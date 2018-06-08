@@ -1,4 +1,4 @@
-package com.streamr.client;
+package com.streamr.client.protocol;
 
 public class MessageFromServer {
 

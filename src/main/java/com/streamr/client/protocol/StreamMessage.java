@@ -1,8 +1,8 @@
-package com.streamr.client;
+package com.streamr.client.protocol;
 
 import java.util.Date;
 
-public class BroadcastMessage {
+public class StreamMessage {
     private String streamId;
     private int partition;
     private long timestamp;
@@ -12,7 +12,7 @@ public class BroadcastMessage {
     private int contentTypeCode;
     private Object payload;
 
-    public BroadcastMessage(String streamId, int partition, long timestamp, Integer ttl, Long offset, Long previousOffset, int contentTypeCode, Object payload) {
+    public StreamMessage(String streamId, int partition, long timestamp, Integer ttl, Long offset, Long previousOffset, int contentTypeCode, Object payload) {
         this.streamId = streamId;
         this.partition = partition;
         this.timestamp = timestamp;

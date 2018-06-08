@@ -41,6 +41,7 @@ public class StreamrClient {
         int contributions;
     }
 
+    // TODO: remove
     public static void main(String... args) throws Exception {
         OkHttpClient client = new OkHttpClient();
 

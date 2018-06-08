@@ -1,7 +1,6 @@
 package com.streamr.client.protocol;
 
 import com.squareup.moshi.*;
-import com.streamr.client.MessageFromServer;
 import com.streamr.client.exceptions.MalformedMessageException;
 import com.streamr.client.exceptions.UnsupportedMessageException;
 
@@ -16,10 +15,10 @@ public class MessageFromServerAdapter extends JsonAdapter<MessageFromServer> {
             new StreamMessageAdapter(), // 1: Unicast
             moshi.adapter(SubscribeResponse.class),   // 2: Subscribed
             moshi.adapter(UnsubscribeResponse.class), // 3: Unsubscribed
-            null, // 4: Resending TODO
-            null, // 5: Resent TODO
-            null, // 6: No resend TODO
-            null // 7: Error TODO
+            moshi.adapter(ResendingMessage.class), // 4: Resending
+            moshi.adapter(ResentMessage.class), // 5: Resent
+            moshi.adapter(NoResendMessage.class), // 6: No resend
+            moshi.adapter(String.class) // 7: Error
     };
 
     @Override
@@ -54,15 +53,6 @@ public class MessageFromServerAdapter extends JsonAdapter<MessageFromServer> {
 
     @Override
     public void toJson(JsonWriter writer, MessageFromServer value) throws IOException {
-        try {
-            writer.beginArray();
-            writer.value(0); // version
-            writer.value(value.getMessageTypeCode()); // type
-            writer.value(value.getSubscriptionId()); // subscription id
-            writer.value(adapterByCode[value.getMessageTypeCode()].toJson(value.getPayload()));
-            writer.endArray();
-        } finally {
-            writer.close();
-        }
+        throw new RuntimeException("Unimplemented!"); // TODO
     }
 }

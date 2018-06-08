@@ -4,44 +4,42 @@ import com.streamr.client.Subscription;
 import com.streamr.client.exceptions.AlreadySubscribedException;
 import com.streamr.client.exceptions.SubscriptionNotFoundException;
 
-import java.util.*;
+import java.util.HashMap;
+import java.util.Map;
 
 public class Subscriptions {
 
-    private final Map<StreamPartition, Subscription> subs = new HashMap<>();
-    private final Map<String, Subscription> subsById = new HashMap<>();
+    private final Map<String, Subscription> subsByKey = new HashMap<>();
+
+    private static String getKey(String streamId, int partition) {
+        return streamId + "-" + partition;
+    }
 
     public void add(Subscription sub) {
-        if (subs.containsKey(sub.getStreamPartition())) {
+        String key = getKey(sub.getStreamId(), sub.getPartition());
+        if (subsByKey.containsKey(key)) {
             throw new AlreadySubscribedException(sub);
         } else {
-            subs.put(sub.getStreamPartition(), sub);
-            subsById.put(sub.getId(), sub);
+            subsByKey.put(key, sub);
         }
     }
 
-    public Subscription get(Subscription sub) throws SubscriptionNotFoundException {
-        Subscription result = subs.get(sub.getStreamPartition());
-        if (result == null) {
-            throw new SubscriptionNotFoundException(sub);
-        }
-        return result;
-    }
+    public Subscription get(String streamId, int partition) throws SubscriptionNotFoundException {
+        String key = getKey(streamId, partition);
 
-    public Subscription get(String subId) throws SubscriptionNotFoundException {
-        Subscription result = subsById.get(subId);
+        Subscription result = subsByKey.get(key);
         if (result == null) {
-            throw new SubscriptionNotFoundException(subId);
+            throw new SubscriptionNotFoundException(streamId, partition);
         }
         return result;
     }
 
     public void remove(Subscription sub) throws SubscriptionNotFoundException {
-        if (subs.containsKey(sub.getStreamPartition())) {
-            Subscription removed = subs.remove(sub.getStreamPartition());
-            subsById.remove(removed.getId());
+        String key = getKey(sub.getStreamId(), sub.getPartition());
+        if (subsByKey.containsKey(key)) {
+            subsByKey.remove(key);
         } else {
-            throw new SubscriptionNotFoundException(sub);
+            throw new SubscriptionNotFoundException(sub.getStreamId(), sub.getPartition());
         }
     }
 }

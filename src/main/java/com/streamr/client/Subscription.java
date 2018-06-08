@@ -8,6 +8,7 @@ public class Subscription {
 
     private final String id;
     private final StreamPartition streamPartition;
+    private final MessageHandler handler;
 
     private State state;
 
@@ -15,9 +16,10 @@ public class Subscription {
         SUBSCRIBING, SUBSCRIBED, UNSUBSCRIBING, UNSUBSCRIBED
     }
 
-    public Subscription(String streamId, int partition) {
+    public Subscription(String streamId, int partition, MessageHandler handler) {
         this.id = UUID.randomUUID().toString();
         this.streamPartition = new StreamPartition(streamId, partition);
+        this.handler = handler;
     }
 
     public String getId() {
@@ -42,5 +44,9 @@ public class Subscription {
 
     public void setState(State state) {
         this.state = state;
+    }
+
+    public MessageHandler getHandler() {
+        return handler;
     }
 }

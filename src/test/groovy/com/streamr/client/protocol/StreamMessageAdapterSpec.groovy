@@ -1,7 +1,6 @@
 package com.streamr.client.protocol
 
 import com.squareup.moshi.JsonReader
-import com.streamr.client.BroadcastMessage
 import com.streamr.client.exceptions.MalformedMessageException
 import com.streamr.client.exceptions.UnsupportedMessageException
 import okio.Buffer
@@ -25,7 +24,7 @@ class StreamMessageAdapterSpec extends Specification {
 		String json = "[28,\"7wa7APtlTq6EC5iTCBy6dw\",0,1528228173462,0,1871084066,1871084061,27,\"{\\\"desi\\\":\\\"2\\\",\\\"dir\\\":\\\"1\\\",\\\"oper\\\":40,\\\"veh\\\":222,\\\"tst\\\":\\\"2018-06-05T19:49:33Z\\\",\\\"tsi\\\":1528228173,\\\"spd\\\":3.6,\\\"hdg\\\":69,\\\"lat\\\":60.192258,\\\"long\\\":24.928701,\\\"acc\\\":-0.59,\\\"dl\\\":-248,\\\"odo\\\":5134,\\\"drst\\\":0,\\\"oday\\\":\\\"2018-06-05\\\",\\\"jrn\\\":885,\\\"line\\\":30,\\\"start\\\":\\\"22:23\\\"}\"]"
 
 		when:
-		BroadcastMessage msg = adapter.fromJson(toReader(json))
+		StreamMessage msg = adapter.fromJson(toReader(json))
 
 		then:
 		msg.getStreamId() == "7wa7APtlTq6EC5iTCBy6dw"

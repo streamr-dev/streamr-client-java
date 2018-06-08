@@ -1,21 +1,20 @@
 package com.streamr.client.protocol;
 
 import com.squareup.moshi.*;
-import com.streamr.client.BroadcastMessage;
 import com.streamr.client.exceptions.MalformedMessageException;
 import com.streamr.client.exceptions.UnsupportedMessageException;
 
 import java.io.IOException;
 import java.util.Map;
 
-public class StreamMessageAdapter extends JsonAdapter<BroadcastMessage> {
+public class StreamMessageAdapter extends JsonAdapter<StreamMessage> {
 
     // Thread safe
     private static final Moshi moshi = new Moshi.Builder().build();
     private static final JsonAdapter<Map> mapAdapter = moshi.adapter(Map.class);
 
     @Override
-    public BroadcastMessage fromJson(JsonReader reader) throws IOException {
+    public StreamMessage fromJson(JsonReader reader) throws IOException {
         try {
             reader.beginArray();
 
@@ -43,14 +42,14 @@ public class StreamMessageAdapter extends JsonAdapter<BroadcastMessage> {
 
             reader.endArray();
 
-            return new BroadcastMessage(streamId, partition, timestamp, ttl, offset, previousOffset, contentType, payload);
+            return new StreamMessage(streamId, partition, timestamp, ttl, offset, previousOffset, contentType, payload);
         } catch (JsonDataException e) {
             throw new MalformedMessageException("Malformed message: " + reader.toString(), e);
         }
     }
 
     @Override
-    public void toJson(JsonWriter writer, BroadcastMessage value) throws IOException {
+    public void toJson(JsonWriter writer, StreamMessage value) throws IOException {
         // TODO
         /*
         writer.beginArray();
