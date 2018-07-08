@@ -147,7 +147,7 @@ public class StreamrWebsocketClient {
 
     public void handleMessage(String rawMessageAsString) {
         try {
-            log.info("<< " + rawMessageAsString);
+            log.debug("<< " + rawMessageAsString);
 
             // Handle different message types
             MessageFromServer message = messageFromServerAdapter.fromJson(rawMessageAsString);
