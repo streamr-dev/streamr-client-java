@@ -25,7 +25,7 @@ public class StreamrWebsocketClient {
     private final Moshi moshi = new Moshi.Builder().build();
     private final JsonAdapter<SubscribeRequest> subscribeRequestAdapter = moshi.adapter(SubscribeRequest.class);
     private final JsonAdapter<UnsubscribeRequest> unsubscribeRequestAdapter = moshi.adapter(UnsubscribeRequest.class);
-    private final JsonAdapter<MessageFromServer> messageFromServerAdapter = moshi.adapter(MessageFromServer.class);
+    private final JsonAdapter<MessageFromServer> messageFromServerAdapter = new MessageFromServerAdapter();
 
     private final StreamrClientOptions options;
     private final WebSocketClient websocket;
@@ -169,7 +169,7 @@ public class StreamrWebsocketClient {
                 log.error("Parsed message was null! Raw message: " + rawMessageAsString);
             }
         } catch (IOException e) {
-            log.error(e);
+            log.error("Error while handling message: " + rawMessageAsString, e);
         }
     }
 
@@ -178,7 +178,11 @@ public class StreamrWebsocketClient {
         log.debug(message.getStreamId() + ": " + message.getPayload().toString());
 
         Subscription sub = subs.get(message.getStreamId(), message.getPartition());
-        sub.getHandler().onMessage(sub, message);
+
+        // Only call the handler if we are in subscribed state (and not for example UNSUBSCRIBING)
+        if (sub.getState().equals(Subscription.State.SUBSCRIBED)) {
+            sub.getHandler().onMessage(sub, message);
+        }
     }
 
     public Subscription subscribe(String streamId, MessageHandler handler) {
@@ -218,6 +222,7 @@ public class StreamrWebsocketClient {
         sub.setState(Subscription.State.UNSUBSCRIBED);
     }
 
+    // TODO: remove
     public static void main(String[] args) throws InterruptedException {
         StreamrClientOptions options = new StreamrClientOptions();
         //options.setApiKey("tester1-api-key");

@@ -46,8 +46,6 @@ public class MessageFromServerAdapter extends JsonAdapter<MessageFromServer> {
             return new MessageFromServer(messageTypeCode, subscriptionId, payload);
         } catch (JsonDataException e) {
             throw new MalformedMessageException("Malformed message: " + reader.toString(), e);
-        } finally {
-            reader.close();
         }
     }
 
