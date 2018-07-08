@@ -3,24 +3,27 @@ package com.streamr.client;
 import com.squareup.moshi.JsonAdapter;
 import com.squareup.moshi.Moshi;
 import com.squareup.moshi.Types;
-
-import java.net.URI;
-import java.util.Collections;
-import java.util.Comparator;
-import java.util.List;
+import com.squareup.moshi.adapters.Rfc3339DateJsonAdapter;
+import com.streamr.client.rest.Stream;
 import okhttp3.OkHttpClient;
 import okhttp3.Request;
 import okhttp3.Response;
 import okhttp3.ResponseBody;
-import org.java_websocket.client.WebSocketClient;
-import org.java_websocket.handshake.ServerHandshake;
+
+import java.io.IOException;
+import java.util.Collections;
+import java.util.Comparator;
+import java.util.Date;
+import java.util.List;
 
 public class StreamrClient {
 
-    private static final String ENDPOINT = "https://api.github.com/repos/square/okhttp/contributors";
-    private static final Moshi MOSHI = new Moshi.Builder().build();
-    private static final JsonAdapter<List<Contributor>> CONTRIBUTORS_JSON_ADAPTER = MOSHI.adapter(
-            Types.newParameterizedType(List.class, Contributor.class));
+    public static final Moshi MOSHI = new Moshi.Builder()
+            .add(Date.class, new Rfc3339DateJsonAdapter())
+            .build();
+
+    public static final JsonAdapter<Stream> streamJsonAdapter = MOSHI.adapter(Stream.class);
+            //Types.newParameterizedType(List.class, Contributor.class));
 
     private StreamrClientOptions options;
 
@@ -36,39 +39,40 @@ public class StreamrClient {
         this.options = options;
     }
 
-    static class Contributor {
-        String login;
-        int contributions;
+    private Request.Builder addAuthenticationHeader(Request.Builder builder, String apiKey) {
+        if (apiKey == null) {
+            return builder;
+        } else {
+            return builder.addHeader("Authorization", "token " + apiKey);
+        }
     }
 
-    // TODO: remove
-    public static void main(String... args) throws Exception {
+    private <T> T get(String endpoint, String apiKey, JsonAdapter<T> adapter) throws IOException {
         OkHttpClient client = new OkHttpClient();
 
         // Create request for remote resource.
-        Request request = new Request.Builder()
-                .url(ENDPOINT)
-                .build();
+        Request request = addAuthenticationHeader(new Request.Builder()
+                        .url(options.getRestApiUrl() + endpoint),
+                apiKey
+        ).build();
 
         // Execute the request and retrieve the response.
-        try (Response response = client.newCall(request).execute()) {
-            // Deserialize HTTP response to concrete type.
-            ResponseBody body = response.body();
-            List<Contributor> contributors = CONTRIBUTORS_JSON_ADAPTER.fromJson(body.source());
+        Response response = client.newCall(request).execute();
 
-            // Sort list by the most contributions.
-            Collections.sort(contributors, new Comparator<Contributor>() {
-                @Override public int compare(Contributor c1, Contributor c2) {
-                    return c2.contributions - c1.contributions;
-                }
-            });
+        // Deserialize HTTP response to concrete type.
+        ResponseBody body = response.body();
+        return adapter.fromJson(body.source());
+    }
 
-            // Output list of contributors.
-            for (Contributor contributor : contributors) {
-                System.out.println(contributor.login + ": " + contributor.contributions);
-            }
+    /*
+     * Stream endpoints
+     */
+    public Stream getStream(String streamId, String apiKey) throws IOException {
+        if (streamId == null) {
+            throw new IllegalArgumentException("streamId cannot be null!");
         }
 
+        return get("/streams/" + streamId, apiKey, streamJsonAdapter);
     }
 
 }
