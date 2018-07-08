@@ -1,4 +1,4 @@
-package com.streamr.com.streamr.client.utils
+package com.streamr.client.utils
 
 import com.streamr.client.Subscription
 import com.streamr.client.exceptions.SubscriptionNotFoundException

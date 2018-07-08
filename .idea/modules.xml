@@ -3,6 +3,7 @@
   <component name="ProjectModuleManager">
     <modules>
       <module fileurl="file://$PROJECT_DIR$/.idea/modules/streamr-java-client.iml" filepath="$PROJECT_DIR$/.idea/modules/streamr-java-client.iml" />
+      <module fileurl="file://$PROJECT_DIR$/.idea/modules/streamr-java-client_integrationTest.iml" filepath="$PROJECT_DIR$/.idea/modules/streamr-java-client_integrationTest.iml" group="streamr-java-client" />
       <module fileurl="file://$PROJECT_DIR$/.idea/modules/streamr-java-client_main.iml" filepath="$PROJECT_DIR$/.idea/modules/streamr-java-client_main.iml" group="streamr-java-client" />
       <module fileurl="file://$PROJECT_DIR$/.idea/modules/streamr-java-client_test.iml" filepath="$PROJECT_DIR$/.idea/modules/streamr-java-client_test.iml" group="streamr-java-client" />
     </modules>
