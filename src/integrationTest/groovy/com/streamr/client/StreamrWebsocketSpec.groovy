@@ -1,15 +1,14 @@
 package com.streamr.client
 
 import com.streamr.client.protocol.StreamMessage
-import spock.lang.Specification
+import com.streamr.client.rest.Stream
 
-class StreamrWebsocketClientSpec extends Specification {
+class StreamrWebsocketSpec extends StreamrIntegrationSpecification {
 
-	private final static url = "wss://www.streamr.com/api/v1/ws" //"ws://localhost:8890/api/v1/ws";
-	private StreamrWebsocketClient client
+	private StreamrClient client
 
 	void setup() {
-
+		client = createClient("tester1-api-key")
 	}
 
 	void cleanup() {
@@ -18,9 +17,7 @@ class StreamrWebsocketClientSpec extends Specification {
 		}
 	}
 
-	void "client can connect and disconnect"() {
-		client = new StreamrWebsocketClient(new StreamrClientOptions(null, url, null))
-
+	void "client can connect and disconnect over websocket"() {
 		when:
 		client.connect()
 
@@ -35,35 +32,41 @@ class StreamrWebsocketClientSpec extends Specification {
 	}
 
 	void "client can subscribe to and unsubscribe from a public stream"() {
-		client = new StreamrWebsocketClient(new StreamrClientOptions(null, url, null))
 		client.connect()
+
 		int msgCount = 0
 		int timeout = 10 * 1000
 		Subscription sub
 
+		Stream stream = client.createStream(new Stream(generateResourceName(), ""))
+
 		when:
-		sub = client.subscribe("7wa7APtlTq6EC5iTCBy6dw", new MessageHandler() {
+		// Subscribe to the stream
+		sub = client.subscribe(stream, new MessageHandler() {
 			@Override
 			void onMessage(Subscription s, StreamMessage message) {
 				msgCount++
 			}
 		})
-		while (msgCount == 0 && timeout > 0) {
+
+		Thread.sleep(2000)
+
+		// Produce messages to the stream
+		for (int i=0; i<10; i++) {
+			client.publish(stream, [i: i])
+			Thread.sleep(200)
+		}
+
+		// Allow some time for the messages to be received
+		while (msgCount < 10 && timeout > 0) {
 			Thread.sleep(200)
 			timeout -= 200
 		}
 
 		then:
-		msgCount > 0
+		// All messages have been received by subscriber
+		msgCount == 10
 		timeout > 0
-
-		when:
-		client.unsubscribe(sub)
-		int msgCountAfterUnsubscribe = msgCount
-		Thread.sleep(5000)
-
-		then: "No new messages are received after unsubscribe"
-		msgCount == msgCountAfterUnsubscribe
 	}
 
 }

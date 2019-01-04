@@ -3,10 +3,14 @@ package com.streamr.client.protocol;
 import com.squareup.moshi.*;
 import com.streamr.client.exceptions.MalformedMessageException;
 import com.streamr.client.exceptions.UnsupportedMessageException;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 
 import java.io.IOException;
 
 public class MessageFromServerAdapter extends JsonAdapter<MessageFromServer> {
+
+    private static final Logger log = LogManager.getLogger();
 
     // Thread safe
     private static final Moshi moshi = new Moshi.Builder().build();
@@ -33,7 +37,14 @@ public class MessageFromServerAdapter extends JsonAdapter<MessageFromServer> {
             }
 
             int messageTypeCode = reader.nextInt();
-            String subscriptionId = reader.nextString();
+
+            // Peek at subScriptionId to see if it is non-null
+            String subscriptionId = null;
+            if (reader.peek().equals(JsonReader.Token.NULL)) {
+                reader.nextNull();
+            } else {
+                subscriptionId = reader.nextString();
+            }
 
             // Parse payload
             if (messageTypeCode >= adapterByCode.length) {
@@ -45,6 +56,7 @@ public class MessageFromServerAdapter extends JsonAdapter<MessageFromServer> {
 
             return new MessageFromServer(messageTypeCode, subscriptionId, payload);
         } catch (JsonDataException e) {
+            log.error(e);
             throw new MalformedMessageException("Malformed message: " + reader.toString(), e);
         }
     }

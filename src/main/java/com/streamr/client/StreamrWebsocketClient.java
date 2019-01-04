@@ -1,11 +1,12 @@
 package com.streamr.client;
 
 import com.squareup.moshi.JsonAdapter;
-import com.squareup.moshi.Moshi;
 import com.streamr.client.exceptions.AlreadySubscribedException;
 import com.streamr.client.exceptions.ConnectionTimeoutException;
+import com.streamr.client.exceptions.PartitionNotSpecifiedException;
 import com.streamr.client.exceptions.SubscriptionNotFoundException;
 import com.streamr.client.protocol.*;
+import com.streamr.client.rest.Stream;
 import com.streamr.client.utils.Subscriptions;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
@@ -16,18 +17,22 @@ import java.io.IOException;
 import java.net.URI;
 import java.net.URISyntaxException;
 import java.nio.channels.NotYetConnectedException;
+import java.util.Date;
 
-public class StreamrWebsocketClient {
+/**
+ * Extends the AbstractStreamrClient with methods for using the websocket protocol
+ */
+public class StreamrWebsocketClient extends AbstractStreamrClient {
 
     private static final Logger log = LogManager.getLogger();
 
-    // Thread safe
-    private final Moshi moshi = new Moshi.Builder().build();
-    private final JsonAdapter<SubscribeRequest> subscribeRequestAdapter = moshi.adapter(SubscribeRequest.class);
-    private final JsonAdapter<UnsubscribeRequest> unsubscribeRequestAdapter = moshi.adapter(UnsubscribeRequest.class);
+    // JSON Adapters for request and response objects
+    private final JsonAdapter<PublishRequest> publishRequestAdapter = new PublishRequestAdapter();
+    private final JsonAdapter<SubscribeRequest> subscribeRequestAdapter = MOSHI.adapter(SubscribeRequest.class);
+    private final JsonAdapter<UnsubscribeRequest> unsubscribeRequestAdapter = MOSHI.adapter(UnsubscribeRequest.class);
     private final JsonAdapter<MessageFromServer> messageFromServerAdapter = new MessageFromServerAdapter();
 
-    private final StreamrClientOptions options;
+    // Underlying websocket implementation
     private final WebSocketClient websocket;
 
     private final Subscriptions subs = new Subscriptions();
@@ -39,12 +44,8 @@ public class StreamrWebsocketClient {
     private State state = State.Disconnected;
     private Exception errorWhileConnecting = null;
 
-    public StreamrWebsocketClient() {
-        this(new StreamrClientOptions());
-    }
-
     public StreamrWebsocketClient(StreamrClientOptions options) {
-        this.options = options;
+        super(options);
 
         try {
             this.websocket = new WebSocketClient(new URI(options.getWebsocketApiUrl())) {
@@ -88,6 +89,10 @@ public class StreamrWebsocketClient {
             throw new RuntimeException(e);
         }
     }
+
+    /*
+     * Connecting and disconnecting
+     */
 
     public void onOpen() {}
     public void onClose() {}
@@ -145,9 +150,13 @@ public class StreamrWebsocketClient {
         return state;
     }
 
+    /*
+     * Message handling
+     */
+
     public void handleMessage(String rawMessageAsString) {
         try {
-            log.debug("<< " + rawMessageAsString);
+            log.info("<< " + rawMessageAsString);
 
             // Handle different message types
             MessageFromServer message = messageFromServerAdapter.fromJson(rawMessageAsString);
@@ -185,26 +194,58 @@ public class StreamrWebsocketClient {
         }
     }
 
+    /*
+     * Publish
+     */
+
+    public void publish(Stream stream, Object payload) {
+        publish(stream.getId(), payload, new Date());
+    }
+
+    public void publish(Stream stream, Object payload, Date timestamp) {
+        publish(stream.getId(), payload, timestamp);
+    }
+
+    public void publish(String streamId, Object payload) {
+        publish(streamId, payload, new Date());
+    }
+
+    public void publish(String streamId, Object payload, Date timestamp) {
+        PublishRequest req = new PublishRequest(streamId, payload, timestamp, null, options.getApiKey());
+        this.websocket.send(publishRequestAdapter.toJson(req));
+    }
+
+    /*
+     * Subscribe
+     */
+
+    public Subscription subscribe(Stream stream, MessageHandler handler) {
+        if (stream.getPartitions() > 1) {
+            throw new PartitionNotSpecifiedException(stream.getId(), stream.getPartitions());
+        }
+        return subscribe(stream.getId(), 0, handler);
+    }
+
+    public Subscription subscribe(Stream stream, int partition, MessageHandler handler) {
+        return subscribe(stream.getId(), partition, handler);
+    }
+
     public Subscription subscribe(String streamId, MessageHandler handler) {
-        return subscribe(streamId, 0, options.getApiKey(), handler);
+        return subscribe(streamId, 0, handler);
     }
 
-    public Subscription subscribe(String streamId, String apiKey, MessageHandler handler) {
-        return subscribe(streamId, 0, apiKey, handler);
-    }
-
-    public Subscription subscribe(String streamId, int partition, MessageHandler handler) {
-        return subscribe(streamId, partition, options.getApiKey(), handler);
-    }
-
-    public Subscription subscribe(String streamId, int partition, String apiKey, MessageHandler handler) throws AlreadySubscribedException {
-        String subscribeRequest = subscribeRequestAdapter.toJson(new SubscribeRequest(streamId, partition, apiKey));
+    public Subscription subscribe(String streamId, int partition, MessageHandler handler) throws AlreadySubscribedException {
+        String subscribeRequest = subscribeRequestAdapter.toJson(new SubscribeRequest(streamId, partition, options.getApiKey()));
         Subscription sub = new Subscription(streamId, partition, handler);
         subs.add(sub);
         sub.setState(Subscription.State.SUBSCRIBING);
         this.websocket.send(subscribeRequest);
         return sub;
     }
+
+    /*
+     * Unsubscribe
+     */
 
     public void unsubscribe(Subscription sub) {
         String unsubscribeRequest = unsubscribeRequestAdapter.toJson(new UnsubscribeRequest(sub.getStreamId(), sub.getPartition()));
@@ -220,33 +261,6 @@ public class StreamrWebsocketClient {
     private void handleUnsubcribeResponse(UnsubscribeResponse res) throws SubscriptionNotFoundException {
         Subscription sub = subs.get(res.getStream(), res.getPartition());
         sub.setState(Subscription.State.UNSUBSCRIBED);
-    }
-
-    // TODO: remove
-    public static void main(String[] args) throws InterruptedException {
-        StreamrClientOptions options = new StreamrClientOptions();
-        //options.setApiKey("tester1-api-key");
-        //options.setWebsocketApiUrl("ws://localhost:8890/api/v1/ws");
-
-        StreamrWebsocketClient client = new StreamrWebsocketClient(options);
-        try {
-            client.connect();
-        } catch (ConnectionTimeoutException e) {
-            log.error(e);
-        }
-
-        System.out.println("state: " + client.getState());
-
-        Subscription sub = client.subscribe("7wa7APtlTq6EC5iTCBy6dw", new MessageHandler() {
-            @Override
-            public void onMessage(Subscription sub, StreamMessage message) {
-                log.info("Message received! " + message.getPayload());
-            }
-        });
-
-        Thread.sleep(10*1000);
-
-        client.unsubscribe(sub);
     }
 
 }

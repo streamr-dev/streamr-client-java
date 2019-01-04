@@ -51,11 +51,16 @@ public class Stream {
     private String id;
     private String name;
     private String description;
-    private int partitions;
+    private Integer partitions;
     private StreamConfig config;
-    private boolean uiChannel;
+    private Boolean uiChannel;
     private Date dateCreated;
     private Date lastUpdated;
+
+    public Stream(String name, String description) {
+        this.name = name;
+        this.description = description;
+    }
 
     public String getId() {
         return id;
@@ -65,19 +70,35 @@ public class Stream {
         return name;
     }
 
+    public void setName(String name) {
+        this.name = name;
+    }
+
     public String getDescription() {
         return description;
     }
 
-    public int getPartitions() {
+    public void setDescription(String description) {
+        this.description = description;
+    }
+
+    public Integer getPartitions() {
         return partitions;
+    }
+
+    public void setPartitions(Integer partitions) {
+        this.partitions = partitions;
     }
 
     public StreamConfig getConfig() {
         return config;
     }
 
-    public boolean isUiChannel() {
+    public void setConfig(StreamConfig config) {
+        this.config = config;
+    }
+
+    public Boolean isUiChannel() {
         return uiChannel;
     }
 

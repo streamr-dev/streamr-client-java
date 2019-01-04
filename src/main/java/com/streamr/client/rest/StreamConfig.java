@@ -1,5 +1,6 @@
 package com.streamr.client.rest;
 
+import java.util.ArrayList;
 import java.util.List;
 
 /*
@@ -34,14 +35,32 @@ import java.util.List;
    }
  */
 public class StreamConfig {
-    private String topic;
     private List<FieldConfig> fields;
 
-    public String getTopic() {
-        return topic;
+    public StreamConfig() {
+        this.fields = new ArrayList<>();
+    }
+
+    public StreamConfig(List<FieldConfig> fields) {
+        this.fields = fields;
     }
 
     public List<FieldConfig> getFields() {
         return fields;
+    }
+
+    public void setFields(List<FieldConfig> fields) {
+        this.fields = fields;
+    }
+
+    public StreamConfig addField(FieldConfig field) {
+        this.fields.add(field);
+        return this;
+    }
+
+    @Override
+    public boolean equals(Object obj) {
+        // Configs are equal if all the fields are equal (in order)
+        return obj instanceof StreamConfig && ((StreamConfig) obj).getFields().equals(fields);
     }
 }
