@@ -54,7 +54,7 @@ class StreamEndpointsSpec extends StreamrIntegrationSpecification {
         getResult.uiChannel == createResult.uiChannel
     }
 
-    void "createStream() throws AuthenticationRequiredException if the client is unauthenticated"() {
+    void "createStream() throws AuthenticationException if the client is unauthenticated"() {
         Stream proto = new Stream(generateResourceName(), "This stream was created from an integration test")
         StreamrClient unauthenticatedClient = createClient(null);
 
