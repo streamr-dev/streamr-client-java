@@ -1,6 +1,6 @@
 package com.streamr.client
 
-import com.streamr.client.exceptions.AuthenticationRequiredException
+import com.streamr.client.exceptions.AuthenticationException
 import com.streamr.client.exceptions.PermissionDeniedException
 import com.streamr.client.exceptions.ResourceNotFoundException
 import com.streamr.client.rest.FieldConfig
@@ -62,7 +62,7 @@ class StreamEndpointsSpec extends StreamrIntegrationSpecification {
         unauthenticatedClient.createStream(proto)
 
         then:
-        thrown(AuthenticationRequiredException)
+        thrown(AuthenticationException)
     }
 
     void "getStream() throws StreamNotFoundException for non-existent streams"() {

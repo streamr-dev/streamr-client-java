@@ -211,7 +211,7 @@ public class StreamrWebsocketClient extends AbstractStreamrClient {
     }
 
     public void publish(String streamId, Object payload, Date timestamp) {
-        PublishRequest req = new PublishRequest(streamId, payload, timestamp, null, options.getApiKey());
+        PublishRequest req = new PublishRequest(streamId, payload, timestamp, null, session.getSessionToken());
         this.websocket.send(publishRequestAdapter.toJson(req));
     }
 
@@ -235,7 +235,7 @@ public class StreamrWebsocketClient extends AbstractStreamrClient {
     }
 
     public Subscription subscribe(String streamId, int partition, MessageHandler handler) throws AlreadySubscribedException {
-        String subscribeRequest = subscribeRequestAdapter.toJson(new SubscribeRequest(streamId, partition, options.getApiKey()));
+        String subscribeRequest = subscribeRequestAdapter.toJson(new SubscribeRequest(streamId, partition, session.getSessionToken()));
         Subscription sub = new Subscription(streamId, partition, handler);
         subs.add(sub);
         sub.setState(Subscription.State.SUBSCRIBING);

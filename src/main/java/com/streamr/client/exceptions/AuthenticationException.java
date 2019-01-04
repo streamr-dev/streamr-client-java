@@ -1,9 +1,9 @@
 package com.streamr.client.exceptions;
 
-public class AuthenticationRequiredException extends RuntimeException {
+public class AuthenticationException extends RuntimeException {
 
-    public AuthenticationRequiredException(String resourceName) {
-        super("Authentication required: " + resourceName);
+    public AuthenticationException(String resourceName) {
+        super("Authentication failed: " + resourceName);
     }
 
 }

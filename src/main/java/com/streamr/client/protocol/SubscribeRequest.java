@@ -5,28 +5,28 @@ public class SubscribeRequest extends WebsocketRequest {
     private static final String TYPE = "subscribe";
 
     private String stream;
-    private String authKey;
+    private String sessionToken;
     private int partition = 0;
 
-    public SubscribeRequest(String stream, String authKey) {
+    public SubscribeRequest(String stream, String sessionToken) {
         super(TYPE);
         this.stream = stream;
-        this.authKey = authKey;
+        this.sessionToken = sessionToken;
     }
 
-    public SubscribeRequest(String stream, int partition, String authKey) {
+    public SubscribeRequest(String stream, int partition, String sessionToken) {
         super(TYPE);
         this.stream = stream;
         this.partition = partition;
-        this.authKey = authKey;
+        this.sessionToken = sessionToken;
     }
 
     public String getStream() {
         return stream;
     }
 
-    public String getAuthKey() {
-        return authKey;
+    public String getSessionToken() {
+        return sessionToken;
     }
 
     public int getPartition() {

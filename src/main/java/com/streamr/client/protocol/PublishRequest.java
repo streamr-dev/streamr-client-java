@@ -6,7 +6,7 @@ import java.util.Date;
 {
   "type": "publish",
   "stream": "streamId",
-  "authKey": "authKey",
+  "sessionToken": "sessionToken",
   "msg": "{}",                 // the message as stringified json
   "ts": 1533924184016,         // timestamp (optional), defaults to current time on server
   "pkey": "deviceId"           // partition key (optional), defaults to none (random partition)
@@ -17,15 +17,15 @@ public class PublishRequest extends WebsocketRequest {
     private static final String TYPE = "publish";
 
     private String stream;
-    private String authKey;
+    private String sessionToken;
     private Object payload;
     private Date timestamp;
     private String pkey;
 
-    public PublishRequest(String stream, Object payload, Date timestamp, String partitionKey, String authKey) {
+    public PublishRequest(String stream, Object payload, Date timestamp, String partitionKey, String sessionToken) {
         super(TYPE);
         this.stream = stream;
-        this.authKey = authKey;
+        this.sessionToken = sessionToken;
         this.payload = payload;
         this.timestamp = timestamp;
         this.pkey = partitionKey;
@@ -35,8 +35,8 @@ public class PublishRequest extends WebsocketRequest {
         return stream;
     }
 
-    public String getAuthKey() {
-        return authKey;
+    public String getSessionToken() {
+        return sessionToken;
     }
 
     public Object getPayload() {

@@ -1,9 +1,9 @@
 package com.streamr.client;
 
 import com.squareup.moshi.Moshi;
-import com.streamr.client.utils.StringOrMillisDateJsonAdapter;
-
-import java.util.Date;
+import com.streamr.client.authentication.ApiKeyAuthenticationMethod;
+import com.streamr.client.authentication.Session;
+import com.streamr.client.utils.HttpUtils;
 
 /**
  * Provides the barebones of a StreamrClient, including
@@ -12,14 +12,21 @@ import java.util.Date;
 public abstract class AbstractStreamrClient {
 
     // Thread safe
-    protected static final Moshi MOSHI = new Moshi.Builder()
-            .add(Date.class, new StringOrMillisDateJsonAdapter().nullSafe())
-            .build();
+    protected static final Moshi MOSHI = HttpUtils.MOSHI;
 
     protected final StreamrClientOptions options;
 
-    public AbstractStreamrClient(StreamrClientOptions config) {
-        this.options = config;
+    protected final Session session;
+
+    public AbstractStreamrClient(StreamrClientOptions options) {
+        this.options = options;
+
+        // Create Session object based on what kind of authentication method is provided in options
+        if (options.getApiKey() != null) {
+            session = new Session(new ApiKeyAuthenticationMethod(options));
+        } else {
+            session = new Session();
+        }
     }
 
 }
