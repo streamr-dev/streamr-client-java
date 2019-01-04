@@ -1,6 +1,6 @@
 package com.streamr.client
 
-import com.streamr.client.exceptions.AuthenticationRequiredException
+import com.streamr.client.exceptions.AuthenticationException
 import com.streamr.client.exceptions.PermissionDeniedException
 import com.streamr.client.exceptions.ResourceNotFoundException
 import com.streamr.client.rest.FieldConfig
@@ -54,7 +54,7 @@ class StreamEndpointsSpec extends StreamrIntegrationSpecification {
         getResult.uiChannel == createResult.uiChannel
     }
 
-    void "createStream() throws AuthenticationRequiredException if the client is unauthenticated"() {
+    void "createStream() throws AuthenticationException if the client is unauthenticated"() {
         Stream proto = new Stream(generateResourceName(), "This stream was created from an integration test")
         StreamrClient unauthenticatedClient = createClient(null);
 
@@ -62,7 +62,7 @@ class StreamEndpointsSpec extends StreamrIntegrationSpecification {
         unauthenticatedClient.createStream(proto)
 
         then:
-        thrown(AuthenticationRequiredException)
+        thrown(AuthenticationException)
     }
 
     void "getStream() throws StreamNotFoundException for non-existent streams"() {

@@ -1,21 +1,15 @@
 package com.streamr.client;
 
 import com.squareup.moshi.JsonAdapter;
-import com.squareup.moshi.Moshi;
 import com.squareup.moshi.Types;
-import com.squareup.moshi.adapters.Rfc3339DateJsonAdapter;
-import com.streamr.client.exceptions.AuthenticationRequiredException;
+import com.streamr.client.exceptions.AuthenticationException;
 import com.streamr.client.exceptions.PermissionDeniedException;
 import com.streamr.client.exceptions.ResourceNotFoundException;
 import com.streamr.client.rest.Stream;
 import okhttp3.*;
 
-import javax.security.sasl.AuthenticationException;
 import java.io.IOException;
 import java.net.HttpURLConnection;
-import java.util.Collections;
-import java.util.Comparator;
-import java.util.Date;
 import java.util.List;
 
 /**
@@ -65,7 +59,7 @@ public class StreamrClient extends StreamrWebsocketClient {
                 case HttpURLConnection.HTTP_NOT_FOUND:
                     throw new ResourceNotFoundException(action);
                 case HttpURLConnection.HTTP_UNAUTHORIZED:
-                    throw new AuthenticationRequiredException(action);
+                    throw new AuthenticationException(action);
                 case HttpURLConnection.HTTP_FORBIDDEN:
                     throw new PermissionDeniedException(action);
                 default:
