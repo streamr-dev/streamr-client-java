@@ -8,7 +8,11 @@ class StreamrIntegrationSpecification extends Specification {
     private final static DEFAULT_WEBSOCKET_URL = "ws://localhost:8890/api/v1/ws";
 
     protected static StreamrClient createClient(String apiKey = null) {
-        return new StreamrClient(new StreamrClientOptions(apiKey, DEFAULT_WEBSOCKET_URL, DEFAULT_REST_URL))
+        return new StreamrClient(createOptions(apiKey))
+    }
+
+    protected static StreamrClientOptions createOptions(String apiKey = null) {
+        return new StreamrClientOptions(apiKey, DEFAULT_WEBSOCKET_URL, DEFAULT_REST_URL)
     }
 
     protected String generateResourceName() {

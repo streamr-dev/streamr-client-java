@@ -1,21 +1,20 @@
 package com.streamr.client.protocol;
 
-import com.squareup.moshi.*;
+import com.squareup.moshi.JsonAdapter;
+import com.squareup.moshi.JsonDataException;
+import com.squareup.moshi.JsonReader;
+import com.squareup.moshi.JsonWriter;
 import com.streamr.client.exceptions.MalformedMessageException;
 import com.streamr.client.exceptions.UnsupportedMessageException;
+import com.streamr.client.utils.HttpUtils;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
 import java.io.IOException;
-import java.util.Map;
 
 public class StreamMessageAdapter extends JsonAdapter<StreamMessage> {
 
     private static final Logger log = LogManager.getLogger();
-
-    // Thread safe
-    private static final Moshi moshi = new Moshi.Builder().build();
-    private static final JsonAdapter<Map> mapAdapter = moshi.adapter(Map.class);
 
     @Override
     public StreamMessage fromJson(JsonReader reader) throws IOException {
@@ -47,7 +46,7 @@ public class StreamMessageAdapter extends JsonAdapter<StreamMessage> {
             // Parse payload as JSON
             Object payload;
             if (contentType == 27) {
-                payload = mapAdapter.fromJson(reader.nextString());
+                payload = HttpUtils.mapAdapter.fromJson(reader.nextString());
             } else {
                 throw new UnsupportedMessageException("Unrecognized payload type: " + contentType);
             }

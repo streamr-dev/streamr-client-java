@@ -47,8 +47,8 @@ public class PublishRequestAdapter extends JsonAdapter<PublishRequest> {
 
         // Optional fields
 
-        if (value.getAuthKey() != null) {
-            writer.name("authKey").value(value.getAuthKey());
+        if (value.getSessionToken() != null) {
+            writer.name("sessionToken").value(value.getSessionToken());
         }
         if (value.getTimestamp() != null) {
             writer.name("ts").value(value.getTimestamp().getTime());

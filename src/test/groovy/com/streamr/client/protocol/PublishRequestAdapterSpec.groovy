@@ -39,13 +39,13 @@ class PublishRequestAdapterSpec extends Specification {
 				[foo: "bar"],
 				new Date(1535384328000),
 				"foo",
-				"key")
+				"token")
 
 		when:
 		adapter.toJson(buffer, request)
 
 		then:
-		buffer.readString(utf8) == "{\"type\":\"publish\",\"stream\":\"streamId\",\"msg\":\"{\\\"foo\\\":\\\"bar\\\"}\",\"authKey\":\"key\",\"ts\":1535384328000,\"pkey\":\"foo\"}"
+		buffer.readString(utf8) == "{\"type\":\"publish\",\"stream\":\"streamId\",\"msg\":\"{\\\"foo\\\":\\\"bar\\\"}\",\"sessionToken\":\"token\",\"ts\":1535384328000,\"pkey\":\"foo\"}"
 	}
 
 	void "toJson (with unsupported payload)"() {
