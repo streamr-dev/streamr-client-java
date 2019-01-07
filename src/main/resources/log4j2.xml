@@ -6,7 +6,7 @@
         </Console>
     </Appenders>
     <Loggers>
-        <Logger name="com.streamr.client" level="debug" additivity="false">
+        <Logger name="streamr.client" level="debug" additivity="false">
             <AppenderRef ref="Console" />
         </Logger>
         <Root level="warn" additivity="false">
