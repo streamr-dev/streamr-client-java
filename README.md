@@ -6,10 +6,12 @@ Using this library, you can easily interact with Streamr over HTTP and websocket
 
 This library is work-in-progress. It is currently in a MVP stage covering a very basic subset of functionality including:
 
-- Authenticating with an API key to start a session
-- Creating and looking up Streams
-- Publishing events to Streams over websocket
-- Subscribing to events from Streams over websocket
+- [Authentication with an API key](#authentication)
+- [Creating Streams](#creating-streams)
+- [Looking up Streams](#looking-up-streams)
+- [Publishing events to Streams](#publishing)
+- [Subscribing to events from Streams](#subscribing)
+- [Unsubscribing from Streams](#unsubscribing)
 
 # Installation
 
@@ -17,7 +19,8 @@ This library will be published to Maven, but it's not there yet.
 
 # Usage
 
-## Authenticating
+<a name="authentication"></a>
+## Authentication
 
 To authenticate as a Streamr user, simply provide your API key to the `StreamrClient` constructor:
 
@@ -33,6 +36,7 @@ You can access public resources without authenticating. In this case you can cre
 StreamrClient client = new StreamrClient(); 
 ```
 
+<a name="creating-streams"></a>
 ## Creating Streams
 
 You create Streams via the `create(Stream)` method, passing in a prototype `Stream` object with fields set as you wish. The method returns the `Stream` object that was actually created.
@@ -41,6 +45,7 @@ You create Streams via the `create(Stream)` method, passing in a prototype `Stre
 Stream created = client.create(new Stream("Stream name", "Stream description"));
 ```
 
+<a name="looking-up-streams"></a>
 ## Looking up Streams
 
 You can look up Streams by `id`:
@@ -55,6 +60,7 @@ Or by the name of the Stream (expects an unique result):
 Stream stream = client.getStreamByName("My Fancy Stream");
 ```
 
+<a name="publishing"></a>
 ## Publishing events to Streams
 
 Events in Streams are key-value pairs, represented in Java as `Map` objects. Below is an example of creating an event payload and publishing it into a Stream:
@@ -75,6 +81,7 @@ All events are timestamped. The above example assigns the current timestamp to t
 client.publish(stream, msg, new Date());
 ```
 
+<a name="subscribing"></a>
 ## Subscribing to events from Streams
 
 By subscribing to Streams, your application gets immediately notified about new events in the Stream. You provide a `MessageHandler` which gets called with new events.
@@ -89,6 +96,7 @@ Subscription sub = client.subscribe(stream, new MessageHandler() {
 })
 ```
 
+<a name="unsubscribing"></a>
 ## Unsubscribing from Streams
 
 To stop receiving events from a Stream, pass the `Subscription` object you got when subscribing to the `unsubscribe` method:
