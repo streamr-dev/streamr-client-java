@@ -18,6 +18,7 @@ import java.net.URI;
 import java.net.URISyntaxException;
 import java.nio.channels.NotYetConnectedException;
 import java.util.Date;
+import java.util.Map;
 
 /**
  * Extends the AbstractStreamrClient with methods for using the websocket protocol
@@ -198,20 +199,20 @@ public class StreamrWebsocketClient extends AbstractStreamrClient {
      * Publish
      */
 
-    public void publish(Stream stream, Object payload) {
-        publish(stream.getId(), payload, new Date());
+    public void publish(Stream stream, Map<String, Object> payload) {
+        publish(stream, payload, new Date(), null);
     }
 
-    public void publish(Stream stream, Object payload, Date timestamp) {
-        publish(stream.getId(), payload, timestamp);
+    public void publish(Stream stream, Map<String, Object> payload, Date timestamp) {
+        publish(stream, payload, timestamp, null);
     }
 
-    public void publish(String streamId, Object payload) {
-        publish(streamId, payload, new Date());
-    }
+    public void publish(Stream stream, Map<String, Object> payload, Date timestamp, String partitionKey) {
+        if (!getState().equals(State.Connected)) {
+            connect();
+        }
 
-    public void publish(String streamId, Object payload, Date timestamp) {
-        PublishRequest req = new PublishRequest(streamId, payload, timestamp, null, session.getSessionToken());
+        PublishRequest req = new PublishRequest(stream.getId(), payload, timestamp, partitionKey, session.getSessionToken());
         this.websocket.send(publishRequestAdapter.toJson(req));
     }
 
@@ -223,20 +224,16 @@ public class StreamrWebsocketClient extends AbstractStreamrClient {
         if (stream.getPartitions() > 1) {
             throw new PartitionNotSpecifiedException(stream.getId(), stream.getPartitions());
         }
-        return subscribe(stream.getId(), 0, handler);
+        return subscribe(stream, 0, handler);
     }
 
     public Subscription subscribe(Stream stream, int partition, MessageHandler handler) {
-        return subscribe(stream.getId(), partition, handler);
-    }
+        if (!getState().equals(State.Connected)) {
+            connect();
+        }
 
-    public Subscription subscribe(String streamId, MessageHandler handler) {
-        return subscribe(streamId, 0, handler);
-    }
-
-    public Subscription subscribe(String streamId, int partition, MessageHandler handler) throws AlreadySubscribedException {
-        String subscribeRequest = subscribeRequestAdapter.toJson(new SubscribeRequest(streamId, partition, session.getSessionToken()));
-        Subscription sub = new Subscription(streamId, partition, handler);
+        String subscribeRequest = subscribeRequestAdapter.toJson(new SubscribeRequest(stream.getId(), partition, session.getSessionToken()));
+        Subscription sub = new Subscription(stream.getId(), partition, handler);
         subs.add(sub);
         sub.setState(Subscription.State.SUBSCRIBING);
         this.websocket.send(subscribeRequest);

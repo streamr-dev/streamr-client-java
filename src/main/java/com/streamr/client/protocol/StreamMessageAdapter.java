@@ -11,6 +11,7 @@ import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
 import java.io.IOException;
+import java.util.Map;
 
 public class StreamMessageAdapter extends JsonAdapter<StreamMessage> {
 
@@ -43,8 +44,9 @@ public class StreamMessageAdapter extends JsonAdapter<StreamMessage> {
 
             int contentType = reader.nextInt();
 
-            // Parse payload as JSON
-            Object payload;
+            // Payload type might need to be changed to Object when new
+            // non-JSON payload types are introduced
+            Map<String, Object> payload;
             if (contentType == 27) {
                 payload = HttpUtils.mapAdapter.fromJson(reader.nextString());
             } else {

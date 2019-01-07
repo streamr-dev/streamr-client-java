@@ -1,6 +1,7 @@
 package com.streamr.client.protocol;
 
 import java.util.Date;
+import java.util.Map;
 
 public class StreamMessage {
     private String streamId;
@@ -10,9 +11,12 @@ public class StreamMessage {
     private Long offset;
     private Long previousOffset;
     private int contentTypeCode;
-    private Object payload;
 
-    public StreamMessage(String streamId, int partition, long timestamp, Integer ttl, Long offset, Long previousOffset, int contentTypeCode, Object payload) {
+    // Payload type might need to be changed to Object when new
+    // non-JSON payload types are introduced
+    private Map<String, Object> payload;
+
+    public StreamMessage(String streamId, int partition, long timestamp, Integer ttl, Long offset, Long previousOffset, int contentTypeCode, Map<String, Object> payload) {
         this.streamId = streamId;
         this.partition = partition;
         this.timestamp = timestamp;
@@ -55,7 +59,7 @@ public class StreamMessage {
         return contentTypeCode;
     }
 
-    public Object getPayload() {
+    public Map<String, Object> getPayload() {
         return payload;
     }
 }
