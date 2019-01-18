@@ -91,7 +91,7 @@ class StreamrWebsocketSpec extends StreamrIntegrationSpecification {
 		// All messages have been received by subscriber
 		msgCount == 10
 		timeout > 0
-		latestMsg.payload.i == 10
+		latestMsg.content.i == 10
 
 		when:
 		client.unsubscribe(sub)
