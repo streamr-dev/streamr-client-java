@@ -5,8 +5,6 @@
     <exclude-output />
     <content url="file://$MODULE_DIR$/../../src/integrationTest">
       <sourceFolder url="file://$MODULE_DIR$/../../src/integrationTest/groovy" isTestSource="true" />
-      <sourceFolder url="file://$MODULE_DIR$/../../src/integrationTest/java" isTestSource="true" />
-      <sourceFolder url="file://$MODULE_DIR$/../../src/integrationTest/resources" type="java-test-resource" />
     </content>
     <orderEntry type="inheritedJdk" />
     <orderEntry type="sourceFolder" forTests="false" />
