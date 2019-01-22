@@ -56,8 +56,8 @@ public class StreamMessageV29 extends StreamMessage {
     }
 
     @Override
-    public int getSequenceNumber() {
-        return 0;
+    public long getSequenceNumber() {
+        return 0L;
     }
 
     public Integer getTtl() {

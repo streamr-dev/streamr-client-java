@@ -49,8 +49,8 @@ public class StreamMessageV28 extends StreamMessage {
     }
 
     @Override
-    public int getSequenceNumber() {
-        return 0;
+    public long getSequenceNumber() {
+        return 0L;
     }
 
     @Override

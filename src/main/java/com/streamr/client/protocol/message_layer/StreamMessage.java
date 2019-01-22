@@ -99,7 +99,7 @@ public abstract class StreamMessage {
 
     public abstract Date getTimestampAsDate();
 
-    public abstract int getSequenceNumber();
+    public abstract long getSequenceNumber();
 
     public abstract String getPublisherId();
 

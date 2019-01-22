@@ -59,7 +59,7 @@ public class StreamMessageV30 extends StreamMessage {
     }
 
     @Override
-    public int getSequenceNumber() {
+    public long getSequenceNumber() {
         return messageID.getSequenceNumber();
     }
 

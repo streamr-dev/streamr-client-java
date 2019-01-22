@@ -5,7 +5,7 @@ public class MessageID {
     private String streamId;
     private int streamPartition;
     private long timestamp;
-    private int sequenceNumber;
+    private long sequenceNumber;
     private String publisherId;
 
     public MessageID(String streamId, int streamPartition, long timestamp, int sequenceNumber, String publisherId) {
@@ -32,7 +32,7 @@ public class MessageID {
         return new Date(timestamp);
     }
 
-    public int getSequenceNumber() {
+    public long getSequenceNumber() {
         return sequenceNumber;
     }
 
