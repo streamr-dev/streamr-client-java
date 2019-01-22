@@ -87,7 +87,7 @@ class StreamMessageSpec extends Specification {
 		msg.getTtl() == 0
 		msg.getOffset() == 1871084066
 		msg.getPreviousOffset() == 1871084061
-		msg.getContentType() == StreamMessage.ContentType.CONTENT_TYPE_JSON
+		msg.getContentType() == ContentType.CONTENT_TYPE_JSON
 		msg.getContent() instanceof Map
 		msg.getContent().desi == "2"
 	}
@@ -107,10 +107,10 @@ class StreamMessageSpec extends Specification {
 		msg.getTtl() == 0
 		msg.getOffset() == 1871084066
 		msg.getPreviousOffset() == 1871084061
-		msg.getContentType() == StreamMessage.ContentType.CONTENT_TYPE_JSON
+		msg.getContentType() == ContentType.CONTENT_TYPE_JSON
 		msg.getContent() instanceof Map
 		msg.getContent().desi == "2"
-		msg.getSignatureType() == StreamMessage.SignatureType.SIGNATURE_TYPE_ETH
+		msg.getSignatureType() == SignatureType.SIGNATURE_TYPE_ETH
 		msg.getPublisherId() == "publisherAddress"
 		msg.getSignature() == "signature"
 	}
@@ -132,10 +132,10 @@ class StreamMessageSpec extends Specification {
 		msg.getPreviousMessageRef().getTimestamp() == 1528228170000L
 		msg.getPreviousMessageRef().getTimestampAsDate() == new Date(1528228170000L)
 		msg.getPreviousMessageRef().getSequenceNumber() == 0
-		msg.getContentType() == StreamMessage.ContentType.CONTENT_TYPE_JSON
+		msg.getContentType() == ContentType.CONTENT_TYPE_JSON
 		msg.getContent() instanceof Map
 		msg.getContent().desi == "2"
-		msg.getSignatureType() == StreamMessage.SignatureType.SIGNATURE_TYPE_ETH
+		msg.getSignatureType() == SignatureType.SIGNATURE_TYPE_ETH
 		msg.getSignature() == "signature"
 	}
 
@@ -154,10 +154,10 @@ class StreamMessageSpec extends Specification {
 		msg.getSequenceNumber() == 0
 		msg.getPublisherId() == "publisherId"
 		msg.getPreviousMessageRef() == null
-		msg.getContentType() == StreamMessage.ContentType.CONTENT_TYPE_JSON
+		msg.getContentType() == ContentType.CONTENT_TYPE_JSON
 		msg.getContent() instanceof Map
 		msg.getContent().desi == "2"
-		msg.getSignatureType() == StreamMessage.SignatureType.SIGNATURE_TYPE_ETH
+		msg.getSignatureType() == SignatureType.SIGNATURE_TYPE_ETH
 		msg.getSignature() == "signature"
 	}
 
@@ -176,7 +176,7 @@ class StreamMessageSpec extends Specification {
 		msg.getTtl() == 0
 		msg.getOffset() == 1871084066
 		msg.getPreviousOffset() == null
-		msg.getContentType() == StreamMessage.ContentType.CONTENT_TYPE_JSON
+		msg.getContentType() == ContentType.CONTENT_TYPE_JSON
 		msg.getContent() instanceof Map
 		msg.getContent().desi == "2"
 	}

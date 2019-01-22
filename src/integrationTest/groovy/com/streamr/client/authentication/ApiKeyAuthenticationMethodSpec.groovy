@@ -1,9 +1,9 @@
 package com.streamr.client.authentication
 
-
+import com.streamr.client.StreamrIntegrationSpecification
 import com.streamr.client.exceptions.AuthenticationException
 
-class ApiKeyAuthenticationMethodSpec extends com.streamr.client.StreamrIntegrationSpecification {
+class ApiKeyAuthenticationMethodSpec extends StreamrIntegrationSpecification {
 
 	void "newSessionToken() fetches a new sessionToken using the provided API key"() {
 		ApiKeyAuthenticationMethod auth = new ApiKeyAuthenticationMethod(createOptions("tester1-api-key"))
