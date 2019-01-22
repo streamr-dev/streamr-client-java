@@ -6,6 +6,9 @@ import java.io.IOException;
 import java.util.Date;
 
 public class StreamMessageV30 extends StreamMessage {
+
+    private static final StreamMessageV30Adapter v30Adapter = new StreamMessageV30Adapter();
+
     public static final int VERSION = 30;
     private MessageID messageID;
     private MessageRef previousMessageRef;
@@ -26,7 +29,11 @@ public class StreamMessageV30 extends StreamMessage {
                             String serializedContent, SignatureType signatureType, String signature) throws IOException {
         super(VERSION, contentType, serializedContent);
         this.messageID = new MessageID(streamId, streamPartition, timestamp, sequenceNumber, publisherId);
-        this.previousMessageRef = new MessageRef(previousTimestamp, previousSequenceNumber);
+        if (previousTimestamp == null) {
+            this.previousMessageRef = null;
+        } else {
+            this.previousMessageRef = new MessageRef(previousTimestamp, previousSequenceNumber);
+        }
         this.signatureType = signatureType;
         this.signature = signature;
     }
@@ -75,12 +82,7 @@ public class StreamMessageV30 extends StreamMessage {
 
     @Override
     protected void writeJson(JsonWriter writer) throws IOException {
-        messageID.writeJson(writer);
-        previousMessageRef.writeJson(writer);
-        writer.value(contentType.getId());
-        writer.value(serializedContent);
-        writer.value(signatureType.getId());
-        writer.value(signature);
+        v30Adapter.toJson(writer, this);
     }
 
 }

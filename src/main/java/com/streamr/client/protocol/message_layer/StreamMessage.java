@@ -1,10 +1,13 @@
 package com.streamr.client.protocol.message_layer;
 
 import java.io.IOException;
+import java.nio.charset.Charset;
 import java.nio.charset.StandardCharsets;
 import java.util.Date;
 import java.util.HashMap;
 import java.util.Map;
+
+import com.squareup.moshi.JsonReader;
 import com.squareup.moshi.JsonWriter;
 import com.streamr.client.utils.HttpUtils;
 import com.streamr.client.exceptions.UnsupportedMessageException;
@@ -15,6 +18,7 @@ import org.apache.logging.log4j.Logger;
 public abstract class StreamMessage {
 
     private static final Logger log = LogManager.getLogger();
+    private static final StreamMessageAdapter adapter = new StreamMessageAdapter();
 
     public enum ContentType {
         CONTENT_TYPE_JSON ((byte) 27);
@@ -83,6 +87,10 @@ public abstract class StreamMessage {
         }
     }
 
+    public int getVersion() {
+        return version;
+    }
+
     public abstract String getStreamId();
 
     public abstract int getStreamPartition();
@@ -103,14 +111,15 @@ public abstract class StreamMessage {
         return content;
     }
 
+    public String getSerializedContent() {
+        return serializedContent;
+    }
+
     public String toJson(){
         try {
             Buffer buffer = new Buffer();
             JsonWriter writer = JsonWriter.of(buffer);
-            writer.beginArray();
-            writer.value(version);
-            writeJson(writer);
-            writer.endArray();
+            adapter.toJson(writer, this);
             return buffer.readUtf8();
         } catch (IOException e) {
             log.error(e);
@@ -127,4 +136,11 @@ public abstract class StreamMessage {
     }
 
     protected abstract void writeJson(JsonWriter writer) throws IOException;
+
+    private static JsonReader toReader(String json) {
+        return JsonReader.of(new Buffer().writeString(json, Charset.forName("UTF-8")));
+    }
+    public static StreamMessage fromJson(String json) throws IOException {
+        return adapter.fromJson(toReader(json));
+    }
 }

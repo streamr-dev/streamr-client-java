@@ -6,6 +6,9 @@ import java.io.IOException;
 import java.util.Date;
 
 public class StreamMessageV29 extends StreamMessage {
+
+    private static final StreamMessageV29Adapter v29Adapter = new StreamMessageV29Adapter();
+
     public static final int VERSION = 29;
     private String streamId;
     private int streamPartition;
@@ -84,16 +87,6 @@ public class StreamMessageV29 extends StreamMessage {
 
     @Override
     protected void writeJson(JsonWriter writer) throws IOException {
-        writer.value(streamId);
-        writer.value(streamPartition);
-        writer.value(timestamp);
-        writer.value(ttl);
-        writer.value(offset);
-        writer.value(previousOffset);
-        writer.value(contentType.getId());
-        writer.value(serializedContent);
-        writer.value(signatureType.getId());
-        writer.value(publisherAddress);
-        writer.value(signature);
+        v29Adapter.toJson(writer, this);
     }
 }

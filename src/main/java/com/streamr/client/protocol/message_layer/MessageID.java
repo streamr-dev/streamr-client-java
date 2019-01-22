@@ -1,8 +1,4 @@
 package com.streamr.client.protocol.message_layer;
-
-import com.squareup.moshi.JsonWriter;
-
-import java.io.IOException;
 import java.util.Date;
 
 public class MessageID {
@@ -42,15 +38,5 @@ public class MessageID {
 
     public String getPublisherId() {
         return publisherId;
-    }
-
-    protected void writeJson(JsonWriter writer) throws IOException {
-        writer.beginArray();
-        writer.value(streamId);
-        writer.value(streamPartition);
-        writer.value(timestamp);
-        writer.value(sequenceNumber);
-        writer.value(publisherId);
-        writer.endArray();
     }
 }
