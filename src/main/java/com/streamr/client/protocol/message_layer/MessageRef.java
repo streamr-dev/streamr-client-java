@@ -3,7 +3,7 @@ import java.util.Date;
 
 public class MessageRef {
     private long timestamp;
-    private int sequenceNumber;
+    private long sequenceNumber;
 
     public MessageRef(Long timestamp, int sequenceNumber) {
         this.timestamp = timestamp;
@@ -18,7 +18,7 @@ public class MessageRef {
         return new Date(timestamp);
     }
 
-    public int getSequenceNumber() {
+    public long getSequenceNumber() {
         return sequenceNumber;
     }
 }
