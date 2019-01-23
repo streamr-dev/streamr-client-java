@@ -49,8 +49,17 @@ public class StreamMessageAdapter extends JsonAdapter<StreamMessage> {
     @Override
     public void toJson(JsonWriter writer, StreamMessage value) throws IOException {
         writer.beginArray();
-        writer.value(value.getVersion());
-        value.writeJson(writer);
+        int version = value.getVersion();
+        writer.value(version);
+        if (version == StreamMessageV28.VERSION) {
+            v28Adapter.toJson(writer, (StreamMessageV28) value);
+        } else if (version == StreamMessageV29.VERSION) {
+            v29Adapter.toJson(writer, (StreamMessageV29) value);
+        } else if (version == StreamMessageV30.VERSION) {
+            v30Adapter.toJson(writer, (StreamMessageV30) value);
+        } else {
+            throw new UnsupportedMessageException("Unrecognized stream message version: " + version);
+        }
         writer.endArray();
     }
 }

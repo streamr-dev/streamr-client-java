@@ -1,13 +1,9 @@
 package com.streamr.client.protocol.message_layer;
 
-import com.squareup.moshi.JsonWriter;
-
 import java.io.IOException;
 import java.util.Date;
 
 public class StreamMessageV28 extends StreamMessage {
-
-    private static final StreamMessageV28Adapter v28Adapter = new StreamMessageV28Adapter();
 
     public static final int VERSION = 28;
     private String streamId;
@@ -68,10 +64,5 @@ public class StreamMessageV28 extends StreamMessage {
 
     public Long getPreviousOffset() {
         return previousOffset;
-    }
-
-    @Override
-    protected void writeJson(JsonWriter writer) throws IOException {
-        v28Adapter.toJson(writer, this);
     }
 }

@@ -135,12 +135,15 @@ public abstract class StreamMessage {
         return toBytes().length;
     }
 
-    protected abstract void writeJson(JsonWriter writer) throws IOException;
-
     private static JsonReader toReader(String json) {
         return JsonReader.of(new Buffer().writeString(json, Charset.forName("UTF-8")));
     }
+
     public static StreamMessage fromJson(String json) throws IOException {
         return adapter.fromJson(toReader(json));
+    }
+
+    public static StreamMessage fromBytes(byte[] bytes) throws IOException {
+        return StreamMessage.fromJson(new String(bytes, StandardCharsets.UTF_8));
     }
 }

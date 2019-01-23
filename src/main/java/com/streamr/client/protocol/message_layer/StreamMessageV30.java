@@ -1,13 +1,9 @@
 package com.streamr.client.protocol.message_layer;
 
-import com.squareup.moshi.JsonWriter;
-
 import java.io.IOException;
 import java.util.Date;
 
 public class StreamMessageV30 extends StreamMessage {
-
-    private static final StreamMessageV30Adapter v30Adapter = new StreamMessageV30Adapter();
 
     public static final int VERSION = 30;
     private MessageID messageID;
@@ -79,10 +75,4 @@ public class StreamMessageV30 extends StreamMessage {
     public String getSignature() {
         return signature;
     }
-
-    @Override
-    protected void writeJson(JsonWriter writer) throws IOException {
-        v30Adapter.toJson(writer, this);
-    }
-
 }
