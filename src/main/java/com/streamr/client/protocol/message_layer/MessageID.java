@@ -8,7 +8,7 @@ public class MessageID {
     private long sequenceNumber;
     private String publisherId;
 
-    public MessageID(String streamId, int streamPartition, long timestamp, int sequenceNumber, String publisherId) {
+    public MessageID(String streamId, int streamPartition, long timestamp, long sequenceNumber, String publisherId) {
         this.streamId = streamId;
         this.streamPartition = streamPartition;
         this.timestamp = timestamp;

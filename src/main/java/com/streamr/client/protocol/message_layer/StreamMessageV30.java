@@ -24,8 +24,8 @@ public class StreamMessageV30 extends StreamMessage {
         this.signature = signature;
     }
 
-    public StreamMessageV30(String streamId, int streamPartition, long timestamp, int sequenceNumber,
-                            String publisherId, Long previousTimestamp, int previousSequenceNumber, ContentType contentType,
+    public StreamMessageV30(String streamId, int streamPartition, long timestamp, long sequenceNumber,
+                            String publisherId, Long previousTimestamp, Long previousSequenceNumber, ContentType contentType,
                             String serializedContent, SignatureType signatureType, String signature) throws IOException {
         super(VERSION, contentType, serializedContent);
         this.messageID = new MessageID(streamId, streamPartition, timestamp, sequenceNumber, publisherId);

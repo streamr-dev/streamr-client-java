@@ -5,7 +5,7 @@ public class MessageRef {
     private long timestamp;
     private long sequenceNumber;
 
-    public MessageRef(Long timestamp, int sequenceNumber) {
+    public MessageRef(Long timestamp, long sequenceNumber) {
         this.timestamp = timestamp;
         this.sequenceNumber = sequenceNumber;
     }
