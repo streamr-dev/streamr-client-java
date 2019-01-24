@@ -39,6 +39,9 @@ public class StreamMessageV29Adapter extends JsonAdapter<StreamMessageV29> {
             if (signatureType == SignatureType.SIGNATURE_TYPE_ETH) {
                 publisherAddress = reader.nextString();
                 signature = reader.nextString();
+            } else {
+                reader.nextNull();
+                reader.nextNull();
             }
 
             return new StreamMessageV29(streamId, partition, timestamp, ttl, offset, previousOffset, contentType,

@@ -33,6 +33,8 @@ public class StreamMessageV30Adapter extends JsonAdapter<StreamMessageV30> {
             String signature = null;
             if (signatureType == SignatureType.SIGNATURE_TYPE_ETH) {
                 signature = reader.nextString();
+            } else {
+                reader.nextNull();
             }
 
             return new StreamMessageV30(messageID, previousMessageRef, contentType, serializedContent, signatureType, signature);

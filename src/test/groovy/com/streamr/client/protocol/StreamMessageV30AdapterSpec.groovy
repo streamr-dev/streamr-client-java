@@ -134,4 +134,25 @@ class StreamMessageV30AdapterSpec extends Specification {
 		msg.getSignatureType() == StreamMessage.SignatureType.SIGNATURE_TYPE_ETH
 		msg.getSignature() == "signature"
 	}
+
+	void "fromJson (v30) with no signature"() {
+		String json = "[30,[\"7wa7APtlTq6EC5iTCBy6dw\",0,1528228173462,0,\"publisherId\"],null,27,\"{\\\"desi\\\":\\\"2\\\",\\\"dir\\\":\\\"1\\\",\\\"oper\\\":40,\\\"veh\\\":222,\\\"tst\\\":\\\"2018-06-05T19:49:33Z\\\",\\\"tsi\\\":1528228173,\\\"spd\\\":3.6,\\\"hdg\\\":69,\\\"lat\\\":60.192258,\\\"long\\\":24.928701,\\\"acc\\\":-0.59,\\\"dl\\\":-248,\\\"odo\\\":5134,\\\"drst\\\":0,\\\"oday\\\":\\\"2018-06-05\\\",\\\"jrn\\\":885,\\\"line\\\":30,\\\"start\\\":\\\"22:23\\\"}\",0,null]"
+
+		when:
+		StreamMessageV30 msg = fromJsonToMsg(adapter, json)
+
+		then:
+		msg.toJson() == json
+		msg.getStreamId() == "7wa7APtlTq6EC5iTCBy6dw"
+		msg.getStreamPartition() == 0
+		msg.getTimestamp() == 1528228173462L
+		msg.getTimestampAsDate() == new Date(1528228173462L)
+		msg.getSequenceNumber() == 0
+		msg.getPublisherId() == "publisherId"
+		msg.getPreviousMessageRef() == null
+		msg.getContentType() == ContentType.CONTENT_TYPE_JSON
+		msg.getContent() instanceof Map
+		msg.getContent().desi == "2"
+		msg.getSignatureType() == StreamMessage.SignatureType.SIGNATURE_TYPE_NONE
+	}
 }
