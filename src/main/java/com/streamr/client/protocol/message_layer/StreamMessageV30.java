@@ -1,7 +1,6 @@
 package com.streamr.client.protocol.message_layer;
 
 import java.io.IOException;
-import java.util.Date;
 
 public class StreamMessageV30 extends StreamMessage {
 
@@ -47,11 +46,6 @@ public class StreamMessageV30 extends StreamMessage {
     @Override
     public long getTimestamp() {
         return messageID.getTimestamp();
-    }
-
-    @Override
-    public Date getTimestampAsDate() {
-        return messageID.getTimestampAsDate();
     }
 
     @Override

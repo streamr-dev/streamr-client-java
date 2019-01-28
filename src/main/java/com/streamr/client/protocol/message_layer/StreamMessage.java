@@ -15,7 +15,7 @@ import okio.Buffer;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
-public abstract class StreamMessage {
+public abstract class StreamMessage implements ITimestamped {
 
     private static final Logger log = LogManager.getLogger();
     private static final StreamMessageAdapter adapter = new StreamMessageAdapter();
@@ -97,7 +97,10 @@ public abstract class StreamMessage {
 
     public abstract long getTimestamp();
 
-    public abstract Date getTimestampAsDate();
+    @Override
+    public Date getTimestampAsDate() {
+        return new Date(getTimestamp());
+    }
 
     public abstract long getSequenceNumber();
 
