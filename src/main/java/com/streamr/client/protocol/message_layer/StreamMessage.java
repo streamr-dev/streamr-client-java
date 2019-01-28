@@ -87,6 +87,17 @@ public abstract class StreamMessage implements ITimestamped {
         }
     }
 
+    public StreamMessage(int version, ContentType contentType, Map<String, Object> content){
+        this.version = version;
+        this.contentType = contentType;
+        if (contentType == ContentType.CONTENT_TYPE_JSON) {
+            this.content = content;
+            this.serializedContent = HttpUtils.mapAdapter.toJson(content);
+        } else {
+            throw new UnsupportedMessageException("Unrecognized payload type: " + contentType);
+        }
+    }
+
     public int getVersion() {
         return version;
     }
