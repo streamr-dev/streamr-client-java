@@ -19,7 +19,7 @@ public class HttpUtils {
     // Thread safe
     public static final Moshi MOSHI = new Moshi.Builder()
             .add(Date.class, new StringOrMillisDateJsonAdapter().nullSafe())
-            .add(BigDecimal.class, new BigDecimalAdapter())
+            .add(BigDecimal.class, new BigDecimalAdapter().nullSafe())
             .build();
 
     public static final JsonAdapter<Map> mapAdapter = MOSHI.adapter(Map.class);
