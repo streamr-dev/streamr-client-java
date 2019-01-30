@@ -1,7 +1,7 @@
 package com.streamr.client.protocol.message_layer;
 
 import java.io.IOException;
-import java.util.Date;
+import java.util.Map;
 
 public class StreamMessageV30 extends StreamMessage {
 
@@ -20,10 +20,33 @@ public class StreamMessageV30 extends StreamMessage {
         this.signature = signature;
     }
 
+    public StreamMessageV30(MessageID messageID, MessageRef previousMessageRef, ContentType contentType,
+                            Map<String, Object> content, SignatureType signatureType, String signature) throws IOException {
+        super(VERSION, contentType, content);
+        this.messageID = messageID;
+        this.previousMessageRef = previousMessageRef;
+        this.signatureType = signatureType;
+        this.signature = signature;
+    }
+
     public StreamMessageV30(String streamId, int streamPartition, long timestamp, long sequenceNumber,
                             String publisherId, Long previousTimestamp, Long previousSequenceNumber, ContentType contentType,
                             String serializedContent, SignatureType signatureType, String signature) throws IOException {
         super(VERSION, contentType, serializedContent);
+        this.messageID = new MessageID(streamId, streamPartition, timestamp, sequenceNumber, publisherId);
+        if (previousTimestamp == null) {
+            this.previousMessageRef = null;
+        } else {
+            this.previousMessageRef = new MessageRef(previousTimestamp, previousSequenceNumber);
+        }
+        this.signatureType = signatureType;
+        this.signature = signature;
+    }
+
+    public StreamMessageV30(String streamId, int streamPartition, long timestamp, long sequenceNumber,
+                            String publisherId, Long previousTimestamp, Long previousSequenceNumber, ContentType contentType,
+                            Map<String, Object> content, SignatureType signatureType, String signature) throws IOException {
+        super(VERSION, contentType, content);
         this.messageID = new MessageID(streamId, streamPartition, timestamp, sequenceNumber, publisherId);
         if (previousTimestamp == null) {
             this.previousMessageRef = null;
@@ -47,11 +70,6 @@ public class StreamMessageV30 extends StreamMessage {
     @Override
     public long getTimestamp() {
         return messageID.getTimestamp();
-    }
-
-    @Override
-    public Date getTimestampAsDate() {
-        return messageID.getTimestampAsDate();
     }
 
     @Override

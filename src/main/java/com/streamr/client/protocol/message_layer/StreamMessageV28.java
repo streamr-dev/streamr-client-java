@@ -1,7 +1,7 @@
 package com.streamr.client.protocol.message_layer;
 
 import java.io.IOException;
-import java.util.Date;
+import java.util.Map;
 
 public class StreamMessageV28 extends StreamMessage {
 
@@ -24,6 +24,17 @@ public class StreamMessageV28 extends StreamMessage {
         this.previousOffset = previousOffset;
     }
 
+    public StreamMessageV28(String streamId, int streamPartition, long timestamp, Integer ttl, Long offset,
+                            Long previousOffset, ContentType contentType, Map<String, Object> content) {
+        super(VERSION, contentType, content);
+        this.streamId = streamId;
+        this.streamPartition = streamPartition;
+        this.timestamp = timestamp;
+        this.ttl = ttl;
+        this.offset = offset;
+        this.previousOffset = previousOffset;
+    }
+
     @Override
     public String getStreamId() {
         return streamId;
@@ -37,11 +48,6 @@ public class StreamMessageV28 extends StreamMessage {
     @Override
     public long getTimestamp() {
         return timestamp;
-    }
-
-    @Override
-    public Date getTimestampAsDate() {
-        return new Date(timestamp);
     }
 
     @Override
