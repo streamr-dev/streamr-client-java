@@ -1,7 +1,7 @@
 package com.streamr.client;
 
 import com.squareup.moshi.JsonAdapter;
-import com.streamr.client.protocol.*;
+import com.streamr.client.protocol.control_layer.*;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.java_websocket.client.WebSocketClient;
@@ -212,7 +212,7 @@ public class StreamrWebsocketClient extends AbstractStreamrClient {
             connect();
         }
 
-        PublishRequest req = new PublishRequest(stream.getId(), payload, timestamp, partitionKey, session.getSessionToken());
+        PublishRequest req = null; // new PublishRequest(stream.getId(), payload, timestamp, partitionKey, session.getSessionToken());
         this.websocket.send(publishRequestAdapter.toJson(req));
     }
 
@@ -251,12 +251,12 @@ public class StreamrWebsocketClient extends AbstractStreamrClient {
     }
 
     private void handleSubcribeResponse(SubscribeResponse res) throws SubscriptionNotFoundException {
-        Subscription sub = subs.get(res.getStream(), res.getPartition());
+        Subscription sub = subs.get(res.getStreamId(), res.getStreamPartition());
         sub.setState(Subscription.State.SUBSCRIBED);
     }
 
     private void handleUnsubcribeResponse(UnsubscribeResponse res) throws SubscriptionNotFoundException {
-        Subscription sub = subs.get(res.getStream(), res.getPartition());
+        Subscription sub = subs.get(res.getStreamId(), res.getStreamPartition());
         sub.setState(Subscription.State.UNSUBSCRIBED);
     }
 

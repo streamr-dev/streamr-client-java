@@ -1,5 +1,8 @@
 package com.streamr.client.protocol
 
+import com.streamr.client.protocol.control_layer.ResendOption
+import com.streamr.client.protocol.control_layer.ResendRequest
+import com.streamr.client.protocol.control_layer.ResendRequestAdapter
 import okio.Buffer
 import spock.lang.Specification
 
@@ -9,7 +12,7 @@ class ResendRequestAdapterSpec extends Specification {
 
 	private static Charset utf8 = Charset.forName("UTF-8")
 
-	ResendRequestAdapter adapter
+    ResendRequestAdapter adapter
 	Buffer buffer
 
 	void setup() {
