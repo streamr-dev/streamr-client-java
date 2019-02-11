@@ -15,6 +15,7 @@ import java.io.IOException;
 public class StreamMessageV30Adapter extends JsonAdapter<StreamMessageV30> {
 
     private static final Logger log = LogManager.getLogger();
+    private static final MessageRefAdapter msgRefAdapter = new MessageRefAdapter();
 
     @Override
     public StreamMessageV30 fromJson(JsonReader reader) throws IOException {
@@ -25,7 +26,7 @@ public class StreamMessageV30Adapter extends JsonAdapter<StreamMessageV30> {
             if (reader.peek().equals(JsonReader.Token.NULL)) {
                 reader.nextNull();
             } else {
-                previousMessageRef = messageRefFromJson(reader);
+                previousMessageRef = msgRefAdapter.fromJson(reader);
             }
             ContentType contentType = ContentType.fromId((byte)reader.nextInt());
             String serializedContent = reader.nextString();
@@ -61,20 +62,6 @@ public class StreamMessageV30Adapter extends JsonAdapter<StreamMessageV30> {
         }
     }
 
-    private MessageRef messageRefFromJson(JsonReader reader) throws IOException {
-        try {
-            reader.beginArray();
-            long timestamp = reader.nextLong();
-            int sequenceNumber = reader.nextInt();
-            reader.endArray();
-
-            return new MessageRef(timestamp, sequenceNumber);
-        } catch (JsonDataException e) {
-            log.error(e);
-            throw new MalformedMessageException("Malformed message ref: " + reader.toString(), e);
-        }
-    }
-
     @Override
     public void toJson(JsonWriter writer, StreamMessageV30 value) throws IOException {
         writer.beginArray();
@@ -85,10 +72,7 @@ public class StreamMessageV30Adapter extends JsonAdapter<StreamMessageV30> {
         writer.value(value.getPublisherId());
         writer.endArray();
         if (value.getPreviousMessageRef() != null) {
-            writer.beginArray();
-            writer.value(value.getPreviousMessageRef().getTimestamp());
-            writer.value(value.getPreviousMessageRef().getSequenceNumber());
-            writer.endArray();
+            msgRefAdapter.toJson(writer, value.getPreviousMessageRef());
         }else {
             writer.value((String)null);
         }
