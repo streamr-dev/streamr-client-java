@@ -1,18 +1,18 @@
 package com.streamr.client.protocol.control_layer;
 
-import com.squareup.moshi.JsonAdapter;
 import com.squareup.moshi.JsonReader;
 import com.squareup.moshi.JsonWriter;
 
 import java.io.IOException;
 
-public class ResendResponseResendingAdapter extends JsonAdapter<ResendResponseResending> {
+public class ResendResponseResendingAdapter extends ControlLayerAdapter<ResendResponseResending> {
 
     @Override
     public ResendResponseResending fromJson(JsonReader reader) throws IOException {
-        // TODO
-
-        throw new RuntimeException("Unimplemented!");
+        String streamId = reader.nextString();
+        int streamPartition = reader.nextInt();
+        String subId = reader.nextString();
+        return new ResendResponseResending(streamId, streamPartition, subId);
     }
 
     @Override

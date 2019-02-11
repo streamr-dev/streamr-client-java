@@ -1,12 +1,11 @@
 package com.streamr.client.protocol.control_layer;
 
-import com.squareup.moshi.JsonAdapter;
 import com.squareup.moshi.JsonReader;
 import com.squareup.moshi.JsonWriter;
 
 import java.io.IOException;
 
-public class ResendLastRequestAdapter extends JsonAdapter<ResendLastRequest> {
+public class ResendLastRequestAdapter extends ControlLayerAdapter<ResendLastRequest> {
 
     @Override
     public ResendLastRequest fromJson(JsonReader reader) throws IOException {

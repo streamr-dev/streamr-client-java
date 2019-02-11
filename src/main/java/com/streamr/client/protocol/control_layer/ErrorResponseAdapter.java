@@ -1,12 +1,11 @@
 package com.streamr.client.protocol.control_layer;
 
-import com.squareup.moshi.JsonAdapter;
 import com.squareup.moshi.JsonReader;
 import com.squareup.moshi.JsonWriter;
 
 import java.io.IOException;
 
-public class ErrorResponseAdapter extends JsonAdapter<ErrorResponse> {
+public class ErrorResponseAdapter extends ControlLayerAdapter<ErrorResponse> {
 
     @Override
     public ErrorResponse fromJson(JsonReader reader) throws IOException {

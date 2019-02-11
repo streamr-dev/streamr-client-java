@@ -1,19 +1,18 @@
 package com.streamr.client.protocol.control_layer;
 
-import com.squareup.moshi.JsonAdapter;
 import com.squareup.moshi.JsonReader;
 import com.squareup.moshi.JsonWriter;
-import com.streamr.client.protocol.message_layer.StreamMessageAdapter;
 
 import java.io.IOException;
 
-public class SubscribeRequestAdapter extends JsonAdapter<SubscribeRequest> {
+public class SubscribeRequestAdapter extends ControlLayerAdapter<SubscribeRequest> {
 
     @Override
     public SubscribeRequest fromJson(JsonReader reader) throws IOException {
-        // TODO
-
-        throw new RuntimeException("Unimplemented!");
+        String streamId = reader.nextString();
+        int streamPartition = reader.nextInt();
+        String sessionToken = reader.nextString();
+        return new SubscribeRequest(streamId, streamPartition, sessionToken);
     }
 
     @Override
