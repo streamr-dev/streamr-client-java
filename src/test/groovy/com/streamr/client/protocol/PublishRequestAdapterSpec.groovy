@@ -1,8 +1,6 @@
 package com.streamr.client.protocol
 
 import com.squareup.moshi.JsonReader
-import com.streamr.client.protocol.control_layer.ErrorResponse
-import com.streamr.client.protocol.control_layer.ErrorResponseAdapter
 import com.streamr.client.protocol.control_layer.PublishRequest
 import com.streamr.client.protocol.control_layer.PublishRequestAdapter
 import com.streamr.client.protocol.message_layer.StreamMessage
@@ -35,7 +33,7 @@ class PublishRequestAdapterSpec extends Specification {
 	}
 
 	void "fromJson"() {
-		String msgJson = "[30,[\"7wa7APtlTq6EC5iTCBy6dw\",0,1528228173462,0,\"publisherId\"],[1528228170000,0],27,\"{\\\"hello\\\":\\\"world\\\"}\",1,\"signature\"]"
+		String msgJson = "[30,[\"7wa7APtlTq6EC5iTCBy6dw\",0,1528228173462,0,\"publisherId\",\"1\"],[1528228170000,0],27,\"{\\\"hello\\\":\\\"world\\\"}\",1,\"signature\"]"
 		String json = '[1,8,'+msgJson+',"sessionToken"]'
 
 		when:
@@ -48,10 +46,10 @@ class PublishRequestAdapterSpec extends Specification {
 
 	void "toJson"() {
 		StreamMessageV30 msg = new StreamMessageV30(
-				"7wa7APtlTq6EC5iTCBy6dw", 0, 1528228173462L, 0, "publisherId", 1528228170000L, 0,
+				"7wa7APtlTq6EC5iTCBy6dw", 0, 1528228173462L, 0, "publisherId", "1", 1528228170000L, 0,
 				StreamMessage.ContentType.CONTENT_TYPE_JSON, '{"hello":"world"}', StreamMessage.SignatureType.SIGNATURE_TYPE_ETH, "signature")
 		PublishRequest request = new PublishRequest(msg, "sessionToken")
-		String msgJson = "[30,[\"7wa7APtlTq6EC5iTCBy6dw\",0,1528228173462,0,\"publisherId\"],[1528228170000,0],27,\"{\\\"hello\\\":\\\"world\\\"}\",1,\"signature\"]"
+		String msgJson = "[30,[\"7wa7APtlTq6EC5iTCBy6dw\",0,1528228173462,0,\"publisherId\",\"1\"],[1528228170000,0],27,\"{\\\"hello\\\":\\\"world\\\"}\",1,\"signature\"]"
 
 		when:
 		adapter.toJson(buffer, request)

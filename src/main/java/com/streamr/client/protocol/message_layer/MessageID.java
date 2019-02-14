@@ -7,13 +7,15 @@ public class MessageID {
     private long timestamp;
     private long sequenceNumber;
     private String publisherId;
+    private String msgChainId;
 
-    public MessageID(String streamId, int streamPartition, long timestamp, long sequenceNumber, String publisherId) {
+    public MessageID(String streamId, int streamPartition, long timestamp, long sequenceNumber, String publisherId, String msgChainId) {
         this.streamId = streamId;
         this.streamPartition = streamPartition;
         this.timestamp = timestamp;
         this.sequenceNumber = sequenceNumber;
         this.publisherId = publisherId;
+        this.msgChainId = msgChainId;
     }
 
     public String getStreamId() {
@@ -38,5 +40,9 @@ public class MessageID {
 
     public String getPublisherId() {
         return publisherId;
+    }
+
+    public String getMsgChainId() {
+        return msgChainId;
     }
 }

@@ -36,7 +36,7 @@ class ControlMessageAdapterSpec extends Specification {
     }
 
     def "BroadcastMessage"() {
-        String msgJson = "[30,[\"7wa7APtlTq6EC5iTCBy6dw\",0,1528228173462,0,\"publisherId\"],[1528228170000,0],27,\"{\\\"hello\\\":\\\"world\\\"}\",1,\"signature\"]"
+        String msgJson = "[30,[\"7wa7APtlTq6EC5iTCBy6dw\",0,1528228173462,0,\"publisherId\",\"1\"],[1528228170000,0],27,\"{\\\"hello\\\":\\\"world\\\"}\",1,\"signature\"]"
         String json = '[1,0,'+msgJson+']'
         when:
         ControlMessage msg = fromJson(adapter, json)
@@ -45,7 +45,7 @@ class ControlMessageAdapterSpec extends Specification {
         msg.toJson() == json
     }
     def "UnicastMessage"() {
-        String msgJson = "[30,[\"7wa7APtlTq6EC5iTCBy6dw\",0,1528228173462,0,\"publisherId\"],[1528228170000,0],27,\"{\\\"hello\\\":\\\"world\\\"}\",1,\"signature\"]"
+        String msgJson = "[30,[\"7wa7APtlTq6EC5iTCBy6dw\",0,1528228173462,0,\"publisherId\",\"1\"],[1528228170000,0],27,\"{\\\"hello\\\":\\\"world\\\"}\",1,\"signature\"]"
         String json = '[1,1,"subId",'+msgJson+']'
         when:
         ControlMessage msg = fromJson(adapter, json)
@@ -102,7 +102,7 @@ class ControlMessageAdapterSpec extends Specification {
         msg.toJson() == json
     }
     def "PublishRequest"() {
-        String msgJson = "[30,[\"7wa7APtlTq6EC5iTCBy6dw\",0,1528228173462,0,\"publisherId\"],[1528228170000,0],27,\"{\\\"hello\\\":\\\"world\\\"}\",1,\"signature\"]"
+        String msgJson = "[30,[\"7wa7APtlTq6EC5iTCBy6dw\",0,1528228173462,0,\"publisherId\",\"1\"],[1528228170000,0],27,\"{\\\"hello\\\":\\\"world\\\"}\",1,\"signature\"]"
         String json = '[1,8,'+msgJson+',"sessionToken"]'
         when:
         ControlMessage msg = fromJson(adapter, json)

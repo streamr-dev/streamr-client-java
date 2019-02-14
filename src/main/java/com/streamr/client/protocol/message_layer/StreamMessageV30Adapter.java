@@ -53,9 +53,10 @@ public class StreamMessageV30Adapter extends JsonAdapter<StreamMessageV30> {
             long timestamp = reader.nextLong();
             int sequenceNumber = reader.nextInt();
             String publisherId = reader.nextString();
+            String msgChainId = reader.nextString();
             reader.endArray();
 
-            return new MessageID(streamId, streamPartition, timestamp, sequenceNumber, publisherId);
+            return new MessageID(streamId, streamPartition, timestamp, sequenceNumber, publisherId, msgChainId);
         } catch (JsonDataException e) {
             log.error(e);
             throw new MalformedMessageException("Malformed message id: " + reader.toString(), e);
@@ -70,6 +71,7 @@ public class StreamMessageV30Adapter extends JsonAdapter<StreamMessageV30> {
         writer.value(value.getTimestamp());
         writer.value(value.getSequenceNumber());
         writer.value(value.getPublisherId());
+        writer.value(value.getMsgChainId());
         writer.endArray();
         if (value.getPreviousMessageRef() != null) {
             msgRefAdapter.toJson(writer, value.getPreviousMessageRef());

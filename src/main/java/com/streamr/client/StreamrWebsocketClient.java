@@ -208,17 +208,12 @@ public class StreamrWebsocketClient extends AbstractStreamrClient {
         if (!getState().equals(State.Connected)) {
             connect();
         }
-        MessageID msgId = new MessageID(stream.getId(), 0, timestamp.getTime(), 0, "");
-        StreamMessage streamMessage = null;
-        try {
-            // TODO: non-default values for partition, sequence number, publisherId and previousMsgRef
-            streamMessage = new StreamMessageV30(
-                    msgId, null, StreamMessage.ContentType.CONTENT_TYPE_JSON, payload,
-                    StreamMessage.SignatureType.SIGNATURE_TYPE_NONE, null
-            );
-        } catch (IOException e){
-            log.error(e);
-        }
+        // TODO: non-default values for partition, sequence number, publisherId, msgChainId and previousMsgRef
+        MessageID msgId = new MessageID(stream.getId(), 0, timestamp.getTime(), 0, "", "");
+        StreamMessage streamMessage = new StreamMessageV30(
+                msgId, null, StreamMessage.ContentType.CONTENT_TYPE_JSON, payload,
+                StreamMessage.SignatureType.SIGNATURE_TYPE_NONE, null
+        );
 
         PublishRequest req = new PublishRequest(streamMessage, session.getSessionToken());
         this.websocket.send(req.toJson());
