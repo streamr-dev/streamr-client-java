@@ -17,7 +17,9 @@ public class ResendFromRequestAdapter extends ControlLayerAdapter<ResendFromRequ
         String subId = reader.nextString();
         MessageRef from = msgRefAdapter.fromJson(reader);
         String publisherId = reader.nextString();
-        return new ResendFromRequest(streamId, streamPartition, subId, from, publisherId);
+        String msgChainId = reader.nextString();
+        String sessionToken = reader.nextString();
+        return new ResendFromRequest(streamId, streamPartition, subId, from, publisherId, msgChainId, sessionToken);
     }
 
     @Override
@@ -30,6 +32,8 @@ public class ResendFromRequestAdapter extends ControlLayerAdapter<ResendFromRequ
         writer.value(value.getSubId());
         msgRefAdapter.toJson(writer, value.getFromMsgRef());
         writer.value(value.getPublisherId());
+        writer.value(value.getMsgChainId());
+        writer.value(value.getSessionToken());
         writer.endArray();
     }
 }

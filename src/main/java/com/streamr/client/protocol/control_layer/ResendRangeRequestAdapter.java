@@ -18,7 +18,9 @@ public class ResendRangeRequestAdapter extends ControlLayerAdapter<ResendRangeRe
         MessageRef from = msgRefAdapter.fromJson(reader);
         MessageRef to = msgRefAdapter.fromJson(reader);
         String publisherId = reader.nextString();
-        return new ResendRangeRequest(streamId, streamPartition, subId, from, to, publisherId);
+        String msgChainId = reader.nextString();
+        String sessionToken = reader.nextString();
+        return new ResendRangeRequest(streamId, streamPartition, subId, from, to, publisherId, msgChainId, sessionToken);
     }
 
     @Override
@@ -32,6 +34,8 @@ public class ResendRangeRequestAdapter extends ControlLayerAdapter<ResendRangeRe
         msgRefAdapter.toJson(writer, value.getFromMsgRef());
         msgRefAdapter.toJson(writer, value.getToMsgRef());
         writer.value(value.getPublisherId());
+        writer.value(value.getMsgChainId());
+        writer.value(value.getSessionToken());
         writer.endArray();
     }
 }

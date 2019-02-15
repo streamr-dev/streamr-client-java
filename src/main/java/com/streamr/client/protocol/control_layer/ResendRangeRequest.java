@@ -11,8 +11,11 @@ public class ResendRangeRequest extends ControlMessage {
     private final MessageRef fromMsgRef;
     private final MessageRef toMsgRef;
     private final String publisherId;
+    private final String msgChainId;
+    private final String sessionToken;
 
-    public ResendRangeRequest(String streamId, int streamPartition, String subId, MessageRef fromMsgRef, MessageRef toMsgRef, String publisherId) {
+    public ResendRangeRequest(String streamId, int streamPartition, String subId, MessageRef fromMsgRef,
+                              MessageRef toMsgRef, String publisherId, String msgChainId, String sessionToken) {
         super(TYPE);
         this.streamId = streamId;
         this.streamPartition = streamPartition;
@@ -20,6 +23,8 @@ public class ResendRangeRequest extends ControlMessage {
         this.fromMsgRef = fromMsgRef;
         this.toMsgRef = toMsgRef;
         this.publisherId = publisherId;
+        this.msgChainId = msgChainId;
+        this.sessionToken = sessionToken;
     }
 
     public String getStreamId() {
@@ -44,5 +49,13 @@ public class ResendRangeRequest extends ControlMessage {
 
     public String getPublisherId() {
         return publisherId;
+    }
+
+    public String getMsgChainId() {
+        return msgChainId;
+    }
+
+    public String getSessionToken() {
+        return sessionToken;
     }
 }

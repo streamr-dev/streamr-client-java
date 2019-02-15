@@ -32,7 +32,7 @@ class ResendFromRequestAdapterSpec extends Specification {
 	}
 
 	void "fromJson"() {
-		String json = '[1,12,"streamId",0,"subId",[143415425455,0],"publisherId"]'
+		String json = '[1,12,"streamId",0,"subId",[143415425455,0],"publisherId","msgChainId","sessionToken"]'
 
 		when:
 		ResendFromRequest msg = toMsg(adapter, json)
@@ -44,16 +44,18 @@ class ResendFromRequestAdapterSpec extends Specification {
 		msg.getFromMsgRef().getTimestamp() == 143415425455
 		msg.getFromMsgRef().getSequenceNumber() == 0
 		msg.getPublisherId() == "publisherId"
+		msg.getMsgChainId() == "msgChainId"
+		msg.getSessionToken() == "sessionToken"
 	}
 
 	void "toJson"() {
 		MessageRef from = new MessageRef(143415425455L, 0L)
-		ResendFromRequest request = new ResendFromRequest("streamId", 0, "subId", from, "publisherId")
+		ResendFromRequest request = new ResendFromRequest("streamId", 0, "subId", from, "publisherId", "msgChainId", "sessionToken")
 
 		when:
 		adapter.toJson(buffer, request)
 
 		then:
-		buffer.readString(utf8) == '[1,12,"streamId",0,"subId",[143415425455,0],"publisherId"]'
+		buffer.readString(utf8) == '[1,12,"streamId",0,"subId",[143415425455,0],"publisherId","msgChainId","sessionToken"]'
 	}
 }

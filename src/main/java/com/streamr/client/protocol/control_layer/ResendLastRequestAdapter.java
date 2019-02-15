@@ -13,7 +13,8 @@ public class ResendLastRequestAdapter extends ControlLayerAdapter<ResendLastRequ
         int streamPartition = reader.nextInt();
         String subId = reader.nextString();
         int numberLast = reader.nextInt();
-        return new ResendLastRequest(streamId, streamPartition, subId, numberLast);
+        String sessionToken = reader.nextString();
+        return new ResendLastRequest(streamId, streamPartition, subId, numberLast, sessionToken);
     }
 
     @Override
@@ -25,6 +26,7 @@ public class ResendLastRequestAdapter extends ControlLayerAdapter<ResendLastRequ
         writer.value(value.getStreamPartition());
         writer.value(value.getSubId());
         writer.value(value.getNumberLast());
+        writer.value(value.getSessionToken());
         writer.endArray();
     }
 }
