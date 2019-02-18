@@ -1,0 +1,11 @@
+<component name="libraryTable">
+  <library name="Gradle: org.springframework:spring-expression:4.3.19.RELEASE">
+    <CLASSES>
+      <root url="jar://$USER_HOME$/.gradle/caches/modules-2/files-2.1/org.springframework/spring-expression/4.3.19.RELEASE/6d4998d23d22ae976fd8f807f8ceeff5df0925d4/spring-expression-4.3.19.RELEASE.jar!/" />
+    </CLASSES>
+    <JAVADOC />
+    <SOURCES>
+      <root url="jar://$USER_HOME$/.gradle/caches/modules-2/files-2.1/org.springframework/spring-expression/4.3.19.RELEASE/5ed0b462ae005e1ea103802c489c5354970e0a16/spring-expression-4.3.19.RELEASE-sources.jar!/" />
+    </SOURCES>
+  </library>
+</component>
