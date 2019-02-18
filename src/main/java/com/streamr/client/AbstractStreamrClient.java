@@ -2,6 +2,7 @@ package com.streamr.client;
 
 import com.squareup.moshi.Moshi;
 import com.streamr.client.authentication.ApiKeyAuthenticationMethod;
+import com.streamr.client.authentication.ChallengeAuthenticationMethod;
 import com.streamr.client.authentication.Session;
 import com.streamr.client.utils.HttpUtils;
 
@@ -24,6 +25,8 @@ public abstract class AbstractStreamrClient {
         // Create Session object based on what kind of authentication method is provided in options
         if (options.getApiKey() != null) {
             session = new Session(new ApiKeyAuthenticationMethod(options));
+        } else if (options.getEthereumPrivateKey() != null) {
+            session = new Session(new ChallengeAuthenticationMethod(options));
         } else {
             session = new Session();
         }
