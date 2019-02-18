@@ -17,7 +17,7 @@ public class ApiKeyAuthenticationMethod extends AuthenticationMethod {
 
     @Override
     protected LoginResponse login() throws IOException {
-        return post("/login/apikey", adapter.toJson(new ApiKeyLoginRequest(options.getApiKey())));
+        return parse(post("/login/apikey", adapter.toJson(new ApiKeyLoginRequest(options.getApiKey()))));
     }
 
     static class ApiKeyLoginRequest {

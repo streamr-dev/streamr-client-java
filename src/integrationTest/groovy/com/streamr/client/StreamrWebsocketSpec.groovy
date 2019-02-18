@@ -8,7 +8,7 @@ class StreamrWebsocketSpec extends StreamrIntegrationSpecification {
 	private StreamrClient client
 
 	void setup() {
-		client = createClient("tester1-api-key")
+		client = createClientWithPrivateKey(generatePrivateKey())
 	}
 
 	void cleanup() {
