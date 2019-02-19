@@ -16,12 +16,16 @@ class StreamrIntegrationSpecification extends Specification {
         return Hex.encodeHexString(array)
     }
 
-    protected static StreamrClient createUnauthenticatedClient() {
-        return new StreamrClient(new StreamrClientOptions(null, DEFAULT_WEBSOCKET_URL, DEFAULT_REST_URL))
+    protected static StreamrWebsocketClient createUnauthenticatedClient() {
+        return new StreamrWebsocketClient(new StreamrClientOptions(null, DEFAULT_WEBSOCKET_URL, DEFAULT_REST_URL))
     }
 
-    protected static StreamrClient createClientWithPrivateKey(String privateKey = null) {
-        return new StreamrClient(createOptionsWithPrivateKey(privateKey))
+    protected static StreamrWebsocketClient createClientWithPrivateKey(String privateKey = null) {
+        return new StreamrWebsocketClient(createOptionsWithPrivateKey(privateKey))
+    }
+
+    protected static StreamrWebsocketClient createClientWithApiKey(String privateKey = null) {
+        return new StreamrWebsocketClient(createOptionsWithApiKey(privateKey))
     }
 
     protected static StreamrClientOptions createOptionsWithApiKey(String apiKey = null) {

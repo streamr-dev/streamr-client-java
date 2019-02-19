@@ -1,5 +1,6 @@
 package com.streamr.client
 
+import com.streamr.client.authentication.ChallengeAuthenticationMethod
 import com.streamr.client.exceptions.AmbiguousResultsException
 import com.streamr.client.exceptions.PermissionDeniedException
 import com.streamr.client.exceptions.ResourceNotFoundException
@@ -7,10 +8,11 @@ import com.streamr.client.rest.Stream
 import com.streamr.client.rest.StreamConfig
 import com.streamr.client.exceptions.AuthenticationException
 import com.streamr.client.rest.FieldConfig
+import com.streamr.client.rest.UserInfo
 
 class StreamEndpointsSpec extends StreamrIntegrationSpecification {
 
-	private StreamrClient client
+	private StreamrWebsocketClient client
 
 	void setup() {
 		client = createClientWithPrivateKey(generatePrivateKey())
@@ -126,5 +128,25 @@ class StreamEndpointsSpec extends StreamrIntegrationSpecification {
 
         then:
         thrown(PermissionDeniedException)
+    }
+
+    void "getUserInfo()"() {
+        ChallengeAuthenticationMethod method = (ChallengeAuthenticationMethod) client.getOptions().getAuthenticationMethod()
+        when:
+        UserInfo info = client.getUserInfo()
+
+        then:
+        info.getName() == method.address
+        info.getUsername() == method.address
+    }
+
+    void "getUserInfo() with api key"() {
+        StreamrWebsocketClient apiKeyClient = createClientWithApiKey("tester1-api-key")
+        when:
+        UserInfo info = apiKeyClient.getUserInfo()
+
+        then:
+        info.getName() == "Tester One"
+        info.getUsername() == "tester1@streamr.com"
     }
 }

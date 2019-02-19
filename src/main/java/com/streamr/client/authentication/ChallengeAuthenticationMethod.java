@@ -40,6 +40,10 @@ public class ChallengeAuthenticationMethod extends AuthenticationMethod {
         return challengeAdapter.fromJson(post("/login/challenge/"+address, ""));
     }
 
+    public String getAddress() {
+        return address;
+    }
+
     private String signChallenge(String challengeToSign) throws IOException {
         try {
             ECKey.ECDSASignature sig = account.sign(calculateMessageHash(challengeToSign));

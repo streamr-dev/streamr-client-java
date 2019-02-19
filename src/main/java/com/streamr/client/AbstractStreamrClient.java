@@ -26,4 +26,11 @@ public abstract class AbstractStreamrClient {
         session = new Session(options.getRestApiUrl(), options.getAuthenticationMethod());
     }
 
+    public StreamrClientOptions getOptions() {
+        return options;
+    }
+
+    public String getSessionToken() {
+        return session.getSessionToken();
+    }
 }
