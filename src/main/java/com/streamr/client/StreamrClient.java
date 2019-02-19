@@ -6,6 +6,7 @@ import com.streamr.client.authentication.AuthenticationMethod;
 import com.streamr.client.exceptions.AmbiguousResultsException;
 import com.streamr.client.exceptions.ResourceNotFoundException;
 import com.streamr.client.rest.Stream;
+import com.streamr.client.rest.UserInfo;
 import com.streamr.client.utils.HttpUtils;
 import okhttp3.*;
 
@@ -17,16 +18,19 @@ import java.util.List;
  * It inherits the functionality in StreamrWebsocketClient and adds methods for interacting
  * with the RESTful API endpoints.
  */
-public class StreamrClient extends StreamrWebsocketClient {
+public class StreamrClient extends AbstractStreamrClient {
 
     public static final JsonAdapter<Stream> streamJsonAdapter = MOSHI.adapter(Stream.class);
+    public static final JsonAdapter<UserInfo> userInfoJsonAdapter = MOSHI.adapter(UserInfo.class);
     public static final JsonAdapter<List<Stream>> streamListJsonAdapter = MOSHI.adapter(Types.newParameterizedType(List.class, Stream.class));
+
+    // private final Publisher publisher;
 
     /**
      * Creates a StreamrClient with default options
      */
     public StreamrClient() {
-        super(new StreamrClientOptions());
+        this(new StreamrClientOptions());
     }
 
     public StreamrClient(AuthenticationMethod authenticationMethod) {
@@ -35,6 +39,7 @@ public class StreamrClient extends StreamrWebsocketClient {
 
     public StreamrClient(StreamrClientOptions options) {
         super(options);
+        // publisher = new Publisher(this);
     }
 
     /*
@@ -116,4 +121,8 @@ public class StreamrClient extends StreamrWebsocketClient {
         return post(url, streamJsonAdapter.toJson(stream), streamJsonAdapter);
     }
 
+    public UserInfo getUserInfo() throws IOException {
+        HttpUrl url = HttpUrl.parse(options.getRestApiUrl() + "/users/me");
+        return get(url, userInfoJsonAdapter);
+    }
 }

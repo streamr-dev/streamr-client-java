@@ -39,6 +39,10 @@ public class EthereumAuthenticationMethod extends AuthenticationMethod {
         return challengeAdapter.fromJson(post(restApiUrl + "/login/challenge/"+address, ""));
     }
 
+    public String getAddress() {
+        return address;
+    }
+
     private String signChallenge(String challengeToSign) throws IOException {
         try {
             ECKey.ECDSASignature sig = account.sign(calculateMessageHash(challengeToSign));

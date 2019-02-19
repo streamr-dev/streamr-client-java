@@ -1,9 +1,10 @@
 package com.streamr.client;
 
 import com.streamr.client.exceptions.MalformedMessageException;
+import com.streamr.client.authentication.ApiKeyAuthenticationMethod;
+import com.streamr.client.authentication.EthereumAuthenticationMethod;
 import com.streamr.client.protocol.control_layer.*;
-import com.streamr.client.protocol.message_layer.MessageID;
-import com.streamr.client.protocol.message_layer.StreamMessageV30;
+import org.apache.commons.codec.digest.DigestUtils;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.java_websocket.client.WebSocketClient;
@@ -25,7 +26,7 @@ import java.util.Map;
 /**
  * Extends the AbstractStreamrClient with methods for using the websocket protocol
  */
-public class StreamrWebsocketClient extends AbstractStreamrClient {
+public class StreamrWebsocketClient extends StreamrClient {
 
     private static final Logger log = LogManager.getLogger();
 
@@ -41,8 +42,22 @@ public class StreamrWebsocketClient extends AbstractStreamrClient {
     private State state = State.Disconnected;
     private Exception errorWhileConnecting = null;
 
+    private String publisherId = null;
+    private final MessageCreationUtil msgCreationUtil;
+
     public StreamrWebsocketClient(StreamrClientOptions options) {
         super(options);
+
+        if (options.getAuthenticationMethod() instanceof ApiKeyAuthenticationMethod) {
+            try {
+                publisherId = DigestUtils.sha256Hex(getUserInfo().getUsername());
+            } catch (IOException e) {
+                throw new RuntimeException(e);
+            }
+        } else if (options.getAuthenticationMethod() instanceof EthereumAuthenticationMethod) {
+            publisherId = ((EthereumAuthenticationMethod) options.getAuthenticationMethod()).getAddress();
+        }
+        msgCreationUtil = new MessageCreationUtil(publisherId);
 
         try {
             this.websocket = new WebSocketClient(new URI(options.getWebsocketApiUrl())) {
@@ -94,6 +109,10 @@ public class StreamrWebsocketClient extends AbstractStreamrClient {
     public void onOpen() {}
     public void onClose() {}
     public void onError(Exception ex) {}
+
+    public WebSocketClient getWebsocket() {
+        return websocket;
+    }
 
     /**
      * Connects the websocket. Blocks until connected, or throws if the connection times out.
@@ -203,26 +222,16 @@ public class StreamrWebsocketClient extends AbstractStreamrClient {
      */
 
     public void publish(Stream stream, Map<String, Object> payload) {
-        publish(stream, payload, new Date(), null);
+        publish(stream, payload, new Date());
     }
 
     public void publish(Stream stream, Map<String, Object> payload, Date timestamp) {
-        publish(stream, payload, timestamp, null);
-    }
-
-    public void publish(Stream stream, Map<String, Object> payload, Date timestamp, String partitionKey) {
-        if (!getState().equals(State.Connected)) {
+        if (!getState().equals(StreamrWebsocketClient.State.Connected)) {
             connect();
         }
-        // TODO: non-default values for partition, sequence number, publisherId, msgChainId and previousMsgRef
-        MessageID msgId = new MessageID(stream.getId(), 0, timestamp.getTime(), 0, "", "");
-        StreamMessage streamMessage = new StreamMessageV30(
-                msgId, null, StreamMessage.ContentType.CONTENT_TYPE_JSON, payload,
-                StreamMessage.SignatureType.SIGNATURE_TYPE_NONE, null
-        );
-
-        PublishRequest req = new PublishRequest(streamMessage, session.getSessionToken());
-        this.websocket.send(req.toJson());
+        StreamMessage streamMessage = msgCreationUtil.createStreamMessage(stream, payload, timestamp, null);
+        PublishRequest req = new PublishRequest(streamMessage, getSessionToken());
+        getWebsocket().send(req.toJson());
     }
 
     /*
