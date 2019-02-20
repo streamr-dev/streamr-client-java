@@ -2,6 +2,7 @@ package com.streamr.client;
 
 import com.squareup.moshi.JsonAdapter;
 import com.squareup.moshi.Types;
+import com.streamr.client.authentication.AuthenticationMethod;
 import com.streamr.client.exceptions.AmbiguousResultsException;
 import com.streamr.client.exceptions.ResourceNotFoundException;
 import com.streamr.client.rest.Stream;
@@ -28,8 +29,8 @@ public class StreamrClient extends StreamrWebsocketClient {
         super(new StreamrClientOptions());
     }
 
-    public StreamrClient(String apiKey) {
-        this(new StreamrClientOptions(apiKey));
+    public StreamrClient(AuthenticationMethod authenticationMethod) {
+        this(new StreamrClientOptions(authenticationMethod));
     }
 
     public StreamrClient(StreamrClientOptions options) {

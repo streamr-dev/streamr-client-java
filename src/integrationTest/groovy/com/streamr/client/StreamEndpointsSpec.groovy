@@ -94,7 +94,7 @@ class StreamEndpointsSpec extends StreamrIntegrationSpecification {
 
     void "createStream() throws AuthenticationException if the client is unauthenticated"() {
         Stream proto = new Stream(generateResourceName(), "This stream was created from an integration test")
-        StreamrClient unauthenticatedClient = createClient(null);
+        StreamrClient unauthenticatedClient = createUnauthenticatedClient()
 
         when:
         unauthenticatedClient.createStream(proto)
@@ -113,7 +113,7 @@ class StreamEndpointsSpec extends StreamrIntegrationSpecification {
 
     void "getStream() throws PermissionDeniedException for streams which the user can not access"() {
         Stream proto = new Stream(generateResourceName(), "This stream was created from an integration test")
-        StreamrClient unauthenticatedClient = createClient(null);
+        StreamrClient unauthenticatedClient = createUnauthenticatedClient()
 
         when:
         Stream createResult = client.createStream(proto)

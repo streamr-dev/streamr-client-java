@@ -15,12 +15,15 @@ import java.util.Date;
 
 public abstract class AuthenticationMethod {
 
-    protected final StreamrClientOptions options;
-    private JsonAdapter<LoginResponse> responseAdapter;
+    private String restApiUrl;
+    private JsonAdapter<LoginResponse> responseAdapter = HttpUtils.MOSHI.adapter(LoginResponse.class);
 
-    public AuthenticationMethod(StreamrClientOptions options) {
-        this.options = options;
+    public AuthenticationMethod() {
         this.responseAdapter = HttpUtils.MOSHI.adapter(LoginResponse.class);
+    }
+
+    public void setRestApiUrl(String restApiUrl) {
+        this.restApiUrl = restApiUrl;
     }
 
     /**
@@ -45,7 +48,7 @@ public abstract class AuthenticationMethod {
         OkHttpClient client = new OkHttpClient();
 
         Request request = new Request.Builder()
-                        .url(options.getRestApiUrl() + endpoint)
+                        .url(restApiUrl + endpoint)
                         .post(RequestBody.create(HttpUtils.jsonType, requestBody))
                         .build();
 
