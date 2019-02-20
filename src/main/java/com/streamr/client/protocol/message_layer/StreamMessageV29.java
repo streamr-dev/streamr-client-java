@@ -89,7 +89,7 @@ public class StreamMessageV29 extends StreamMessage {
 
     @Override
     public String getMsgChainId() {
-        return null;
+        return "";
     }
 
     public String getSignature() {
