@@ -18,30 +18,26 @@ public class ChallengeAuthenticationMethod extends AuthenticationMethod {
 
     private JsonAdapter<Challenge> challengeAdapter = HttpUtils.MOSHI.adapter(Challenge.class);
     private JsonAdapter<ChallengeResponse> challengeResponseAdapter = HttpUtils.MOSHI.adapter(ChallengeResponse.class);
-    private ECKey account;
-    private String address;
 
     public ChallengeAuthenticationMethod(StreamrClientOptions options) {
         super(options);
-        this.account = getAccountFromPrivateKey(options.getEthereumPrivateKey());
-        this.address = "0x" + Hex.encodeHexString(account.getAddress());
     }
 
     @Override
     protected LoginResponse login() throws IOException {
         Challenge challenge = getChallenge();
         String signature = signChallenge(challenge.challenge);
-        ChallengeResponse response = new ChallengeResponse(challenge, signature, address);
+        ChallengeResponse response = new ChallengeResponse(challenge, signature, options.getAddress());
         return parse(post("/login/response", challengeResponseAdapter.toJson(response)));
     }
 
     public Challenge getChallenge() throws IOException {
-        return challengeAdapter.fromJson(post("/login/challenge/"+address, ""));
+        return challengeAdapter.fromJson(post("/login/challenge/"+options.getAddress(), ""));
     }
 
     private String signChallenge(String challengeToSign) throws IOException {
         try {
-            ECKey.ECDSASignature sig = account.sign(calculateMessageHash(challengeToSign));
+            ECKey.ECDSASignature sig = options.getAccount().sign(calculateMessageHash(challengeToSign));
             return "0x" + Hex.encodeHexString(ByteUtil.merge(
                     ByteUtil.bigIntegerToBytes(sig.r, 32),
                     ByteUtil.bigIntegerToBytes(sig.s, 32),
@@ -49,11 +45,6 @@ public class ChallengeAuthenticationMethod extends AuthenticationMethod {
         } catch (DecoderException e) {
             throw new IOException(e.getMessage());
         }
-    }
-
-    private static ECKey getAccountFromPrivateKey(String privateKey) {
-        String withoutPrefix = privateKey.startsWith("0x") ? privateKey.substring(2) : privateKey;
-        return ECKey.fromPrivate(new BigInteger(withoutPrefix, 16));
     }
 
     private static final String SIGN_MAGIC = "\u0019Ethereum Signed Message:\n";
