@@ -16,28 +16,33 @@ import org.ethereum.util.ByteUtil;
 
 public class ChallengeAuthenticationMethod extends AuthenticationMethod {
 
+    private final ECKey account;
+    private final String address;
     private JsonAdapter<Challenge> challengeAdapter = HttpUtils.MOSHI.adapter(Challenge.class);
     private JsonAdapter<ChallengeResponse> challengeResponseAdapter = HttpUtils.MOSHI.adapter(ChallengeResponse.class);
 
-    public ChallengeAuthenticationMethod(StreamrClientOptions options) {
-        super(options);
+    public ChallengeAuthenticationMethod(String ethereumPrivateKey) {
+        super();
+        String withoutPrefix = ethereumPrivateKey.startsWith("0x") ? ethereumPrivateKey.substring(2) : ethereumPrivateKey;
+        this.account = ECKey.fromPrivate(new BigInteger(withoutPrefix, 16));
+        this.address = "0x" + Hex.encodeHexString(this.account.getAddress());
     }
 
     @Override
     protected LoginResponse login() throws IOException {
         Challenge challenge = getChallenge();
         String signature = signChallenge(challenge.challenge);
-        ChallengeResponse response = new ChallengeResponse(challenge, signature, options.getAddress());
+        ChallengeResponse response = new ChallengeResponse(challenge, signature, address);
         return parse(post("/login/response", challengeResponseAdapter.toJson(response)));
     }
 
     public Challenge getChallenge() throws IOException {
-        return challengeAdapter.fromJson(post("/login/challenge/"+options.getAddress(), ""));
+        return challengeAdapter.fromJson(post("/login/challenge/"+address, ""));
     }
 
     private String signChallenge(String challengeToSign) throws IOException {
         try {
-            ECKey.ECDSASignature sig = options.getAccount().sign(calculateMessageHash(challengeToSign));
+            ECKey.ECDSASignature sig = account.sign(calculateMessageHash(challengeToSign));
             return "0x" + Hex.encodeHexString(ByteUtil.merge(
                     ByteUtil.bigIntegerToBytes(sig.r, 32),
                     ByteUtil.bigIntegerToBytes(sig.s, 32),

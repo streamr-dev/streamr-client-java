@@ -10,15 +10,11 @@ public class Session {
     private final AuthenticationMethod authenticationMethod;
     private String sessionToken = null;
 
-    /**
-     * For unauthenticated sessions
-     */
-    public Session() {
-        authenticationMethod = null;
-    }
-
-    public Session(AuthenticationMethod authenticationMethod) {
+    public Session(String restApiUrl, AuthenticationMethod authenticationMethod) {
         this.authenticationMethod = authenticationMethod;
+        if (this.authenticationMethod != null) {
+            this.authenticationMethod.setRestApiUrl(restApiUrl);
+        }
     }
 
     public boolean isAuthenticated() {
