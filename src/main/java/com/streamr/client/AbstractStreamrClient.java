@@ -25,7 +25,7 @@ public abstract class AbstractStreamrClient {
         // Create Session object based on what kind of authentication method is provided in options
         if (options.getApiKey() != null) {
             session = new Session(new ApiKeyAuthenticationMethod(options));
-        } else if (options.getEthereumPrivateKey() != null) {
+        } else if (options.getAccount() != null) {
             session = new Session(new ChallengeAuthenticationMethod(options));
         } else {
             session = new Session();
