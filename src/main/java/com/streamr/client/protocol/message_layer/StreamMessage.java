@@ -117,6 +117,8 @@ public abstract class StreamMessage implements ITimestamped {
 
     public abstract String getPublisherId();
 
+    public abstract String getMsgChainId();
+
     public ContentType getContentType() {
         return contentType;
     }

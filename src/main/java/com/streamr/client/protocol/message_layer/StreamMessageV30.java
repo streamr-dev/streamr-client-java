@@ -82,6 +82,7 @@ public class StreamMessageV30 extends StreamMessage {
         return messageID.getPublisherId();
     }
 
+    @Override
     public String getMsgChainId() {
         return messageID.getMsgChainId();
     }

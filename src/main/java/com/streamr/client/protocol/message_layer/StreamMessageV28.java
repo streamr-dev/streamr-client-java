@@ -60,6 +60,11 @@ public class StreamMessageV28 extends StreamMessage {
         return "";
     }
 
+    @Override
+    public String getMsgChainId() {
+        return null;
+    }
+
     public Integer getTtl() {
         return ttl;
     }
