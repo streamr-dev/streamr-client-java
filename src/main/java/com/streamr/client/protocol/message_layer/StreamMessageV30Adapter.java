@@ -32,7 +32,7 @@ public class StreamMessageV30Adapter extends JsonAdapter<StreamMessageV30> {
             String serializedContent = reader.nextString();
             SignatureType signatureType = SignatureType.fromId((byte)reader.nextInt());
             String signature = null;
-            if (signatureType == SignatureType.SIGNATURE_TYPE_ETH) {
+            if (signatureType != SignatureType.SIGNATURE_TYPE_NONE) {
                 signature = reader.nextString();
             } else {
                 reader.nextNull();
