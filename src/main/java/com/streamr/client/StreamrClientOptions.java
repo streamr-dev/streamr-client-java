@@ -5,6 +5,7 @@ import com.streamr.client.authentication.AuthenticationMethod;
 public class StreamrClientOptions {
 
     private AuthenticationMethod authenticationMethod = null;
+    private SigningOptions signingOptions = SigningOptions.getDefault();
     private String websocketApiUrl = "wss://www.streamr.com/api/v1/ws";
     private String restApiUrl = "https://www.streamr.com/api/v1";
     private long connectionTimeoutMillis = 10 * 1000;
@@ -15,8 +16,13 @@ public class StreamrClientOptions {
         this.authenticationMethod = authenticationMethod;
     }
 
-    public StreamrClientOptions(AuthenticationMethod authenticationMethod, String websocketApiUrl, String restApiUrl) {
-        this(authenticationMethod);
+    public StreamrClientOptions(AuthenticationMethod authenticationMethod, SigningOptions signingOptions) {
+        this.authenticationMethod = authenticationMethod;
+        this.signingOptions = signingOptions;
+    }
+
+    public StreamrClientOptions(AuthenticationMethod authenticationMethod, SigningOptions signingOptions, String websocketApiUrl, String restApiUrl) {
+        this(authenticationMethod, signingOptions);
         this.websocketApiUrl = websocketApiUrl;
         this.restApiUrl = restApiUrl;
     }

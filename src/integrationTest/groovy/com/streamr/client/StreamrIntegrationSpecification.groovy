@@ -17,7 +17,7 @@ class StreamrIntegrationSpecification extends Specification {
     }
 
     protected static StreamrClient createUnauthenticatedClient() {
-        return new StreamrClient(new StreamrClientOptions(null, DEFAULT_WEBSOCKET_URL, DEFAULT_REST_URL))
+        return new StreamrClient(new StreamrClientOptions(null, SigningOptions.getDefault(), DEFAULT_WEBSOCKET_URL, DEFAULT_REST_URL))
     }
 
     protected static StreamrClient createClientWithPrivateKey(String privateKey = null) {
@@ -29,11 +29,11 @@ class StreamrIntegrationSpecification extends Specification {
     }
 
     protected static StreamrClientOptions createOptionsWithApiKey(String apiKey = null) {
-        return new StreamrClientOptions(new ApiKeyAuthenticationMethod(apiKey), DEFAULT_WEBSOCKET_URL, DEFAULT_REST_URL)
+        return new StreamrClientOptions(new ApiKeyAuthenticationMethod(apiKey), SigningOptions.getDefault(), DEFAULT_WEBSOCKET_URL, DEFAULT_REST_URL)
     }
 
     protected static StreamrClientOptions createOptionsWithPrivateKey(String privateKey = null) {
-        return new StreamrClientOptions(new EthereumAuthenticationMethod(privateKey), DEFAULT_WEBSOCKET_URL, DEFAULT_REST_URL)
+        return new StreamrClientOptions(new EthereumAuthenticationMethod(privateKey), SigningOptions.getDefault(), DEFAULT_WEBSOCKET_URL, DEFAULT_REST_URL)
     }
 
     protected String generateResourceName() {
