@@ -12,14 +12,14 @@ import com.streamr.client.rest.UserInfo
 
 class StreamEndpointsSpec extends StreamrIntegrationSpecification {
 
-	private StreamrWebsocketClient client
+	private StreamrClient client
 
 	void setup() {
 		client = createClientWithPrivateKey(generatePrivateKey())
 	}
 
     void cleanup() {
-        if (client != null && client.state != StreamrWebsocketClient.State.Disconnected) {
+        if (client != null && client.state != StreamrClient.State.Disconnected) {
             client.disconnect()
         }
     }
@@ -141,7 +141,7 @@ class StreamEndpointsSpec extends StreamrIntegrationSpecification {
     }
 
     void "getUserInfo() with api key"() {
-        StreamrWebsocketClient apiKeyClient = createClientWithApiKey("tester1-api-key")
+        StreamrClient apiKeyClient = createClientWithApiKey("tester1-api-key")
         when:
         UserInfo info = apiKeyClient.getUserInfo()
 
