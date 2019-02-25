@@ -6,7 +6,7 @@ import org.apache.commons.codec.binary.Hex
 import spock.lang.Specification
 
 class StreamrIntegrationSpecification extends Specification {
-    
+
     protected final static DEFAULT_REST_URL = "http://localhost:8081/streamr-core/api/v1"
     private final static DEFAULT_WEBSOCKET_URL = "ws://localhost:8890/api/v1/ws?controlLayerVersion=1&messageLayerVersion=30"
 
@@ -16,16 +16,16 @@ class StreamrIntegrationSpecification extends Specification {
         return Hex.encodeHexString(array)
     }
 
-    protected static StreamrWebsocketClient createUnauthenticatedClient() {
-        return new StreamrWebsocketClient(new StreamrClientOptions(null, DEFAULT_WEBSOCKET_URL, DEFAULT_REST_URL))
+    protected static StreamrClient createUnauthenticatedClient() {
+        return new StreamrClient(new StreamrClientOptions(null, DEFAULT_WEBSOCKET_URL, DEFAULT_REST_URL))
     }
 
-    protected static StreamrWebsocketClient createClientWithPrivateKey(String privateKey = null) {
-        return new StreamrWebsocketClient(createOptionsWithPrivateKey(privateKey))
+    protected static StreamrClient createClientWithPrivateKey(String privateKey = null) {
+        return new StreamrClient(createOptionsWithPrivateKey(privateKey))
     }
 
-    protected static StreamrWebsocketClient createClientWithApiKey(String privateKey = null) {
-        return new StreamrWebsocketClient(createOptionsWithApiKey(privateKey))
+    protected static StreamrClient createClientWithApiKey(String privateKey = null) {
+        return new StreamrClient(createOptionsWithApiKey(privateKey))
     }
 
     protected static StreamrClientOptions createOptionsWithApiKey(String apiKey = null) {

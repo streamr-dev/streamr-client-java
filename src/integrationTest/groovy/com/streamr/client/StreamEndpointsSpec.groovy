@@ -12,14 +12,14 @@ import com.streamr.client.rest.UserInfo
 
 class StreamEndpointsSpec extends StreamrIntegrationSpecification {
 
-	private StreamrWebsocketClient client
+	private StreamrClient client
 
 	void setup() {
 		client = createClientWithPrivateKey(generatePrivateKey())
 	}
 
     void cleanup() {
-        if (client != null && client.state != StreamrWebsocketClient.State.Disconnected) {
+        if (client != null && client.state != StreamrClient.State.Disconnected) {
             client.disconnect()
         }
     }
@@ -96,7 +96,7 @@ class StreamEndpointsSpec extends StreamrIntegrationSpecification {
 
     void "createStream() throws AuthenticationException if the client is unauthenticated"() {
         Stream proto = new Stream(generateResourceName(), "This stream was created from an integration test")
-        StreamrClient unauthenticatedClient = createUnauthenticatedClient()
+        StreamrRESTClient unauthenticatedClient = createUnauthenticatedClient()
 
         when:
         unauthenticatedClient.createStream(proto)
@@ -115,7 +115,7 @@ class StreamEndpointsSpec extends StreamrIntegrationSpecification {
 
     void "getStream() throws PermissionDeniedException for streams which the user can not access"() {
         Stream proto = new Stream(generateResourceName(), "This stream was created from an integration test")
-        StreamrClient unauthenticatedClient = createUnauthenticatedClient()
+        StreamrRESTClient unauthenticatedClient = createUnauthenticatedClient()
 
         when:
         Stream createResult = client.createStream(proto)
@@ -141,7 +141,7 @@ class StreamEndpointsSpec extends StreamrIntegrationSpecification {
     }
 
     void "getUserInfo() with api key"() {
-        StreamrWebsocketClient apiKeyClient = createClientWithApiKey("tester1-api-key")
+        StreamrClient apiKeyClient = createClientWithApiKey("tester1-api-key")
         when:
         UserInfo info = apiKeyClient.getUserInfo()
 
