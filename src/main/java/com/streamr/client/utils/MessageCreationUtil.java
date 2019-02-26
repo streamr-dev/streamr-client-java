@@ -1,4 +1,4 @@
-package com.streamr.client;
+package com.streamr.client.utils;
 
 import com.streamr.client.protocol.message_layer.MessageID;
 import com.streamr.client.protocol.message_layer.MessageRef;
@@ -7,7 +7,6 @@ import com.streamr.client.protocol.message_layer.StreamMessageV30;
 import com.streamr.client.rest.Stream;
 import org.apache.commons.lang3.RandomStringUtils;
 
-import java.io.UnsupportedEncodingException;
 import java.nio.ByteBuffer;
 import java.nio.charset.StandardCharsets;
 import java.security.MessageDigest;
@@ -19,14 +18,16 @@ import java.util.Map;
 public class MessageCreationUtil {
     private final String publisherId;
     private final String msgChainId;
+    private final SigningUtil signingUtil;
 
     private final HashMap<String, MessageRef> refsPerStreamAndPartition = new HashMap<>();
 
     private final HashMap<String, Integer> cachedHashes = new HashMap<>();
 
-    public MessageCreationUtil(String publisherId) {
+    public MessageCreationUtil(String publisherId, SigningUtil signingUtil) {
         this.publisherId = publisherId;
         msgChainId = RandomStringUtils.randomAlphanumeric(20);
+        this.signingUtil = signingUtil;
     }
 
     public StreamMessage createStreamMessage(Stream stream, Map<String, Object> payload, Date timestamp, String partitionKey) {
@@ -41,7 +42,7 @@ public class MessageCreationUtil {
         );
 
         refsPerStreamAndPartition.put(key, new MessageRef(timestamp.getTime(), sequenceNumber));
-        return streamMessage;
+        return (signingUtil == null) ? streamMessage : signingUtil.getSignedStreamMessage(streamMessage);
     }
 
     private int hash(String partitionKey) {

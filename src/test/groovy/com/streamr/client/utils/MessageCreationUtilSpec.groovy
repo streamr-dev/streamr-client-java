@@ -1,8 +1,9 @@
-package com.streamr.client
+package com.streamr.client.utils
 
 import com.streamr.client.protocol.message_layer.StreamMessage
 import com.streamr.client.protocol.message_layer.StreamMessageV30
 import com.streamr.client.rest.Stream
+import com.streamr.client.utils.MessageCreationUtil
 import spock.lang.Specification
 
 class MessageCreationUtilSpec extends Specification {
@@ -10,7 +11,7 @@ class MessageCreationUtilSpec extends Specification {
     Stream stream
 
     void setup() {
-        msgCreationUtil = new MessageCreationUtil("publisherId")
+        msgCreationUtil = new MessageCreationUtil("publisherId", null)
         stream = new Stream("test-stream", "")
         stream.id = "stream-id"
         stream.partitions = 1
@@ -32,6 +33,15 @@ class MessageCreationUtilSpec extends Specification {
         msg.content == [foo: "bar"]
         msg.signatureType == StreamMessage.SignatureType.SIGNATURE_TYPE_NONE
         msg.signature == null
+    }
+
+    void "signer is called"() {
+        SigningUtil signingUtil = Mock(SigningUtil)
+        MessageCreationUtil msgCreationUtil2 = new MessageCreationUtil("publisherId", signingUtil)
+        when:
+        msgCreationUtil2.createStreamMessage(stream, [foo: "bar"], new Date(), null)
+        then:
+        1 * signingUtil.getSignedStreamMessage(_)
     }
 
     void "publish with sequence numbers equal to 0"() {

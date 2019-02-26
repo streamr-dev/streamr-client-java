@@ -4,6 +4,8 @@ import com.streamr.client.authentication.ApiKeyAuthenticationMethod;
 import com.streamr.client.authentication.EthereumAuthenticationMethod;
 import com.streamr.client.exceptions.MalformedMessageException;
 import com.streamr.client.protocol.control_layer.*;
+import com.streamr.client.utils.MessageCreationUtil;
+import com.streamr.client.utils.SigningUtil;
 import org.apache.commons.codec.digest.DigestUtils;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
@@ -43,6 +45,7 @@ public class StreamrClient extends StreamrRESTClient {
     private Exception errorWhileConnecting = null;
 
     private String publisherId = null;
+    private SigningUtil signingUtil = null;
     private final MessageCreationUtil msgCreationUtil;
 
     public StreamrClient(StreamrClientOptions options) {
@@ -57,7 +60,10 @@ public class StreamrClient extends StreamrRESTClient {
         } else if (options.getAuthenticationMethod() instanceof EthereumAuthenticationMethod) {
             publisherId = ((EthereumAuthenticationMethod) options.getAuthenticationMethod()).getAddress();
         }
-        msgCreationUtil = new MessageCreationUtil(publisherId);
+        if (options.publishSignedMsgs()) {
+            signingUtil = new SigningUtil(((ChallengeAuthenticationMethod) options.getAuthenticationMethod()).getAccount());
+        }
+        msgCreationUtil = new MessageCreationUtil(publisherId, signingUtil);
 
         try {
             this.websocket = new WebSocketClient(new URI(options.getWebsocketApiUrl())) {
