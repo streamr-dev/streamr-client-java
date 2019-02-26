@@ -54,6 +54,7 @@ public class Stream {
     private Integer partitions;
     private StreamConfig config;
     private Boolean uiChannel;
+    private Boolean requireSignedData;
     private Date dateCreated;
     private Date lastUpdated;
 
@@ -104,6 +105,17 @@ public class Stream {
 
     public Boolean isUiChannel() {
         return uiChannel;
+    }
+
+    public boolean requiresSignedData() {
+        if (requireSignedData == null) {
+            return false;
+        }
+        return requireSignedData;
+    }
+
+    public void setRequireSignedData(boolean requireSignedData) {
+        this.requireSignedData = requireSignedData;
     }
 
     public Date getDateCreated() {

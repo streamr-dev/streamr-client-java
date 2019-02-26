@@ -51,6 +51,25 @@ class StreamEndpointsSpec extends StreamrIntegrationSpecification {
         getResult.config == createResult.config
         getResult.partitions == createResult.partitions
         getResult.uiChannel == createResult.uiChannel
+        !getResult.requiresSignedData()
+    }
+
+    void "createStream() then getStream() setting requiresSignedData"() {
+        Stream proto = new Stream(generateResourceName(), "This stream was created from an integration test")
+        proto.requireSignedData = true
+        proto.setConfig(new StreamConfig())
+
+        when:
+        Stream createResult = client.createStream(proto)
+
+        then:
+        createResult.requiresSignedData()
+
+        when:
+        Stream getResult = client.getStream(createResult.getId())
+
+        then:
+        getResult.requiresSignedData()
     }
 
     void "createStream() then getStreamByName()"() {
