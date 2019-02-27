@@ -1,5 +1,6 @@
 package com.streamr.client
 
+import com.streamr.client.protocol.message_layer.StreamMessageV30
 import com.streamr.client.rest.Stream
 import com.streamr.client.protocol.message_layer.StreamMessage
 
@@ -101,6 +102,32 @@ class StreamrWebsocketSpec extends StreamrIntegrationSpecification {
 		then:
 		// No more messages should be received, since we're unsubscribed
 		msgCount == 10
+	}
+
+	void "subscriber receives signed message if published with signature"() {
+		Subscription sub
+
+		Stream stream = client.createStream(new Stream(generateResourceName(), ""))
+
+		when:
+		// Subscribe to the stream
+		StreamMessageV30 msg
+		sub = client.subscribe(stream, new MessageHandler() {
+			@Override
+			void onMessage(Subscription s, StreamMessage message) {
+				msg = (StreamMessageV30) message
+			}
+		})
+
+		Thread.sleep(2000)
+
+		client.publish(stream, [test: 'signed'])
+
+		Thread.sleep(200)
+
+		then:
+		msg.signatureType == StreamMessage.SignatureType.SIGNATURE_TYPE_ETH
+		msg.signature != null
 	}
 
 }
