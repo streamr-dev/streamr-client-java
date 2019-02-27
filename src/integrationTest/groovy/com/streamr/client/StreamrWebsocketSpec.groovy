@@ -126,6 +126,7 @@ class StreamrWebsocketSpec extends StreamrIntegrationSpecification {
 		Thread.sleep(200)
 
 		then:
+		msg.getPublisherId() == client.getPublisherId()
 		msg.signatureType == StreamMessage.SignatureType.SIGNATURE_TYPE_ETH
 		msg.signature != null
 	}

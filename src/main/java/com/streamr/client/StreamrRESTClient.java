@@ -5,12 +5,14 @@ import com.squareup.moshi.Types;
 import com.streamr.client.authentication.AuthenticationMethod;
 import com.streamr.client.exceptions.AmbiguousResultsException;
 import com.streamr.client.exceptions.ResourceNotFoundException;
+import com.streamr.client.rest.Publishers;
 import com.streamr.client.rest.Stream;
 import com.streamr.client.rest.UserInfo;
 import com.streamr.client.utils.HttpUtils;
 import okhttp3.*;
 
 import java.io.IOException;
+import java.util.ArrayList;
 import java.util.List;
 
 /**
@@ -20,6 +22,7 @@ public abstract class StreamrRESTClient extends AbstractStreamrClient {
 
     public static final JsonAdapter<Stream> streamJsonAdapter = MOSHI.adapter(Stream.class);
     public static final JsonAdapter<UserInfo> userInfoJsonAdapter = MOSHI.adapter(UserInfo.class);
+    public static final JsonAdapter<Publishers> publishersJsonAdapter = MOSHI.adapter(Publishers.class);
     public static final JsonAdapter<List<Stream>> streamListJsonAdapter = MOSHI.adapter(Types.newParameterizedType(List.class, Stream.class));
 
     // private final Publisher publisher;
@@ -122,5 +125,10 @@ public abstract class StreamrRESTClient extends AbstractStreamrClient {
     public UserInfo getUserInfo() throws IOException {
         HttpUrl url = HttpUrl.parse(options.getRestApiUrl() + "/users/me");
         return get(url, userInfoJsonAdapter);
+    }
+
+    public List<String> getPublishers(String streamId) throws IOException {
+        HttpUrl url = HttpUrl.parse(options.getRestApiUrl() + "/streams/" + streamId + "/publishers");
+        return get(url, publishersJsonAdapter).getAddresses();
     }
 }

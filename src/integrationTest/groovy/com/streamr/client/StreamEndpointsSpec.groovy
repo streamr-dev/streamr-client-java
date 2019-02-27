@@ -168,4 +168,13 @@ class StreamEndpointsSpec extends StreamrIntegrationSpecification {
         info.getName() == "Tester One"
         info.getUsername() == "tester1@streamr.com"
     }
+
+    void "getPublishers()"() {
+        Stream proto = new Stream(generateResourceName(), "This stream was created from an integration test")
+        Stream createdResult = client.createStream(proto)
+        when:
+        List<String> publishers = client.getPublishers(createdResult.id)
+        then:
+        publishers == [client.getPublisherId()]
+    }
 }

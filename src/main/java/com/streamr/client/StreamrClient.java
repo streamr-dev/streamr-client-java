@@ -172,6 +172,10 @@ public class StreamrClient extends StreamrRESTClient {
         return state;
     }
 
+    public String getPublisherId() {
+        return publisherId;
+    }
+
     /*
      * Message handling
      */
