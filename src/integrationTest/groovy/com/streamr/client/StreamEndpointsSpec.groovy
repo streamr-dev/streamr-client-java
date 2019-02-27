@@ -54,7 +54,7 @@ class StreamEndpointsSpec extends StreamrIntegrationSpecification {
         !getResult.requiresSignedData()
     }
 
-    void "createStream() then getStream() setting requiresSignedData"() {
+    void "createStream() then getStream() setting requireSignedData"() {
         Stream proto = new Stream(generateResourceName(), "This stream was created from an integration test")
         proto.requireSignedData = true
         proto.setConfig(new StreamConfig())

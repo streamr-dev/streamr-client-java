@@ -71,4 +71,8 @@ public class StreamrClientOptions {
     public boolean publishSignedMsgs() {
         return publishSignedMsgs;
     }
+
+    public String getVerifySignaturesOption() {
+        return signingOptions.getVerifySignatures();
+    }
 }

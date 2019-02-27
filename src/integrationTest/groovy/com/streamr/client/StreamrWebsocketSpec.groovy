@@ -105,16 +105,15 @@ class StreamrWebsocketSpec extends StreamrIntegrationSpecification {
 	}
 
 	void "subscriber receives signed message if published with signature"() {
-		Subscription sub
-
 		Stream stream = client.createStream(new Stream(generateResourceName(), ""))
 
 		when:
 		// Subscribe to the stream
 		StreamMessageV30 msg
-		sub = client.subscribe(stream, new MessageHandler() {
+		client.subscribe(stream, new MessageHandler() {
 			@Override
 			void onMessage(Subscription s, StreamMessage message) {
+				//reaching this point ensures that the signature verification didn't throw
 				msg = (StreamMessageV30) message
 			}
 		})

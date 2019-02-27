@@ -3,6 +3,7 @@ package com.streamr.client;
 import com.streamr.client.authentication.ApiKeyAuthenticationMethod;
 import com.streamr.client.authentication.EthereumAuthenticationMethod;
 import com.streamr.client.exceptions.MalformedMessageException;
+import com.streamr.client.exceptions.InvalidSignatureException;
 import com.streamr.client.protocol.control_layer.*;
 import com.streamr.client.utils.MessageCreationUtil;
 import com.streamr.client.utils.SigningUtil;
@@ -22,8 +23,7 @@ import java.io.IOException;
 import java.net.URI;
 import java.net.URISyntaxException;
 import java.nio.channels.NotYetConnectedException;
-import java.util.Date;
-import java.util.Map;
+import java.util.*;
 
 /**
  * Extends the StreamrRESTClient with methods for using the websocket protocol.
@@ -61,7 +61,7 @@ public class StreamrClient extends StreamrRESTClient {
             publisherId = ((EthereumAuthenticationMethod) options.getAuthenticationMethod()).getAddress();
         }
         if (options.publishSignedMsgs()) {
-            signingUtil = new SigningUtil(((ChallengeAuthenticationMethod) options.getAuthenticationMethod()).getAccount());
+            signingUtil = new SigningUtil(((EthereumAuthenticationMethod) options.getAuthenticationMethod()).getAccount());
         }
         msgCreationUtil = new MessageCreationUtil(publisherId, signingUtil);
 
@@ -180,7 +180,7 @@ public class StreamrClient extends StreamrRESTClient {
      * Message handling
      */
 
-    public void handleMessage(String rawMessageAsString) {
+    private void handleMessage(String rawMessageAsString) {
         try {
             log.info("<< " + rawMessageAsString);
 
@@ -219,6 +219,7 @@ public class StreamrClient extends StreamrRESTClient {
         }
 
 
+        verifyStreamMessage(message);
         Subscription sub = subs.get(message.getStreamId(), message.getStreamPartition());
 
         // Only call the handler if we are in subscribed state (and not for example UNSUBSCRIBING)
@@ -286,6 +287,38 @@ public class StreamrClient extends StreamrRESTClient {
     private void handleUnsubcribeResponse(UnsubscribeResponse res) throws SubscriptionNotFoundException {
         Subscription sub = subs.get(res.getStreamId(), res.getStreamPartition());
         sub.setState(Subscription.State.UNSUBSCRIBED);
+    }
+
+    private void verifyStreamMessage(StreamMessage msg) throws InvalidSignatureException {
+        if(msg.getSignature() != null) {
+            List<String> publishers;
+            try {
+                publishers = getPublishers(msg.getStreamId());
+            } catch (IOException e) {
+                throw new RuntimeException(e);
+            }
+            if (!SigningUtil.hasValidSignature(msg, new HashSet<>(publishers))) {
+                throw new InvalidSignatureException(msg);
+            }
+        } else {
+            if (shouldVerify(msg.getStreamId())) {
+                throw new InvalidSignatureException(msg);
+            }
+        }
+    }
+
+    private boolean shouldVerify(String streamId) {
+        if (options.getVerifySignaturesOption().equals("always")) {
+            return true;
+        }
+        if (options.getVerifySignaturesOption().equals("never")) {
+            return false;
+        }
+        try {
+            return getStream(streamId).requiresSignedData();
+        } catch (IOException e) {
+            throw new RuntimeException(e);
+        }
     }
 
 }

@@ -76,4 +76,14 @@ public class StreamMessageV28 extends StreamMessage {
     public Long getPreviousOffset() {
         return previousOffset;
     }
+
+    @Override
+    public SignatureType getSignatureType() {
+        return SignatureType.SIGNATURE_TYPE_NONE;
+    }
+
+    @Override
+    public String getSignature() {
+        return null;
+    }
 }
