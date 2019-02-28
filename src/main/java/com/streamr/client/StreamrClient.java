@@ -7,6 +7,7 @@ import com.streamr.client.exceptions.InvalidSignatureException;
 import com.streamr.client.protocol.control_layer.*;
 import com.streamr.client.utils.MessageCreationUtil;
 import com.streamr.client.utils.SigningUtil;
+import com.streamr.client.utils.StreamCachingUtil;
 import org.apache.commons.codec.digest.DigestUtils;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
@@ -47,9 +48,24 @@ public class StreamrClient extends StreamrRESTClient {
     private String publisherId = null;
     private SigningUtil signingUtil = null;
     private final MessageCreationUtil msgCreationUtil;
+    private final StreamCachingUtil cache;
 
     public StreamrClient(StreamrClientOptions options) {
         super(options);
+
+        cache = new StreamCachingUtil(id -> {
+            try {
+                return getStream(id);
+            } catch (IOException e) {
+                throw new RuntimeException(e);
+            }
+        }, id -> {
+            try {
+                return getPublishers(id);
+            } catch (IOException e) {
+                throw new RuntimeException(e);
+            }
+        });
 
         if (options.getAuthenticationMethod() instanceof ApiKeyAuthenticationMethod) {
             try {
@@ -291,12 +307,7 @@ public class StreamrClient extends StreamrRESTClient {
 
     private void verifyStreamMessage(StreamMessage msg) throws InvalidSignatureException {
         if(msg.getSignature() != null) {
-            List<String> publishers;
-            try {
-                publishers = getPublishers(msg.getStreamId());
-            } catch (IOException e) {
-                throw new RuntimeException(e);
-            }
+            List<String> publishers = cache.getPublishers(msg.getStreamId());
             if (!SigningUtil.hasValidSignature(msg, new HashSet<>(publishers))) {
                 throw new InvalidSignatureException(msg);
             }
@@ -314,11 +325,8 @@ public class StreamrClient extends StreamrRESTClient {
         if (options.getVerifySignaturesOption().equals("never")) {
             return false;
         }
-        try {
-            return getStream(streamId).requiresSignedData();
-        } catch (IOException e) {
-            throw new RuntimeException(e);
-        }
+        Stream stream = cache.getStream(streamId);
+        return stream.requiresSignedData();
     }
 
 }
