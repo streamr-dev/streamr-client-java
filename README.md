@@ -15,7 +15,49 @@ This library is work-in-progress. It is currently in a MVP stage covering a very
 
 # Installation
 
-This library will be published to Maven, but it's not there yet.
+This library is currently published in the Maven repository https://oss.sonatype.org/content/groups/public. 
+
+## Using Maven
+
+In your `pom.xml`, add the repo:
+```
+  <repositories>
+    <repository>
+      <id>oss-sonatype</id>
+      <name>OSS Sonatype</name>
+      <url>https://oss.sonatype.org/content/groups/public</url>
+    </repository>
+    ...
+  </repositories>
+```
+And the artifact itself:
+```
+  <dependencies>
+    <dependency>
+      <groupId>com.streamr</groupId>
+      <artifactId>client</artifactId>
+      <version>0.1-SNAPSHOT</version>
+    </dependency>
+    ...
+  </dependencies>
+```
+
+## Using Gradle
+
+In your `build.gradle`, add the repo:
+```
+repositories {
+    maven {
+      url 'https://oss.sonatype.org/content/groups/public'
+    }
+}
+```
+And the artifact itself:
+```
+dependencies {
+    implementation 'com.streamr:client:0.1-SNAPSHOT'
+}
+```
 
 # Usage
 
