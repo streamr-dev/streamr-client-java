@@ -57,6 +57,10 @@ public class StreamMessageV30 extends StreamMessage {
         this.signature = signature;
     }
 
+    public MessageID getMessageID() {
+        return messageID;
+    }
+
     @Override
     public String getStreamId() {
         return messageID.getStreamId();
