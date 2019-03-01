@@ -48,6 +48,23 @@ class ResendFromRequestAdapterSpec extends Specification {
 		msg.getSessionToken() == "sessionToken"
 	}
 
+	void "fromJson (null fields)"() {
+		String json = '[1,12,"streamId",0,"subId",[143415425455,0],null,null,null]'
+
+		when:
+		ResendFromRequest msg = toMsg(adapter, json)
+
+		then:
+		msg.getStreamId() == "streamId"
+		msg.getStreamPartition() == 0
+		msg.getSubId() == "subId"
+		msg.getFromMsgRef().getTimestamp() == 143415425455
+		msg.getFromMsgRef().getSequenceNumber() == 0
+		msg.getPublisherId() == null
+		msg.getMsgChainId() == null
+		msg.getSessionToken() == null
+	}
+
 	void "toJson"() {
 		MessageRef from = new MessageRef(143415425455L, 0L)
 		ResendFromRequest request = new ResendFromRequest("streamId", 0, "subId", from, "publisherId", "msgChainId", "sessionToken")
@@ -57,5 +74,16 @@ class ResendFromRequestAdapterSpec extends Specification {
 
 		then:
 		buffer.readString(utf8) == '[1,12,"streamId",0,"subId",[143415425455,0],"publisherId","msgChainId","sessionToken"]'
+	}
+
+	void "toJson (null fields)"() {
+		MessageRef from = new MessageRef(143415425455L, 0L)
+		ResendFromRequest request = new ResendFromRequest("streamId", 0, "subId", from, null, null, null)
+
+		when:
+		adapter.toJson(buffer, request)
+
+		then:
+		buffer.readString(utf8) == '[1,12,"streamId",0,"subId",[143415425455,0],null,null,null]'
 	}
 }

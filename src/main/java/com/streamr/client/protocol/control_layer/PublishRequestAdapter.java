@@ -14,7 +14,7 @@ public class PublishRequestAdapter extends ControlLayerAdapter<PublishRequest> {
     @Override
     public PublishRequest fromJson(JsonReader reader) throws IOException {
         StreamMessage streamMessage = streamMessageAdapter.fromJson(reader);
-        String sessionToken = reader.nextString();
+        String sessionToken = nullSafe(reader, r ->r.nextString());
         return new PublishRequest(streamMessage, sessionToken);
     }
 

@@ -11,7 +11,7 @@ public class SubscribeRequestAdapter extends ControlLayerAdapter<SubscribeReques
     public SubscribeRequest fromJson(JsonReader reader) throws IOException {
         String streamId = reader.nextString();
         int streamPartition = reader.nextInt();
-        String sessionToken = reader.nextString();
+        String sessionToken = nullSafe(reader, r -> r.nextString());
         return new SubscribeRequest(streamId, streamPartition, sessionToken);
     }
 

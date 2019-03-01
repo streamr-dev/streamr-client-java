@@ -44,6 +44,18 @@ class PublishRequestAdapterSpec extends Specification {
 		msg.sessionToken == "sessionToken"
 	}
 
+	void "fromJson (null session token)"() {
+		String msgJson = "[30,[\"7wa7APtlTq6EC5iTCBy6dw\",0,1528228173462,0,\"publisherId\",\"1\"],[1528228170000,0],27,\"{\\\"hello\\\":\\\"world\\\"}\",2,\"signature\"]"
+		String json = '[1,8,'+msgJson+',null]'
+
+		when:
+		PublishRequest msg = toMsg(adapter, json)
+
+		then:
+		msg.streamMessage instanceof StreamMessage
+		msg.sessionToken == null
+	}
+
 	void "toJson"() {
 		StreamMessageV30 msg = new StreamMessageV30(
 				"7wa7APtlTq6EC5iTCBy6dw", 0, 1528228173462L, 0, "publisherId", "1", 1528228170000L, 0,

@@ -13,7 +13,7 @@ public class ResendLastRequestAdapter extends ControlLayerAdapter<ResendLastRequ
         int streamPartition = reader.nextInt();
         String subId = reader.nextString();
         int numberLast = reader.nextInt();
-        String sessionToken = reader.nextString();
+        String sessionToken = nullSafe(reader, r -> r.nextString());
         return new ResendLastRequest(streamId, streamPartition, subId, numberLast, sessionToken);
     }
 

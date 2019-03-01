@@ -15,12 +15,13 @@ import java.io.IOException;
 public class StreamMessageV30Adapter extends JsonAdapter<StreamMessageV30> {
 
     private static final Logger log = LogManager.getLogger();
+    private static final MessageIDAdapter msgIdAdapter = new MessageIDAdapter();
     private static final MessageRefAdapter msgRefAdapter = new MessageRefAdapter();
 
     @Override
     public StreamMessageV30 fromJson(JsonReader reader) throws IOException {
         try {
-            MessageID messageID = messageIDFromJson(reader);
+            MessageID messageID = msgIdAdapter.fromJson(reader);
             MessageRef previousMessageRef = null;
             // Peek at the previousMessageRef, as it can be null
             if (reader.peek().equals(JsonReader.Token.NULL)) {
@@ -45,34 +46,9 @@ public class StreamMessageV30Adapter extends JsonAdapter<StreamMessageV30> {
         }
     }
 
-    private MessageID messageIDFromJson(JsonReader reader) throws IOException {
-        try {
-            reader.beginArray();
-            String streamId = reader.nextString();
-            int streamPartition = reader.nextInt();
-            long timestamp = reader.nextLong();
-            int sequenceNumber = reader.nextInt();
-            String publisherId = reader.nextString();
-            String msgChainId = reader.nextString();
-            reader.endArray();
-
-            return new MessageID(streamId, streamPartition, timestamp, sequenceNumber, publisherId, msgChainId);
-        } catch (JsonDataException e) {
-            log.error(e);
-            throw new MalformedMessageException("Malformed message id: " + reader.toString(), e);
-        }
-    }
-
     @Override
     public void toJson(JsonWriter writer, StreamMessageV30 value) throws IOException {
-        writer.beginArray();
-        writer.value(value.getStreamId());
-        writer.value(value.getStreamPartition());
-        writer.value(value.getTimestamp());
-        writer.value(value.getSequenceNumber());
-        writer.value(value.getPublisherId());
-        writer.value(value.getMsgChainId());
-        writer.endArray();
+        msgIdAdapter.toJson(writer, value.getMessageID());
         if (value.getPreviousMessageRef() != null) {
             msgRefAdapter.toJson(writer, value.getPreviousMessageRef());
         }else {

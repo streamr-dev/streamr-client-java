@@ -42,6 +42,18 @@ class SubscribeRequestAdapterSpec extends Specification {
 		msg.sessionToken == "sessionToken"
 	}
 
+	void "fromJson (null session token)"() {
+		String json = '[1,9,"streamId",0,null]'
+
+		when:
+		SubscribeRequest msg = toMsg(adapter, json)
+
+		then:
+		msg.streamId == "streamId"
+		msg.streamPartition == 0
+		msg.sessionToken == null
+	}
+
 	void "toJson"() {
 		SubscribeRequest request = new SubscribeRequest("streamId", 0, "sessionToken")
 
