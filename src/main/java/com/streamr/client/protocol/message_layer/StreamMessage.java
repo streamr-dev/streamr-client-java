@@ -43,7 +43,8 @@ public abstract class StreamMessage implements ITimestamped {
 
     public enum SignatureType {
         SIGNATURE_TYPE_NONE ((byte) 0),
-        SIGNATURE_TYPE_ETH ((byte) 1);
+        SIGNATURE_TYPE_ETH_LEGACY ((byte) 1),
+        SIGNATURE_TYPE_ETH ((byte) 2);
 
         private final byte id;
 
@@ -58,6 +59,8 @@ public abstract class StreamMessage implements ITimestamped {
         public static SignatureType fromId(byte id) {
             if (id == SIGNATURE_TYPE_NONE.id) {
                 return SIGNATURE_TYPE_NONE;
+            } else if (id == SIGNATURE_TYPE_ETH_LEGACY.id) {
+                return SIGNATURE_TYPE_ETH_LEGACY;
             } else if (id == SIGNATURE_TYPE_ETH.id) {
                 return SIGNATURE_TYPE_ETH;
             }
@@ -116,6 +119,8 @@ public abstract class StreamMessage implements ITimestamped {
     public abstract long getSequenceNumber();
 
     public abstract String getPublisherId();
+
+    public abstract String getMsgChainId();
 
     public ContentType getContentType() {
         return contentType;

@@ -1,8 +1,8 @@
 package com.streamr.client.protocol
 
 import com.squareup.moshi.JsonReader
-import com.streamr.client.protocol.control_layer.PublishRequest
-import com.streamr.client.protocol.control_layer.PublishRequestAdapter
+import com.streamr.client.protocol.control_layer.BroadcastMessage
+import com.streamr.client.protocol.control_layer.BroadcastMessageAdapter
 import com.streamr.client.protocol.message_layer.StreamMessage
 import com.streamr.client.protocol.message_layer.StreamMessageV30
 import okio.Buffer
@@ -10,63 +10,50 @@ import spock.lang.Specification
 
 import java.nio.charset.Charset
 
-class PublishRequestAdapterSpec extends Specification {
+class BroadcastMessageAdapterSpec extends Specification {
 
 	private static Charset utf8 = Charset.forName("UTF-8")
 
-    PublishRequestAdapter adapter
+	BroadcastMessageAdapter adapter
 	Buffer buffer
 
 	void setup() {
-		adapter = new PublishRequestAdapter()
+		adapter = new BroadcastMessageAdapter()
 		buffer = new Buffer()
 	}
 
-	private static PublishRequest toMsg(PublishRequestAdapter adapter, String json) {
+	private static BroadcastMessage toMsg(BroadcastMessageAdapter adapter, String json) {
 		JsonReader reader = JsonReader.of(new Buffer().writeString(json, Charset.forName("UTF-8")))
 		reader.beginArray()
 		reader.nextInt()
 		reader.nextInt()
-		PublishRequest msg = adapter.fromJson(reader)
+		BroadcastMessage msg = adapter.fromJson(reader)
 		reader.endArray()
 		return msg
 	}
 
 	void "fromJson"() {
 		String msgJson = "[30,[\"7wa7APtlTq6EC5iTCBy6dw\",0,1528228173462,0,\"publisherId\",\"1\"],[1528228170000,0],27,\"{\\\"hello\\\":\\\"world\\\"}\",2,\"signature\"]"
-		String json = '[1,8,'+msgJson+',"sessionToken"]'
+		String json = '[1,0,'+msgJson+']'
 
 		when:
-		PublishRequest msg = toMsg(adapter, json)
+		BroadcastMessage msg = toMsg(adapter, json)
 
 		then:
-		msg.streamMessage instanceof StreamMessage
-		msg.sessionToken == "sessionToken"
-	}
-
-	void "fromJson (null session token)"() {
-		String msgJson = "[30,[\"7wa7APtlTq6EC5iTCBy6dw\",0,1528228173462,0,\"publisherId\",\"1\"],[1528228170000,0],27,\"{\\\"hello\\\":\\\"world\\\"}\",2,\"signature\"]"
-		String json = '[1,8,'+msgJson+',null]'
-
-		when:
-		PublishRequest msg = toMsg(adapter, json)
-
-		then:
-		msg.streamMessage instanceof StreamMessage
-		msg.sessionToken == null
+		msg.getStreamMessage() instanceof StreamMessage
 	}
 
 	void "toJson"() {
 		StreamMessageV30 msg = new StreamMessageV30(
 				"7wa7APtlTq6EC5iTCBy6dw", 0, 1528228173462L, 0, "publisherId", "1", 1528228170000L, 0,
 				StreamMessage.ContentType.CONTENT_TYPE_JSON, '{"hello":"world"}', StreamMessage.SignatureType.SIGNATURE_TYPE_ETH, "signature")
-		PublishRequest request = new PublishRequest(msg, "sessionToken")
+		BroadcastMessage broadcastMessage = new BroadcastMessage(msg)
 		String msgJson = "[30,[\"7wa7APtlTq6EC5iTCBy6dw\",0,1528228173462,0,\"publisherId\",\"1\"],[1528228170000,0],27,\"{\\\"hello\\\":\\\"world\\\"}\",2,\"signature\"]"
 
 		when:
-		adapter.toJson(buffer, request)
+		adapter.toJson(buffer, broadcastMessage)
 
 		then:
-		buffer.readString(utf8) == '[1,8,'+msgJson+',"sessionToken"]'
+		buffer.readString(utf8) == '[1,0,'+msgJson+']'
 	}
 }

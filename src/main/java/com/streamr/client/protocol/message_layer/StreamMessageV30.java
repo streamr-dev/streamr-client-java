@@ -21,7 +21,7 @@ public class StreamMessageV30 extends StreamMessage {
     }
 
     public StreamMessageV30(MessageID messageID, MessageRef previousMessageRef, ContentType contentType,
-                            Map<String, Object> content, SignatureType signatureType, String signature) throws IOException {
+                            Map<String, Object> content, SignatureType signatureType, String signature) {
         super(VERSION, contentType, content);
         this.messageID = messageID;
         this.previousMessageRef = previousMessageRef;
@@ -30,10 +30,10 @@ public class StreamMessageV30 extends StreamMessage {
     }
 
     public StreamMessageV30(String streamId, int streamPartition, long timestamp, long sequenceNumber,
-                            String publisherId, Long previousTimestamp, Long previousSequenceNumber, ContentType contentType,
+                            String publisherId, String msgChainId, Long previousTimestamp, Long previousSequenceNumber, ContentType contentType,
                             String serializedContent, SignatureType signatureType, String signature) throws IOException {
         super(VERSION, contentType, serializedContent);
-        this.messageID = new MessageID(streamId, streamPartition, timestamp, sequenceNumber, publisherId);
+        this.messageID = new MessageID(streamId, streamPartition, timestamp, sequenceNumber, publisherId, msgChainId);
         if (previousTimestamp == null) {
             this.previousMessageRef = null;
         } else {
@@ -44,10 +44,10 @@ public class StreamMessageV30 extends StreamMessage {
     }
 
     public StreamMessageV30(String streamId, int streamPartition, long timestamp, long sequenceNumber,
-                            String publisherId, Long previousTimestamp, Long previousSequenceNumber, ContentType contentType,
-                            Map<String, Object> content, SignatureType signatureType, String signature) throws IOException {
+                            String publisherId, String msgChainId, Long previousTimestamp, Long previousSequenceNumber, ContentType contentType,
+                            Map<String, Object> content, SignatureType signatureType, String signature) {
         super(VERSION, contentType, content);
-        this.messageID = new MessageID(streamId, streamPartition, timestamp, sequenceNumber, publisherId);
+        this.messageID = new MessageID(streamId, streamPartition, timestamp, sequenceNumber, publisherId, msgChainId);
         if (previousTimestamp == null) {
             this.previousMessageRef = null;
         } else {
@@ -55,6 +55,10 @@ public class StreamMessageV30 extends StreamMessage {
         }
         this.signatureType = signatureType;
         this.signature = signature;
+    }
+
+    public MessageID getMessageID() {
+        return messageID;
     }
 
     @Override
@@ -80,6 +84,11 @@ public class StreamMessageV30 extends StreamMessage {
     @Override
     public String getPublisherId() {
         return messageID.getPublisherId();
+    }
+
+    @Override
+    public String getMsgChainId() {
+        return messageID.getMsgChainId();
     }
 
     public MessageRef getPreviousMessageRef() {

@@ -87,6 +87,11 @@ public class StreamMessageV29 extends StreamMessage {
         return publisherAddress;
     }
 
+    @Override
+    public String getMsgChainId() {
+        return "";
+    }
+
     public String getSignature() {
         return signature;
     }
