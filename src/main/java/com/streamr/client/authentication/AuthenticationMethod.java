@@ -15,7 +15,7 @@ import java.util.Date;
 
 public abstract class AuthenticationMethod {
 
-    private JsonAdapter<LoginResponse> responseAdapter = HttpUtils.MOSHI.adapter(LoginResponse.class);
+    private JsonAdapter<LoginResponse> responseAdapter;
 
     public AuthenticationMethod() {
         this.responseAdapter = HttpUtils.MOSHI.adapter(LoginResponse.class);
