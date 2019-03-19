@@ -7,10 +7,9 @@ class ApiKeyAuthenticationMethodSpec extends StreamrIntegrationSpecification {
 
 	void "newSessionToken() fetches a new sessionToken using the provided API key"() {
 		ApiKeyAuthenticationMethod auth = new ApiKeyAuthenticationMethod("tester1-api-key")
-		auth.setRestApiUrl(DEFAULT_REST_URL)
 
 		when:
-		String sessionToken = auth.newSessionToken()
+		String sessionToken = auth.newSessionToken(DEFAULT_REST_URL)
 
 		then:
 		sessionToken != null
@@ -18,10 +17,9 @@ class ApiKeyAuthenticationMethodSpec extends StreamrIntegrationSpecification {
 
 	void "newSessionToken() throws if the credentials are wrong"() {
 		ApiKeyAuthenticationMethod auth = new ApiKeyAuthenticationMethod("wrong")
-		auth.setRestApiUrl(DEFAULT_REST_URL)
 
 		when:
-		auth.newSessionToken()
+		auth.newSessionToken(DEFAULT_REST_URL)
 
 		then:
 		thrown(AuthenticationException)

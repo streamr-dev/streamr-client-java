@@ -18,8 +18,8 @@ public class ApiKeyAuthenticationMethod extends AuthenticationMethod {
     }
 
     @Override
-    protected LoginResponse login() throws IOException {
-        return parse(post("/login/apikey", adapter.toJson(new ApiKeyLoginRequest(apiKey))));
+    protected LoginResponse login(String restApiUrl) throws IOException {
+        return parse(post(restApiUrl + "/login/apikey", adapter.toJson(new ApiKeyLoginRequest(apiKey))));
     }
 
     static class ApiKeyLoginRequest {

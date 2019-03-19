@@ -8,13 +8,12 @@ package com.streamr.client.authentication;
 public class Session {
 
     private final AuthenticationMethod authenticationMethod;
+    private final String restApiUrl;
     private String sessionToken = null;
 
     public Session(String restApiUrl, AuthenticationMethod authenticationMethod) {
         this.authenticationMethod = authenticationMethod;
-        if (this.authenticationMethod != null) {
-            this.authenticationMethod.setRestApiUrl(restApiUrl);
-        }
+        this.restApiUrl = restApiUrl;
     }
 
     public boolean isAuthenticated() {
@@ -23,7 +22,7 @@ public class Session {
 
     public String getSessionToken() {
         if (sessionToken == null && isAuthenticated()) {
-            sessionToken = authenticationMethod.newSessionToken();
+            sessionToken = authenticationMethod.newSessionToken(restApiUrl);
         } else if (sessionToken == null) {
             throw new RuntimeException("No authentication method: Don't call getSessionToken() if isAuthenticated returns false!");
         }

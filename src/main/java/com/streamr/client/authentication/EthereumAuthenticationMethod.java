@@ -29,15 +29,15 @@ public class EthereumAuthenticationMethod extends AuthenticationMethod {
     }
 
     @Override
-    protected LoginResponse login() throws IOException {
-        Challenge challenge = getChallenge();
+    protected LoginResponse login(String restApiUrl) throws IOException {
+        Challenge challenge = getChallenge(restApiUrl);
         String signature = signChallenge(challenge.challenge);
         ChallengeResponse response = new ChallengeResponse(challenge, signature, address);
-        return parse(post("/login/response", challengeResponseAdapter.toJson(response)));
+        return parse(post(restApiUrl + "/login/response", challengeResponseAdapter.toJson(response)));
     }
 
-    public Challenge getChallenge() throws IOException {
-        return challengeAdapter.fromJson(post("/login/challenge/"+address, ""));
+    public Challenge getChallenge(String restApiUrl) throws IOException {
+        return challengeAdapter.fromJson(post(restApiUrl + "/login/challenge/"+address, ""));
     }
 
     private String signChallenge(String challengeToSign) throws IOException {
