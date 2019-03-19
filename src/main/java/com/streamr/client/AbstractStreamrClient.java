@@ -1,8 +1,6 @@
 package com.streamr.client;
 
 import com.squareup.moshi.Moshi;
-import com.streamr.client.authentication.ApiKeyAuthenticationMethod;
-import com.streamr.client.authentication.ChallengeAuthenticationMethod;
 import com.streamr.client.authentication.Session;
 import com.streamr.client.utils.HttpUtils;
 

@@ -14,14 +14,14 @@ import org.apache.commons.codec.binary.Hex;
 import org.ethereum.crypto.HashUtil;
 import org.ethereum.util.ByteUtil;
 
-public class ChallengeAuthenticationMethod extends AuthenticationMethod {
+public class EthereumAuthenticationMethod extends AuthenticationMethod {
 
     private final ECKey account;
     private final String address;
     private JsonAdapter<Challenge> challengeAdapter = HttpUtils.MOSHI.adapter(Challenge.class);
     private JsonAdapter<ChallengeResponse> challengeResponseAdapter = HttpUtils.MOSHI.adapter(ChallengeResponse.class);
 
-    public ChallengeAuthenticationMethod(String ethereumPrivateKey) {
+    public EthereumAuthenticationMethod(String ethereumPrivateKey) {
         super();
         String withoutPrefix = ethereumPrivateKey.startsWith("0x") ? ethereumPrivateKey.substring(2) : ethereumPrivateKey;
         this.account = ECKey.fromPrivate(new BigInteger(withoutPrefix, 16));

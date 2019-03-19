@@ -1,7 +1,7 @@
 package com.streamr.client
 
 import com.streamr.client.authentication.ApiKeyAuthenticationMethod
-import com.streamr.client.authentication.ChallengeAuthenticationMethod
+import com.streamr.client.authentication.EthereumAuthenticationMethod
 import org.apache.commons.codec.binary.Hex
 import spock.lang.Specification
 
@@ -29,7 +29,7 @@ class StreamrIntegrationSpecification extends Specification {
     }
 
     protected static StreamrClientOptions createOptionsWithPrivateKey(String privateKey = null) {
-        return new StreamrClientOptions(new ChallengeAuthenticationMethod(privateKey), DEFAULT_WEBSOCKET_URL, DEFAULT_REST_URL)
+        return new StreamrClientOptions(new EthereumAuthenticationMethod(privateKey), DEFAULT_WEBSOCKET_URL, DEFAULT_REST_URL)
     }
 
     protected String generateResourceName() {
