@@ -1,22 +1,28 @@
 package com.streamr.client;
 
+import com.streamr.client.authentication.AuthenticationMethod;
+
 public class StreamrClientOptions {
 
-    private String apiKey = null;
+    private AuthenticationMethod authenticationMethod = null;
     private String websocketApiUrl = "wss://www.streamr.com/api/v1/ws";
     private String restApiUrl = "https://www.streamr.com/api/v1";
     private long connectionTimeoutMillis = 10 * 1000;
 
     public StreamrClientOptions() {}
 
-    public StreamrClientOptions(String apiKey) {
-        this.apiKey = apiKey;
+    public StreamrClientOptions(AuthenticationMethod authenticationMethod) {
+        this.authenticationMethod = authenticationMethod;
     }
 
-    public StreamrClientOptions(String apiKey, String websocketApiUrl, String restApiUrl) {
-        this.apiKey = apiKey;
+    public StreamrClientOptions(AuthenticationMethod authenticationMethod, String websocketApiUrl, String restApiUrl) {
+        this(authenticationMethod);
         this.websocketApiUrl = websocketApiUrl;
         this.restApiUrl = restApiUrl;
+    }
+
+    public AuthenticationMethod getAuthenticationMethod() {
+        return authenticationMethod;
     }
 
     public String getWebsocketApiUrl() {
@@ -33,14 +39,6 @@ public class StreamrClientOptions {
 
     public void setRestApiUrl(String restApiUrl) {
         this.restApiUrl = restApiUrl;
-    }
-
-    public String getApiKey() {
-        return apiKey;
-    }
-
-    public void setApiKey(String apiKey) {
-        this.apiKey = apiKey;
     }
 
     public long getConnectionTimeoutMillis() {

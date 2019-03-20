@@ -1,0 +1,11 @@
+<component name="libraryTable">
+  <library name="Gradle: com.cedarsoftware:java-util:1.8.0">
+    <CLASSES>
+      <root url="jar://$USER_HOME$/.gradle/caches/modules-2/files-2.1/com.cedarsoftware/java-util/1.8.0/9a37997b13af5016688b648d7177d4da17399b40/java-util-1.8.0.jar!/" />
+    </CLASSES>
+    <JAVADOC />
+    <SOURCES>
+      <root url="jar://$USER_HOME$/.gradle/caches/modules-2/files-2.1/com.cedarsoftware/java-util/1.8.0/18d743d1e991ba5401d5c89360b288b0a52b6c6f/java-util-1.8.0-sources.jar!/" />
+    </SOURCES>
+  </library>
+</component>

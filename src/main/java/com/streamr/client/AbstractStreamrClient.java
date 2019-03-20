@@ -1,7 +1,6 @@
 package com.streamr.client;
 
 import com.squareup.moshi.Moshi;
-import com.streamr.client.authentication.ApiKeyAuthenticationMethod;
 import com.streamr.client.authentication.Session;
 import com.streamr.client.utils.HttpUtils;
 
@@ -22,11 +21,7 @@ public abstract class AbstractStreamrClient {
         this.options = options;
 
         // Create Session object based on what kind of authentication method is provided in options
-        if (options.getApiKey() != null) {
-            session = new Session(new ApiKeyAuthenticationMethod(options));
-        } else {
-            session = new Session();
-        }
+        session = new Session(options.getRestApiUrl(), options.getAuthenticationMethod());
     }
 
 }

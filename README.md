@@ -63,14 +63,26 @@ dependencies {
 
 <a name="authentication"></a>
 ## Authentication
+To authenticate as a Streamr user, provide an `AuthenticationMethod` instance. We have two concrete classes that extend `AuthenticationMethod`:
 
-To authenticate as a Streamr user, simply provide your API key to the `StreamrClient` constructor:
+- `ApiKeyAuthenticationMethod(String apiKey)`
+- `EthereumAuthenticationMethod(String ethereumPrivateKey)`
+
+To authenticate with an API key, create an `ApiKeyAuthenticationMethod` instance and pass it to the `StreamrClient` constructor:
 
 ```java
-StreamrClient client = new StreamrClient(myApiKey); 
+StreamrClient client = new StreamrClient(new ApiKeyAuthenticationMethod(myApiKey)); 
 ```
 
 The library will automatically fetch a session token using the provided API key to allow authenticated requests to be made.
+
+To authenticate with an Ethereum account, create an `EthereumAuthenticationMethod` instance and pass it to the `StreamrClient` constructor:
+
+```java
+StreamrClient client = new StreamrClient(new EthereumAuthenticationMethod(myEthereumPrivateKey)); 
+```
+
+The library will automatically initiate a challenge-response protocol to allow you to prove that you own the Ethereum private key without revealing it. You will be identified with the associated Ethereum public address. At the end of the protocol, the library will fetch a session token to allow authenticated requests to be made.
 
 You can access public resources without authenticating. In this case you can create the instance without any arguments:
 
@@ -152,7 +164,6 @@ client.unsubscribe(sub);
 This library is work in progress. At least the following will be done, probably sooner than later:
 
 - Publishing this library to Maven
-- Authenticating with the Ethereum challenge/response protocol
 - Signing published data
 - Verifying signed data on reception
 - Resends on subscription

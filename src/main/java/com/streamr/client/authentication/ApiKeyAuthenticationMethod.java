@@ -9,15 +9,17 @@ import java.io.IOException;
 public class ApiKeyAuthenticationMethod extends AuthenticationMethod {
 
     private JsonAdapter<ApiKeyLoginRequest> adapter;
+    private final String apiKey;
 
-    public ApiKeyAuthenticationMethod(StreamrClientOptions options) {
-        super(options);
+    public ApiKeyAuthenticationMethod(String apiKey) {
+        super();
+        this.apiKey = apiKey;
         this.adapter = HttpUtils.MOSHI.adapter(ApiKeyLoginRequest.class);
     }
 
     @Override
-    protected LoginResponse login() throws IOException {
-        return post("/login/apikey", adapter.toJson(new ApiKeyLoginRequest(options.getApiKey())));
+    protected LoginResponse login(String restApiUrl) throws IOException {
+        return parse(post(restApiUrl + "/login/apikey", adapter.toJson(new ApiKeyLoginRequest(apiKey))));
     }
 
     static class ApiKeyLoginRequest {
