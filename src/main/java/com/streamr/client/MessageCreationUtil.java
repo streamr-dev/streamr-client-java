@@ -7,6 +7,11 @@ import com.streamr.client.protocol.message_layer.StreamMessageV30;
 import com.streamr.client.rest.Stream;
 import org.apache.commons.lang3.RandomStringUtils;
 
+import java.io.UnsupportedEncodingException;
+import java.nio.ByteBuffer;
+import java.nio.charset.StandardCharsets;
+import java.security.MessageDigest;
+import java.security.NoSuchAlgorithmException;
 import java.util.Date;
 import java.util.HashMap;
 import java.util.Map;
@@ -16,6 +21,8 @@ public class MessageCreationUtil {
     private final String msgChainId;
 
     private final HashMap<String, MessageRef> refsPerStreamAndPartition = new HashMap<>();
+
+    private final HashMap<String, Integer> cachedHashes = new HashMap<>();
 
     public MessageCreationUtil(String publisherId) {
         this.publisherId = publisherId;
@@ -37,14 +44,31 @@ public class MessageCreationUtil {
         return streamMessage;
     }
 
+    private int hash(String partitionKey) {
+        Integer hash = cachedHashes.get(partitionKey);
+        if (hash == null) {
+            byte[] bytes;
+            try {
+                MessageDigest md = MessageDigest.getInstance("MD5");
+                bytes = md.digest(partitionKey.getBytes(StandardCharsets.UTF_8));
+            } catch (NoSuchAlgorithmException e) {
+                throw new RuntimeException(e);
+            }
+            int newHash = ByteBuffer.wrap(bytes).order(java.nio.ByteOrder.LITTLE_ENDIAN).getInt();
+            cachedHashes.put(partitionKey, newHash);
+            return newHash;
+        }
+        return hash;
+    }
+
     private int getStreamPartition(int nbPartitions, String partitionKey) {
         if (nbPartitions == 0) {
             throw new Error("partitionCount is falsey!");
         } else if (nbPartitions == 1) {
             return 0;
         } else if (partitionKey != null) {
-            int hash = partitionKey.hashCode();
-            return Math.abs(hash) % nbPartitions;
+            int h = hash(partitionKey);
+            return Math.abs(h) % nbPartitions;
         } else {
             return (int) Math.floor(Math.random() * nbPartitions);
         }
