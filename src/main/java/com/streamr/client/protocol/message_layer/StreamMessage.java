@@ -75,19 +75,10 @@ public abstract class StreamMessage implements ITimestamped {
     protected Map<String, Object> content;
     protected String serializedContent;
 
-    public StreamMessage(int version, ContentType contentType, String serializedContent) throws IOException {
+    public StreamMessage(int version, ContentType contentType, String serializedContent) {
         this.version = version;
         this.contentType = contentType;
         this.serializedContent = serializedContent;
-        if (contentType == ContentType.CONTENT_TYPE_JSON) {
-            if(serializedContent.equals("")) {
-                this.content = new HashMap<String, Object>();
-            } else {
-                this.content = HttpUtils.mapAdapter.fromJson(serializedContent);
-            }
-        } else {
-            throw new UnsupportedMessageException("Unrecognized payload type: " + contentType);
-        }
     }
 
     public StreamMessage(int version, ContentType contentType, Map<String, Object> content){
@@ -126,7 +117,18 @@ public abstract class StreamMessage implements ITimestamped {
         return contentType;
     }
 
-    public Map<String, Object> getContent() {
+    public Map<String, Object> getContent() throws IOException {
+        if (content == null) {
+            if (contentType == ContentType.CONTENT_TYPE_JSON) {
+                if(serializedContent.equals("")) {
+                    this.content = new HashMap<String, Object>();
+                } else {
+                    this.content = HttpUtils.mapAdapter.fromJson(serializedContent);
+                }
+            } else {
+                throw new UnsupportedMessageException("Unrecognized payload type: " + contentType);
+            }
+        }
         return content;
     }
 

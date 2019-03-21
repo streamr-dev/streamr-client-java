@@ -1,5 +1,6 @@
 package com.streamr.client;
 
+import com.streamr.client.exceptions.MalformedMessageException;
 import com.streamr.client.protocol.control_layer.*;
 import com.streamr.client.protocol.message_layer.MessageID;
 import com.streamr.client.protocol.message_layer.StreamMessageV30;
@@ -182,7 +183,12 @@ public class StreamrWebsocketClient extends AbstractStreamrClient {
 
     private void handleMessage(StreamMessage message) throws SubscriptionNotFoundException {
         // TODO: gap checking and gap fill
-        log.debug(message.getStreamId() + ": " + message.getContent().toString());
+        try {
+            log.debug(message.getStreamId() + ": " + message.getContent().toString());
+        } catch (IOException e) {
+            throw new MalformedMessageException(message.toJson());
+        }
+
 
         Subscription sub = subs.get(message.getStreamId(), message.getStreamPartition());
 
