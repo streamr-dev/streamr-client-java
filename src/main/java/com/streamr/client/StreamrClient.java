@@ -1,7 +1,7 @@
 package com.streamr.client;
 
 import com.streamr.client.authentication.ApiKeyAuthenticationMethod;
-import com.streamr.client.authentication.ChallengeAuthenticationMethod;
+import com.streamr.client.authentication.EthereumAuthenticationMethod;
 import com.streamr.client.protocol.control_layer.*;
 import org.apache.commons.codec.digest.DigestUtils;
 import org.apache.logging.log4j.LogManager;
@@ -53,8 +53,8 @@ public class StreamrClient extends StreamrRESTClient {
             } catch (IOException e) {
                 throw new RuntimeException(e);
             }
-        } else if (options.getAuthenticationMethod() instanceof ChallengeAuthenticationMethod) {
-            publisherId = ((ChallengeAuthenticationMethod) options.getAuthenticationMethod()).getAddress();
+        } else if (options.getAuthenticationMethod() instanceof EthereumAuthenticationMethod) {
+            publisherId = ((EthereumAuthenticationMethod) options.getAuthenticationMethod()).getAddress();
         }
         msgCreationUtil = new MessageCreationUtil(publisherId);
 
