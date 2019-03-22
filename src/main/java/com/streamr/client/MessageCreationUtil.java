@@ -54,9 +54,8 @@ public class MessageCreationUtil {
             } catch (NoSuchAlgorithmException e) {
                 throw new RuntimeException(e);
             }
-            int newHash = ByteBuffer.wrap(bytes).order(java.nio.ByteOrder.LITTLE_ENDIAN).getInt();
-            cachedHashes.put(partitionKey, newHash);
-            return newHash;
+            hash = ByteBuffer.wrap(bytes).order(java.nio.ByteOrder.LITTLE_ENDIAN).getInt();
+            cachedHashes.put(partitionKey, hash);
         }
         return hash;
     }
