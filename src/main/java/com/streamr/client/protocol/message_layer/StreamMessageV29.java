@@ -89,6 +89,11 @@ public class StreamMessageV29 extends StreamMessage {
     }
 
     @Override
+    public MessageRef getPreviousMessageRef() {
+        return null;
+    }
+
+    @Override
     public SignatureType getSignatureType() {
         return signatureType;
     }

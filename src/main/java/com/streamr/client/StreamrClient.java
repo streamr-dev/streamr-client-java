@@ -213,6 +213,12 @@ public class StreamrClient extends StreamrRESTClient {
                         handleSubcribeResponse((SubscribeResponse)message);
                     } else if (message.getType() == UnsubscribeResponse.TYPE) {
                         handleUnsubcribeResponse((UnsubscribeResponse)message);
+                    } else if (message.getType() == ResendResponseResending.TYPE) {
+                        handleResendResponseResending((ResendResponseResending)message);
+                    } else if (message.getType() == ResendResponseNoResend.TYPE) {
+                        handleResendResponseNoResend((ResendResponseNoResend)message);
+                    } else if (message.getType() == ResendResponseResent.TYPE) {
+                        handleResendResponseResent((ResendResponseResent)message);
                     }
                 } catch (Exception e) {
                     log.error("Error handling message: " + message, e);
@@ -233,13 +239,21 @@ public class StreamrClient extends StreamrRESTClient {
             throw new MalformedMessageException(message.toJson());
         }
 
-
         subscribedStreamsUtil.verifyStreamMessage(message);
         Subscription sub = subs.get(message.getStreamId(), message.getStreamPartition());
 
         // Only call the handler if we are in subscribed state (and not for example UNSUBSCRIBING)
         if (sub.getState().equals(Subscription.State.SUBSCRIBED)) {
-            sub.getHandler().onMessage(sub, message);
+            try {
+                message.getContent(); // call to trigger potential IOException
+                ResendRangeRequest gapToFill = sub.handleMessage(message, getSessionToken());
+                if (gapToFill != null) {
+                    sub.setResending(true);
+                    this.websocket.send(gapToFill.toJson());
+                }
+            } catch (IOException e) {
+                sub.handleError(e, message);
+            }
         }
     }
 
@@ -291,6 +305,7 @@ public class StreamrClient extends StreamrRESTClient {
     public void unsubscribe(Subscription sub) {
         UnsubscribeRequest unsubscribeRequest = new UnsubscribeRequest(sub.getStreamId(), sub.getPartition());
         sub.setState(Subscription.State.UNSUBSCRIBING);
+        sub.setResending(false);
         this.websocket.send(unsubscribeRequest.toJson());
     }
 
@@ -302,5 +317,26 @@ public class StreamrClient extends StreamrRESTClient {
     private void handleUnsubcribeResponse(UnsubscribeResponse res) throws SubscriptionNotFoundException {
         Subscription sub = subs.get(res.getStreamId(), res.getStreamPartition());
         sub.setState(Subscription.State.UNSUBSCRIBED);
+    }
+
+    private void handleResendResponseResending(ResendResponseResending res) throws SubscriptionNotFoundException {
+        Subscription sub = subs.get(res.getStreamId(), res.getStreamPartition());
+        log.debug("Resending started for subscription "+sub.getId());
+    }
+
+    private void handleResendResponseNoResend(ResendResponseNoResend res) throws SubscriptionNotFoundException {
+        Subscription sub = subs.get(res.getStreamId(), res.getStreamPartition());
+        endResendAndCheckQueue(sub);
+    }
+
+    private void handleResendResponseResent(ResendResponseResent res) throws SubscriptionNotFoundException {
+        Subscription sub = subs.get(res.getStreamId(), res.getStreamPartition());
+        endResendAndCheckQueue(sub);
+    }
+
+    private void endResendAndCheckQueue(Subscription sub) {
+        sub.setResending(false);
+        ResendRangeRequest gap = sub.handleQueue(getSessionToken());
+        this.websocket.send(gap.toJson());
     }
 }

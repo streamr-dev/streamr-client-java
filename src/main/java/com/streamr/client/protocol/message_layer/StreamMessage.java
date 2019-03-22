@@ -113,6 +113,12 @@ public abstract class StreamMessage implements ITimestamped {
 
     public abstract String getMsgChainId();
 
+    public abstract MessageRef getPreviousMessageRef();
+
+    public MessageRef getMessageRef() {
+        return new MessageRef(getTimestamp(), getSequenceNumber());
+    }
+
     public ContentType getContentType() {
         return contentType;
     }

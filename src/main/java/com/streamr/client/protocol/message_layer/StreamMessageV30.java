@@ -91,6 +91,7 @@ public class StreamMessageV30 extends StreamMessage {
         return messageID.getMsgChainId();
     }
 
+    @Override
     public MessageRef getPreviousMessageRef() {
         return previousMessageRef;
     }
