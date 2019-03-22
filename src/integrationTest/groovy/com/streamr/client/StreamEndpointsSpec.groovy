@@ -1,6 +1,6 @@
 package com.streamr.client
 
-import com.streamr.client.authentication.ChallengeAuthenticationMethod
+import com.streamr.client.authentication.EthereumAuthenticationMethod
 import com.streamr.client.exceptions.AmbiguousResultsException
 import com.streamr.client.exceptions.PermissionDeniedException
 import com.streamr.client.exceptions.ResourceNotFoundException
@@ -131,7 +131,7 @@ class StreamEndpointsSpec extends StreamrIntegrationSpecification {
     }
 
     void "getUserInfo()"() {
-        ChallengeAuthenticationMethod method = (ChallengeAuthenticationMethod) client.getOptions().getAuthenticationMethod()
+        EthereumAuthenticationMethod method = (EthereumAuthenticationMethod) client.getOptions().getAuthenticationMethod()
         when:
         UserInfo info = client.getUserInfo()
 
