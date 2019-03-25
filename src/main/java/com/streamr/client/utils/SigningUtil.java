@@ -1,12 +1,10 @@
 package com.streamr.client.utils;
 
-import com.streamr.client.exceptions.InvalidSignatureException;
 import com.streamr.client.exceptions.SignatureFailedException;
 import com.streamr.client.exceptions.UnsupportedMessageException;
 import com.streamr.client.exceptions.UnsupportedSignatureTypeException;
 import com.streamr.client.protocol.message_layer.StreamMessage;
 import com.streamr.client.protocol.message_layer.StreamMessageV30;
-import com.streamr.client.rest.Stream;
 import org.apache.commons.codec.DecoderException;
 import org.apache.commons.codec.binary.Hex;
 import org.ethereum.crypto.ECKey;
@@ -44,7 +42,7 @@ public class SigningUtil {
     }
 
     public static String sign(String data, ECKey account) throws DecoderException {
-        org.ethereum.crypto.ECKey.ECDSASignature sig = account.sign(calculateMessageHash(data));
+        ECKey.ECDSASignature sig = account.sign(calculateMessageHash(data));
         return "0x" + Hex.encodeHexString(ByteUtil.merge(
                 ByteUtil.bigIntegerToBytes(sig.r, 32),
                 ByteUtil.bigIntegerToBytes(sig.s, 32),
