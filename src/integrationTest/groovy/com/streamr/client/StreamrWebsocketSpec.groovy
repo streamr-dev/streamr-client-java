@@ -12,7 +12,7 @@ class StreamrWebsocketSpec extends StreamrIntegrationSpecification {
 	}
 
 	void cleanup() {
-		if (client != null && client.state != StreamrWebsocketClient.State.Disconnected) {
+		if (client != null && client.state != StreamrClient.State.Disconnected) {
 			client.disconnect()
 		}
 	}
@@ -22,13 +22,13 @@ class StreamrWebsocketSpec extends StreamrIntegrationSpecification {
 		client.connect()
 
 		then:
-		client.state == StreamrWebsocketClient.State.Connected
+		client.state == StreamrClient.State.Connected
 
 		when:
 		client.disconnect()
 
 		then:
-		client.state == StreamrWebsocketClient.State.Disconnected
+		client.state == StreamrClient.State.Disconnected
 	}
 
 
@@ -39,7 +39,7 @@ class StreamrWebsocketSpec extends StreamrIntegrationSpecification {
 		client.publish(stream, [foo: "bar"], new Date())
 
 		then:
-		client.state == StreamrWebsocketClient.State.Connected
+		client.state == StreamrClient.State.Connected
 	}
 
 	void "client automatically connects for subscribing"() {
@@ -52,7 +52,7 @@ class StreamrWebsocketSpec extends StreamrIntegrationSpecification {
 		})
 
 		then:
-		client.state == StreamrWebsocketClient.State.Connected
+		client.state == StreamrClient.State.Connected
 	}
 
 	void "a subscriber receives published messages"() {

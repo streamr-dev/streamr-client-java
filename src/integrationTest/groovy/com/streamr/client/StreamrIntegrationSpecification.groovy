@@ -24,6 +24,10 @@ class StreamrIntegrationSpecification extends Specification {
         return new StreamrClient(createOptionsWithPrivateKey(privateKey))
     }
 
+    protected static StreamrClient createClientWithApiKey(String apiKey = null) {
+        return new StreamrClient(createOptionsWithApiKey(apiKey))
+    }
+
     protected static StreamrClientOptions createOptionsWithApiKey(String apiKey = null) {
         return new StreamrClientOptions(new ApiKeyAuthenticationMethod(apiKey), DEFAULT_WEBSOCKET_URL, DEFAULT_REST_URL)
     }
