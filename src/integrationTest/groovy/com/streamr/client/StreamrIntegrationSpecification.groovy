@@ -24,8 +24,8 @@ class StreamrIntegrationSpecification extends Specification {
         return new StreamrClient(createOptionsWithPrivateKey(privateKey))
     }
 
-    protected static StreamrClient createClientWithApiKey(String privateKey = null) {
-        return new StreamrClient(createOptionsWithApiKey(privateKey))
+    protected static StreamrClient createClientWithApiKey(String apiKey = null) {
+        return new StreamrClient(createOptionsWithApiKey(apiKey))
     }
 
     protected static StreamrClientOptions createOptionsWithApiKey(String apiKey = null) {
