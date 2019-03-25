@@ -1,7 +1,7 @@
 package com.streamr.client;
 
 import com.streamr.client.authentication.AuthenticationMethod;
-import com.streamr.client.authentication.ChallengeAuthenticationMethod;
+import com.streamr.client.authentication.EthereumAuthenticationMethod;
 import com.streamr.client.exceptions.InvalidOptionsException;
 
 public class StreamrClientOptions {
@@ -23,14 +23,14 @@ public class StreamrClientOptions {
         this.authenticationMethod = authenticationMethod;
         this.signingOptions = signingOptions;
         if (this.signingOptions.getPublishSigned().equals("always")) {
-            if (authenticationMethod instanceof ChallengeAuthenticationMethod) {
+            if (authenticationMethod instanceof EthereumAuthenticationMethod) {
                 this.publishSignedMsgs = true;
             } else {
                 throw new InvalidOptionsException("Signing option 'always' requires a ChallengeAuthenticationMethod as" +
                         "AuthenticationMethod.(Need a private key to be able to sign).");
             }
         } else if (this.signingOptions.getPublishSigned().equals("auto")) {
-            this.publishSignedMsgs = authenticationMethod instanceof ChallengeAuthenticationMethod;
+            this.publishSignedMsgs = authenticationMethod instanceof EthereumAuthenticationMethod;
         }
     }
 

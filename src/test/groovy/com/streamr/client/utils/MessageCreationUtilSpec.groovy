@@ -104,6 +104,8 @@ class MessageCreationUtilSpec extends Specification {
         assert msg2.getSequenceNumber() == 0L
         assert msg2.previousMessageRef == null
 
+        assert msg2.getStreamPartition() != msg3.getStreamPartition()
+
         assert msg3.getTimestamp() == timestamp.getTime()
         assert msg3.getSequenceNumber() == 0L
         assert msg3.previousMessageRef == null
