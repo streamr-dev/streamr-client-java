@@ -4,17 +4,23 @@ import com.streamr.client.SigningOptions.SignatureVerificationPolicy;
 import com.streamr.client.exceptions.InvalidSignatureException;
 import com.streamr.client.protocol.message_layer.StreamMessage;
 import com.streamr.client.rest.Stream;
+import org.cache2k.Cache;
+import org.cache2k.Cache2kBuilder;
 
-import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
+import java.util.concurrent.TimeUnit;
 import java.util.function.Function;
 
 public class SubscribedStreamsUtil {
-    private HashMap<String, Stream> streamsPerStreamId = new HashMap<>();
+    private Cache<String, Stream> streamsPerStreamId = new Cache2kBuilder<String, Stream>() {}
+        .expireAfterWrite(15, TimeUnit.MINUTES).build();
     private Function<String,Stream> getStreamFunction;
-    private HashMap<String, HashSet<String>> publishersPerStreamId = new HashMap<>();
+
+    private Cache<String, HashSet<String>> publishersPerStreamId = new Cache2kBuilder<String, HashSet<String>>() {}
+        .expireAfterWrite(30, TimeUnit.MINUTES).build();
     private Function<String,List<String>> getPublishersFunction;
+
     private final SignatureVerificationPolicy verifySignatures;
 
     public SubscribedStreamsUtil(Function<String,Stream> getStreamFunction,
