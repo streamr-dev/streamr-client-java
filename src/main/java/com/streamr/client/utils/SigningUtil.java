@@ -4,14 +4,13 @@ import com.streamr.client.exceptions.SignatureFailedException;
 import com.streamr.client.exceptions.UnsupportedMessageException;
 import com.streamr.client.exceptions.UnsupportedSignatureTypeException;
 import com.streamr.client.protocol.message_layer.StreamMessage;
-import com.streamr.client.protocol.message_layer.StreamMessageV30;
 import org.apache.commons.codec.DecoderException;
 import org.apache.commons.codec.binary.Hex;
 import org.ethereum.crypto.ECKey;
 import org.ethereum.crypto.HashUtil;
 import org.ethereum.util.ByteUtil;
 
-import java.io.IOException;
+import java.nio.charset.StandardCharsets;
 import java.security.SignatureException;
 import java.util.Set;
 
@@ -23,25 +22,20 @@ public class SigningUtil {
         this.account = account;
     }
 
-    public StreamMessage getSignedStreamMessage(StreamMessage msg, StreamMessage.SignatureType signatureType) {
+    public void signStreamMessage(StreamMessage msg, StreamMessage.SignatureType signatureType) {
         if (msg.getVersion() != 30) {
             throw new UnsupportedMessageException("Can only sign most recent StreamMessage version (30).");
         }
-        StreamMessageV30 msgv30 = (StreamMessageV30) msg;
-        try {
-            String signature = sign(getPayloadToSignOrVerify(msg, signatureType), account);
-            return new StreamMessageV30(msgv30.getMessageID(), msgv30.getPreviousMessageRef(), msgv30.getContentType(),
-                    msgv30.getSerializedContent(), signatureType, signature);
-        } catch (DecoderException | IOException e) {
-            throw new SignatureFailedException(e.getMessage());
-        }
+        String signature = sign(getPayloadToSignOrVerify(msg, signatureType), account);
+        msg.setSignatureType(signatureType);
+        msg.setSignature(signature);
     }
 
-    public StreamMessage getSignedStreamMessage(StreamMessage msg) {
-        return getSignedStreamMessage(msg, StreamMessage.SignatureType.SIGNATURE_TYPE_ETH);
+    public void signStreamMessage(StreamMessage msg) {
+        signStreamMessage(msg, StreamMessage.SignatureType.SIGNATURE_TYPE_ETH);
     }
 
-    public static String sign(String data, ECKey account) throws DecoderException {
+    public static String sign(String data, ECKey account){
         ECKey.ECDSASignature sig = account.sign(calculateMessageHash(data));
         return "0x" + Hex.encodeHexString(ByteUtil.merge(
                 ByteUtil.bigIntegerToBytes(sig.r, 32),
@@ -64,18 +58,27 @@ public class SigningUtil {
 
     private static String getPayloadToSignOrVerify(StreamMessage msg, StreamMessage.SignatureType signatureType) {
         if (signatureType == StreamMessage.SignatureType.SIGNATURE_TYPE_ETH_LEGACY) {
-            return String.format("%s%s%s%s%s", msg.getStreamId(), msg.getStreamPartition(), msg.getTimestamp(),
-                    msg.getPublisherId(), msg.getSerializedContent());
+            StringBuilder sb = new StringBuilder(msg.getStreamId());
+            sb.append(msg.getStreamPartition());
+            sb.append(msg.getTimestamp());
+            sb.append(msg.getPublisherId());
+            sb.append(msg.getSerializedContent());
+            return sb.toString();
         } else if (signatureType == StreamMessage.SignatureType.SIGNATURE_TYPE_ETH) {
-            return String.format("%s%s%s%s%s%s%s", msg.getStreamId(), msg.getStreamPartition(), msg.getTimestamp(),
-                    msg.getSequenceNumber(), msg.getPublisherId(), msg.getMsgChainId(), msg.getSerializedContent());
+            StringBuilder sb = new StringBuilder(msg.getStreamId());
+            sb.append(msg.getStreamPartition());
+            sb.append(msg.getTimestamp());
+            sb.append(msg.getSequenceNumber());
+            sb.append(msg.getPublisherId());
+            sb.append(msg.getMsgChainId());
+            sb.append(msg.getSerializedContent());
+            return sb.toString();
         }
         throw new UnsupportedSignatureTypeException(signatureType);
     }
 
-    private static byte[] calculateMessageHash(String message) throws DecoderException {
-        String messageHex = "0x" + Hex.encodeHexString(message.getBytes());
-        byte[] messageBytes = Hex.decodeHex(messageHex.replace("0x", "").toCharArray());
+    private static byte[] calculateMessageHash(String message){
+        byte[] messageBytes = message.getBytes(StandardCharsets.UTF_8);
         String prefix = SIGN_MAGIC + messageBytes.length;
         byte[] toHash = ByteUtil.merge(prefix.getBytes(), messageBytes);
         return HashUtil.sha3(toHash);

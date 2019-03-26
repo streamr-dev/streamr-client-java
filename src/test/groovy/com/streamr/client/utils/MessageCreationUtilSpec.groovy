@@ -3,7 +3,6 @@ package com.streamr.client.utils
 import com.streamr.client.protocol.message_layer.StreamMessage
 import com.streamr.client.protocol.message_layer.StreamMessageV30
 import com.streamr.client.rest.Stream
-import com.streamr.client.utils.MessageCreationUtil
 import spock.lang.Specification
 
 class MessageCreationUtilSpec extends Specification {
@@ -41,7 +40,7 @@ class MessageCreationUtilSpec extends Specification {
         when:
         msgCreationUtil2.createStreamMessage(stream, [foo: "bar"], new Date(), null)
         then:
-        1 * signingUtil.getSignedStreamMessage(_)
+        1 * signingUtil.signStreamMessage(_)
     }
 
     void "publish with sequence numbers equal to 0"() {

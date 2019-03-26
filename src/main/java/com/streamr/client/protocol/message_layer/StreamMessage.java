@@ -140,6 +140,10 @@ public abstract class StreamMessage implements ITimestamped {
 
     public abstract String getSignature();
 
+    public abstract void setSignatureType(SignatureType signatureType);
+
+    public abstract void setSignature(String signature);
+
     public String toJson(){
         try {
             Buffer buffer = new Buffer();

@@ -22,14 +22,14 @@ public class StreamrClientOptions {
     public StreamrClientOptions(AuthenticationMethod authenticationMethod, SigningOptions signingOptions) {
         this.authenticationMethod = authenticationMethod;
         this.signingOptions = signingOptions;
-        if (this.signingOptions.getPublishSigned().equals("always")) {
+        if (this.signingOptions.getPublishSigned() == SigningOptions.SignatureComputationPolicy.ALWAYS) {
             if (authenticationMethod instanceof EthereumAuthenticationMethod) {
                 this.publishSignedMsgs = true;
             } else {
-                throw new InvalidOptionsException("Signing option 'always' requires a ChallengeAuthenticationMethod as" +
+                throw new InvalidOptionsException("SigningOptions.SignatureComputationPolicy.ALWAYS requires an EthereumAuthenticationMethod as" +
                         "AuthenticationMethod.(Need a private key to be able to sign).");
             }
-        } else if (this.signingOptions.getPublishSigned().equals("auto")) {
+        } else if (this.signingOptions.getPublishSigned() == SigningOptions.SignatureComputationPolicy.AUTO) {
             this.publishSignedMsgs = authenticationMethod instanceof EthereumAuthenticationMethod;
         }
     }
@@ -68,11 +68,11 @@ public class StreamrClientOptions {
         this.connectionTimeoutMillis = connectionTimeoutMillis;
     }
 
-    public boolean publishSignedMsgs() {
+    public boolean getPublishSignedMsgs() {
         return publishSignedMsgs;
     }
 
-    public String getVerifySignaturesOption() {
-        return signingOptions.getVerifySignatures();
+    public SigningOptions getSigningOptions() {
+        return signingOptions;
     }
 }

@@ -122,7 +122,7 @@ class StreamrWebsocketSpec extends StreamrIntegrationSpecification {
 
 		client.publish(stream, [test: 'signed'])
 
-		Thread.sleep(200)
+		Thread.sleep(2000)
 
 		then:
 		msg.getPublisherId() == client.getPublisherId()

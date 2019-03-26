@@ -97,4 +97,14 @@ public class StreamMessageV29 extends StreamMessage {
     public String getSignature() {
         return signature;
     }
+
+    @Override
+    public void setSignatureType(SignatureType signatureType) {
+        throw new AbstractMethodError("This method is not implemented in version 29");
+    }
+
+    @Override
+    public void setSignature(String signature) {
+        throw new AbstractMethodError("This method is not implemented in version 29");
+    }
 }

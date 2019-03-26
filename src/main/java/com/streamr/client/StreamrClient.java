@@ -3,11 +3,10 @@ package com.streamr.client;
 import com.streamr.client.authentication.ApiKeyAuthenticationMethod;
 import com.streamr.client.authentication.EthereumAuthenticationMethod;
 import com.streamr.client.exceptions.MalformedMessageException;
-import com.streamr.client.exceptions.InvalidSignatureException;
 import com.streamr.client.protocol.control_layer.*;
 import com.streamr.client.utils.MessageCreationUtil;
 import com.streamr.client.utils.SigningUtil;
-import com.streamr.client.utils.StreamCachingUtil;
+import com.streamr.client.utils.SubscribedStreamsUtil;
 import org.apache.commons.codec.digest.DigestUtils;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
@@ -46,14 +45,13 @@ public class StreamrClient extends StreamrRESTClient {
     private Exception errorWhileConnecting = null;
 
     private String publisherId = null;
-    private SigningUtil signingUtil = null;
     private final MessageCreationUtil msgCreationUtil;
-    private final StreamCachingUtil cache;
+    private final SubscribedStreamsUtil subscribedStreamsUtil;
 
     public StreamrClient(StreamrClientOptions options) {
         super(options);
 
-        cache = new StreamCachingUtil(id -> {
+        subscribedStreamsUtil = new SubscribedStreamsUtil(id -> {
             try {
                 return getStream(id);
             } catch (IOException e) {
@@ -65,7 +63,7 @@ public class StreamrClient extends StreamrRESTClient {
             } catch (IOException e) {
                 throw new RuntimeException(e);
             }
-        });
+        }, options.getSigningOptions().getVerifySignatures());
 
         if (options.getAuthenticationMethod() instanceof ApiKeyAuthenticationMethod) {
             try {
@@ -76,7 +74,8 @@ public class StreamrClient extends StreamrRESTClient {
         } else if (options.getAuthenticationMethod() instanceof EthereumAuthenticationMethod) {
             publisherId = ((EthereumAuthenticationMethod) options.getAuthenticationMethod()).getAddress();
         }
-        if (options.publishSignedMsgs()) {
+        SigningUtil signingUtil = null;
+        if (options.getPublishSignedMsgs()) {
             signingUtil = new SigningUtil(((EthereumAuthenticationMethod) options.getAuthenticationMethod()).getAccount());
         }
         msgCreationUtil = new MessageCreationUtil(publisherId, signingUtil);
@@ -235,7 +234,7 @@ public class StreamrClient extends StreamrRESTClient {
         }
 
 
-        verifyStreamMessage(message);
+        subscribedStreamsUtil.verifyStreamMessage(message);
         Subscription sub = subs.get(message.getStreamId(), message.getStreamPartition());
 
         // Only call the handler if we are in subscribed state (and not for example UNSUBSCRIBING)
@@ -304,29 +303,4 @@ public class StreamrClient extends StreamrRESTClient {
         Subscription sub = subs.get(res.getStreamId(), res.getStreamPartition());
         sub.setState(Subscription.State.UNSUBSCRIBED);
     }
-
-    private void verifyStreamMessage(StreamMessage msg) throws InvalidSignatureException {
-        if(msg.getSignature() != null) {
-            List<String> publishers = cache.getPublishers(msg.getStreamId());
-            if (!SigningUtil.hasValidSignature(msg, new HashSet<>(publishers))) {
-                throw new InvalidSignatureException(msg);
-            }
-        } else {
-            if (shouldVerify(msg.getStreamId())) {
-                throw new InvalidSignatureException(msg);
-            }
-        }
-    }
-
-    private boolean shouldVerify(String streamId) {
-        if (options.getVerifySignaturesOption().equals("always")) {
-            return true;
-        }
-        if (options.getVerifySignaturesOption().equals("never")) {
-            return false;
-        }
-        Stream stream = cache.getStream(streamId);
-        return stream.requiresSignedData();
-    }
-
 }

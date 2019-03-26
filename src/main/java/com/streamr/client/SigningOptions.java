@@ -1,33 +1,35 @@
 package com.streamr.client;
 
-import com.streamr.client.exceptions.InvalidOptionsException;
-
 public class SigningOptions {
-    private final String publishSigned; //"auto", "always" or "never"
-    private final String verifySignatures; //"auto", "always" or "never"
+    private final SignatureComputationPolicy publishSigned;
+    private final SignatureVerificationPolicy verifySignatures;
 
-    public SigningOptions(String publishSigned, String verifySignatures) {
-        validateOption(publishSigned);
-        validateOption(verifySignatures);
+    public enum SignatureComputationPolicy {
+        AUTO,
+        ALWAYS,
+        NEVER
+    }
+
+    public enum SignatureVerificationPolicy {
+        AUTO,
+        ALWAYS,
+        NEVER,
+    }
+
+    public SigningOptions(SignatureComputationPolicy publishSigned, SignatureVerificationPolicy verifySignatures) {
         this.publishSigned = publishSigned;
         this.verifySignatures = verifySignatures;
     }
 
-    private void validateOption(String option) {
-        if(!(option.equals("auto") || option.equals("always") || option.equals("never"))) {
-            throw new InvalidOptionsException("Must be either 'auto', 'always' or 'never' but got: "+option);
-        }
-    }
-
-    public String getPublishSigned() {
+    public SignatureComputationPolicy getPublishSigned() {
         return publishSigned;
     }
 
-    public String getVerifySignatures() {
+    public SignatureVerificationPolicy getVerifySignatures() {
         return verifySignatures;
     }
 
     static SigningOptions getDefault() {
-        return new SigningOptions("auto", "auto");
+        return new SigningOptions(SignatureComputationPolicy.AUTO, SignatureVerificationPolicy.AUTO);
     }
 }

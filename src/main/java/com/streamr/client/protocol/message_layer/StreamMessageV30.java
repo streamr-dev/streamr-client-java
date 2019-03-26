@@ -104,4 +104,14 @@ public class StreamMessageV30 extends StreamMessage {
     public String getSignature() {
         return signature;
     }
+
+    @Override
+    public void setSignatureType(SignatureType signatureType) {
+        this.signatureType = signatureType;
+    }
+
+    @Override
+    public void setSignature(String signature) {
+        this.signature = signature;
+    }
 }

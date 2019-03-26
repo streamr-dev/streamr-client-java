@@ -48,12 +48,8 @@ public class EthereumAuthenticationMethod extends AuthenticationMethod {
         return account;
     }
 
-    private String signChallenge(String challengeToSign) throws IOException {
-        try {
-            return SigningUtil.sign(challengeToSign, account);
-        } catch (DecoderException e) {
-            throw new IOException(e.getMessage());
-        }
+    private String signChallenge(String challengeToSign){
+        return SigningUtil.sign(challengeToSign, account);
     }
 
     static class Challenge {

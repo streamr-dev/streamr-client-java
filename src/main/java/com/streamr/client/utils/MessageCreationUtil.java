@@ -42,7 +42,10 @@ public class MessageCreationUtil {
         );
 
         refsPerStreamAndPartition.put(key, new MessageRef(timestamp.getTime(), sequenceNumber));
-        return (signingUtil == null) ? streamMessage : signingUtil.getSignedStreamMessage(streamMessage);
+        if (signingUtil != null) {
+            signingUtil.signStreamMessage(streamMessage);
+        }
+        return streamMessage;
     }
 
     private int hash(String partitionKey) {

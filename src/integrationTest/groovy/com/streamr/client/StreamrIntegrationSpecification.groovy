@@ -3,7 +3,6 @@ package com.streamr.client
 import com.streamr.client.authentication.ApiKeyAuthenticationMethod
 import com.streamr.client.authentication.EthereumAuthenticationMethod
 import org.apache.commons.codec.binary.Hex
-import org.ethereum.crypto.ECKey
 import spock.lang.Specification
 
 class StreamrIntegrationSpecification extends Specification {
