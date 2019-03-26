@@ -1,4 +1,4 @@
-package com.streamr.client;
+package com.streamr.client.options;
 
 public class SigningOptions {
     private final SignatureComputationPolicy publishSigned;
@@ -29,7 +29,7 @@ public class SigningOptions {
         return verifySignatures;
     }
 
-    static SigningOptions getDefault() {
+    public static SigningOptions getDefault() {
         return new SigningOptions(SignatureComputationPolicy.AUTO, SignatureVerificationPolicy.AUTO);
     }
 }

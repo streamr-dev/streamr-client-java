@@ -1,6 +1,7 @@
 package com.streamr.client;
 
-import com.streamr.client.exceptions.InvalidSignatureException;
+import com.streamr.client.options.ResendFromOption;
+import com.streamr.client.options.ResendOption;
 import com.streamr.client.protocol.control_layer.ResendRangeRequest;
 import com.streamr.client.protocol.message_layer.MessageRef;
 import com.streamr.client.protocol.message_layer.StreamMessage;
@@ -9,7 +10,6 @@ import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
 import java.io.IOException;
-import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.LinkedList;
 import java.util.UUID;
@@ -21,6 +21,7 @@ public class Subscription {
     private final String id;
     private final StreamPartition streamPartition;
     private final MessageHandler handler;
+    private ResendOption resendOption = null;
 
     private final HashMap<String, MessageRef> lastReceivedMsgRef = new HashMap<>();
     private boolean resending = false;
@@ -36,6 +37,13 @@ public class Subscription {
         this.id = UUID.randomUUID().toString();
         this.streamPartition = new StreamPartition(streamId, partition);
         this.handler = handler;
+    }
+
+    public Subscription(String streamId, int partition, MessageHandler handler, ResendOption resendOption) {
+        this.id = UUID.randomUUID().toString();
+        this.streamPartition = new StreamPartition(streamId, partition);
+        this.handler = handler;
+        this.resendOption = resendOption;
     }
 
     public String getId() {
@@ -115,12 +123,39 @@ public class Subscription {
     }
 
     public void handleError(Exception e, StreamMessage msg) {
-        String key = msg.getStreamId()+"-"+msg.getStreamPartition();
-        if (e instanceof InvalidSignatureException || e instanceof IOException) {
+        String key = msg.getPublisherId() + msg.getMsgChainId();
+        if (e instanceof IOException) {
             if(!checkForGap(msg.getPreviousMessageRef(), key)) {
                 lastReceivedMsgRef.put(key, msg.getMessageRef());
             }
+        } else {
+            throw new RuntimeException(e);
         }
+    }
+
+    public boolean hasResendOptions() {
+        return resendOption != null;
+    }
+
+    /**
+     * Resend needs can change if messages have already been received.
+     * This function always returns the effective resend options:
+     *
+     * If messages have been received and 'resendOption' is a ResendFromOption,
+     * then it is updated with the latest received message.
+     */
+    public ResendOption getEffectiveResendOption() {
+        if (resendOption instanceof ResendFromOption) {
+            ResendFromOption resendFromOption = (ResendFromOption) resendOption;
+            if (resendFromOption.getPublisherId() != null && resendFromOption.getMsgChainId() != null) {
+                String key = resendFromOption.getPublisherId() + resendFromOption.getMsgChainId();
+                MessageRef last = lastReceivedMsgRef.get(key);
+                if (last != null) {
+                    return new ResendFromOption(last, resendFromOption.getPublisherId(), resendFromOption.getMsgChainId());
+                }
+            }
+        }
+        return resendOption;
     }
 
     private boolean checkForGap(MessageRef prev, String key) {

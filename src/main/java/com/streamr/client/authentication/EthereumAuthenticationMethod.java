@@ -11,8 +11,6 @@ import com.streamr.client.utils.SigningUtil;
 import org.apache.commons.codec.DecoderException;
 import org.ethereum.crypto.ECKey;
 import org.apache.commons.codec.binary.Hex;
-import org.ethereum.crypto.HashUtil;
-import org.ethereum.util.ByteUtil;
 
 public class EthereumAuthenticationMethod extends AuthenticationMethod {
 

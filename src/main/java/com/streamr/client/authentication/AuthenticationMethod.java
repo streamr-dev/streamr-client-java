@@ -1,8 +1,6 @@
 package com.streamr.client.authentication;
 
 import com.squareup.moshi.JsonAdapter;
-import com.streamr.client.StreamrClientOptions;
-import com.streamr.client.exceptions.AuthenticationException;
 import com.streamr.client.utils.HttpUtils;
 import okhttp3.OkHttpClient;
 import okhttp3.Request;

@@ -3,6 +3,8 @@ package com.streamr.client;
 import com.streamr.client.authentication.ApiKeyAuthenticationMethod;
 import com.streamr.client.authentication.EthereumAuthenticationMethod;
 import com.streamr.client.exceptions.MalformedMessageException;
+import com.streamr.client.options.ResendOption;
+import com.streamr.client.options.StreamrClientOptions;
 import com.streamr.client.protocol.control_layer.*;
 import com.streamr.client.utils.MessageCreationUtil;
 import com.streamr.client.utils.SigningUtil;
@@ -282,16 +284,16 @@ public class StreamrClient extends StreamrRESTClient {
         if (stream.getPartitions() > 1) {
             throw new PartitionNotSpecifiedException(stream.getId(), stream.getPartitions());
         }
-        return subscribe(stream, 0, handler);
+        return subscribe(stream, 0, handler, null);
     }
 
-    public Subscription subscribe(Stream stream, int partition, MessageHandler handler) {
+    public Subscription subscribe(Stream stream, int partition, MessageHandler handler, ResendOption resendOption) {
         if (!getState().equals(State.Connected)) {
             connect();
         }
 
         SubscribeRequest subscribeRequest = new SubscribeRequest(stream.getId(), partition, session.getSessionToken());
-        Subscription sub = new Subscription(stream.getId(), partition, handler);
+        Subscription sub = new Subscription(stream.getId(), partition, handler, resendOption);
         subs.add(sub);
         sub.setState(Subscription.State.SUBSCRIBING);
         this.websocket.send(subscribeRequest.toJson());
@@ -312,6 +314,10 @@ public class StreamrClient extends StreamrRESTClient {
     private void handleSubcribeResponse(SubscribeResponse res) throws SubscriptionNotFoundException {
         Subscription sub = subs.get(res.getStreamId(), res.getStreamPartition());
         sub.setState(Subscription.State.SUBSCRIBED);
+        if (sub.hasResendOptions()) {
+            ResendOption resendOption = sub.getEffectiveResendOption();
+            this.websocket.send(resendOption.toRequest(res.getStreamId(), res.getStreamPartition(), sub.getId(), this.getSessionToken()).toJson());
+        }
     }
 
     private void handleUnsubcribeResponse(UnsubscribeResponse res) throws SubscriptionNotFoundException {
