@@ -47,21 +47,21 @@ class MessageCreationUtilSpec extends Specification {
         long timestamp = (new Date()).getTime()
         when:
         StreamMessageV30 msg1 = (StreamMessageV30) msgCreationUtil.createStreamMessage(stream, [foo: "bar"], new Date(timestamp), null)
-        StreamMessageV30 msg2 = (StreamMessageV30) msgCreationUtil.createStreamMessage(stream, [foo: "bar"], new Date(timestamp + 1), null)
-        StreamMessageV30 msg3 = (StreamMessageV30) msgCreationUtil.createStreamMessage(stream, [foo: "bar"], new Date(timestamp + 2), null)
+        StreamMessageV30 msg2 = (StreamMessageV30) msgCreationUtil.createStreamMessage(stream, [foo: "bar"], new Date(timestamp + 100), null)
+        StreamMessageV30 msg3 = (StreamMessageV30) msgCreationUtil.createStreamMessage(stream, [foo: "bar"], new Date(timestamp + 200), null)
         then:
         msg1.getTimestamp() == timestamp
         msg1.getSequenceNumber() == 0L
         msg1.previousMessageRef == null
 
-        msg2.getTimestamp() == timestamp + 1
+        msg2.getTimestamp() == timestamp + 100
         msg2.getSequenceNumber() == 0L
         msg2.previousMessageRef.timestamp == timestamp
         msg2.previousMessageRef.sequenceNumber == 0L
 
-        msg3.getTimestamp() == timestamp + 2
+        msg3.getTimestamp() == timestamp + 200
         msg3.getSequenceNumber() == 0L
-        msg3.previousMessageRef.timestamp == timestamp + 1
+        msg3.previousMessageRef.timestamp == timestamp + 100
         msg3.previousMessageRef.sequenceNumber == 0L
     }
 
