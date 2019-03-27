@@ -234,7 +234,6 @@ public class StreamrClient extends StreamrRESTClient {
     }
 
     private void handleMessage(StreamMessage message) throws SubscriptionNotFoundException {
-        // TODO: gap checking and gap fill
         try {
             log.debug(message.getStreamId() + ": " + message.getContent().toString());
         } catch (IOException e) {
