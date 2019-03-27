@@ -343,6 +343,8 @@ public class StreamrClient extends StreamrRESTClient {
     private void endResendAndCheckQueue(Subscription sub) {
         sub.setResending(false);
         ResendRangeRequest gap = sub.handleQueue(getSessionToken());
-        this.websocket.send(gap.toJson());
+        if (gap != null) {
+            this.websocket.send(gap.toJson());
+        }
     }
 }
