@@ -1,4 +1,4 @@
-package com.streamr.client
+package com.streamr.client.utils
 
 import com.streamr.client.protocol.message_layer.StreamMessage
 import com.streamr.client.protocol.message_layer.StreamMessageV30
@@ -10,7 +10,7 @@ class MessageCreationUtilSpec extends Specification {
     Stream stream
 
     void setup() {
-        msgCreationUtil = new MessageCreationUtil("publisherId")
+        msgCreationUtil = new MessageCreationUtil("publisherId", null)
         stream = new Stream("test-stream", "")
         stream.id = "stream-id"
         stream.partitions = 1
@@ -34,25 +34,34 @@ class MessageCreationUtilSpec extends Specification {
         msg.signature == null
     }
 
+    void "signer is called"() {
+        SigningUtil signingUtil = Mock(SigningUtil)
+        MessageCreationUtil msgCreationUtil2 = new MessageCreationUtil("publisherId", signingUtil)
+        when:
+        msgCreationUtil2.createStreamMessage(stream, [foo: "bar"], new Date(), null)
+        then:
+        1 * signingUtil.signStreamMessage(_)
+    }
+
     void "publish with sequence numbers equal to 0"() {
         long timestamp = (new Date()).getTime()
         when:
         StreamMessageV30 msg1 = (StreamMessageV30) msgCreationUtil.createStreamMessage(stream, [foo: "bar"], new Date(timestamp), null)
-        StreamMessageV30 msg2 = (StreamMessageV30) msgCreationUtil.createStreamMessage(stream, [foo: "bar"], new Date(timestamp + 1), null)
-        StreamMessageV30 msg3 = (StreamMessageV30) msgCreationUtil.createStreamMessage(stream, [foo: "bar"], new Date(timestamp + 2), null)
+        StreamMessageV30 msg2 = (StreamMessageV30) msgCreationUtil.createStreamMessage(stream, [foo: "bar"], new Date(timestamp + 100), null)
+        StreamMessageV30 msg3 = (StreamMessageV30) msgCreationUtil.createStreamMessage(stream, [foo: "bar"], new Date(timestamp + 200), null)
         then:
         msg1.getTimestamp() == timestamp
         msg1.getSequenceNumber() == 0L
         msg1.previousMessageRef == null
 
-        msg2.getTimestamp() == timestamp + 1
+        msg2.getTimestamp() == timestamp + 100
         msg2.getSequenceNumber() == 0L
         msg2.previousMessageRef.timestamp == timestamp
         msg2.previousMessageRef.sequenceNumber == 0L
 
-        msg3.getTimestamp() == timestamp + 2
+        msg3.getTimestamp() == timestamp + 200
         msg3.getSequenceNumber() == 0L
-        msg3.previousMessageRef.timestamp == timestamp + 1
+        msg3.previousMessageRef.timestamp == timestamp + 100
         msg3.previousMessageRef.sequenceNumber == 0L
     }
 
@@ -93,6 +102,8 @@ class MessageCreationUtilSpec extends Specification {
         assert msg2.getTimestamp() == timestamp.getTime()
         assert msg2.getSequenceNumber() == 0L
         assert msg2.previousMessageRef == null
+
+        assert msg2.getStreamPartition() != msg3.getStreamPartition()
 
         assert msg3.getTimestamp() == timestamp.getTime()
         assert msg3.getSequenceNumber() == 0L

@@ -78,10 +78,6 @@ public class StreamMessageV29 extends StreamMessage {
         return previousOffset;
     }
 
-    public SignatureType getSignatureType() {
-        return signatureType;
-    }
-
     @Override
     public String getPublisherId() {
         return publisherAddress;
@@ -92,7 +88,23 @@ public class StreamMessageV29 extends StreamMessage {
         return "";
     }
 
+    @Override
+    public SignatureType getSignatureType() {
+        return signatureType;
+    }
+
+    @Override
     public String getSignature() {
         return signature;
+    }
+
+    @Override
+    public void setSignatureType(SignatureType signatureType) {
+        throw new AbstractMethodError("This method is not implemented in version 29");
+    }
+
+    @Override
+    public void setSignature(String signature) {
+        throw new AbstractMethodError("This method is not implemented in version 29");
     }
 }

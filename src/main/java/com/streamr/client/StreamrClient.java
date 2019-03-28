@@ -4,6 +4,9 @@ import com.streamr.client.authentication.ApiKeyAuthenticationMethod;
 import com.streamr.client.authentication.EthereumAuthenticationMethod;
 import com.streamr.client.exceptions.MalformedMessageException;
 import com.streamr.client.protocol.control_layer.*;
+import com.streamr.client.utils.MessageCreationUtil;
+import com.streamr.client.utils.SigningUtil;
+import com.streamr.client.utils.SubscribedStreamsUtil;
 import org.apache.commons.codec.digest.DigestUtils;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
@@ -20,8 +23,7 @@ import java.io.IOException;
 import java.net.URI;
 import java.net.URISyntaxException;
 import java.nio.channels.NotYetConnectedException;
-import java.util.Date;
-import java.util.Map;
+import java.util.*;
 
 /**
  * Extends the StreamrRESTClient with methods for using the websocket protocol.
@@ -44,9 +46,24 @@ public class StreamrClient extends StreamrRESTClient {
 
     private String publisherId = null;
     private final MessageCreationUtil msgCreationUtil;
+    private final SubscribedStreamsUtil subscribedStreamsUtil;
 
     public StreamrClient(StreamrClientOptions options) {
         super(options);
+
+        subscribedStreamsUtil = new SubscribedStreamsUtil(id -> {
+            try {
+                return getStream(id);
+            } catch (IOException e) {
+                throw new RuntimeException(e);
+            }
+        }, id -> {
+            try {
+                return getPublishers(id);
+            } catch (IOException e) {
+                throw new RuntimeException(e);
+            }
+        }, options.getSigningOptions().getVerifySignatures());
 
         if (options.getAuthenticationMethod() instanceof ApiKeyAuthenticationMethod) {
             try {
@@ -57,7 +74,11 @@ public class StreamrClient extends StreamrRESTClient {
         } else if (options.getAuthenticationMethod() instanceof EthereumAuthenticationMethod) {
             publisherId = ((EthereumAuthenticationMethod) options.getAuthenticationMethod()).getAddress();
         }
-        msgCreationUtil = new MessageCreationUtil(publisherId);
+        SigningUtil signingUtil = null;
+        if (options.getPublishSignedMsgs()) {
+            signingUtil = new SigningUtil(((EthereumAuthenticationMethod) options.getAuthenticationMethod()).getAccount());
+        }
+        msgCreationUtil = new MessageCreationUtil(publisherId, signingUtil);
 
         try {
             this.websocket = new WebSocketClient(new URI(options.getWebsocketApiUrl())) {
@@ -166,11 +187,15 @@ public class StreamrClient extends StreamrRESTClient {
         return state;
     }
 
+    public String getPublisherId() {
+        return publisherId;
+    }
+
     /*
      * Message handling
      */
 
-    public void handleMessage(String rawMessageAsString) {
+    private void handleMessage(String rawMessageAsString) {
         try {
             log.info("<< " + rawMessageAsString);
 
@@ -209,6 +234,7 @@ public class StreamrClient extends StreamrRESTClient {
         }
 
 
+        subscribedStreamsUtil.verifyStreamMessage(message);
         Subscription sub = subs.get(message.getStreamId(), message.getStreamPartition());
 
         // Only call the handler if we are in subscribed state (and not for example UNSUBSCRIBING)
@@ -277,5 +303,4 @@ public class StreamrClient extends StreamrRESTClient {
         Subscription sub = subs.get(res.getStreamId(), res.getStreamPartition());
         sub.setState(Subscription.State.UNSUBSCRIBED);
     }
-
 }

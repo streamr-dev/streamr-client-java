@@ -7,6 +7,7 @@ import java.io.IOException;
 import java.math.BigInteger;
 import java.util.Date;
 
+import com.streamr.client.utils.SigningUtil;
 import org.apache.commons.codec.DecoderException;
 import org.ethereum.crypto.ECKey;
 import org.apache.commons.codec.binary.Hex;
@@ -43,26 +44,12 @@ public class EthereumAuthenticationMethod extends AuthenticationMethod {
         return address;
     }
 
-    private String signChallenge(String challengeToSign) throws IOException {
-        try {
-            ECKey.ECDSASignature sig = account.sign(calculateMessageHash(challengeToSign));
-            return "0x" + Hex.encodeHexString(ByteUtil.merge(
-                    ByteUtil.bigIntegerToBytes(sig.r, 32),
-                    ByteUtil.bigIntegerToBytes(sig.s, 32),
-                    new byte[]{sig.v}));
-        } catch (DecoderException e) {
-            throw new IOException(e.getMessage());
-        }
+    public ECKey getAccount() {
+        return account;
     }
 
-    private static final String SIGN_MAGIC = "\u0019Ethereum Signed Message:\n";
-
-    private static byte[] calculateMessageHash(String message) throws DecoderException {
-        String messageHex = "0x" + Hex.encodeHexString(message.getBytes());
-        byte[] messageBytes = Hex.decodeHex(messageHex.replace("0x", "").toCharArray());
-        String prefix = SIGN_MAGIC + messageBytes.length;
-        byte[] toHash = ByteUtil.merge(prefix.getBytes(), messageBytes);
-        return HashUtil.sha3(toHash);
+    private String signChallenge(String challengeToSign){
+        return SigningUtil.sign(challengeToSign, account);
     }
 
     static class Challenge {

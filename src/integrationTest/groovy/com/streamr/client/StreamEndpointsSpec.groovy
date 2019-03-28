@@ -51,6 +51,25 @@ class StreamEndpointsSpec extends StreamrIntegrationSpecification {
         getResult.config == createResult.config
         getResult.partitions == createResult.partitions
         getResult.uiChannel == createResult.uiChannel
+        !getResult.requiresSignedData()
+    }
+
+    void "createStream() then getStream() setting requireSignedData"() {
+        Stream proto = new Stream(generateResourceName(), "This stream was created from an integration test")
+        proto.requireSignedData = true
+        proto.setConfig(new StreamConfig())
+
+        when:
+        Stream createResult = client.createStream(proto)
+
+        then:
+        createResult.requiresSignedData()
+
+        when:
+        Stream getResult = client.getStream(createResult.getId())
+
+        then:
+        getResult.requiresSignedData()
     }
 
     void "createStream() then getStreamByName()"() {
@@ -148,5 +167,14 @@ class StreamEndpointsSpec extends StreamrIntegrationSpecification {
         then:
         info.getName() == "Tester One"
         info.getUsername() == "tester1@streamr.com"
+    }
+
+    void "getPublishers()"() {
+        Stream proto = new Stream(generateResourceName(), "This stream was created from an integration test")
+        Stream createdResult = client.createStream(proto)
+        when:
+        List<String> publishers = client.getPublishers(createdResult.id)
+        then:
+        publishers == [client.getPublisherId()]
     }
 }

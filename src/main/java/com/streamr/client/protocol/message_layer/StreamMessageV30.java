@@ -95,11 +95,23 @@ public class StreamMessageV30 extends StreamMessage {
         return previousMessageRef;
     }
 
+    @Override
     public SignatureType getSignatureType() {
         return signatureType;
     }
 
+    @Override
     public String getSignature() {
         return signature;
+    }
+
+    @Override
+    public void setSignatureType(SignatureType signatureType) {
+        this.signatureType = signatureType;
+    }
+
+    @Override
+    public void setSignature(String signature) {
+        this.signature = signature;
     }
 }
