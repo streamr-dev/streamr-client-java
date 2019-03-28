@@ -44,11 +44,14 @@ And the artifact itself:
 
 ## Using Gradle
 
-In your `build.gradle`, add the repo:
+In your `build.gradle`, add the repos:
 ```
 repositories {
     maven {
       url 'https://oss.sonatype.org/content/groups/public'
+    }
+    maven {
+        url "https://dl.bintray.com/ethereum/maven/"
     }
 }
 ```
