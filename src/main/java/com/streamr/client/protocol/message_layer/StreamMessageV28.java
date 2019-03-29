@@ -65,6 +65,11 @@ public class StreamMessageV28 extends StreamMessage {
         return "";
     }
 
+    @Override
+    public MessageRef getPreviousMessageRef() {
+        return null;
+    }
+
     public Integer getTtl() {
         return ttl;
     }

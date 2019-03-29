@@ -71,6 +71,10 @@ public class SigningUtil {
             sb.append(msg.getSequenceNumber());
             sb.append(msg.getPublisherId());
             sb.append(msg.getMsgChainId());
+            if (msg.getPreviousMessageRef() != null) {
+                sb.append(msg.getPreviousMessageRef().getTimestamp());
+                sb.append(msg.getPreviousMessageRef().getSequenceNumber());
+            }
             sb.append(msg.getSerializedContent());
             return sb.toString();
         }
