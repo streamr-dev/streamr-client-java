@@ -107,7 +107,7 @@ public class Subscription {
     }
 
     public void handleQueue() throws GapDetectedException {
-        while(!queue.isEmpty() && gap == null) {
+        while(!queue.isEmpty()) {
             StreamMessage msg = queue.poll();
             handleMessage(msg);
         }
