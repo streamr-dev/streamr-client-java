@@ -85,7 +85,6 @@ public class Subscription {
         String key = msg.getPublisherId() + msg.getMsgChainId();
         if (resending && !isResend) {
             queue.add(msg);
-            return null;
         } else if (checkForGap(msg.getPreviousMessageRef(), key) && !resending) {
             queue.add(msg);
             MessageRef from = lastReceivedMsgRef.get(key); // cannot know the first missing message so there will be a duplicate received
@@ -104,7 +103,6 @@ public class Subscription {
                 lastReceivedMsgRef.put(key, msgRef);
                 handler.onMessage(this, msg);
             }
-            return null;
         }
     }
 

@@ -1,6 +1,6 @@
 package com.streamr.client.exceptions;
 
-import com.streamr.client.protocol.message_layer.MessageRef
+import com.streamr.client.protocol.message_layer.MessageRef;
 
 public class GapDetectedException extends RuntimeException {
 	private final String streamId;
@@ -12,7 +12,7 @@ public class GapDetectedException extends RuntimeException {
     public GapDetectedException(String streamId, int streamPartition,
     	MessageRef from, MessageRef to, String publisherId, String msgChainId) {
         super("Gap Detected for stream " + streamId + ", partition " + streamPartition
-        	+ ", publisher " + publisherId + ", message chain " + msgChainId + " between " from + " and " + to);
+        	+ ", publisher " + publisherId + ", message chain " + msgChainId + " between " + from + " and " + to);
         this.streamId = streamId;
         this.streamPartition = streamPartition;
         this.from = from;
