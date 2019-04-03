@@ -3,6 +3,7 @@ package com.streamr.client.options;
 import com.streamr.client.protocol.control_layer.ControlMessage;
 import com.streamr.client.protocol.control_layer.ResendRangeRequest;
 import com.streamr.client.protocol.message_layer.MessageRef;
+import java.util.Date;
 
 public class ResendRangeOption extends ResendOption {
     private MessageRef from;
