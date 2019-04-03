@@ -5,6 +5,7 @@ import com.streamr.client.options.ResendLastOption
 import com.streamr.client.protocol.control_layer.ResendRangeRequest
 import com.streamr.client.protocol.message_layer.StreamMessage
 import com.streamr.client.protocol.message_layer.StreamMessageV30
+import com.streamr.client.exceptions.GapDetectedException
 import spock.lang.Specification
 
 class SubscriptionSpec extends Specification {
