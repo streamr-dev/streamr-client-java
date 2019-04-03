@@ -3,6 +3,7 @@ package com.streamr.client;
 import com.streamr.client.authentication.ApiKeyAuthenticationMethod;
 import com.streamr.client.authentication.EthereumAuthenticationMethod;
 import com.streamr.client.exceptions.MalformedMessageException;
+import com.streamr.client.exceptions.GapDetectedException;
 import com.streamr.client.options.ResendOption;
 import com.streamr.client.options.StreamrClientOptions;
 import com.streamr.client.protocol.control_layer.*;
@@ -247,13 +248,14 @@ public class StreamrClient extends StreamrRESTClient {
         if (sub.getState().equals(Subscription.State.SUBSCRIBED)) {
             try {
                 message.getContent(); // call to trigger potential IOException
-                ResendRangeRequest gapToFill = sub.handleMessage(message, getSessionToken());
-                if (gapToFill != null) {
-                    sub.setResending(true);
-                    this.websocket.send(gapToFill.toJson());
-                }
+                sub.handleMessage(message);
             } catch (IOException e) {
                 sub.handleError(e, message);
+            } catch (GapDetectedException e) {
+                ResendRangeRequest req = new ResendRangeRequest(e.getStreamId(), e.getStreamPartition(),
+                    sub.getId(), e.getFrom(), e.getTo(), e.getPublisherId(), e.getMsgChainId(), getSessionToken());
+                sub.setResending(true);
+                this.websocket.send(req.toJson());
             }
         }
     }
@@ -341,9 +343,13 @@ public class StreamrClient extends StreamrRESTClient {
 
     private void endResendAndCheckQueue(Subscription sub) {
         sub.setResending(false);
-        ResendRangeRequest gap = sub.handleQueue(getSessionToken());
-        if (gap != null) {
-            this.websocket.send(gap.toJson());
+        try {
+            sub.handleQueue();
+        } catch (GapDetectedException e) {
+            ResendRangeRequest req = new ResendRangeRequest(e.getStreamId(), e.getStreamPartition(),
+                sub.getId(), e.getFrom(), e.getTo(), e.getPublisherId(), e.getMsgChainId(), getSessionToken());
+            sub.setResending(true);
+            this.websocket.send(req.toJson());
         }
     }
 }

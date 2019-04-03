@@ -15,12 +15,12 @@ public class ResendFromOption extends ResendOption {
         this.msgChainId = msgChainId;
     }
 
-    public ResendFromOption(long timestamp, long sequenceNumber, String publisherId, String msgChainId) {
-        this(new MessageRef(timestamp, sequenceNumber), publisherId, msgChainId);
+    public ResendFromOption(Date timestamp, long sequenceNumber, String publisherId, String msgChainId) {
+        this(new MessageRef(timestamp.getTime(), sequenceNumber), publisherId, msgChainId);
     }
 
-    public ResendFromOption(long timestamp) {
-        this(new MessageRef(timestamp, 0L), null, null);
+    public ResendFromOption(Date timestamp) {
+        this(new MessageRef(timestamp.getTime(), 0L), null, null);
     }
 
     public MessageRef getFrom() {

@@ -5,13 +5,14 @@ import com.streamr.client.options.ResendOption;
 import com.streamr.client.protocol.control_layer.ResendRangeRequest;
 import com.streamr.client.protocol.message_layer.MessageRef;
 import com.streamr.client.protocol.message_layer.StreamMessage;
+import com.streamr.client.exceptions.GapDetectedException;
 import com.streamr.client.utils.StreamPartition;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
 import java.io.IOException;
 import java.util.HashMap;
-import java.util.LinkedList;
+import java.util.ArrayDeque;
 import java.util.UUID;
 
 public class Subscription {
@@ -21,11 +22,11 @@ public class Subscription {
     private final String id;
     private final StreamPartition streamPartition;
     private final MessageHandler handler;
-    private ResendOption resendOption = null;
+    private ResendOption resendOption;
 
     private final HashMap<String, MessageRef> lastReceivedMsgRef = new HashMap<>();
     private boolean resending = false;
-    private final LinkedList<StreamMessage> queue = new LinkedList<>();
+    private final ArrayDeque<StreamMessage> queue = new ArrayDeque<>();
 
     private State state;
 
@@ -33,17 +34,15 @@ public class Subscription {
         SUBSCRIBING, SUBSCRIBED, UNSUBSCRIBING, UNSUBSCRIBED
     }
 
-    public Subscription(String streamId, int partition, MessageHandler handler) {
-        this.id = UUID.randomUUID().toString();
-        this.streamPartition = new StreamPartition(streamId, partition);
-        this.handler = handler;
-    }
-
     public Subscription(String streamId, int partition, MessageHandler handler, ResendOption resendOption) {
         this.id = UUID.randomUUID().toString();
         this.streamPartition = new StreamPartition(streamId, partition);
         this.handler = handler;
         this.resendOption = resendOption;
+    }
+
+    public Subscription(String streamId, int partition, MessageHandler handler) {
+        this(streamId, partition, handler, null);
     }
 
     public String getId() {
@@ -70,10 +69,6 @@ public class Subscription {
         this.state = state;
     }
 
-    public MessageHandler getHandler() {
-        return handler;
-    }
-
     public boolean isResending() {
         return resending;
     }
@@ -82,11 +77,11 @@ public class Subscription {
         this.resending = resending;
     }
 
-    public ResendRangeRequest handleMessage(StreamMessage msg, String sessionToken) {
-        return handleMessage(msg, sessionToken, false);
+    public void handleMessage(StreamMessage msg) throws GapDetectedException {
+        handleMessage(msg, false);
     }
 
-    public ResendRangeRequest handleMessage(StreamMessage msg, String sessionToken, boolean isResend) {
+    public void handleMessage(StreamMessage msg, boolean isResend) throws GapDetectedException {
         String key = msg.getPublisherId() + msg.getMsgChainId();
         if (resending && !isResend) {
             queue.add(msg);
@@ -95,7 +90,7 @@ public class Subscription {
             queue.add(msg);
             MessageRef from = lastReceivedMsgRef.get(key); // cannot know the first missing message so there will be a duplicate received
             MessageRef to = msg.getPreviousMessageRef();
-            return new ResendRangeRequest(msg.getStreamId(), msg.getStreamPartition(), id, from, to, msg.getPublisherId(), msg.getMsgChainId(), sessionToken);
+            throw new GapDetectedException(msg.getStreamId(), msg.getStreamPartition(), from, to, msg.getPublisherId(), msg.getMsgChainId());
         } else {
             MessageRef msgRef = msg.getMessageRef();
             Integer res = null;
@@ -107,19 +102,17 @@ public class Subscription {
                 log.debug(String.format("Sub %s already received message: %s, lastReceivedMsgRef: %s. Ignoring message.", id, msgRef, last));
             } else {
                 lastReceivedMsgRef.put(key, msgRef);
-                getHandler().onMessage(this, msg);
+                handler.onMessage(this, msg);
             }
             return null;
         }
     }
 
-    public ResendRangeRequest handleQueue(String sessionToken) {
-        ResendRangeRequest gap = null;
+    public void handleQueue() throws GapDetectedException {
         while(!queue.isEmpty() && gap == null) {
             StreamMessage msg = queue.poll();
-            gap = handleMessage(msg, sessionToken);
+            handleMessage(msg);
         }
-        return gap;
     }
 
     public void handleError(Exception e, StreamMessage msg) {

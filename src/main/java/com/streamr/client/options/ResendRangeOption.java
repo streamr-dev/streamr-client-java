@@ -10,16 +10,16 @@ public class ResendRangeOption extends ResendOption {
     private String publisherId;
     private String msgChainId;
 
-    public ResendRangeOption(long fromTimestamp, long fromSequenceNumber, long toTimestamp, long toSequenceNumber, String publisherId, String msgChainId) {
-        from = new MessageRef(fromTimestamp, fromSequenceNumber);
-        to = new MessageRef(toTimestamp, toSequenceNumber);
+    public ResendRangeOption(Date fromTimestamp, long fromSequenceNumber, Date toTimestamp, long toSequenceNumber, String publisherId, String msgChainId) {
+        from = new MessageRef(fromTimestamp.getTime(), fromSequenceNumber);
+        to = new MessageRef(toTimestamp.getTime(), toSequenceNumber);
         this.publisherId = publisherId;
         this.msgChainId = msgChainId;
     }
 
-    public ResendRangeOption(long fromTimestamp, long toTimestamp) {
-        from = new MessageRef(fromTimestamp, 0L);
-        to = new MessageRef(toTimestamp, 0L);
+    public ResendRangeOption(Date fromTimestamp, Date toTimestamp) {
+        from = new MessageRef(fromTimestamp.getTime(), 0L);
+        to = new MessageRef(toTimestamp.getTime(), 0L);
         this.publisherId = null;
         this.msgChainId = null;
     }

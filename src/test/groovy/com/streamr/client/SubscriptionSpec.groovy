@@ -12,11 +12,6 @@ class SubscriptionSpec extends Specification {
     StreamMessageV30 msg = new StreamMessageV30("stream-id", 0, (new Date()).getTime(), 0, "publisherId", "msgChainId",
             null, 0, StreamMessage.ContentType.CONTENT_TYPE_JSON, "{}", StreamMessage.SignatureType.SIGNATURE_TYPE_NONE, null)
 
-    boolean done = false
-    void setup() {
-        done = false
-    }
-
     StreamMessage createMessage(long timestamp, long sequenceNumber, Long previousTimestamp, Long previousSequenceNumber) {
         return createMessage(timestamp, sequenceNumber, previousTimestamp, previousSequenceNumber, "publisherId")
     }
@@ -34,17 +29,17 @@ class SubscriptionSpec extends Specification {
     }
 
     void "calls the message handler"() {
+        StreamMessage received
         when:
         Subscription sub = new Subscription(msg.getStreamId(), msg.getStreamPartition(), new MessageHandler() {
             @Override
             void onMessage(Subscription sub, StreamMessage message) {
-                assert msg.toJson() == message.toJson()
-                done = true
+                received = message
             }
         })
-        sub.handleMessage(msg, 'session-token')
+        sub.handleMessage(msg)
         then:
-        done
+        received.toJson() == msg.toJson()
     }
 
     void "calls the handler once for each message in order"() {
@@ -53,24 +48,20 @@ class SubscriptionSpec extends Specification {
             msgs.add(createMessage((long)i, 0, null, 0))
         }
         ArrayList<StreamMessage> received = new ArrayList<>()
-        int counter = 0
         when:
         Subscription sub = new Subscription(msg.getStreamId(), msg.getStreamPartition(), new MessageHandler() {
             @Override
             void onMessage(Subscription sub, StreamMessage message) {
-                assert msgs.get(counter).toJson() == message.toJson()
                 received.add(message)
-                counter++
-                if (counter == 5) {
-                    done = true
-                }
             }
         })
         for (int i=0;i<5;i++) {
-            sub.handleMessage(msgs.get(i), 'session-token')
+            sub.handleMessage(msgs.get(i))
         }
         then:
-        done
+        for (int i=0;i<5;i++) {
+            assert msgs.get(i).toJson() == received.get(i).toJson()
+        }
     }
 
     void "does not handle messages (queued) during resending"() {
@@ -82,90 +73,111 @@ class SubscriptionSpec extends Specification {
             }
         })
         sub.setResending(true)
-        sub.handleMessage(msg, 'session-token')
+        sub.handleMessage(msg)
         then:
-        assert true
+        noExceptionThrown()
     }
 
     void "handles messages during resending if isResend=true"() {
+        StreamMessage received
         when:
         Subscription sub = new Subscription(msg.getStreamId(), msg.getStreamPartition(), new MessageHandler() {
             @Override
             void onMessage(Subscription sub, StreamMessage message) {
-                assert msg.toJson() == message.toJson()
-                done = true
+                received = message
             }
         })
         sub.setResending(true)
-        sub.handleMessage(msg, 'session-token', true)
+        sub.handleMessage(msg, true)
         then:
-        done
+        received.toJson() == msg.toJson()
     }
 
     void "ignores duplicate messages"() {
+        StreamMessage received
         int counter = 0
         when:
         Subscription sub = new Subscription(msg.getStreamId(), msg.getStreamPartition(), new MessageHandler() {
             @Override
             void onMessage(Subscription sub, StreamMessage message) {
-                assert msg.toJson() == message.toJson()
+                received = message
                 counter++
-                done = true
                 if (counter == 2) {
                     throw new Exception("Shouldn't handle this duplicate message!")
                 }
             }
         })
-        sub.handleMessage(msg, 'session-token')
-        sub.handleMessage(msg, 'session-token')
+        sub.handleMessage(msg)
+        sub.handleMessage(msg)
         then:
-        done
+        received.toJson() == msg.toJson()
+        noExceptionThrown()
     }
 
-    void "returns a ResendRangeRequest if a gap is detected"() {
+    void "throws a GapDetectedException if a gap is detected"() {
         StreamMessage msg1 = createMessage(1, 0, null, 0)
         StreamMessage msg4 = createMessage(4, 0, 3, 0)
-        when:
         Subscription sub = new Subscription(msg1.getStreamId(), msg1.getStreamPartition(), empty)
-        ResendRangeRequest req = new ResendRangeRequest(msg1.getStreamId(), msg1.getStreamPartition(), sub.getId(),
-                msg1.getMessageRef(), msg4.getPreviousMessageRef(), msg1.getPublisherId(), msg1.getMsgChainId(), 'session-token')
+        when:
+        sub.handleMessage(msg1)
         then:
-        sub.handleMessage(msg1, 'session-token') == null
-        sub.handleMessage(msg4, 'session-token').toJson() == req.toJson()
+        noExceptionThrown()
+
+        when:
+        sub.handleMessage(msg4)
+        then:
+        GapDetectedException ex = thrown(GapDetectedException)
+        ex.getStreamId() == msg1.getStreamId()
+        ex.getStreamPartition() == msg1.getStreamPartition()
+        ex.getFrom() == msg1.getMessageRef()
+        ex.getTo() == msg4.getPreviousMessageRef()
+        ex.getPublisherId() == msg1.getPublisherId()
+        ex.getMsgChainId() == msg1.getMsgChainId()
     }
 
-    void "returns null if different publishers"() {
+    void "does not throw if different publishers"() {
         StreamMessage msg1 = createMessage(1, 0, null, 0, "publisher1")
         StreamMessage msg4 = createMessage(4, 0, 3, 0, "publisher2")
         when:
         Subscription sub = new Subscription(msg1.getStreamId(), msg1.getStreamPartition(), empty)
+        sub.handleMessage(msg1)
+        sub.handleMessage(msg4)
         then:
-        sub.handleMessage(msg1, 'session-token') == null
-        sub.handleMessage(msg4, 'session-token') == null
+        noExceptionThrown()
     }
 
-    void "returns a ResendRangeRequest if a gap is detected (same timestamp but different sequence numbers)"() {
+    void "throws a GapDetectedException if a gap is detected (same timestamp but different sequence numbers)"() {
         StreamMessage msg1 = createMessage(1, 0, null, 0)
         StreamMessage msg4 = createMessage(1, 4, 1, 3)
-        when:
         Subscription sub = new Subscription(msg1.getStreamId(), msg1.getStreamPartition(), empty)
-        ResendRangeRequest req = new ResendRangeRequest(msg1.getStreamId(), msg1.getStreamPartition(), sub.getId(),
-                msg1.getMessageRef(), msg4.getPreviousMessageRef(), msg1.getPublisherId(), msg1.getMsgChainId(), 'session-token')
+        when:
+        sub.handleMessage(msg1)
         then:
-        sub.handleMessage(msg1, 'session-token') == null
-        sub.handleMessage(msg4, 'session-token').toJson() == req.toJson()
+        noExceptionThrown()
+
+        when:
+        sub.handleMessage(msg4)
+        then:
+        GapDetectedException ex = thrown(GapDetectedException)
+        ex.getStreamId() == msg1.getStreamId()
+        ex.getStreamPartition() == msg1.getStreamPartition()
+        ex.getFrom() == msg1.getMessageRef()
+        ex.getTo() == msg4.getPreviousMessageRef()
+        ex.getPublisherId() == msg1.getPublisherId()
+        ex.getMsgChainId() == msg1.getMsgChainId()
     }
 
-    void "returns null if there is no gap"() {
+    void "does not throw if there is no gap"() {
         StreamMessage msg1 = createMessage(1, 0, null, 0)
         StreamMessage msg2 = createMessage(1, 1, 1, 0)
         StreamMessage msg3 = createMessage(4, 0, 1, 1)
         when:
         Subscription sub = new Subscription(msg1.getStreamId(), msg1.getStreamPartition(), empty)
+        sub.handleMessage(msg1)
+        sub.handleMessage(msg2)
+        sub.handleMessage(msg3)
         then:
-        sub.handleMessage(msg1, 'session-token') == null
-        sub.handleMessage(msg2, 'session-token') == null
-        sub.handleMessage(msg3, 'session-token') == null
+        noExceptionThrown()
     }
 
     void "marks the message as received if an IOException occurs, and continues normally on next message"() {
@@ -174,33 +186,38 @@ class SubscriptionSpec extends Specification {
         StreamMessage msg3 = createMessage(4, 0, 1, 1)
         when:
         Subscription sub = new Subscription(msg1.getStreamId(), msg1.getStreamPartition(), empty)
-        then:
-        sub.handleMessage(msg1, 'session-token') == null
+        sub.handleMessage(msg1)
         sub.handleError(new IOException(), msg2)
-        sub.handleMessage(msg3, 'session-token') == null
+        sub.handleMessage(msg3)
+        then:
+        noExceptionThrown()
     }
 
-    void "if an IOException AND a gap occur, does not mark it as received and returns ResendRangeRequest at the next message"() {
+    void "if an IOException AND a gap occur, does not mark it as received and throws a GapDetectedException at the next message"() {
         StreamMessage msg1 = createMessage(1, 0, null, 0)
         StreamMessage msg3 = createMessage(3, 0, 2, 0)
         StreamMessage msg4 = createMessage(4, 0, 3, 0)
-        when:
         Subscription sub = new Subscription(msg1.getStreamId(), msg1.getStreamPartition(), empty)
-        ResendRangeRequest req = new ResendRangeRequest(msg1.getStreamId(), msg1.getStreamPartition(), sub.getId(),
-                msg1.getMessageRef(), msg4.getPreviousMessageRef(), msg1.getPublisherId(), msg1.getMsgChainId(), 'session-token')
-        then:
-        sub.handleMessage(msg1, 'session-token') == null
-        // msg2 is missing
-        sub.handleError(new IOException(), msg3)
-        sub.handleMessage(msg4, 'session-token').toJson() == req.toJson()
-    }
-
-    void "updates the State"() {
         when:
-        Subscription sub = new Subscription("streamId", 0, empty)
-        sub.setState(Subscription.State.SUBSCRIBED)
+        sub.handleMessage(msg1)
         then:
-        sub.getState() == Subscription.State.SUBSCRIBED
+        noExceptionThrown()
+
+        when:
+        sub.handleError(new IOException(), msg3)
+        then:
+        noExceptionThrown()
+
+        when:
+        sub.handleMessage(msg4)
+        then:
+        GapDetectedException ex = thrown(GapDetectedException)
+        ex.getStreamId() == msg1.getStreamId()
+        ex.getStreamPartition() == msg1.getStreamPartition()
+        ex.getFrom() == msg1.getMessageRef()
+        ex.getTo() == msg4.getPreviousMessageRef()
+        ex.getPublisherId() == msg1.getPublisherId()
+        ex.getMsgChainId() == msg1.getMsgChainId()
     }
 
     void "getEffectiveResendOption() returns original resend option"() {
@@ -215,7 +232,7 @@ class SubscriptionSpec extends Specification {
         ResendFromOption resendFromOption = new ResendFromOption(1, 0, msg1.getPublisherId(), msg1.getMsgChainId())
         when:
         Subscription sub = new Subscription("streamId", 0, empty, resendFromOption)
-        sub.handleMessage(msg1, 'session-token')
+        sub.handleMessage(msg1)
         ResendFromOption newResendFromOption = (ResendFromOption) sub.getEffectiveResendOption()
         then:
         newResendFromOption.from.timestamp == 10
