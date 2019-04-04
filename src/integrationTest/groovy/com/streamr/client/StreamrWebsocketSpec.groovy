@@ -173,7 +173,7 @@ class StreamrWebsocketSpec extends StreamrIntegrationSpecification {
 			void onMessage(Subscription s, StreamMessage message) {
 				received = message.getContent() == [i: 1]
 			}
-		}, new ResendFromOption(0))
+		}, new ResendFromOption(new Date(0)))
 
 		Thread.sleep(5000)
 

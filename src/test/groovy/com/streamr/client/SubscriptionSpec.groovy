@@ -230,7 +230,7 @@ class SubscriptionSpec extends Specification {
 
     void "getEffectiveResendOption() updates the original resend from option after message received"() {
         StreamMessage msg1 = createMessage(10, 0, null, 0)
-        ResendFromOption resendFromOption = new ResendFromOption(1, 0, msg1.getPublisherId(), msg1.getMsgChainId())
+        ResendFromOption resendFromOption = new ResendFromOption(new Date(1), 0, msg1.getPublisherId(), msg1.getMsgChainId())
         when:
         Subscription sub = new Subscription("streamId", 0, empty, resendFromOption)
         sub.handleMessage(msg1)

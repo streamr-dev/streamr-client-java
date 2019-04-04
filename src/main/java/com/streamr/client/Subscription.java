@@ -83,6 +83,14 @@ public class Subscription {
 
     public void handleMessage(StreamMessage msg, boolean isResend) throws GapDetectedException {
         String key = msg.getPublisherId() + msg.getMsgChainId();
+        try {
+            msg.getContent(); // call to trigger potential IOException
+        } catch (IOException e) {
+            if(!checkForGap(msg.getPreviousMessageRef(), key)) {
+                lastReceivedMsgRef.put(key, msg.getMessageRef());
+            }
+            return;
+        }
         if (resending && !isResend) {
             queue.add(msg);
         } else if (checkForGap(msg.getPreviousMessageRef(), key) && !resending) {
@@ -106,7 +114,7 @@ public class Subscription {
         }
     }
 
-    public void handleQueue() throws GapDetectedException {
+    private void handleQueue() throws GapDetectedException {
         while(!queue.isEmpty()) {
             StreamMessage msg = queue.poll();
             handleMessage(msg);
@@ -147,6 +155,15 @@ public class Subscription {
             }
         }
         return resendOption;
+    }
+
+    public void startResend() {
+        resending = true;
+    }
+
+    public void endResend() throws GapDetectedException {
+        resending = false;
+        handleQueue();
     }
 
     private boolean checkForGap(MessageRef prev, String key) {

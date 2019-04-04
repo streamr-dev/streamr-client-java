@@ -247,10 +247,7 @@ public class StreamrClient extends StreamrRESTClient {
         // Only call the handler if we are in subscribed state (and not for example UNSUBSCRIBING)
         if (sub.getState().equals(Subscription.State.SUBSCRIBED)) {
             try {
-                message.getContent(); // call to trigger potential IOException
                 sub.handleMessage(message);
-            } catch (IOException e) {
-                sub.handleError(e, message);
             } catch (GapDetectedException e) {
                 ResendRangeRequest req = new ResendRangeRequest(e.getStreamId(), e.getStreamPartition(),
                     sub.getId(), e.getFrom(), e.getTo(), e.getPublisherId(), e.getMsgChainId(), getSessionToken());
@@ -342,13 +339,12 @@ public class StreamrClient extends StreamrRESTClient {
     }
 
     private void endResendAndCheckQueue(Subscription sub) {
-        sub.setResending(false);
         try {
-            sub.handleQueue();
+            sub.endResend();
         } catch (GapDetectedException e) {
             ResendRangeRequest req = new ResendRangeRequest(e.getStreamId(), e.getStreamPartition(),
                 sub.getId(), e.getFrom(), e.getTo(), e.getPublisherId(), e.getMsgChainId(), getSessionToken());
-            sub.setResending(true);
+            sub.startResend();
             this.websocket.send(req.toJson());
         }
     }
