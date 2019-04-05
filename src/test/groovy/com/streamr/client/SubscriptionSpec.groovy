@@ -117,6 +117,7 @@ class SubscriptionSpec extends Specification {
 
     void "throws a GapDetectedException if a gap is detected"() {
         StreamMessage msg1 = createMessage(1, 0, null, 0)
+        StreamMessage afterMsg1 = createMessage(1, 1, null, 0)
         StreamMessage msg4 = createMessage(4, 0, 3, 0)
         Subscription sub = new Subscription(msg1.getStreamId(), msg1.getStreamPartition(), empty)
         when:
@@ -130,7 +131,7 @@ class SubscriptionSpec extends Specification {
         GapDetectedException ex = thrown(GapDetectedException)
         ex.getStreamId() == msg1.getStreamId()
         ex.getStreamPartition() == msg1.getStreamPartition()
-        ex.getFrom() == msg1.getMessageRef()
+        ex.getFrom() == afterMsg1.getMessageRef()
         ex.getTo() == msg4.getPreviousMessageRef()
         ex.getPublisherId() == msg1.getPublisherId()
         ex.getMsgChainId() == msg1.getMsgChainId()
@@ -149,6 +150,7 @@ class SubscriptionSpec extends Specification {
 
     void "throws a GapDetectedException if a gap is detected (same timestamp but different sequence numbers)"() {
         StreamMessage msg1 = createMessage(1, 0, null, 0)
+        StreamMessage afterMsg1 = createMessage(1, 1, null, 0)
         StreamMessage msg4 = createMessage(1, 4, 1, 3)
         Subscription sub = new Subscription(msg1.getStreamId(), msg1.getStreamPartition(), empty)
         when:
@@ -162,7 +164,7 @@ class SubscriptionSpec extends Specification {
         GapDetectedException ex = thrown(GapDetectedException)
         ex.getStreamId() == msg1.getStreamId()
         ex.getStreamPartition() == msg1.getStreamPartition()
-        ex.getFrom() == msg1.getMessageRef()
+        ex.getFrom() == afterMsg1.getMessageRef()
         ex.getTo() == msg4.getPreviousMessageRef()
         ex.getPublisherId() == msg1.getPublisherId()
         ex.getMsgChainId() == msg1.getMsgChainId()
@@ -179,46 +181,6 @@ class SubscriptionSpec extends Specification {
         sub.handleMessage(msg3)
         then:
         noExceptionThrown()
-    }
-
-    void "marks the message as received if an IOException occurs, and continues normally on next message"() {
-        StreamMessage msg1 = createMessage(1, 0, null, 0)
-        StreamMessage msg2 = createMessage(1, 1, 1, 0)
-        StreamMessage msg3 = createMessage(4, 0, 1, 1)
-        when:
-        Subscription sub = new Subscription(msg1.getStreamId(), msg1.getStreamPartition(), empty)
-        sub.handleMessage(msg1)
-        sub.handleError(new IOException(), msg2)
-        sub.handleMessage(msg3)
-        then:
-        noExceptionThrown()
-    }
-
-    void "if an IOException AND a gap occur, does not mark it as received and throws a GapDetectedException at the next message"() {
-        StreamMessage msg1 = createMessage(1, 0, null, 0)
-        StreamMessage msg3 = createMessage(3, 0, 2, 0)
-        StreamMessage msg4 = createMessage(4, 0, 3, 0)
-        Subscription sub = new Subscription(msg1.getStreamId(), msg1.getStreamPartition(), empty)
-        when:
-        sub.handleMessage(msg1)
-        then:
-        noExceptionThrown()
-
-        when:
-        sub.handleError(new IOException(), msg3)
-        then:
-        noExceptionThrown()
-
-        when:
-        sub.handleMessage(msg4)
-        then:
-        GapDetectedException ex = thrown(GapDetectedException)
-        ex.getStreamId() == msg1.getStreamId()
-        ex.getStreamPartition() == msg1.getStreamPartition()
-        ex.getFrom() == msg1.getMessageRef()
-        ex.getTo() == msg4.getPreviousMessageRef()
-        ex.getPublisherId() == msg1.getPublisherId()
-        ex.getMsgChainId() == msg1.getMsgChainId()
     }
 
     void "getEffectiveResendOption() returns original resend option"() {

@@ -2,7 +2,6 @@ package com.streamr.client;
 
 import com.streamr.client.options.ResendFromOption;
 import com.streamr.client.options.ResendOption;
-import com.streamr.client.protocol.control_layer.ResendRangeRequest;
 import com.streamr.client.protocol.message_layer.MessageRef;
 import com.streamr.client.protocol.message_layer.StreamMessage;
 import com.streamr.client.exceptions.GapDetectedException;
@@ -83,19 +82,12 @@ public class Subscription {
 
     public void handleMessage(StreamMessage msg, boolean isResend) throws GapDetectedException {
         String key = msg.getPublisherId() + msg.getMsgChainId();
-        try {
-            msg.getContent(); // call to trigger potential IOException
-        } catch (IOException e) {
-            if(!checkForGap(msg.getPreviousMessageRef(), key)) {
-                lastReceivedMsgRef.put(key, msg.getMessageRef());
-            }
-            return;
-        }
         if (resending && !isResend) {
             queue.add(msg);
         } else if (checkForGap(msg.getPreviousMessageRef(), key) && !resending) {
             queue.add(msg);
-            MessageRef from = lastReceivedMsgRef.get(key); // cannot know the first missing message so there will be a duplicate received
+            MessageRef last = lastReceivedMsgRef.get(key);
+            MessageRef from = new MessageRef(last.getTimestamp(), last.getSequenceNumber() + 1);
             MessageRef to = msg.getPreviousMessageRef();
             throw new GapDetectedException(msg.getStreamId(), msg.getStreamPartition(), from, to, msg.getPublisherId(), msg.getMsgChainId());
         } else {
@@ -118,17 +110,6 @@ public class Subscription {
         while(!queue.isEmpty()) {
             StreamMessage msg = queue.poll();
             handleMessage(msg);
-        }
-    }
-
-    public void handleError(Exception e, StreamMessage msg) {
-        String key = msg.getPublisherId() + msg.getMsgChainId();
-        if (e instanceof IOException) {
-            if(!checkForGap(msg.getPreviousMessageRef(), key)) {
-                lastReceivedMsgRef.put(key, msg.getMessageRef());
-            }
-        } else {
-            throw new RuntimeException(e);
         }
     }
 
