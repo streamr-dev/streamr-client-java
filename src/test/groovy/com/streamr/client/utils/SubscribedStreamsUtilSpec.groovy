@@ -6,7 +6,7 @@ import com.streamr.client.protocol.message_layer.StreamMessage
 import com.streamr.client.protocol.message_layer.StreamMessageV30
 import com.streamr.client.rest.Stream
 import spock.lang.Specification
-import com.streamr.client.SigningOptions.SignatureVerificationPolicy
+import com.streamr.client.options.SigningOptions.SignatureVerificationPolicy
 
 class SubscribedStreamsUtilSpec extends Specification {
     String signature = "0x787cd72924153c88350e808de68b68c88030cbc34d053a5c696a5893d5e6fec1687c1b6205ec99aeb3375a81bf5cb8857ae39c1b55a41b32ed6399ae8da456a61b"

@@ -1,4 +1,4 @@
-package com.streamr.client;
+package com.streamr.client.options;
 
 import com.streamr.client.authentication.AuthenticationMethod;
 import com.streamr.client.authentication.EthereumAuthenticationMethod;

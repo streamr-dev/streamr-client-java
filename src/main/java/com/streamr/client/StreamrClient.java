@@ -3,6 +3,9 @@ package com.streamr.client;
 import com.streamr.client.authentication.ApiKeyAuthenticationMethod;
 import com.streamr.client.authentication.EthereumAuthenticationMethod;
 import com.streamr.client.exceptions.MalformedMessageException;
+import com.streamr.client.exceptions.GapDetectedException;
+import com.streamr.client.options.ResendOption;
+import com.streamr.client.options.StreamrClientOptions;
 import com.streamr.client.protocol.control_layer.*;
 import com.streamr.client.utils.MessageCreationUtil;
 import com.streamr.client.utils.SigningUtil;
@@ -213,6 +216,12 @@ public class StreamrClient extends StreamrRESTClient {
                         handleSubcribeResponse((SubscribeResponse)message);
                     } else if (message.getType() == UnsubscribeResponse.TYPE) {
                         handleUnsubcribeResponse((UnsubscribeResponse)message);
+                    } else if (message.getType() == ResendResponseResending.TYPE) {
+                        handleResendResponseResending((ResendResponseResending)message);
+                    } else if (message.getType() == ResendResponseNoResend.TYPE) {
+                        handleResendResponseNoResend((ResendResponseNoResend)message);
+                    } else if (message.getType() == ResendResponseResent.TYPE) {
+                        handleResendResponseResent((ResendResponseResent)message);
                     }
                 } catch (Exception e) {
                     log.error("Error handling message: " + message, e);
@@ -226,20 +235,25 @@ public class StreamrClient extends StreamrRESTClient {
     }
 
     private void handleMessage(StreamMessage message) throws SubscriptionNotFoundException {
-        // TODO: gap checking and gap fill
         try {
             log.debug(message.getStreamId() + ": " + message.getContent().toString());
         } catch (IOException e) {
             throw new MalformedMessageException(message.toJson());
         }
 
-
         subscribedStreamsUtil.verifyStreamMessage(message);
         Subscription sub = subs.get(message.getStreamId(), message.getStreamPartition());
 
         // Only call the handler if we are in subscribed state (and not for example UNSUBSCRIBING)
         if (sub.getState().equals(Subscription.State.SUBSCRIBED)) {
-            sub.getHandler().onMessage(sub, message);
+            try {
+                sub.handleMessage(message);
+            } catch (GapDetectedException e) {
+                ResendRangeRequest req = new ResendRangeRequest(e.getStreamId(), e.getStreamPartition(),
+                    sub.getId(), e.getFrom(), e.getTo(), e.getPublisherId(), e.getMsgChainId(), getSessionToken());
+                sub.setResending(true);
+                this.websocket.send(req.toJson());
+            }
         }
     }
 
@@ -268,16 +282,16 @@ public class StreamrClient extends StreamrRESTClient {
         if (stream.getPartitions() > 1) {
             throw new PartitionNotSpecifiedException(stream.getId(), stream.getPartitions());
         }
-        return subscribe(stream, 0, handler);
+        return subscribe(stream, 0, handler, null);
     }
 
-    public Subscription subscribe(Stream stream, int partition, MessageHandler handler) {
+    public Subscription subscribe(Stream stream, int partition, MessageHandler handler, ResendOption resendOption) {
         if (!getState().equals(State.Connected)) {
             connect();
         }
 
         SubscribeRequest subscribeRequest = new SubscribeRequest(stream.getId(), partition, session.getSessionToken());
-        Subscription sub = new Subscription(stream.getId(), partition, handler);
+        Subscription sub = new Subscription(stream.getId(), partition, handler, resendOption);
         subs.add(sub);
         sub.setState(Subscription.State.SUBSCRIBING);
         this.websocket.send(subscribeRequest.toJson());
@@ -291,16 +305,47 @@ public class StreamrClient extends StreamrRESTClient {
     public void unsubscribe(Subscription sub) {
         UnsubscribeRequest unsubscribeRequest = new UnsubscribeRequest(sub.getStreamId(), sub.getPartition());
         sub.setState(Subscription.State.UNSUBSCRIBING);
+        sub.setResending(false);
         this.websocket.send(unsubscribeRequest.toJson());
     }
 
     private void handleSubcribeResponse(SubscribeResponse res) throws SubscriptionNotFoundException {
         Subscription sub = subs.get(res.getStreamId(), res.getStreamPartition());
         sub.setState(Subscription.State.SUBSCRIBED);
+        if (sub.hasResendOptions()) {
+            ResendOption resendOption = sub.getEffectiveResendOption();
+            this.websocket.send(resendOption.toRequest(res.getStreamId(), res.getStreamPartition(), sub.getId(), this.getSessionToken()).toJson());
+        }
     }
 
     private void handleUnsubcribeResponse(UnsubscribeResponse res) throws SubscriptionNotFoundException {
         Subscription sub = subs.get(res.getStreamId(), res.getStreamPartition());
         sub.setState(Subscription.State.UNSUBSCRIBED);
+    }
+
+    private void handleResendResponseResending(ResendResponseResending res) throws SubscriptionNotFoundException {
+        Subscription sub = subs.get(res.getStreamId(), res.getStreamPartition());
+        log.debug("Resending started for subscription "+sub.getId());
+    }
+
+    private void handleResendResponseNoResend(ResendResponseNoResend res) throws SubscriptionNotFoundException {
+        Subscription sub = subs.get(res.getStreamId(), res.getStreamPartition());
+        endResendAndCheckQueue(sub);
+    }
+
+    private void handleResendResponseResent(ResendResponseResent res) throws SubscriptionNotFoundException {
+        Subscription sub = subs.get(res.getStreamId(), res.getStreamPartition());
+        endResendAndCheckQueue(sub);
+    }
+
+    private void endResendAndCheckQueue(Subscription sub) {
+        try {
+            sub.endResend();
+        } catch (GapDetectedException e) {
+            ResendRangeRequest req = new ResendRangeRequest(e.getStreamId(), e.getStreamPartition(),
+                sub.getId(), e.getFrom(), e.getTo(), e.getPublisherId(), e.getMsgChainId(), getSessionToken());
+            sub.startResend();
+            this.websocket.send(req.toJson());
+        }
     }
 }

@@ -1,5 +1,7 @@
 package com.streamr.client
 
+import com.streamr.client.options.ResendFromOption
+import com.streamr.client.options.ResendLastOption
 import com.streamr.client.protocol.message_layer.StreamMessageV30
 import com.streamr.client.rest.Stream
 import com.streamr.client.protocol.message_layer.StreamMessage
@@ -128,6 +130,56 @@ class StreamrWebsocketSpec extends StreamrIntegrationSpecification {
 		msg.getPublisherId() == client.getPublisherId()
 		msg.signatureType == StreamMessage.SignatureType.SIGNATURE_TYPE_ETH
 		msg.signature != null
+	}
+
+	void "subscribe with resend last"() {
+		Subscription sub
+
+		Stream stream = client.createStream(new Stream(generateResourceName(), ""))
+
+		boolean received = false
+
+		when:
+		client.publish(stream, [i: 1])
+		Thread.sleep(2000)
+		// Subscribe to the stream
+		sub = client.subscribe(stream, 0, new MessageHandler() {
+			@Override
+			void onMessage(Subscription s, StreamMessage message) {
+				received = message.getContent() == [i: 1]
+			}
+		}, new ResendLastOption(1))
+
+		Thread.sleep(5000)
+
+		then:
+		received
+		client.unsubscribe(sub)
+	}
+
+	void "subscribe with resend from"() {
+		Subscription sub
+
+		Stream stream = client.createStream(new Stream(generateResourceName(), ""))
+
+		boolean received = false
+
+		when:
+		client.publish(stream, [i: 1])
+		Thread.sleep(2000)
+		// Subscribe to the stream
+		sub = client.subscribe(stream, 0, new MessageHandler() {
+			@Override
+			void onMessage(Subscription s, StreamMessage message) {
+				received = message.getContent() == [i: 1]
+			}
+		}, new ResendFromOption(new Date(0)))
+
+		Thread.sleep(5000)
+
+		then:
+		received
+		client.unsubscribe(sub)
 	}
 
 }

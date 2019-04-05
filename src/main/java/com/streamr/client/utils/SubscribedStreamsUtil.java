@@ -1,6 +1,6 @@
 package com.streamr.client.utils;
 
-import com.streamr.client.SigningOptions.SignatureVerificationPolicy;
+import com.streamr.client.options.SigningOptions.SignatureVerificationPolicy;
 import com.streamr.client.exceptions.InvalidSignatureException;
 import com.streamr.client.protocol.message_layer.StreamMessage;
 import com.streamr.client.rest.Stream;

@@ -5,6 +5,7 @@ import com.squareup.moshi.Types;
 import com.streamr.client.authentication.AuthenticationMethod;
 import com.streamr.client.exceptions.AmbiguousResultsException;
 import com.streamr.client.exceptions.ResourceNotFoundException;
+import com.streamr.client.options.StreamrClientOptions;
 import com.streamr.client.rest.Publishers;
 import com.streamr.client.rest.Stream;
 import com.streamr.client.rest.UserInfo;
@@ -12,7 +13,6 @@ import com.streamr.client.utils.HttpUtils;
 import okhttp3.*;
 
 import java.io.IOException;
-import java.util.ArrayList;
 import java.util.List;
 
 /**

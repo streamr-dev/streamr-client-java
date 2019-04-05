@@ -2,6 +2,8 @@ package com.streamr.client
 
 import com.streamr.client.authentication.ApiKeyAuthenticationMethod
 import com.streamr.client.authentication.EthereumAuthenticationMethod
+import com.streamr.client.options.SigningOptions
+import com.streamr.client.options.StreamrClientOptions
 import org.apache.commons.codec.binary.Hex
 import spock.lang.Specification
 
