@@ -31,10 +31,6 @@ public abstract class AuthenticationMethod {
         }
     }
 
-    public void logout(String restApiUrl) throws IOException {
-        post(restApiUrl + "/logout", "");
-    }
-
     /**
      * Should call the login endpoint(s) with appropriate credentials to get a LoginResponse.
      * You can use the post(endpoint, requestBody) utility function to do this.

@@ -1,7 +1,5 @@
 package com.streamr.client.authentication;
 
-import java.io.IOException;
-
 /**
  * Holds credentials for getting new sessionTokens, and holds the current sessionToken.
  * Currently only supports the API key. Support for Ethereum-based authentication needs to
@@ -32,12 +30,12 @@ public class Session {
         return sessionToken;
     }
 
-    public void logout() {
-        try {
-            authenticationMethod.logout(restApiUrl);
-        } catch (IOException e) {
-            throw new RuntimeException(e);
+    public String getNewSessionToken() {
+        if (isAuthenticated()) {
+            sessionToken = authenticationMethod.newSessionToken(restApiUrl);
+        } else {
+            throw new RuntimeException("No authentication method: Don't call getSessionToken() if isAuthenticated returns false!");
         }
+        return sessionToken;
     }
-
 }

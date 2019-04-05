@@ -4,6 +4,7 @@ import com.squareup.moshi.JsonAdapter;
 import com.squareup.moshi.Types;
 import com.streamr.client.authentication.AuthenticationMethod;
 import com.streamr.client.exceptions.AmbiguousResultsException;
+import com.streamr.client.exceptions.AuthenticationException;
 import com.streamr.client.exceptions.ResourceNotFoundException;
 import com.streamr.client.options.StreamrClientOptions;
 import com.streamr.client.rest.Publishers;
@@ -47,11 +48,12 @@ public abstract class StreamrRESTClient extends AbstractStreamrClient {
      * Helper functions
      */
 
-    private Request.Builder addAuthenticationHeader(Request.Builder builder) {
+    private Request.Builder addAuthenticationHeader(Request.Builder builder, boolean newToken) {
         if (!session.isAuthenticated()) {
             return builder;
         } else {
-            return builder.addHeader("Authorization", "Bearer " + session.getSessionToken());
+            String sessionToken = newToken ? session.getSessionToken() : session.getNewSessionToken();
+            return builder.addHeader("Authorization", "Bearer " + sessionToken);
         }
     }
 
@@ -68,16 +70,26 @@ public abstract class StreamrRESTClient extends AbstractStreamrClient {
 
     private <T> T get(HttpUrl url, JsonAdapter<T> adapter) throws IOException {
         Request.Builder builder = new Request.Builder().url(url);
-        Request request = addAuthenticationHeader(builder).build();
-        return execute(request, adapter);
+        Request request = addAuthenticationHeader(builder, false).build();
+        try {
+            return execute(request, adapter);
+        } catch (AuthenticationException e) {
+            Request request2 = addAuthenticationHeader(builder, true).build();
+            return execute(request2, adapter);
+        }
     }
 
     private <T> T post(HttpUrl url, String requestBody, JsonAdapter<T> adapter) throws IOException {
         Request.Builder builder = new Request.Builder()
                 .url(url)
                 .post(RequestBody.create(HttpUtils.jsonType, requestBody));
-        Request request = addAuthenticationHeader(builder).build();
-        return execute(request, adapter);
+        Request request = addAuthenticationHeader(builder, false).build();
+        try {
+            return execute(request, adapter);
+        } catch (AuthenticationException e) {
+            Request request2 = addAuthenticationHeader(builder, true).build();
+            return execute(request2, adapter);
+        }
     }
 
     /*
@@ -130,5 +142,14 @@ public abstract class StreamrRESTClient extends AbstractStreamrClient {
     public List<String> getPublishers(String streamId) throws IOException {
         HttpUrl url = HttpUrl.parse(options.getRestApiUrl() + "/streams/" + streamId + "/publishers");
         return get(url, publishersJsonAdapter).getAddresses();
+    }
+
+    public void logout() throws IOException {
+        HttpUrl url = HttpUrl.parse(options.getRestApiUrl() + "/logout");
+        Request.Builder builder = new Request.Builder().url(url)
+                .post(RequestBody.create(HttpUtils.jsonType, ""));
+        Request request = addAuthenticationHeader(builder, false).build();
+        OkHttpClient client = new OkHttpClient();
+        client.newCall(request).execute();
     }
 }

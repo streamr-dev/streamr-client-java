@@ -32,8 +32,4 @@ public abstract class AbstractStreamrClient {
     public String getSessionToken() {
         return session.getSessionToken();
     }
-
-    public void logout() {
-        session.logout();
-    }
 }

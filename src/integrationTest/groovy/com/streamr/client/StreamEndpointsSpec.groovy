@@ -177,4 +177,16 @@ class StreamEndpointsSpec extends StreamrIntegrationSpecification {
         then:
         publishers == [client.getPublisherId()]
     }
+
+    void "not same token used after logout()"() {
+        StreamrClient apiKeyClient = createClientWithApiKey("tester1-api-key")
+        when:
+        apiKeyClient.getUserInfo() // fetches sessionToken1 and requests endpoint
+        String sessionToken1 = apiKeyClient.getSessionToken()
+        apiKeyClient.logout()
+        apiKeyClient.getUserInfo() // requests with sessionToken1, receives 401, fetches sessionToken2 and requests endpoint
+        String sessionToken2 = apiKeyClient.getSessionToken()
+        then:
+        sessionToken1 != sessionToken2
+    }
 }
