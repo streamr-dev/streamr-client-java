@@ -167,10 +167,6 @@ client.unsubscribe(sub);
 This library is work in progress. At least the following will be done, probably sooner than later:
 
 - Publishing this library to Maven
-- Signing published data
-- Verifying signed data on reception
-- Resends on subscription
-- Detecting and filling-in gaps in data
 - Covering all of the Stream API
 - Covering the API endpoints for other resources than Streams
 
