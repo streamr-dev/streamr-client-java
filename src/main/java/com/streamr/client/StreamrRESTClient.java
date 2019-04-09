@@ -65,31 +65,37 @@ public abstract class StreamrRESTClient extends AbstractStreamrClient {
         HttpUtils.assertSuccessful(response);
 
         // Deserialize HTTP response to concrete type.
-        return adapter.fromJson(response.body().source());
+        return adapter == null ? null : adapter.fromJson(response.body().source());
+    }
+
+    private <T> T executeWithRetry(Request.Builder builder, JsonAdapter<T> adapter, boolean retryIfSessionExpired) throws IOException {
+        Request request = addAuthenticationHeader(builder, false).build();
+        try {
+            return execute(request, adapter);
+        } catch (AuthenticationException e) {
+            if (retryIfSessionExpired) {
+                Request request2 = addAuthenticationHeader(builder, true).build();
+                return execute(request2, adapter);
+            } else {
+                throw e;
+            }
+        }
     }
 
     private <T> T get(HttpUrl url, JsonAdapter<T> adapter) throws IOException {
         Request.Builder builder = new Request.Builder().url(url);
-        Request request = addAuthenticationHeader(builder, false).build();
-        try {
-            return execute(request, adapter);
-        } catch (AuthenticationException e) {
-            Request request2 = addAuthenticationHeader(builder, true).build();
-            return execute(request2, adapter);
-        }
+        return executeWithRetry(builder, adapter, true);
     }
 
     private <T> T post(HttpUrl url, String requestBody, JsonAdapter<T> adapter) throws IOException {
+        return post(url, requestBody, adapter, true);
+    }
+
+    private <T> T post(HttpUrl url, String requestBody, JsonAdapter<T> adapter, boolean retryIfSessionExpired) throws IOException {
         Request.Builder builder = new Request.Builder()
                 .url(url)
                 .post(RequestBody.create(HttpUtils.jsonType, requestBody));
-        Request request = addAuthenticationHeader(builder, false).build();
-        try {
-            return execute(request, adapter);
-        } catch (AuthenticationException e) {
-            Request request2 = addAuthenticationHeader(builder, true).build();
-            return execute(request2, adapter);
-        }
+        return executeWithRetry(builder, adapter, retryIfSessionExpired);
     }
 
     /*
@@ -146,10 +152,6 @@ public abstract class StreamrRESTClient extends AbstractStreamrClient {
 
     public void logout() throws IOException {
         HttpUrl url = HttpUrl.parse(options.getRestApiUrl() + "/logout");
-        Request.Builder builder = new Request.Builder().url(url)
-                .post(RequestBody.create(HttpUtils.jsonType, ""));
-        Request request = addAuthenticationHeader(builder, false).build();
-        OkHttpClient client = new OkHttpClient();
-        client.newCall(request).execute();
+        post(url, "", null, false);
     }
 }

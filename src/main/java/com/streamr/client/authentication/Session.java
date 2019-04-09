@@ -31,11 +31,7 @@ public class Session {
     }
 
     public String getNewSessionToken() {
-        if (isAuthenticated()) {
-            sessionToken = authenticationMethod.newSessionToken(restApiUrl);
-        } else {
-            throw new RuntimeException("No authentication method: Don't call getSessionToken() if isAuthenticated returns false!");
-        }
-        return sessionToken;
+        sessionToken = null;
+        return getSessionToken();
     }
 }
