@@ -189,4 +189,13 @@ class StreamEndpointsSpec extends StreamrIntegrationSpecification {
         then:
         sessionToken1 != sessionToken2
     }
+
+    void "throws if logout() when already logged out"() {
+        StreamrClient apiKeyClient = createClientWithApiKey("tester1-api-key")
+        when:
+        apiKeyClient.logout()
+        apiKeyClient.logout() // does not retry with a new session token after receiving 401
+        then:
+        thrown(AuthenticationException)
+    }
 }

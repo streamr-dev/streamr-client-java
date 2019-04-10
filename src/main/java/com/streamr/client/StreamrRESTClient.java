@@ -52,7 +52,8 @@ public abstract class StreamrRESTClient extends AbstractStreamrClient {
         if (!session.isAuthenticated()) {
             return builder;
         } else {
-            String sessionToken = newToken ? session.getSessionToken() : session.getNewSessionToken();
+            String sessionToken = newToken ? session.getNewSessionToken() : session.getSessionToken();
+            builder.removeHeader("Authorization");
             return builder.addHeader("Authorization", "Bearer " + sessionToken);
         }
     }
