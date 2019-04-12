@@ -30,4 +30,8 @@ public class Session {
         return sessionToken;
     }
 
+    public String getNewSessionToken() {
+        sessionToken = null;
+        return getSessionToken();
+    }
 }

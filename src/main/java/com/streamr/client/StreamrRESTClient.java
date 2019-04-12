@@ -4,6 +4,7 @@ import com.squareup.moshi.JsonAdapter;
 import com.squareup.moshi.Types;
 import com.streamr.client.authentication.AuthenticationMethod;
 import com.streamr.client.exceptions.AmbiguousResultsException;
+import com.streamr.client.exceptions.AuthenticationException;
 import com.streamr.client.exceptions.ResourceNotFoundException;
 import com.streamr.client.options.StreamrClientOptions;
 import com.streamr.client.rest.Publishers;
@@ -47,11 +48,13 @@ public abstract class StreamrRESTClient extends AbstractStreamrClient {
      * Helper functions
      */
 
-    private Request.Builder addAuthenticationHeader(Request.Builder builder) {
+    private Request.Builder addAuthenticationHeader(Request.Builder builder, boolean newToken) {
         if (!session.isAuthenticated()) {
             return builder;
         } else {
-            return builder.addHeader("Authorization", "Bearer " + session.getSessionToken());
+            String sessionToken = newToken ? session.getNewSessionToken() : session.getSessionToken();
+            builder.removeHeader("Authorization");
+            return builder.addHeader("Authorization", "Bearer " + sessionToken);
         }
     }
 
@@ -63,21 +66,37 @@ public abstract class StreamrRESTClient extends AbstractStreamrClient {
         HttpUtils.assertSuccessful(response);
 
         // Deserialize HTTP response to concrete type.
-        return adapter.fromJson(response.body().source());
+        return adapter == null ? null : adapter.fromJson(response.body().source());
+    }
+
+    private <T> T executeWithRetry(Request.Builder builder, JsonAdapter<T> adapter, boolean retryIfSessionExpired) throws IOException {
+        Request request = addAuthenticationHeader(builder, false).build();
+        try {
+            return execute(request, adapter);
+        } catch (AuthenticationException e) {
+            if (retryIfSessionExpired) {
+                Request request2 = addAuthenticationHeader(builder, true).build();
+                return execute(request2, adapter);
+            } else {
+                throw e;
+            }
+        }
     }
 
     private <T> T get(HttpUrl url, JsonAdapter<T> adapter) throws IOException {
         Request.Builder builder = new Request.Builder().url(url);
-        Request request = addAuthenticationHeader(builder).build();
-        return execute(request, adapter);
+        return executeWithRetry(builder, adapter, true);
     }
 
     private <T> T post(HttpUrl url, String requestBody, JsonAdapter<T> adapter) throws IOException {
+        return post(url, requestBody, adapter, true);
+    }
+
+    private <T> T post(HttpUrl url, String requestBody, JsonAdapter<T> adapter, boolean retryIfSessionExpired) throws IOException {
         Request.Builder builder = new Request.Builder()
                 .url(url)
                 .post(RequestBody.create(HttpUtils.jsonType, requestBody));
-        Request request = addAuthenticationHeader(builder).build();
-        return execute(request, adapter);
+        return executeWithRetry(builder, adapter, retryIfSessionExpired);
     }
 
     /*
@@ -130,5 +149,10 @@ public abstract class StreamrRESTClient extends AbstractStreamrClient {
     public List<String> getPublishers(String streamId) throws IOException {
         HttpUrl url = HttpUrl.parse(options.getRestApiUrl() + "/streams/" + streamId + "/publishers");
         return get(url, publishersJsonAdapter).getAddresses();
+    }
+
+    public void logout() throws IOException {
+        HttpUrl url = HttpUrl.parse(options.getRestApiUrl() + "/logout");
+        post(url, "", null, false);
     }
 }
