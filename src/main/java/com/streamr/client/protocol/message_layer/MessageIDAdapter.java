@@ -13,7 +13,7 @@ public class MessageIDAdapter extends JsonAdapter<MessageID> {
         String streamId = reader.nextString();
         int streamPartition = reader.nextInt();
         long timestamp = reader.nextLong();
-        int sequenceNumber = reader.nextInt();
+        long sequenceNumber = reader.nextLong();
         String publisherId = reader.nextString();
         String msgChainId = reader.nextString();
         reader.endArray();

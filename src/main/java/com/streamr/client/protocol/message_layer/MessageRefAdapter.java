@@ -11,7 +11,7 @@ public class MessageRefAdapter extends JsonAdapter<MessageRef> {
     public MessageRef fromJson(JsonReader reader) throws IOException {
         reader.beginArray();
         long timestamp = reader.nextLong();
-        int sequenceNumber = reader.nextInt();
+        long sequenceNumber = reader.nextLong();
         reader.endArray();
         return new MessageRef(timestamp, sequenceNumber);
     }
