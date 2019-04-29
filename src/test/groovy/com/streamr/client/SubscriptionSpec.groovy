@@ -7,6 +7,7 @@ import com.streamr.client.protocol.message_layer.StreamMessage
 import com.streamr.client.protocol.message_layer.StreamMessageV30
 import com.streamr.client.exceptions.GapDetectedException
 import spock.lang.Specification
+import spock.util.concurrent.BlockingVariable
 
 class SubscriptionSpec extends Specification {
 
@@ -115,9 +116,10 @@ class SubscriptionSpec extends Specification {
         noExceptionThrown()
     }
 
-    void "throws a GapDetectedException if a gap is detected"() {
+    void "throws and set a GapDetectedException if a gap is detected, clears the exception when gap filled"() {
         StreamMessage msg1 = createMessage(1, 0, null, 0)
         StreamMessage afterMsg1 = createMessage(1, 1, null, 0)
+        StreamMessage missing = createMessage(3, 0, 1, 0)
         StreamMessage msg4 = createMessage(4, 0, 3, 0)
         Subscription sub = new Subscription(msg1.getStreamId(), msg1.getStreamPartition(), empty)
         when:
@@ -135,6 +137,13 @@ class SubscriptionSpec extends Specification {
         ex.getTo() == msg4.getPreviousMessageRef()
         ex.getPublisherId() == msg1.getPublisherId()
         ex.getMsgChainId() == msg1.getMsgChainId()
+        sub.getGapDetectedException(msg1.getPublisherId(), msg1.getMsgChainId()).from == ex.getFrom()
+        sub.getGapDetectedException(msg1.getPublisherId(), msg1.getMsgChainId()).to == ex.getTo()
+
+        when:
+        sub.handleMessage(missing)
+        then:
+        sub.getGapDetectedException(msg1.getPublisherId(), msg1.getMsgChainId()) == null
     }
 
     void "does not throw if different publishers"() {

@@ -47,6 +47,9 @@ dependencies {
 	compile group: 'com.squareup.moshi', name: 'moshi', version: '1.6.0'
 	compile group: 'com.squareup.moshi', name: 'moshi-adapters', version: '1.6.0'
 	compile group: 'com.squareup.okio', name: 'okio', version: '2.2.0'
+	compile 'commons-codec:commons-codec:1.6'
+	compile 'commons-lang:commons-lang:2.6'
+	compile 'org.apache.commons:commons-lang3:3.1'
 	compile 'cglib:cglib:3.2.10'
 	compile 'org.objenesis:objenesis:3.0.1'
 	compile 'org.ethereum:ethereumj-core:1.11.0-RELEASE'
@@ -78,5 +81,12 @@ publishing {
 	}
 	repositories {
 		mavenLocal()
+		maven {
+			credentials {
+				username ''
+				password ''
+			}
+			url 'https://oss.sonatype.org/content/repositories/snapshots'
+		}
 	}
 }
