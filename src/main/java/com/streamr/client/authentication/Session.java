@@ -23,10 +23,7 @@ public class Session {
     public String getSessionToken() {
         if (sessionToken == null && isAuthenticated()) {
             sessionToken = authenticationMethod.newSessionToken(restApiUrl);
-        } else if (sessionToken == null) {
-            throw new RuntimeException("No authentication method: Don't call getSessionToken() if isAuthenticated returns false!");
         }
-
         return sessionToken;
     }
 

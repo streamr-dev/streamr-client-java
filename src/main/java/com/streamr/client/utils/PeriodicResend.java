@@ -28,16 +28,21 @@ public class PeriodicResend extends Thread {
 
     @Override
     public void run() {
+        try {
+            Thread.sleep(interval); //initial delay before the first resend request
+        } catch (InterruptedException e) {
+            log.error(e);
+        }
         GapDetectedException ex;
         while(ws.isOpen() && sub.isSubscribed() && (ex = sub.getGapDetectedException(publisherId, msgChainId)) != null) {
+            ResendRangeRequest req = new ResendRangeRequest(ex.getStreamId(), ex.getStreamPartition(),
+                    sub.getId(), ex.getFrom(), ex.getTo(), publisherId, msgChainId, sessionToken);
+            ws.send(req.toJson());
             try {
                 Thread.sleep(interval);
             } catch (InterruptedException e) {
                 log.error(e);
             }
-            ResendRangeRequest req = new ResendRangeRequest(ex.getStreamId(), ex.getStreamPartition(),
-                    sub.getId(), ex.getFrom(), ex.getTo(), publisherId, msgChainId, sessionToken);
-            ws.send(req.toJson());
         }
     }
 }

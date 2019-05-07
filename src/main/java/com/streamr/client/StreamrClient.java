@@ -35,7 +35,7 @@ public class StreamrClient extends StreamrRESTClient {
     // Underlying websocket implementation
     private final WebSocketClient websocket;
 
-    private final Subscriptions subs = new Subscriptions();
+    protected final Subscriptions subs = new Subscriptions();
 
     public enum State {
         Connecting, Connected, Disconnecting, Disconnected
@@ -116,7 +116,7 @@ public class StreamrClient extends StreamrRESTClient {
 
                 @Override
                 public void send(String text) throws NotYetConnectedException {
-                    log.info(">> " + text);
+                    onSendMessage(text);
                     super.send(text);
                 }
             };
@@ -197,7 +197,7 @@ public class StreamrClient extends StreamrRESTClient {
      * Message handling
      */
 
-    private void handleMessage(String rawMessageAsString) {
+    protected void handleMessage(String rawMessageAsString) {
         try {
             log.info("<< " + rawMessageAsString);
 
@@ -207,10 +207,10 @@ public class StreamrClient extends StreamrRESTClient {
                 try {
                     if (message.getType() == BroadcastMessage.TYPE) {
                         BroadcastMessage msg = (BroadcastMessage) message;
-                        handleMessage(msg.getStreamMessage());
+                        handleMessage(msg.getStreamMessage(), false);
                     } else if (message.getType() == UnicastMessage.TYPE) {
                         UnicastMessage msg = (UnicastMessage) message;
-                        handleMessage(msg.getStreamMessage());
+                        handleMessage(msg.getStreamMessage(), true);
                     } else if (message.getType() == SubscribeResponse.TYPE) {
                         handleSubcribeResponse((SubscribeResponse)message);
                     } else if (message.getType() == UnsubscribeResponse.TYPE) {
@@ -228,12 +228,12 @@ public class StreamrClient extends StreamrRESTClient {
             } else {
                 log.error("Parsed message was null! Raw message: " + rawMessageAsString);
             }
-        } catch (IOException e) {
+        } catch (Exception e) {
             log.error("Error while handling message: " + rawMessageAsString, e);
         }
     }
 
-    private void handleMessage(StreamMessage message) throws SubscriptionNotFoundException {
+    private void handleMessage(StreamMessage message, boolean isResend) throws SubscriptionNotFoundException {
         try {
             log.debug(message.getStreamId() + ": " + message.getContent().toString());
         } catch (IOException e) {
@@ -253,7 +253,7 @@ public class StreamrClient extends StreamrRESTClient {
                 secondResends.remove(sub.getId());
             }
             try {
-                sub.handleMessage(message);
+                sub.handleMessage(message, isResend);
             } catch (GapDetectedException e) {
                 ResendRangeRequest req = new ResendRangeRequest(e.getStreamId(), e.getStreamPartition(),
                     sub.getId(), e.getFrom(), e.getTo(), e.getPublisherId(), e.getMsgChainId(), getSessionToken());
@@ -287,7 +287,8 @@ public class StreamrClient extends StreamrRESTClient {
      */
 
     public Subscription subscribe(Stream stream, MessageHandler handler) {
-        if (stream.getPartitions() > 1) {
+        Integer nbPartitions = stream.getPartitions();
+        if (nbPartitions != null && nbPartitions > 1) {
             throw new PartitionNotSpecifiedException(stream.getId(), stream.getPartitions());
         }
         return subscribe(stream, 0, handler, null);
@@ -361,5 +362,9 @@ public class StreamrClient extends StreamrRESTClient {
             new PeriodicResend(websocket, options.getGapFillTimeout(), sub, e.getPublisherId(),
                     e.getMsgChainId(), getSessionToken()).start();
         }
+    }
+
+    protected void onSendMessage(String message) {
+        log.info(">> " + message);
     }
 }

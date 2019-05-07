@@ -9,7 +9,7 @@ public class StreamrClientOptions {
     private AuthenticationMethod authenticationMethod = null;
     private SigningOptions signingOptions = SigningOptions.getDefault();
     private boolean publishSignedMsgs = false;
-    private String websocketApiUrl = "wss://www.streamr.com/api/v1/ws";
+    private String websocketApiUrl = "wss://www.streamr.com/api/v1/ws?controlLayerVersion=1&messageLayerVersion=30";
     private String restApiUrl = "https://www.streamr.com/api/v1";
     private long connectionTimeoutMillis = 10 * 1000;
     private int gapFillTimeout = 5000;
