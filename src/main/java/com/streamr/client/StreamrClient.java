@@ -116,7 +116,7 @@ public class StreamrClient extends StreamrRESTClient {
 
                 @Override
                 public void send(String text) throws NotYetConnectedException {
-                    onSendMessage(text);
+                    log.info(">> " + text);
                     super.send(text);
                 }
             };
@@ -362,9 +362,5 @@ public class StreamrClient extends StreamrRESTClient {
             new PeriodicResend(websocket, options.getGapFillTimeout(), sub, e.getPublisherId(),
                     e.getMsgChainId(), getSessionToken()).start();
         }
-    }
-
-    protected void onSendMessage(String message) {
-        log.info(">> " + message);
     }
 }
