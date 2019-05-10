@@ -19,7 +19,7 @@ public class StreamMessageV29 extends StreamMessage {
     public StreamMessageV29(String streamId, int streamPartition, long timestamp, Integer ttl, Long offset,
                             Long previousOffset, ContentType contentType, String serializedContent,
                             SignatureType signatureType, String publisherAddress, String signature) throws IOException {
-        super(VERSION, contentType, serializedContent);
+        super(VERSION, contentType, EncryptionType.NONE, serializedContent);
         this.streamId = streamId;
         this.streamPartition = streamPartition;
         this.timestamp = timestamp;
@@ -34,7 +34,7 @@ public class StreamMessageV29 extends StreamMessage {
     public StreamMessageV29(String streamId, int streamPartition, long timestamp, Integer ttl, Long offset,
                             Long previousOffset, ContentType contentType, Map<String, Object> content,
                             SignatureType signatureType, String publisherAddress, String signature) throws IOException {
-        super(VERSION, contentType, content);
+        super(VERSION, contentType, EncryptionType.NONE, content);
         this.streamId = streamId;
         this.streamPartition = streamPartition;
         this.timestamp = timestamp;

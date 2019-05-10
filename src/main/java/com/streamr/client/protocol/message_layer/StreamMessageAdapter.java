@@ -20,6 +20,7 @@ public class StreamMessageAdapter extends JsonAdapter<StreamMessage> {
     private static final StreamMessageV28Adapter v28Adapter = new StreamMessageV28Adapter();
     private static final StreamMessageV29Adapter v29Adapter = new StreamMessageV29Adapter();
     private static final StreamMessageV30Adapter v30Adapter = new StreamMessageV30Adapter();
+    private static final StreamMessageV31Adapter v31Adapter = new StreamMessageV31Adapter();
 
     @Override
     public StreamMessage fromJson(JsonReader reader) throws IOException {
@@ -35,6 +36,8 @@ public class StreamMessageAdapter extends JsonAdapter<StreamMessage> {
                 msg = v29Adapter.fromJson(reader);
             } else if (version == StreamMessageV30.VERSION) {
                 msg = v30Adapter.fromJson(reader);
+            } else if (version == StreamMessageV31.VERSION) {
+                msg = v31Adapter.fromJson(reader);
             } else {
                 throw new UnsupportedMessageException("Unrecognized stream message version: " + version);
             }
@@ -57,6 +60,8 @@ public class StreamMessageAdapter extends JsonAdapter<StreamMessage> {
             v29Adapter.toJson(writer, (StreamMessageV29) value);
         } else if (version == StreamMessageV30.VERSION) {
             v30Adapter.toJson(writer, (StreamMessageV30) value);
+        } else if (version == StreamMessageV31.VERSION) {
+            v31Adapter.toJson(writer, (StreamMessageV31) value);
         } else {
             throw new UnsupportedMessageException("Unrecognized stream message version: " + version);
         }
