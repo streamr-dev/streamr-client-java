@@ -9,6 +9,7 @@ import org.java_websocket.client.WebSocketClient;
 
 public class PeriodicResend extends Thread {
     private static final Logger log = LogManager.getLogger();
+    private static final int MAX_RETRIES = 20;
 
     private WebSocketClient ws;
     private int interval;
@@ -34,10 +35,14 @@ public class PeriodicResend extends Thread {
             log.error(e);
         }
         GapDetectedException ex;
-        while(ws.isOpen() && sub.isSubscribed() && (ex = sub.getGapDetectedException(publisherId, msgChainId)) != null) {
+        int retryCount = 0;
+        while(ws.isOpen() && sub.isSubscribed()
+                && (ex = sub.getGapDetectedException(publisherId, msgChainId)) != null
+                && retryCount <= MAX_RETRIES) {
             ResendRangeRequest req = new ResendRangeRequest(ex.getStreamId(), ex.getStreamPartition(),
                     sub.getId(), ex.getFrom(), ex.getTo(), publisherId, msgChainId, sessionToken);
             ws.send(req.toJson());
+            retryCount++;
             try {
                 Thread.sleep(interval);
             } catch (InterruptedException e) {

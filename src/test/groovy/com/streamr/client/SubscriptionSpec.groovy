@@ -2,12 +2,10 @@ package com.streamr.client
 
 import com.streamr.client.options.ResendFromOption
 import com.streamr.client.options.ResendLastOption
-import com.streamr.client.protocol.control_layer.ResendRangeRequest
 import com.streamr.client.protocol.message_layer.StreamMessage
 import com.streamr.client.protocol.message_layer.StreamMessageV30
 import com.streamr.client.exceptions.GapDetectedException
 import spock.lang.Specification
-import spock.util.concurrent.BlockingVariable
 
 class SubscriptionSpec extends Specification {
 
