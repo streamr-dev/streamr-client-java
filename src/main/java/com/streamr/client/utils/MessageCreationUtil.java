@@ -1,10 +1,8 @@
 package com.streamr.client.utils;
 
-import com.streamr.client.protocol.message_layer.MessageID;
-import com.streamr.client.protocol.message_layer.MessageRef;
-import com.streamr.client.protocol.message_layer.StreamMessage;
+import com.streamr.client.exceptions.InvalidGroupKeyException;
+import com.streamr.client.protocol.message_layer.*;
 import com.streamr.client.protocol.message_layer.StreamMessage.EncryptionType;
-import com.streamr.client.protocol.message_layer.StreamMessageV30;
 import com.streamr.client.rest.Stream;
 import org.apache.commons.codec.binary.Hex;
 import org.apache.commons.lang3.RandomStringUtils;
@@ -47,6 +45,7 @@ public class MessageCreationUtil {
         msgChainId = RandomStringUtils.randomAlphanumeric(20);
         this.signingUtil = signingUtil;
         if (groupKeyHex != null) {
+            validateGroupKey(groupKeyHex);
             groupKey = new SecretKeySpec(DatatypeConverter.parseHexBinary(groupKeyHex), "AES");
         }
     }
@@ -56,12 +55,20 @@ public class MessageCreationUtil {
     }
 
     public StreamMessage createStreamMessage(Stream stream, Map<String, Object> payload, Date timestamp, String partitionKey, String groupKeyHex) {
-        EncryptionType encryptionType = EncryptionType.NONE;
+        if (groupKeyHex != null) {
+            validateGroupKey(groupKeyHex);
+        }
+
+        EncryptionType encryptionType;
         String content;
         if (groupKey != null && groupKeyHex != null) {
             encryptionType = EncryptionType.NEW_KEY_AND_AES;
+            byte[] groupKeyBytes = DatatypeConverter.parseHexBinary(groupKeyHex);
             byte[] payloadBytes = HttpUtils.mapAdapter.toJson(payload).getBytes(StandardCharsets.UTF_8);
-            byte[] groupKexBytes = DatatypeConverter.parseHexBinary(groupKeyHex);
+            byte[] plaintext = new byte[groupKeyBytes.length + payloadBytes.length];
+            System.arraycopy(groupKeyBytes, 0, plaintext, 0, groupKeyBytes.length);
+            System.arraycopy(payloadBytes, 0, plaintext, groupKeyBytes.length, payloadBytes.length);
+            content = encrypt(plaintext);
             groupKey = new SecretKeySpec(DatatypeConverter.parseHexBinary(groupKeyHex), "AES");
         } else if (groupKeyHex != null || groupKey != null) {
             if (groupKeyHex != null) {
@@ -69,6 +76,9 @@ public class MessageCreationUtil {
             }
             encryptionType = EncryptionType.AES;
             content = encrypt(HttpUtils.mapAdapter.toJson(payload).getBytes(StandardCharsets.UTF_8));
+        } else {
+            encryptionType = EncryptionType.NONE;
+            content = HttpUtils.mapAdapter.toJson(payload);
         }
         int streamPartition = getStreamPartition(stream.getPartitions(), partitionKey);
         String key = stream.getId() + streamPartition;
@@ -76,8 +86,8 @@ public class MessageCreationUtil {
         long sequenceNumber = getNextSequenceNumber(key, timestamp.getTime());
         MessageID msgId = new MessageID(stream.getId(), streamPartition, timestamp.getTime(), sequenceNumber, publisherId, msgChainId);
         MessageRef prevRef = refsPerStreamAndPartition.get(key);
-        StreamMessage streamMessage = new StreamMessageV30(msgId, prevRef, StreamMessage.ContentType.CONTENT_TYPE_JSON,
-                payload, StreamMessage.SignatureType.SIGNATURE_TYPE_NONE, null
+        StreamMessage streamMessage = new StreamMessageV31(msgId, prevRef, StreamMessage.ContentType.CONTENT_TYPE_JSON,
+                encryptionType, content, StreamMessage.SignatureType.SIGNATURE_TYPE_NONE, null
         );
 
         refsPerStreamAndPartition.put(key, new MessageRef(timestamp.getTime(), sequenceNumber));
@@ -137,5 +147,12 @@ public class MessageCreationUtil {
             log.error(e);
         }
         return null;
+    }
+
+    private static void validateGroupKey(String groupKeyHex) {
+        String without0x = groupKeyHex.startsWith("0x") ? groupKeyHex.substring(2) : groupKeyHex;
+        if (without0x.length() != 64) { // the key must be 256 bits long
+            throw new InvalidGroupKeyException(without0x.length() * 4);
+        }
     }
 }
