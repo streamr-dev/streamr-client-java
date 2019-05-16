@@ -34,7 +34,7 @@ public class PeriodicResend extends Thread {
         } catch (InterruptedException e) {
             log.error(e);
         }
-        GapDetectedException ex;
+        GapDetectedException ex = null;
         int retryCount = 0;
         while(ws.isOpen() && sub.isSubscribed()
                 && (ex = sub.getGapDetectedException(publisherId, msgChainId)) != null
@@ -48,6 +48,9 @@ public class PeriodicResend extends Thread {
             } catch (InterruptedException e) {
                 log.error(e);
             }
+        }
+        if (ws.isOpen() && sub.isSubscribed() && ex != null && retryCount > MAX_RETRIES) {
+            log.warn("Gave up the resend request after " + retryCount + " trials.");
         }
     }
 }
