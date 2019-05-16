@@ -15,7 +15,6 @@ import java.util.ArrayDeque;
 import java.util.UUID;
 
 public class Subscription {
-
     private static final Logger log = LogManager.getLogger();
 
     private final String id;
@@ -26,6 +25,7 @@ public class Subscription {
     private final HashMap<String, MessageRef> lastReceivedMsgRef = new HashMap<>();
     private boolean resending = false;
     private final ArrayDeque<StreamMessage> queue = new ArrayDeque<>();
+    private final HashMap<String, GapDetectedException> gapDetectedExceptions = new HashMap<>();
 
     private State state;
 
@@ -89,8 +89,12 @@ public class Subscription {
             MessageRef last = lastReceivedMsgRef.get(key);
             MessageRef from = new MessageRef(last.getTimestamp(), last.getSequenceNumber() + 1);
             MessageRef to = msg.getPreviousMessageRef();
-            throw new GapDetectedException(msg.getStreamId(), msg.getStreamPartition(), from, to, msg.getPublisherId(), msg.getMsgChainId());
+            GapDetectedException e = new GapDetectedException(msg.getStreamId(), msg.getStreamPartition(), from, to, msg.getPublisherId(), msg.getMsgChainId());
+            gapDetectedExceptions.put(key, e);
+            throw e;
         } else {
+            // The potential gap is filled if we get to this point, so we can clear the exception.
+            gapDetectedExceptions.remove(key);
             MessageRef msgRef = msg.getMessageRef();
             Integer res = null;
             MessageRef last = lastReceivedMsgRef.get(key);
@@ -145,6 +149,14 @@ public class Subscription {
     public void endResend() throws GapDetectedException {
         resending = false;
         handleQueue();
+    }
+
+    public GapDetectedException getGapDetectedException(String publisherId, String msgChainId) {
+        return gapDetectedExceptions.get(publisherId + msgChainId);
+    }
+
+    public boolean isSubscribed() {
+        return state.equals(State.SUBSCRIBED);
     }
 
     private boolean checkForGap(MessageRef prev, String key) {

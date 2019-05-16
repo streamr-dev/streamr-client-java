@@ -7,9 +7,7 @@ import com.streamr.client.exceptions.GapDetectedException;
 import com.streamr.client.options.ResendOption;
 import com.streamr.client.options.StreamrClientOptions;
 import com.streamr.client.protocol.control_layer.*;
-import com.streamr.client.utils.MessageCreationUtil;
-import com.streamr.client.utils.SigningUtil;
-import com.streamr.client.utils.SubscribedStreamsUtil;
+import com.streamr.client.utils.*;
 import org.apache.commons.codec.digest.DigestUtils;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
@@ -20,7 +18,6 @@ import com.streamr.client.exceptions.PartitionNotSpecifiedException;
 import com.streamr.client.exceptions.SubscriptionNotFoundException;
 import com.streamr.client.protocol.message_layer.StreamMessage;
 import com.streamr.client.rest.Stream;
-import com.streamr.client.utils.Subscriptions;
 
 import java.io.IOException;
 import java.net.URI;
@@ -38,7 +35,7 @@ public class StreamrClient extends StreamrRESTClient {
     // Underlying websocket implementation
     private final WebSocketClient websocket;
 
-    private final Subscriptions subs = new Subscriptions();
+    protected final Subscriptions subs = new Subscriptions();
 
     public enum State {
         Connecting, Connected, Disconnecting, Disconnected
@@ -50,6 +47,8 @@ public class StreamrClient extends StreamrRESTClient {
     private String publisherId = null;
     private final MessageCreationUtil msgCreationUtil;
     private final SubscribedStreamsUtil subscribedStreamsUtil;
+
+    private final HashMap<String, OneTimeResend> secondResends = new HashMap<>();
 
     public StreamrClient(StreamrClientOptions options) {
         super(options);
@@ -198,7 +197,7 @@ public class StreamrClient extends StreamrRESTClient {
      * Message handling
      */
 
-    private void handleMessage(String rawMessageAsString) {
+    protected void handleMessage(String rawMessageAsString) {
         try {
             log.info("<< " + rawMessageAsString);
 
@@ -208,10 +207,10 @@ public class StreamrClient extends StreamrRESTClient {
                 try {
                     if (message.getType() == BroadcastMessage.TYPE) {
                         BroadcastMessage msg = (BroadcastMessage) message;
-                        handleMessage(msg.getStreamMessage());
+                        handleMessage(msg.getStreamMessage(), false);
                     } else if (message.getType() == UnicastMessage.TYPE) {
                         UnicastMessage msg = (UnicastMessage) message;
-                        handleMessage(msg.getStreamMessage());
+                        handleMessage(msg.getStreamMessage(), true);
                     } else if (message.getType() == SubscribeResponse.TYPE) {
                         handleSubcribeResponse((SubscribeResponse)message);
                     } else if (message.getType() == UnsubscribeResponse.TYPE) {
@@ -229,12 +228,12 @@ public class StreamrClient extends StreamrRESTClient {
             } else {
                 log.error("Parsed message was null! Raw message: " + rawMessageAsString);
             }
-        } catch (IOException e) {
+        } catch (Exception e) {
             log.error("Error while handling message: " + rawMessageAsString, e);
         }
     }
 
-    private void handleMessage(StreamMessage message) throws SubscriptionNotFoundException {
+    private void handleMessage(StreamMessage message, boolean isResend) throws SubscriptionNotFoundException {
         try {
             log.debug(message.getStreamId() + ": " + message.getContent().toString());
         } catch (IOException e) {
@@ -245,14 +244,23 @@ public class StreamrClient extends StreamrRESTClient {
         Subscription sub = subs.get(message.getStreamId(), message.getStreamPartition());
 
         // Only call the handler if we are in subscribed state (and not for example UNSUBSCRIBING)
-        if (sub.getState().equals(Subscription.State.SUBSCRIBED)) {
+        if (sub.isSubscribed()) {
+            // we can clear the second resend upon reception of a message because gap filling will
+            // take care of sending other resend requests if needed.
+            OneTimeResend resend = secondResends.get(sub.getId());
+            if (resend != null) {
+                resend.interrupt();
+                secondResends.remove(sub.getId());
+            }
             try {
-                sub.handleMessage(message);
+                sub.handleMessage(message, isResend);
             } catch (GapDetectedException e) {
                 ResendRangeRequest req = new ResendRangeRequest(e.getStreamId(), e.getStreamPartition(),
                     sub.getId(), e.getFrom(), e.getTo(), e.getPublisherId(), e.getMsgChainId(), getSessionToken());
                 sub.setResending(true);
                 this.websocket.send(req.toJson());
+                new PeriodicResend(websocket, options.getGapFillTimeout(), sub, e.getPublisherId(),
+                    e.getMsgChainId(), getSessionToken()).start();
             }
         }
     }
@@ -279,7 +287,8 @@ public class StreamrClient extends StreamrRESTClient {
      */
 
     public Subscription subscribe(Stream stream, MessageHandler handler) {
-        if (stream.getPartitions() > 1) {
+        Integer nbPartitions = stream.getPartitions();
+        if (nbPartitions != null && nbPartitions > 1) {
             throw new PartitionNotSpecifiedException(stream.getId(), stream.getPartitions());
         }
         return subscribe(stream, 0, handler, null);
@@ -314,7 +323,11 @@ public class StreamrClient extends StreamrRESTClient {
         sub.setState(Subscription.State.SUBSCRIBED);
         if (sub.hasResendOptions()) {
             ResendOption resendOption = sub.getEffectiveResendOption();
-            this.websocket.send(resendOption.toRequest(res.getStreamId(), res.getStreamPartition(), sub.getId(), this.getSessionToken()).toJson());
+            ControlMessage req = resendOption.toRequest(res.getStreamId(), res.getStreamPartition(), sub.getId(), this.getSessionToken());
+            this.websocket.send(req.toJson());
+            OneTimeResend resend = new OneTimeResend(websocket, req, options.getRetryResendAfter(), sub);
+            secondResends.put(sub.getId(), resend);
+            resend.start();
         }
     }
 
@@ -346,6 +359,8 @@ public class StreamrClient extends StreamrRESTClient {
                 sub.getId(), e.getFrom(), e.getTo(), e.getPublisherId(), e.getMsgChainId(), getSessionToken());
             sub.startResend();
             this.websocket.send(req.toJson());
+            new PeriodicResend(websocket, options.getGapFillTimeout(), sub, e.getPublisherId(),
+                    e.getMsgChainId(), getSessionToken()).start();
         }
     }
 }
