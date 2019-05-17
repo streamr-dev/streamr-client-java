@@ -1,6 +1,5 @@
 package com.streamr.client;
 
-import java.util.concurrent.Callable;
 import com.streamr.client.authentication.ApiKeyAuthenticationMethod;
 import com.streamr.client.authentication.EthereumAuthenticationMethod;
 import com.streamr.client.exceptions.MalformedMessageException;
@@ -28,7 +27,6 @@ import java.net.URI;
 import java.net.URISyntaxException;
 import java.nio.channels.NotYetConnectedException;
 import java.util.*;
-import java.util.function.Function;
 
 /**
  * Extends the StreamrRESTClient with methods for using the websocket protocol.
