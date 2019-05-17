@@ -2,9 +2,11 @@ package com.streamr.client
 
 import com.streamr.client.options.ResendFromOption
 import com.streamr.client.options.ResendLastOption
+import com.streamr.client.options.ResendRangeOption
 import com.streamr.client.protocol.message_layer.StreamMessageV30
 import com.streamr.client.rest.Stream
 import com.streamr.client.protocol.message_layer.StreamMessage
+import spock.util.concurrent.PollingConditions
 
 class StreamrWebsocketSpec extends StreamrIntegrationSpecification {
 
@@ -74,6 +76,7 @@ class StreamrWebsocketSpec extends StreamrIntegrationSpecification {
 				msgCount++
 				latestMsg = message
 			}
+
 		})
 
 		Thread.sleep(2000)
@@ -158,28 +161,174 @@ class StreamrWebsocketSpec extends StreamrIntegrationSpecification {
 	}
 
 	void "subscribe with resend from"() {
-		Subscription sub
+        given:
+        def conditions = new PollingConditions(timeout: 10)
+
+        Stream stream = client.createStream(new Stream(generateResourceName(), ""))
+
+        boolean received = false
+        boolean done = false
+
+        when:
+        client.publish(stream, [i: 1])
+		Thread.sleep(2000)
+
+        // Subscribe to the stream
+        Subscription sub = client.subscribe(stream, 0, new MessageHandler() {
+            @Override
+            void onMessage(Subscription s, StreamMessage message) {
+                received = message.getContent() == [i: 1]
+            }
+			void done(Subscription sub) {
+                done = true
+            }
+        }, new ResendFromOption(new Date(0)))
+
+        then:
+        conditions.eventually() {
+            assert done
+            assert received
+            client.unsubscribe(sub)
+        }
+	}
+
+	void "resend last"() {
+		given:
+		def conditions = new PollingConditions(timeout: 10)
 
 		Stream stream = client.createStream(new Stream(generateResourceName(), ""))
 
-		boolean received = false
+		Map<String, Object>[] receivedMsg = new Map<String, Object>[5]
+		boolean done = false
 
 		when:
-		client.publish(stream, [i: 1])
+		for (int i = 0; i <= 10; i++) {
+			client.publish(stream, [i: i])
+		}
 		Thread.sleep(2000)
+
+		int i = 0
 		// Subscribe to the stream
-		sub = client.subscribe(stream, 0, new MessageHandler() {
+		client.resend(stream, 0, new MessageHandler() {
 			@Override
 			void onMessage(Subscription s, StreamMessage message) {
-				received = message.getContent() == [i: 1]
+				receivedMsg[i++] = message.getContent()
 			}
-		}, new ResendFromOption(new Date(0)))
-
-		Thread.sleep(5000)
+			void done(Subscription sub) {
+				done = true
+			}
+		}, new ResendLastOption(5))
 
 		then:
-		received
-		client.unsubscribe(sub)
+		Map<String, Object>[] expectedMessages = [
+			Collections.singletonMap("i", 6.0),
+			Collections.singletonMap("i", 7.0),
+			Collections.singletonMap("i", 8.0),
+			Collections.singletonMap("i", 9.0),
+			Collections.singletonMap("i", 10.0)
+		]
+
+		conditions.eventually() {
+			assert done
+			assert receivedMsg == expectedMessages
+			System.out.println("finished test")
+		}
 	}
 
+	void "resend from"() {
+		given:
+		def conditions = new PollingConditions(timeout: 10)
+
+		Stream stream = client.createStream(new Stream(generateResourceName(), ""))
+
+		Map<String, Object>[] receivedMsg = new Map<String, Object>[3]
+		boolean done = false
+		Date resendFromDate
+
+		when:
+		for (int i = 0; i <= 10; i++) {
+			client.publish(stream, [i: i])
+
+			if (i == 7) {
+				resendFromDate = new Date()
+			}
+		}
+		Thread.sleep(2000)
+
+		int i = 0
+		// Subscribe to the stream
+		client.resend(stream, 0, new MessageHandler() {
+			@Override
+			void onMessage(Subscription s, StreamMessage message) {
+				receivedMsg[i++] = message.getContent()
+			}
+			void done(Subscription sub) {
+				done = true
+			}
+		}, new ResendFromOption(resendFromDate))
+
+		then:
+		Map<String, Object>[] expectedMessages = [
+				Collections.singletonMap("i", 8.0),
+				Collections.singletonMap("i", 9.0),
+				Collections.singletonMap("i", 10.0)
+		]
+
+		conditions.eventually() {
+			assert done
+			assert receivedMsg == expectedMessages
+			System.out.println("finished test")
+		}
+	}
+
+	void "resend range"() {
+		given:
+		def conditions = new PollingConditions(timeout: 10)
+
+		Stream stream = client.createStream(new Stream(generateResourceName(), ""))
+
+		Map<String, Object>[] receivedMsg = new Map<String, Object>[3]
+		boolean done = false
+		Date resendFromDate
+		Date resendToDate
+
+		when:
+		for (int i = 0; i <= 10; i++) {
+			client.publish(stream, [i: i])
+
+			if (i == 3) {
+				resendFromDate = new Date()
+			}
+
+			if (i == 7) {
+				resendToDate = new Date()
+			}
+		}
+		Thread.sleep(2000)
+
+		int i = 0
+		// Subscribe to the stream
+		client.resend(stream, 0, new MessageHandler() {
+			@Override
+			void onMessage(Subscription s, StreamMessage message) {
+				receivedMsg[i++] = message.getContent()
+			}
+			void done(Subscription sub) {
+				done = true
+			}
+		}, new ResendRangeOption(resendFromDate, resendToDate))
+
+		then:
+		Map<String, Object>[] expectedMessages = [
+				Collections.singletonMap("i", 4.0),
+				Collections.singletonMap("i", 5.0),
+				Collections.singletonMap("i", 6.0)
+		]
+
+		conditions.eventually() {
+			assert done
+			assert receivedMsg == expectedMessages
+			System.out.println("finished test")
+		}
+	}
 }

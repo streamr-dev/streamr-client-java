@@ -154,4 +154,10 @@ public class Subscription {
         MessageRef last = lastReceivedMsgRef.get(key);
         return last != null && prev.compareTo(last) > 0;
     }
+
+    public void resendDone() {
+        if (!this.resending) {
+            this.handler.done(this);
+        }
+    }
 }
