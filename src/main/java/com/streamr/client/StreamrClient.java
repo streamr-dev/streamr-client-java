@@ -261,6 +261,8 @@ public class StreamrClient extends StreamrRESTClient {
                 this.websocket.send(req.toJson());
                 new PeriodicResend(websocket, options.getGapFillTimeout(), sub, e.getPublisherId(),
                     e.getMsgChainId(), getSessionToken()).start();
+            } catch (Exception e) {
+                log.error(e);
             }
         }
     }

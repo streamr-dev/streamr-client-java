@@ -141,7 +141,7 @@ class MessageCreationUtilSpec extends Specification {
 
     void "creates encrypted messages when key defined in constructor"() {
         String key = genKey(32)
-        MessageCreationUtil util = new MessageCreationUtil("publisherId", null, key)
+        MessageCreationUtil util = new MessageCreationUtil("publisherId", null, [(stream.id): key])
         when:
         StreamMessageV31 msg = (StreamMessageV31) util.createStreamMessage(stream, message, new Date(), null)
         then:
@@ -152,7 +152,7 @@ class MessageCreationUtilSpec extends Specification {
     void "throws if the key is not 256 bits long"() {
         String key = genKey(16)
         when:
-        new MessageCreationUtil("publisherId", null, key)
+        new MessageCreationUtil("publisherId", null, [(stream.id): key])
         then:
         thrown InvalidGroupKeyException
 
