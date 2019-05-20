@@ -231,7 +231,6 @@ class StreamrWebsocketSpec extends StreamrIntegrationSpecification {
 		conditions.eventually() {
 			assert done
 			assert receivedMsg == expectedMessages
-			System.out.println("finished test")
 		}
 	}
 
@@ -277,7 +276,6 @@ class StreamrWebsocketSpec extends StreamrIntegrationSpecification {
 		conditions.eventually() {
 			assert done
 			assert receivedMsg == expectedMessages
-			System.out.println("finished test")
 		}
 	}
 
@@ -328,7 +326,6 @@ class StreamrWebsocketSpec extends StreamrIntegrationSpecification {
 		conditions.eventually() {
 			assert done
 			assert receivedMsg == expectedMessages
-			System.out.println("finished test")
 		}
 	}
 }

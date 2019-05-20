@@ -155,9 +155,11 @@ public class Subscription {
         return last != null && prev.compareTo(last) > 0;
     }
 
-    public void resendDone() {
-        if (!this.resending) {
-            this.handler.done(this);
+    void resendDone() {
+        if (this.resending) {
+            log.error("Resending should be done");
         }
+
+        this.handler.done(this);
     }
 }
