@@ -166,4 +166,12 @@ public class Subscription {
         MessageRef last = lastReceivedMsgRef.get(key);
         return last != null && prev.compareTo(last) > 0;
     }
+
+    void resendDone() {
+        if (this.resending) {
+            log.error("Resending should be done");
+        }
+
+        this.handler.done(this);
+    }
 }

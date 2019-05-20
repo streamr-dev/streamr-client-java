@@ -294,6 +294,28 @@ public class StreamrClient extends StreamrRESTClient {
         return subscribe(stream, 0, handler, null);
     }
 
+    public void resend(Stream stream, int partition, MessageHandler handler, ResendOption resendOption) {
+        StreamrClient s = this;
+
+        MessageHandler a = new MessageHandler() {
+            StreamrClient sc = s;
+
+            @Override
+            public void onMessage(Subscription sub, StreamMessage message) {
+                handler.onMessage(sub, message);
+            }
+            public void done(Subscription sub) {
+                if (sc != null) {
+                    sc.unsubscribe(sub);
+                }
+
+                handler.done(sub);
+            }
+        };
+
+        subscribe(stream, partition, a, resendOption);
+    }
+
     public Subscription subscribe(Stream stream, int partition, MessageHandler handler, ResendOption resendOption) {
         if (!getState().equals(State.Connected)) {
             connect();
@@ -344,11 +366,13 @@ public class StreamrClient extends StreamrRESTClient {
     private void handleResendResponseNoResend(ResendResponseNoResend res) throws SubscriptionNotFoundException {
         Subscription sub = subs.get(res.getStreamId(), res.getStreamPartition());
         endResendAndCheckQueue(sub);
+        sub.resendDone();
     }
 
     private void handleResendResponseResent(ResendResponseResent res) throws SubscriptionNotFoundException {
         Subscription sub = subs.get(res.getStreamId(), res.getStreamPartition());
         endResendAndCheckQueue(sub);
+        sub.resendDone();
     }
 
     private void endResendAndCheckQueue(Subscription sub) {
