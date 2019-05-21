@@ -91,8 +91,6 @@ signing {
 	sign configurations.archives
 }
 
-uploadArchives.enabled = false
-
 task uploadArchives {
 	repositories {
 		mavenDeployer {
@@ -137,3 +135,4 @@ task uploadArchives {
 		}
 	}
 }
+uploadArchives.enabled = false
