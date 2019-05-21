@@ -1,5 +1,5 @@
 group 'com.streamr'
-version '0.1-SNAPSHOT'
+version '1.0.0'
 
 buildscript {
 	repositories {
@@ -19,6 +19,8 @@ apply plugin: 'groovy'
 apply plugin: 'nebula.facet'                    // Healthy defaults for a standard project
 apply plugin: 'idea'
 apply plugin: 'maven-publish'
+apply plugin: 'maven'
+apply plugin: 'signing'
 
 sourceCompatibility = 1.8
 targetCompatibility = 1.8
@@ -69,24 +71,67 @@ jar {
 	}
 }
 
-publishing {
-	publications {
-		maven(MavenPublication) {
-			groupId = 'com.streamr'
-			artifactId = 'client'
-			version = '0.1-SNAPSHOT'
+task sourcesJar(type: Jar, dependsOn: classes) {
+	classifier = 'sources'
+	from sourceSets.main.allSource
+}
 
-			from components.java
-		}
-	}
+task javadocJar(type: Jar, dependsOn: javadoc) {
+	classifier = 'javadoc'
+	from javadoc.destinationDir
+}
+
+artifacts {
+	archives javadocJar, sourcesJar
+}
+
+archivesBaseName='client'
+
+signing {
+	sign configurations.archives
+}
+
+uploadArchives {
 	repositories {
-		mavenLocal()
-		maven {
-			credentials {
-				username ''
-				password ''
+		mavenDeployer {
+			beforeDeployment { MavenDeployment deployment -> signing.signPom(deployment) }
+
+			repository(url: "https://oss.sonatype.org/service/local/staging/deploy/maven2/") {
+				authentication(userName: ossrhUsername, password: ossrhPassword)
 			}
-			url 'https://oss.sonatype.org/content/repositories/snapshots'
+
+			snapshotRepository(url: "https://oss.sonatype.org/content/repositories/snapshots/") {
+				authentication(userName: ossrhUsername, password: ossrhPassword)
+			}
+
+			pom.project {
+				name 'Streamr Java Client Library'
+				packaging 'jar'
+				// optionally artifactId can be defined here
+				description 'A Java library to interact with Streamr'
+				url 'https://www.streamr.com/'
+
+				scm {
+					connection 'scm:git:git://github.com/streamr-dev/streamr-client-java'
+					developerConnection 'scm:git:ssh://github.com/streamr-dev/streamr-client-java'
+					url 'https://github.com/streamr-dev/streamr-client-java'
+				}
+
+				licenses {
+					license {
+						name 'The Apache License, Version 2.0'
+						url 'http://www.apache.org/licenses/LICENSE-2.0.txt'
+					}
+				}
+
+				developers {
+					developer {
+						id 'hpihkala'
+						name 'Henri Pihkala'
+						email 'henri.pihkala@streamr.com'
+					}
+				}
+			}
 		}
 	}
 }

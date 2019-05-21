@@ -6,7 +6,7 @@ Using this library, you can easily interact with Streamr over HTTP and websocket
 
 This library is work-in-progress. It is currently in a MVP stage covering a very basic subset of functionality including:
 
-- [Authentication with an API key](#authentication)
+- [Authentication](#authentication)
 - [Creating Streams](#creating-streams)
 - [Looking up Streams](#looking-up-streams)
 - [Publishing events to Streams](#publishing)
@@ -15,41 +15,36 @@ This library is work-in-progress. It is currently in a MVP stage covering a very
 
 # Installation
 
-This library is currently published in the Maven repository https://oss.sonatype.org/content/groups/public. 
+This library is published to the Maven Central repository.
 
 ## Using Maven
 
-In your `pom.xml`, add the repo:
+In your `pom.xml`, add the repository:
 ```
-  <repositories>
-    <repository>
-      <id>oss-sonatype</id>
-      <name>OSS Sonatype</name>
-      <url>https://oss.sonatype.org/content/groups/public</url>
-    </repository>
-    ...
-  </repositories>
+<repositories>
+  <repository>
+    <url>https://dl.bintray.com/ethereum/maven</url>
+  </repository>
+  ...
+</repositories>
 ```
 And the artifact itself:
 ```
-  <dependencies>
-    <dependency>
-      <groupId>com.streamr</groupId>
-      <artifactId>client</artifactId>
-      <version>0.1-SNAPSHOT</version>
-    </dependency>
-    ...
-  </dependencies>
+<dependencies>
+  <dependency>
+    <groupId>com.streamr</groupId>
+    <artifactId>client</artifactId>
+    <version>1.0.0</version>
+  </dependency>
+  ...
+</dependencies>
 ```
 
 ## Using Gradle
 
-In your `build.gradle`, add the repos:
+In your `build.gradle`, add the repository:
 ```
 repositories {
-    maven {
-      url 'https://oss.sonatype.org/content/groups/public'
-    }
     maven {
         url "https://dl.bintray.com/ethereum/maven/"
     }
@@ -58,7 +53,7 @@ repositories {
 And the artifact itself:
 ```
 dependencies {
-    implementation 'com.streamr:client:0.1-SNAPSHOT'
+    implementation 'com.streamr:client:1.0.0'
 }
 ```
 
@@ -166,7 +161,6 @@ client.unsubscribe(sub);
 
 This library is work in progress. At least the following will be done, probably sooner than later:
 
-- Publishing this library to Maven
 - Covering all of the Stream API
 - Covering the API endpoints for other resources than Streams
 
