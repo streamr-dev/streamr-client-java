@@ -18,8 +18,8 @@ apply plugin: 'java'
 apply plugin: 'groovy'
 apply plugin: 'nebula.facet'                    // Healthy defaults for a standard project
 apply plugin: 'idea'
-apply plugin: 'maven-publish'
 apply plugin: 'maven'
+apply plugin: 'maven-publish'
 apply plugin: 'signing'
 
 sourceCompatibility = 1.8
@@ -91,7 +91,10 @@ signing {
 	sign configurations.archives
 }
 
-task uploadArchives {
+uploadArchives {
+	onlyIf {
+		project.hasProperty('publish')
+	}
 	repositories {
 		mavenDeployer {
 			beforeDeployment { MavenDeployment deployment -> signing.signPom(deployment) }
@@ -135,4 +138,3 @@ task uploadArchives {
 		}
 	}
 }
-uploadArchives.enabled = false
