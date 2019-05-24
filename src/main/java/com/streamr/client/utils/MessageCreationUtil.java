@@ -21,7 +21,7 @@ public class MessageCreationUtil {
     private final String publisherId;
     private final String msgChainId;
     private final SigningUtil signingUtil;
-    private final Map<String, SecretKey> groupKeys = new HashMap<>();
+    private final Map<String, SecretKey> groupKeys = new HashMap<>(); // streamId --> groupKey
 
     private final HashMap<String, MessageRef> refsPerStreamAndPartition = new HashMap<>();
 

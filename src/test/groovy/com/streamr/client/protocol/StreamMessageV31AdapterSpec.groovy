@@ -4,6 +4,7 @@ import com.squareup.moshi.JsonReader
 import com.squareup.moshi.JsonWriter
 import com.streamr.client.exceptions.ContentTypeNotParsableException
 import com.streamr.client.exceptions.EncryptedContentNotParsableException
+import com.streamr.client.exceptions.MalformedMessageException
 import com.streamr.client.protocol.message_layer.*
 import com.streamr.client.protocol.message_layer.StreamMessage.ContentType
 import com.streamr.client.protocol.message_layer.StreamMessage.EncryptionType
@@ -170,34 +171,55 @@ class StreamMessageV31AdapterSpec extends Specification {
 	}
 
 	void "fromJson() with content types other than JSON"() {
-		String json1 = "[31,[\"7wa7APtlTq6EC5iTCBy6dw\",0,1528228173462,0,\"publisherId\",\"1\"],null,28,2,\"some group key request\",0,null]"
-		String json2 = "[31,[\"7wa7APtlTq6EC5iTCBy6dw\",0,1528228173462,0,\"publisherId\",\"1\"],null,29,2,\"some group key\",0,null]"
-		String json3 = "[31,[\"7wa7APtlTq6EC5iTCBy6dw\",0,1528228173462,0,\"publisherId\",\"1\"],null,30,2,\"some new group key\",0,null]"
+		String json28 = "[31,[\"7wa7APtlTq6EC5iTCBy6dw\",0,1528228173462,0,\"publisherId\",\"1\"],null,28,0,\"{\\\"publicKey\\\":\\\"some-public-key\\\",\\\"range\\\":{\\\"start\\\":1,\\\"end\\\":2}}\",0,null]"
+		String json28Wrong = "[31,[\"7wa7APtlTq6EC5iTCBy6dw\",0,1528228173462,0,\"publisherId\",\"1\"],null,28,0,\"{\\\"wrongField\\\":\\\"some-public-key\\\"}\",0,null]"
+		String json29 = "[31,[\"7wa7APtlTq6EC5iTCBy6dw\",0,1528228173462,0,\"publisherId\",\"1\"],null,29,0,\"{\\\"keys\\\":[{\\\"groupKey\\\":\\\"some-group-key\\\",\\\"start\\\":123}]}\",0,null]"
+		String json29Wrong1 = "[31,[\"7wa7APtlTq6EC5iTCBy6dw\",0,1528228173462,0,\"publisherId\",\"1\"],null,29,0,\"{\\\"keys\\\":1233}\",0,null]"
+		String json29Wrong2 = "[31,[\"7wa7APtlTq6EC5iTCBy6dw\",0,1528228173462,0,\"publisherId\",\"1\"],null,29,0,\"{\\\"keys\\\":[{\\\"groupKey\\\":\\\"some-group-key\\\",\\\"wrongField\\\":123}]}\",0,null]"
+		String json30 = "[31,[\"7wa7APtlTq6EC5iTCBy6dw\",0,1528228173462,0,\"publisherId\",\"1\"],null,30,0,\"{\\\"groupKey\\\":\\\"some new group key\\\",\\\"start\\\":123}\",0,null]"
+		String json30Wrong = "[31,[\"7wa7APtlTq6EC5iTCBy6dw\",0,1528228173462,0,\"publisherId\",\"1\"],null,30,0,\"{\\\"groupKey\\\":\\\"some new group key\\\",\\\"wrongField\\\":123}\",0,null]"
 
 		when:
-		StreamMessageV31 msg1 = fromJsonToMsg(adapter, json1)
-		msg1.getContent()
+		StreamMessageV31 msg28 = fromJsonToMsg(adapter, json28)
 		then:
-		thrown ContentTypeNotParsableException
-		msg1.toJson() == json1
-		msg1.getContentType() == ContentType.GROUP_KEY_REQUEST
-		msg1.getSerializedContent() == "some group key request"
+		msg28.toJson() == json28
+		msg28.getContentType() == ContentType.GROUP_KEY_REQUEST
+		msg28.getContent().get("publicKey") == "some-public-key"
 		when:
-		StreamMessageV31 msg2 = fromJsonToMsg(adapter, json2)
-		msg2.getContent()
+		StreamMessageV31 msg28Wrong = fromJsonToMsg(adapter, json28Wrong)
+		msg28Wrong.getContent()
 		then:
-		thrown ContentTypeNotParsableException
-		msg2.toJson() == json2
-		msg2.getContentType() == ContentType.GROUP_KEY_RESPONSE_SIMPLE
-		msg2.getSerializedContent() == "some group key"
+		thrown MalformedMessageException
 		when:
-		StreamMessageV31 msg3 = fromJsonToMsg(adapter, json3)
-		msg3.getContent()
+		StreamMessageV31 msg29 = fromJsonToMsg(adapter, json29)
+		List<Map<String,Object>> keys = msg29.getContent().get("keys")
 		then:
-		thrown ContentTypeNotParsableException
-		msg3.toJson() == json3
-		msg3.getContentType() == ContentType.GROUP_KEY_RESET_SIMPLE
-		msg3.getSerializedContent() == "some new group key"
+		msg29.toJson() == json29
+		msg29.getContentType() == ContentType.GROUP_KEY_RESPONSE_SIMPLE
+		keys.get(0).get("groupKey") == "some-group-key"
+		keys.get(0).get("start") == 123
+		when:
+		StreamMessageV31 msg29Wrong1 = fromJsonToMsg(adapter, json29Wrong1)
+		msg29Wrong1.getContent()
+		then:
+		thrown MalformedMessageException
+		when:
+		StreamMessageV31 msg29Wrong2 = fromJsonToMsg(adapter, json29Wrong2)
+		msg29Wrong2.getContent()
+		then:
+		thrown MalformedMessageException
+		when:
+		StreamMessageV31 msg30 = fromJsonToMsg(adapter, json30)
+		then:
+		msg30.toJson() == json30
+		msg30.getContentType() == ContentType.GROUP_KEY_RESET_SIMPLE
+		msg30.getContent().get("groupKey") == "some new group key"
+		msg30.getContent().get("start") == 123
+		when:
+		StreamMessageV31 msg30Wrong = fromJsonToMsg(adapter, json30Wrong)
+		msg30Wrong.getContent()
+		then:
+		thrown MalformedMessageException
 	}
 
 	void "getContent() throws if encrypted"() {

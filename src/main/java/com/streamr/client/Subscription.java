@@ -27,7 +27,7 @@ public class Subscription {
     private final StreamPartition streamPartition;
     private final MessageHandler handler;
     private ResendOption resendOption;
-    private final Map<String, SecretKey> groupKeys = new HashMap<>();
+    private final Map<String, SecretKey> groupKeys = new HashMap<>(); // publisherId --> groupKey
 
     private final HashMap<String, MessageRef> lastReceivedMsgRef = new HashMap<>();
     private boolean resending = false;

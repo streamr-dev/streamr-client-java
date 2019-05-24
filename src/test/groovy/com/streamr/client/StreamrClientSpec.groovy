@@ -1,5 +1,6 @@
 package com.streamr.client
 
+import com.streamr.client.options.EncryptionOptions
 import com.streamr.client.options.ResendLastOption
 import com.streamr.client.options.SigningOptions
 import com.streamr.client.options.StreamrClientOptions
@@ -36,7 +37,7 @@ class StreamrClientSpec extends Specification {
     void setup() {
         server.clear()
         SigningOptions signingOptions = new SigningOptions(SigningOptions.SignatureComputationPolicy.NEVER, SigningOptions.SignatureVerificationPolicy.NEVER)
-        StreamrClientOptions options = new StreamrClientOptions(null, signingOptions, server.getWsUrl(), "", gapFillTimeout, retryResendAfter)
+        StreamrClientOptions options = new StreamrClientOptions(null, signingOptions, EncryptionOptions.getDefault(), server.getWsUrl(), "", gapFillTimeout, retryResendAfter)
         client = new TestingStreamrClient(options)
     }
 
