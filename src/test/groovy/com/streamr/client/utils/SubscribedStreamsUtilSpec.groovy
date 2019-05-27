@@ -3,7 +3,7 @@ package com.streamr.client.utils
 import com.streamr.client.exceptions.InvalidSignatureException
 import com.streamr.client.protocol.message_layer.MessageID
 import com.streamr.client.protocol.message_layer.StreamMessage
-import com.streamr.client.protocol.message_layer.StreamMessageV30
+import com.streamr.client.protocol.message_layer.StreamMessageV31
 import com.streamr.client.rest.Stream
 import spock.lang.Specification
 import com.streamr.client.options.SigningOptions.SignatureVerificationPolicy
@@ -13,14 +13,14 @@ class SubscribedStreamsUtilSpec extends Specification {
     MessageID msgId = new MessageID("streamId", 0, 425235315L, 0L, "publisherId", "msgChainId")
 
     // The signature of this message is invalid but still in a correct format
-    StreamMessage msgInvalid = new StreamMessageV30(msgId, null, StreamMessage.ContentType.CONTENT_TYPE_JSON, [foo: 'bar'],
+    StreamMessage msgInvalid = new StreamMessageV31(msgId, null, StreamMessage.ContentType.CONTENT_TYPE_JSON, StreamMessage.EncryptionType.NONE, [foo: 'bar'],
             StreamMessage.SignatureType.SIGNATURE_TYPE_ETH, signature)
 
     // By checking that this message is verified without throwing, we ensure that the SigningUtil is not called because the signature is not in the correct form
-    StreamMessage msgWrongFormat = new StreamMessageV30(msgId, null, StreamMessage.ContentType.CONTENT_TYPE_JSON, [foo: 'bar'],
+    StreamMessage msgWrongFormat = new StreamMessageV31(msgId, null, StreamMessage.ContentType.CONTENT_TYPE_JSON, StreamMessage.EncryptionType.NONE, [foo: 'bar'],
             StreamMessage.SignatureType.SIGNATURE_TYPE_ETH, "wrong-signature")
 
-    StreamMessage msgUnsigned = new StreamMessageV30(msgId, null, StreamMessage.ContentType.CONTENT_TYPE_JSON, [foo: 'bar'],
+    StreamMessage msgUnsigned = new StreamMessageV31(msgId, null, StreamMessage.ContentType.CONTENT_TYPE_JSON, StreamMessage.EncryptionType.NONE, [foo: 'bar'],
             StreamMessage.SignatureType.SIGNATURE_TYPE_NONE, null)
 
     List<String> publishers = ["publisherId"]

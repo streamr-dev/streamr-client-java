@@ -3,7 +3,7 @@ package com.streamr.client.utils
 import com.streamr.client.protocol.message_layer.MessageID
 import com.streamr.client.protocol.message_layer.MessageRef
 import com.streamr.client.protocol.message_layer.StreamMessage
-import com.streamr.client.protocol.message_layer.StreamMessageV30
+import com.streamr.client.protocol.message_layer.StreamMessageV31
 import org.apache.commons.codec.binary.Hex
 import org.ethereum.crypto.ECKey
 import spock.lang.Specification
@@ -34,7 +34,7 @@ class SigningUtilSpec extends Specification {
     }
 
     void "should correctly sign a StreamMessage with null previous ref"() {
-        StreamMessage msg = new StreamMessageV30(msgId, null, StreamMessage.ContentType.CONTENT_TYPE_JSON, [foo: 'bar'], StreamMessage.SignatureType.SIGNATURE_TYPE_NONE, null)
+        StreamMessage msg = new StreamMessageV31(msgId, null, StreamMessage.ContentType.CONTENT_TYPE_JSON, StreamMessage.EncryptionType.NONE, [foo: 'bar'], StreamMessage.SignatureType.SIGNATURE_TYPE_NONE, null)
         String expectedPayload = "streamId04252353150publisherIdmsgChainId"+'{"foo":"bar"}'
         when:
         signingUtil.signStreamMessage(msg)
@@ -44,7 +44,7 @@ class SigningUtilSpec extends Specification {
     }
 
     void "should correctly sign a StreamMessage with non-null previous ref"() {
-        StreamMessage msg = new StreamMessageV30(msgId, new MessageRef(100, 1), StreamMessage.ContentType.CONTENT_TYPE_JSON, [foo: 'bar'], StreamMessage.SignatureType.SIGNATURE_TYPE_NONE, null)
+        StreamMessage msg = new StreamMessageV31(msgId, new MessageRef(100, 1), StreamMessage.ContentType.CONTENT_TYPE_JSON, StreamMessage.EncryptionType.NONE, [foo: 'bar'], StreamMessage.SignatureType.SIGNATURE_TYPE_NONE, null)
         String expectedPayload = "streamId04252353150publisherIdmsgChainId1001"+'{"foo":"bar"}'
         when:
         signingUtil.signStreamMessage(msg)
@@ -55,14 +55,14 @@ class SigningUtilSpec extends Specification {
 
     void "returns false if no signature"() {
         when:
-        StreamMessage msg = new StreamMessageV30(msgId, null, StreamMessage.ContentType.CONTENT_TYPE_JSON, [foo: 'bar'], StreamMessage.SignatureType.SIGNATURE_TYPE_NONE, null)
+        StreamMessage msg = new StreamMessageV31(msgId, null, StreamMessage.ContentType.CONTENT_TYPE_JSON, StreamMessage.EncryptionType.NONE, [foo: 'bar'], StreamMessage.SignatureType.SIGNATURE_TYPE_NONE, null)
         then:
         !SigningUtil.hasValidSignature(msg, ["publisherId"].toSet())
     }
 
     void "returns false if wrong signature"() {
         when:
-        StreamMessage msg = new StreamMessageV30(msgId, null, StreamMessage.ContentType.CONTENT_TYPE_JSON, [foo: 'bar'],
+        StreamMessage msg = new StreamMessageV31(msgId, null, StreamMessage.ContentType.CONTENT_TYPE_JSON, StreamMessage.EncryptionType.NONE, [foo: 'bar'],
                 StreamMessage.SignatureType.SIGNATURE_TYPE_ETH, "0x787cd72924153c88350e808de68b68c88030cbc34d053a5c696a5893d5e6fec1687c1b6205ec99aeb3375a81bf5cb8857ae39c1b55a41b32ed6399ae8da456a61b")
         then:
         !SigningUtil.hasValidSignature(msg, ["publisherId"].toSet())
@@ -70,7 +70,7 @@ class SigningUtilSpec extends Specification {
 
     void "returns true if correct signature"() {
         MessageID msgId = new MessageID("streamId", 0, 425235315L, 0L, address, "msgChainId")
-        StreamMessage msg = new StreamMessageV30(msgId, null, StreamMessage.ContentType.CONTENT_TYPE_JSON, [foo: 'bar'],
+        StreamMessage msg = new StreamMessageV31(msgId, null, StreamMessage.ContentType.CONTENT_TYPE_JSON, StreamMessage.EncryptionType.NONE, [foo: 'bar'],
                 StreamMessage.SignatureType.SIGNATURE_TYPE_NONE, null)
         when:
         signingUtil.signStreamMessage(msg)
@@ -80,7 +80,7 @@ class SigningUtilSpec extends Specification {
 
     void "returns false if correct signature but not from a trusted publisher"() {
         MessageID msgId = new MessageID("streamId", 0, 425235315L, 0L, address, "msgChainId")
-        StreamMessage msg = new StreamMessageV30(msgId, null, StreamMessage.ContentType.CONTENT_TYPE_JSON, [foo: 'bar'],
+        StreamMessage msg = new StreamMessageV31(msgId, null, StreamMessage.ContentType.CONTENT_TYPE_JSON, StreamMessage.EncryptionType.NONE, [foo: 'bar'],
                 StreamMessage.SignatureType.SIGNATURE_TYPE_NONE, null)
         when:
         signingUtil.signStreamMessage(msg)
