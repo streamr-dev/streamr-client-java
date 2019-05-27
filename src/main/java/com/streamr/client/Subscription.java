@@ -45,18 +45,20 @@ public class Subscription {
         this.streamPartition = new StreamPartition(streamId, partition);
         this.handler = handler;
         this.resendOption = resendOption;
-        for (String publisherId: groupKeysHex.keySet()) {
-            String groupKeyHex = groupKeysHex.get(publisherId);
-            groupKeys.put(publisherId, new SecretKeySpec(DatatypeConverter.parseHexBinary(groupKeyHex), "AES"));
+        if (groupKeysHex != null) {
+            for (String publisherId: groupKeysHex.keySet()) {
+                String groupKeyHex = groupKeysHex.get(publisherId);
+                groupKeys.put(publisherId, new SecretKeySpec(DatatypeConverter.parseHexBinary(groupKeyHex), "AES"));
+            }
         }
     }
 
     public Subscription(String streamId, int partition, MessageHandler handler, ResendOption resendOption) {
-        this(streamId, partition, handler, resendOption, new HashMap<>());
+        this(streamId, partition, handler, resendOption, null);
     }
 
     public Subscription(String streamId, int partition, MessageHandler handler) {
-        this(streamId, partition, handler, null, new HashMap<>());
+        this(streamId, partition, handler, null, null);
     }
 
     public String getId() {

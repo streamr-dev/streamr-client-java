@@ -13,7 +13,6 @@ import com.streamr.client.exceptions.EncryptedContentNotParsableException;
 import com.streamr.client.exceptions.MalformedMessageException;
 import com.streamr.client.utils.HttpUtils;
 import com.streamr.client.exceptions.UnsupportedMessageException;
-import kotlin.TypeCastException;
 import okio.Buffer;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;

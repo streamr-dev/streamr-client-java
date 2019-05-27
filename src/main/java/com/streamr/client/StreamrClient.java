@@ -80,7 +80,7 @@ public class StreamrClient extends StreamrRESTClient {
         if (options.getPublishSignedMsgs()) {
             signingUtil = new SigningUtil(((EthereumAuthenticationMethod) options.getAuthenticationMethod()).getAccount());
         }
-        msgCreationUtil = new MessageCreationUtil(publisherId, signingUtil);
+        msgCreationUtil = new MessageCreationUtil(publisherId, signingUtil, options.getEncryptionOptions().getPublisherGroupKeys());
 
         try {
             this.websocket = new WebSocketClient(new URI(options.getWebsocketApiUrl())) {
@@ -272,14 +272,21 @@ public class StreamrClient extends StreamrRESTClient {
      */
 
     public void publish(Stream stream, Map<String, Object> payload) {
-        publish(stream, payload, new Date());
+        publish(stream, payload, new Date(), null);
     }
 
     public void publish(Stream stream, Map<String, Object> payload, Date timestamp) {
+        publish(stream, payload, timestamp, null);
+    }
+
+    public void publish(Stream stream, Map<String, Object> payload, Date timestamp, String groupKeyHex) {
         if (!getState().equals(StreamrClient.State.Connected)) {
             connect();
         }
-        StreamMessage streamMessage = msgCreationUtil.createStreamMessage(stream, payload, timestamp, null);
+        if (groupKeyHex != null) {
+            options.getEncryptionOptions().getPublisherGroupKeys().put(stream.getId(), groupKeyHex);
+        }
+        StreamMessage streamMessage = msgCreationUtil.createStreamMessage(stream, payload, timestamp, null, groupKeyHex);
         PublishRequest req = new PublishRequest(streamMessage, getSessionToken());
         getWebsocket().send(req.toJson());
     }
@@ -293,8 +300,39 @@ public class StreamrClient extends StreamrRESTClient {
         if (nbPartitions != null && nbPartitions > 1) {
             throw new PartitionNotSpecifiedException(stream.getId(), stream.getPartitions());
         }
-        return subscribe(stream, 0, handler, null);
+        return subscribe(stream, 0, handler, null, null);
     }
+
+    public Subscription subscribe(Stream stream, int partition, MessageHandler handler, ResendOption resendOption) {
+        return subscribe(stream, partition, handler, resendOption, null);
+    }
+
+    public Subscription subscribe(Stream stream, int partition, MessageHandler handler, ResendOption resendOption,
+                                  Map<String, String> groupKeys) {
+        if (!getState().equals(State.Connected)) {
+            connect();
+        }
+
+        if (groupKeys != null) {
+            Map<String, String> keysPerPublisher = options.getEncryptionOptions().getSubscriberGroupKeys().get(stream.getId());
+            if (keysPerPublisher == null) {
+                options.getEncryptionOptions().getSubscriberGroupKeys().put(stream.getId(), new HashMap<>(groupKeys));
+            } else {
+                keysPerPublisher.putAll(groupKeys);
+            }
+        }
+
+        SubscribeRequest subscribeRequest = new SubscribeRequest(stream.getId(), partition, session.getSessionToken());
+        Subscription sub = new Subscription(stream.getId(), partition, handler, resendOption, groupKeys);
+        subs.add(sub);
+        sub.setState(Subscription.State.SUBSCRIBING);
+        this.websocket.send(subscribeRequest.toJson());
+        return sub;
+    }
+
+    /*
+     * Resend
+     */
 
     public void resend(Stream stream, int partition, MessageHandler handler, ResendOption resendOption) {
         StreamrClient s = this;
@@ -316,19 +354,6 @@ public class StreamrClient extends StreamrRESTClient {
         };
 
         subscribe(stream, partition, a, resendOption);
-    }
-
-    public Subscription subscribe(Stream stream, int partition, MessageHandler handler, ResendOption resendOption) {
-        if (!getState().equals(State.Connected)) {
-            connect();
-        }
-
-        SubscribeRequest subscribeRequest = new SubscribeRequest(stream.getId(), partition, session.getSessionToken());
-        Subscription sub = new Subscription(stream.getId(), partition, handler, resendOption);
-        subs.add(sub);
-        sub.setState(Subscription.State.SUBSCRIBING);
-        this.websocket.send(subscribeRequest.toJson());
-        return sub;
     }
 
     /*
