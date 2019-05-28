@@ -51,27 +51,6 @@ public class MessageCreationUtil {
             EncryptionUtil.validateGroupKey(groupKeyHex);
         }
 
-        EncryptionType encryptionType;
-        String content;
-        if (groupKeys.containsKey(stream.getId()) && groupKeyHex != null) {
-            encryptionType = EncryptionType.NEW_KEY_AND_AES;
-            byte[] groupKeyBytes = DatatypeConverter.parseHexBinary(groupKeyHex);
-            byte[] payloadBytes = HttpUtils.mapAdapter.toJson(payload).getBytes(StandardCharsets.UTF_8);
-            byte[] plaintext = new byte[groupKeyBytes.length + payloadBytes.length];
-            System.arraycopy(groupKeyBytes, 0, plaintext, 0, groupKeyBytes.length);
-            System.arraycopy(payloadBytes, 0, plaintext, groupKeyBytes.length, payloadBytes.length);
-            content = EncryptionUtil.encrypt(plaintext, groupKeys.get(stream.getId()));
-            groupKeys.put(stream.getId(), new SecretKeySpec(DatatypeConverter.parseHexBinary(groupKeyHex), "AES"));
-        } else if (groupKeys.containsKey(stream.getId()) || groupKeyHex != null) {
-            if (groupKeyHex != null) {
-                groupKeys.put(stream.getId(), new SecretKeySpec(DatatypeConverter.parseHexBinary(groupKeyHex), "AES"));
-            }
-            encryptionType = EncryptionType.AES;
-            content = EncryptionUtil.encrypt(HttpUtils.mapAdapter.toJson(payload).getBytes(StandardCharsets.UTF_8), groupKeys.get(stream.getId()));
-        } else {
-            encryptionType = EncryptionType.NONE;
-            content = HttpUtils.mapAdapter.toJson(payload);
-        }
         int streamPartition = getStreamPartition(stream.getPartitions(), partitionKey);
         String key = stream.getId() + streamPartition;
 
@@ -79,12 +58,22 @@ public class MessageCreationUtil {
         MessageID msgId = new MessageID(stream.getId(), streamPartition, timestamp.getTime(), sequenceNumber, publisherId, msgChainId);
         MessageRef prevRef = refsPerStreamAndPartition.get(key);
         StreamMessage streamMessage = new StreamMessageV31(msgId, prevRef, StreamMessage.ContentType.CONTENT_TYPE_JSON,
-                encryptionType, content, StreamMessage.SignatureType.SIGNATURE_TYPE_NONE, null
+                EncryptionType.NONE, payload, StreamMessage.SignatureType.SIGNATURE_TYPE_NONE, null
         );
 
         refsPerStreamAndPartition.put(key, new MessageRef(timestamp.getTime(), sequenceNumber));
         if (signingUtil != null) {
             signingUtil.signStreamMessage(streamMessage);
+        }
+
+        if (groupKeys.containsKey(stream.getId()) && groupKeyHex != null) {
+            EncryptionUtil.encryptStreamMessageAndNewKey(groupKeyHex, streamMessage, groupKeys.get(stream.getId()));
+            groupKeys.put(stream.getId(), new SecretKeySpec(DatatypeConverter.parseHexBinary(groupKeyHex), "AES"));
+        } else if (groupKeys.containsKey(stream.getId()) || groupKeyHex != null) {
+            if (groupKeyHex != null) {
+                groupKeys.put(stream.getId(), new SecretKeySpec(DatatypeConverter.parseHexBinary(groupKeyHex), "AES"));
+            }
+            EncryptionUtil.encryptStreamMessage(streamMessage, groupKeys.get(stream.getId()));
         }
         return streamMessage;
     }

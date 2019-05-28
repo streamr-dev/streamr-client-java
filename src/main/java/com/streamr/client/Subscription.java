@@ -7,9 +7,7 @@ import com.streamr.client.options.ResendOption;
 import com.streamr.client.protocol.message_layer.MessageRef;
 import com.streamr.client.protocol.message_layer.StreamMessage;
 import com.streamr.client.exceptions.GapDetectedException;
-import com.streamr.client.protocol.message_layer.StreamMessageV31;
 import com.streamr.client.utils.EncryptionUtil;
-import com.streamr.client.utils.HttpUtils;
 import com.streamr.client.utils.StreamPartition;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
@@ -17,7 +15,6 @@ import org.apache.logging.log4j.Logger;
 import javax.crypto.SecretKey;
 import javax.crypto.spec.SecretKeySpec;
 import javax.xml.bind.DatatypeConverter;
-import java.nio.charset.StandardCharsets;
 import java.util.*;
 
 public class Subscription {
@@ -122,8 +119,11 @@ public class Subscription {
                 log.debug(String.format("Sub %s already received message: %s, lastReceivedMsgRef: %s. Ignoring message.", id, msgRef, last));
             } else {
                 lastReceivedMsgRef.put(key, msgRef);
-                StreamMessage decrypted = getDecryptedMessage((StreamMessageV31)msg);
-                handler.onMessage(this, decrypted);
+                SecretKey newGroupKey = EncryptionUtil.decryptStreamMessage(msg, groupKeys.get(msg.getPublisherId()));
+                if (newGroupKey != null) {
+                    groupKeys.put(msg.getPublisherId(), newGroupKey);
+                }
+                handler.onMessage(this, msg);
             }
         }
     }
@@ -191,40 +191,5 @@ public class Subscription {
         }
 
         this.handler.done(this);
-    }
-
-    //TODO: This method returns a new StreamMessage because MessageHandler takes a StreamMessage as argument.
-    // Shouldn't this method return only the content (Map<String, Object>) and the MessageHandler only take the
-    // content as argument?
-    private StreamMessage getDecryptedMessage(StreamMessageV31 msg) throws UnsupportedMessageException, UnableToDecryptException {
-        if (msg.getContentType() == StreamMessage.ContentType.CONTENT_TYPE_JSON) {
-            if (msg.getEncryptionType() == StreamMessage.EncryptionType.NONE) {
-                return msg;
-            } else if (msg.getEncryptionType() == StreamMessage.EncryptionType.AES) {
-                try {
-                    String plaintext = new String(EncryptionUtil.decrypt(msg.getSerializedContent(), groupKeys.get(msg.getPublisherId())), StandardCharsets.UTF_8);
-                    Map<String, Object> content = HttpUtils.mapAdapter.fromJson(plaintext);
-                    return new StreamMessageV31(msg.getMessageID(), msg.getPreviousMessageRef(),
-                            msg.getContentType(), StreamMessage.EncryptionType.NONE, content, msg.getSignatureType(), msg.getSignature());
-                } catch (Exception e) {
-                    throw new UnableToDecryptException(msg.getSerializedContent());
-                }
-
-            } else if (msg.getEncryptionType() == StreamMessage.EncryptionType.NEW_KEY_AND_AES) {
-                try {
-                    byte[] plaintext = EncryptionUtil.decrypt(msg.getSerializedContent(), groupKeys.get(msg.getPublisherId()));
-                    groupKeys.put(msg.getPublisherId(), new SecretKeySpec(Arrays.copyOfRange(plaintext, 0, 32), "AES"));
-                    String serializedContent = new String(Arrays.copyOfRange(plaintext, 32, plaintext.length), StandardCharsets.UTF_8);
-                    Map<String, Object> content = HttpUtils.mapAdapter.fromJson(serializedContent);
-                    return new StreamMessageV31(msg.getMessageID(), msg.getPreviousMessageRef(),
-                            msg.getContentType(), StreamMessage.EncryptionType.NONE, content, msg.getSignatureType(), msg.getSignature());
-                } catch (Exception e) {
-                    throw new UnableToDecryptException(msg.getSerializedContent());
-                }
-            }
-            throw new UnsupportedMessageException("Unknown encryption type: "+msg.getEncryptionType());
-        }
-        //TODO: Handle other content types
-        throw new UnsupportedMessageException("Unknown content type: "+msg.getContentType());
     }
 }

@@ -168,7 +168,7 @@ public abstract class StreamMessage implements ITimestamped {
         return encryptionType;
     }
 
-    public Map<String, Object> getContent() throws IOException {
+    public Map<String, Object> getContent() throws IOException, EncryptedContentNotParsableException {
         if (content == null) {
             if (encryptionType != EncryptionType.NONE) {
                 throw new EncryptedContentNotParsableException(encryptionType);
@@ -181,6 +181,32 @@ public abstract class StreamMessage implements ITimestamped {
 
     public String getSerializedContent() {
         return serializedContent;
+    }
+
+    public byte[] getSerializedContentAsBytes() {
+        return serializedContent.getBytes(StandardCharsets.UTF_8);
+    }
+
+    public void setEncryptionType(EncryptionType encryptionType) {
+        this.encryptionType = encryptionType;
+    }
+
+    public void setSerializedContent(String serializedContent) throws IOException {
+        this.serializedContent = serializedContent;
+        if (this.encryptionType == EncryptionType.NONE) {
+            this.content = HttpUtils.mapAdapter.fromJson(serializedContent);
+            validateContent(content, contentType);
+        }
+    }
+
+    public void setSerializedContent(byte[] serializedContent) throws IOException {
+        setSerializedContent(new String(serializedContent, StandardCharsets.UTF_8));
+    }
+
+    public void setContent(Map<String, Object> content) {
+        validateContent(content, contentType);
+        this.content = content;
+        this.serializedContent = HttpUtils.mapAdapter.toJson(content);
     }
 
     public abstract SignatureType getSignatureType();
