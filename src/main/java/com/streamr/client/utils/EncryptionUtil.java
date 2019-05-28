@@ -52,7 +52,7 @@ public class EncryptionUtil {
     }
 
     /*
-    Sets the content of 'streamMessage' to be the result of the encryption of the old content with 'groupKey'.
+    Sets the content of 'streamMessage' with the encryption result of the old content with 'groupKey'.
      */
     public static void encryptStreamMessage(StreamMessage streamMessage, SecretKey groupKey) {
         streamMessage.setEncryptionType(StreamMessage.EncryptionType.AES);
@@ -64,7 +64,7 @@ public class EncryptionUtil {
     }
 
     /*
-    Sets the content of the StreamMessage to be the result of the encryption of a plaintext with 'groupKey'. The
+    Sets the content of 'streamMessage' with the encryption result of a plaintext with 'groupKey'. The
     plaintext is the concatenation of 'newGroupKeyHex' and the old serialized content of 'streamMessage'.
      */
     public static void encryptStreamMessageAndNewKey(String newGroupKeyHex, StreamMessage streamMessage, SecretKey groupKey) {
@@ -81,6 +81,12 @@ public class EncryptionUtil {
         }
     }
 
+    /*
+    Decrypts the serialized content of 'streamMessage' with 'groupKey'. If the resulting plaintext is the concatenation
+    of a new group key and a message content, sets the content of 'streamMessage' with that message content and returns
+    the key. If the resulting plaintext is only a message content, sets the content of 'streamMessage' with that
+    message content and returns null.
+     */
     public static SecretKey decryptStreamMessage(StreamMessage streamMessage, SecretKey groupKey) throws UnableToDecryptException {
         try {
             if (streamMessage.getEncryptionType() == StreamMessage.EncryptionType.AES) {
