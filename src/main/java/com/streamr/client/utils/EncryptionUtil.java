@@ -19,7 +19,7 @@ import java.util.Arrays;
 public class EncryptionUtil {
     private static final Logger log = LogManager.getLogger();
     private static final SecureRandom SRAND = new SecureRandom();
-    private static final Cipher cipher = getCipher();
+    private static final ThreadLocal<Cipher> cipher = ThreadLocal.withInitial(() -> getCipher());
 
     private static Cipher getCipher() {
         try {
@@ -35,8 +35,8 @@ public class EncryptionUtil {
             byte[] iv = new byte[16];
             SRAND.nextBytes(iv);
             IvParameterSpec ivspec = new IvParameterSpec(iv);
-            cipher.init(Cipher.ENCRYPT_MODE, groupKey, ivspec);
-            byte[] ciphertext = cipher.doFinal(plaintext);
+            cipher.get().init(Cipher.ENCRYPT_MODE, groupKey, ivspec);
+            byte[] ciphertext = cipher.get().doFinal(plaintext);
             return Hex.encodeHexString(iv) + Hex.encodeHexString(ciphertext);
         } catch (Exception e) {
             log.error(e);
@@ -47,8 +47,8 @@ public class EncryptionUtil {
     public static byte[] decrypt(String ciphertext, SecretKey groupKey) throws Exception {
         byte[] iv = DatatypeConverter.parseHexBinary(ciphertext.substring(0, 32));
         IvParameterSpec ivParameterSpec = new IvParameterSpec(iv);
-        cipher.init(Cipher.DECRYPT_MODE, groupKey, ivParameterSpec);
-        return cipher.doFinal(DatatypeConverter.parseHexBinary(ciphertext.substring(32)));
+        cipher.get().init(Cipher.DECRYPT_MODE, groupKey, ivParameterSpec);
+        return cipher.get().doFinal(DatatypeConverter.parseHexBinary(ciphertext.substring(32)));
     }
 
     /*
