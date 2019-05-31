@@ -62,9 +62,6 @@ public class MessageCreationUtil {
         );
 
         refsPerStreamAndPartition.put(key, new MessageRef(timestamp.getTime(), sequenceNumber));
-        if (signingUtil != null) {
-            signingUtil.signStreamMessage(streamMessage);
-        }
 
         if (groupKeys.containsKey(stream.getId()) && groupKeyHex != null) {
             EncryptionUtil.encryptStreamMessageAndNewKey(groupKeyHex, streamMessage, groupKeys.get(stream.getId()));
@@ -74,6 +71,10 @@ public class MessageCreationUtil {
                 groupKeys.put(stream.getId(), new SecretKeySpec(DatatypeConverter.parseHexBinary(groupKeyHex), "AES"));
             }
             EncryptionUtil.encryptStreamMessage(streamMessage, groupKeys.get(stream.getId()));
+        }
+
+        if (signingUtil != null) {
+            signingUtil.signStreamMessage(streamMessage);
         }
         return streamMessage;
     }

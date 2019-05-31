@@ -234,11 +234,7 @@ public class StreamrClient extends StreamrRESTClient {
     }
 
     private void handleMessage(StreamMessage message, boolean isResend) throws SubscriptionNotFoundException {
-        try {
-            log.debug(message.getStreamId() + ": " + message.getContent().toString());
-        } catch (IOException e) {
-            throw new MalformedMessageException(message.toJson());
-        }
+        log.debug(message.getStreamId() + ": " + message.getSerializedContent());
 
         subscribedStreamsUtil.verifyStreamMessage(message);
         Subscription sub = subs.get(message.getStreamId(), message.getStreamPartition());
