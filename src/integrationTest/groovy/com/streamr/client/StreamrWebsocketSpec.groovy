@@ -3,14 +3,24 @@ package com.streamr.client
 import com.streamr.client.options.ResendFromOption
 import com.streamr.client.options.ResendLastOption
 import com.streamr.client.options.ResendRangeOption
-import com.streamr.client.protocol.message_layer.StreamMessageV30
+import com.streamr.client.protocol.message_layer.StreamMessageV31
 import com.streamr.client.rest.Stream
 import com.streamr.client.protocol.message_layer.StreamMessage
+import org.apache.commons.codec.binary.Hex
 import spock.util.concurrent.PollingConditions
+
+import java.security.SecureRandom
 
 class StreamrWebsocketSpec extends StreamrIntegrationSpecification {
 
 	private StreamrClient client
+	private SecureRandom secureRandom = new SecureRandom()
+
+	String genKey() {
+		byte[] keyBytes = new byte[32]
+		secureRandom.nextBytes(keyBytes)
+		return Hex.encodeHexString(keyBytes)
+	}
 
 	void setup() {
 		client = createClientWithPrivateKey(generatePrivateKey())
@@ -114,12 +124,12 @@ class StreamrWebsocketSpec extends StreamrIntegrationSpecification {
 
 		when:
 		// Subscribe to the stream
-		StreamMessageV30 msg
+		StreamMessageV31 msg
 		client.subscribe(stream, new MessageHandler() {
 			@Override
 			void onMessage(Subscription s, StreamMessage message) {
 				//reaching this point ensures that the signature verification didn't throw
-				msg = (StreamMessageV30) message
+				msg = (StreamMessageV31) message
 			}
 		})
 
@@ -133,6 +143,43 @@ class StreamrWebsocketSpec extends StreamrIntegrationSpecification {
 		msg.getPublisherId() == client.getPublisherId()
 		msg.signatureType == StreamMessage.SignatureType.SIGNATURE_TYPE_ETH
 		msg.signature != null
+	}
+
+	void "subscriber can decrypt messages when he knows the keys used to encrypt"() {
+		Stream stream = client.createStream(new Stream(generateResourceName(), ""))
+		String keyHex = genKey()
+		HashMap<String, String> keys = new HashMap<>()
+		keys.put(client.getPublisherId(), keyHex)
+
+		when:
+		// Subscribe to the stream
+		StreamMessageV31 msg
+		client.subscribe(stream, 0, new MessageHandler() {
+			@Override
+			void onMessage(Subscription s, StreamMessage message) {
+				//reaching this point ensures that the signature verification and decryption didn't throw
+				msg = (StreamMessageV31) message
+			}
+		}, null, keys)
+
+		Thread.sleep(2000)
+
+		client.publish(stream, [test: 'clear text'], new Date(), keyHex)
+
+		Thread.sleep(2000)
+
+		then:
+		msg.getContent() == [test: 'clear text']
+
+		when:
+		// publishing a second message with a new group key
+		client.publish(stream, [test: 'another clear text'], new Date(), genKey())
+
+		Thread.sleep(2000)
+
+		then:
+		// no need to explicitly give the new group key to the subscriber
+		msg.getContent() == [test: 'another clear text']
 	}
 
 	void "subscribe with resend last"() {

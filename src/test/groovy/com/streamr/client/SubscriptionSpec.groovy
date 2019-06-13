@@ -1,24 +1,34 @@
 package com.streamr.client
 
+import com.streamr.client.exceptions.UnableToDecryptException
 import com.streamr.client.options.ResendFromOption
 import com.streamr.client.options.ResendLastOption
 import com.streamr.client.protocol.message_layer.StreamMessage
-import com.streamr.client.protocol.message_layer.StreamMessageV30
+import com.streamr.client.protocol.message_layer.StreamMessageV31
 import com.streamr.client.exceptions.GapDetectedException
+import com.streamr.client.utils.EncryptionUtil
+import com.streamr.client.utils.HttpUtils
+import org.apache.commons.codec.binary.Hex
 import spock.lang.Specification
+
+import javax.crypto.SecretKey
+import javax.crypto.spec.SecretKeySpec
+import javax.xml.bind.DatatypeConverter
+import java.nio.charset.StandardCharsets
+import java.security.SecureRandom
 
 class SubscriptionSpec extends Specification {
 
-    StreamMessageV30 msg = new StreamMessageV30("stream-id", 0, (new Date()).getTime(), 0, "publisherId", "msgChainId",
-            null, 0, StreamMessage.ContentType.CONTENT_TYPE_JSON, "{}", StreamMessage.SignatureType.SIGNATURE_TYPE_NONE, null)
+    StreamMessageV31 msg = new StreamMessageV31("stream-id", 0, (new Date()).getTime(), 0, "publisherId", "msgChainId",
+            null, 0, StreamMessage.ContentType.CONTENT_TYPE_JSON, StreamMessage.EncryptionType.NONE, "{}", StreamMessage.SignatureType.SIGNATURE_TYPE_NONE, null)
 
     StreamMessage createMessage(long timestamp, long sequenceNumber, Long previousTimestamp, Long previousSequenceNumber) {
         return createMessage(timestamp, sequenceNumber, previousTimestamp, previousSequenceNumber, "publisherId")
     }
 
     StreamMessage createMessage(long timestamp, long sequenceNumber, Long previousTimestamp, Long previousSequenceNumber, String publisherId) {
-        return new StreamMessageV30("stream-id", 0, timestamp, sequenceNumber, publisherId, "msgChainId",
-                previousTimestamp, previousSequenceNumber, StreamMessage.ContentType.CONTENT_TYPE_JSON, "{}", StreamMessage.SignatureType.SIGNATURE_TYPE_NONE, null)
+        return new StreamMessageV31("stream-id", 0, timestamp, sequenceNumber, publisherId, "msgChainId",
+                previousTimestamp, previousSequenceNumber, StreamMessage.ContentType.CONTENT_TYPE_JSON, StreamMessage.EncryptionType.NONE, "{}", StreamMessage.SignatureType.SIGNATURE_TYPE_NONE, null)
     }
 
     MessageHandler empty = new MessageHandler() {
@@ -27,6 +37,14 @@ class SubscriptionSpec extends Specification {
 
         }
     }
+
+    String genKey() {
+        byte[] keyBytes = new byte[32]
+        secureRandom.nextBytes(keyBytes)
+        return Hex.encodeHexString(keyBytes)
+    }
+
+    SecureRandom secureRandom = new SecureRandom()
 
     void "calls the message handler"() {
         StreamMessage received
@@ -209,5 +227,92 @@ class SubscriptionSpec extends Specification {
         newResendFromOption.from.sequenceNumber == 0
         newResendFromOption.publisherId == resendFromOption.publisherId
         newResendFromOption.msgChainId == resendFromOption.msgChainId
+    }
+
+    void "decrypts encrypted messages with the correct key"() {
+        String groupKeyHex = genKey()
+        SecretKey groupKey = new SecretKeySpec(DatatypeConverter.parseHexBinary(groupKeyHex), "AES")
+        Map plaintext = [foo: 'bar']
+        String ciphertext = EncryptionUtil.encrypt(HttpUtils.mapAdapter.toJson(plaintext).getBytes(StandardCharsets.UTF_8), groupKey)
+        Map received = null
+        StreamMessageV31 msg1 = new StreamMessageV31("streamId", 0, 0, 0, "publisherId", "",
+                null, null, StreamMessage.ContentType.CONTENT_TYPE_JSON, StreamMessage.EncryptionType.AES, ciphertext, StreamMessage.SignatureType.SIGNATURE_TYPE_NONE, null)
+        Subscription sub = new Subscription("streamId", 0, new MessageHandler() {
+            @Override
+            void onMessage(Subscription sub, StreamMessage message) {
+                received = message.getContent()
+            }
+        }, null, ['publisherId': groupKeyHex])
+        when:
+        sub.handleMessage(msg1)
+        then:
+        received == plaintext
+    }
+
+    void "cannot decrypt encrypted messages with the wrong key"() {
+        String groupKeyHex = genKey()
+        String wrongGroupKeyHex = genKey()
+        SecretKey groupKey = new SecretKeySpec(DatatypeConverter.parseHexBinary(groupKeyHex), "AES")
+        Map plaintext = [foo: 'bar']
+        String ciphertext = EncryptionUtil.encrypt(HttpUtils.mapAdapter.toJson(plaintext).getBytes(StandardCharsets.UTF_8), groupKey)
+        Map received = null
+        StreamMessageV31 msg1 = new StreamMessageV31("streamId", 0, 0, 0, "publisherId", "",
+                null, null, StreamMessage.ContentType.CONTENT_TYPE_JSON, StreamMessage.EncryptionType.AES, ciphertext, StreamMessage.SignatureType.SIGNATURE_TYPE_NONE, null)
+        Subscription sub = new Subscription("streamId", 0, new MessageHandler() {
+            @Override
+            void onMessage(Subscription sub, StreamMessage message) {
+                received = message.getContent()
+            }
+        }, null, ['publisherId': wrongGroupKeyHex])
+        when:
+        sub.handleMessage(msg1)
+        then:
+        thrown UnableToDecryptException
+    }
+
+    void "decrypts first message, updates key, decrypts second message"() {
+        String groupKey1Hex = genKey()
+        SecretKey groupKey1 = new SecretKeySpec(DatatypeConverter.parseHexBinary(groupKey1Hex), "AES")
+        byte[] key2Bytes = new byte[32]
+        secureRandom.nextBytes(key2Bytes)
+        String groupKey2Hex = Hex.encodeHexString(key2Bytes)
+        SecretKey groupKey2 = new SecretKeySpec(DatatypeConverter.parseHexBinary(groupKey2Hex), "AES")
+
+        Map content1 = [foo: 'bar']
+        byte[] content1Bytes = HttpUtils.mapAdapter.toJson(content1).getBytes(StandardCharsets.UTF_8)
+        byte[] plaintext1 = new byte[key2Bytes.length + content1Bytes.length]
+        System.arraycopy(key2Bytes, 0, plaintext1, 0, key2Bytes.length)
+        System.arraycopy(content1Bytes, 0, plaintext1, key2Bytes.length, content1Bytes.length)
+        String ciphertext1 = EncryptionUtil.encrypt(plaintext1, groupKey1)
+        StreamMessageV31 msg1 = new StreamMessageV31("streamId", 0, 0, 0, "publisherId", "",
+                null, null, StreamMessage.ContentType.CONTENT_TYPE_JSON, StreamMessage.EncryptionType.NEW_KEY_AND_AES, ciphertext1, StreamMessage.SignatureType.SIGNATURE_TYPE_NONE, null)
+
+        Map content2 = [hello: 'world']
+        String ciphertext2 = EncryptionUtil.encrypt(HttpUtils.mapAdapter.toJson(content2).getBytes(StandardCharsets.UTF_8), groupKey2)
+        StreamMessageV31 msg2 = new StreamMessageV31("streamId", 0, 1, 0, "publisherId", "",
+                0, 0, StreamMessage.ContentType.CONTENT_TYPE_JSON, StreamMessage.EncryptionType.AES, ciphertext2, StreamMessage.SignatureType.SIGNATURE_TYPE_NONE, null)
+
+        Map received1 = null
+        Map received2 = null
+
+        Subscription sub = new Subscription("streamId", 0, new MessageHandler() {
+            @Override
+            void onMessage(Subscription sub, StreamMessage message) {
+                if (received1 == null) {
+                    received1 = message.getContent()
+                } else {
+                    received2 = message.getContent()
+                }
+
+            }
+        }, null, ['publisherId': groupKey1Hex])
+        when:
+        sub.handleMessage(msg1)
+        then:
+        received1 == content1
+        when:
+        sub.handleMessage(msg2)
+        then:
+        received2 == content2
     }
 }

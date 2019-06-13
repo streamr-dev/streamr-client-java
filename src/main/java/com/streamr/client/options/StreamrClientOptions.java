@@ -4,10 +4,13 @@ import com.streamr.client.authentication.AuthenticationMethod;
 import com.streamr.client.authentication.EthereumAuthenticationMethod;
 import com.streamr.client.exceptions.InvalidOptionsException;
 
+import java.util.HashMap;
+
 public class StreamrClientOptions {
 
     private AuthenticationMethod authenticationMethod = null;
     private SigningOptions signingOptions = SigningOptions.getDefault();
+    private EncryptionOptions encryptionOptions = EncryptionOptions.getDefault();
     private boolean publishSignedMsgs = false;
     private String websocketApiUrl = "wss://www.streamr.com/api/v1/ws?controlLayerVersion=1&messageLayerVersion=30";
     private String restApiUrl = "https://www.streamr.com/api/v1";
@@ -37,17 +40,17 @@ public class StreamrClientOptions {
     }
 
     public StreamrClientOptions(AuthenticationMethod authenticationMethod, SigningOptions signingOptions,
-                                String websocketApiUrl, String restApiUrl) {
+                                EncryptionOptions encryptionOptions, String websocketApiUrl, String restApiUrl) {
         this(authenticationMethod, signingOptions);
+        this.encryptionOptions = encryptionOptions;
         this.websocketApiUrl = websocketApiUrl;
         this.restApiUrl = restApiUrl;
     }
 
     public StreamrClientOptions(AuthenticationMethod authenticationMethod, SigningOptions signingOptions,
-                                String websocketApiUrl, String restApiUrl, int gapFillTimeout, int retryResendAfter) {
-        this(authenticationMethod, signingOptions);
-        this.websocketApiUrl = websocketApiUrl;
-        this.restApiUrl = restApiUrl;
+                                EncryptionOptions encryptionOptions, String websocketApiUrl, String restApiUrl,
+                                int gapFillTimeout, int retryResendAfter) {
+        this(authenticationMethod, signingOptions, encryptionOptions, websocketApiUrl, restApiUrl);
         this.gapFillTimeout = gapFillTimeout;
         this.retryResendAfter = retryResendAfter;
     }
@@ -86,6 +89,10 @@ public class StreamrClientOptions {
 
     public SigningOptions getSigningOptions() {
         return signingOptions;
+    }
+
+    public EncryptionOptions getEncryptionOptions() {
+        return encryptionOptions;
     }
 
     public int getGapFillTimeout() {

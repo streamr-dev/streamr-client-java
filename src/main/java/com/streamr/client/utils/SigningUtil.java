@@ -23,8 +23,8 @@ public class SigningUtil {
     }
 
     public void signStreamMessage(StreamMessage msg, StreamMessage.SignatureType signatureType) {
-        if (msg.getVersion() != 30) {
-            throw new UnsupportedMessageException("Can only sign most recent StreamMessage version (30).");
+        if (msg.getVersion() < 30) {
+            throw new UnsupportedMessageException("Can only sign most recent StreamMessage versions (30 and 31).");
         }
         String signature = sign(getPayloadToSignOrVerify(msg, signatureType), account);
         msg.setSignatureType(signatureType);

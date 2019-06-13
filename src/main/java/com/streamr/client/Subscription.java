@@ -1,18 +1,21 @@
 package com.streamr.client;
 
+import com.streamr.client.exceptions.UnableToDecryptException;
+import com.streamr.client.exceptions.UnsupportedMessageException;
 import com.streamr.client.options.ResendFromOption;
 import com.streamr.client.options.ResendOption;
 import com.streamr.client.protocol.message_layer.MessageRef;
 import com.streamr.client.protocol.message_layer.StreamMessage;
 import com.streamr.client.exceptions.GapDetectedException;
+import com.streamr.client.utils.EncryptionUtil;
 import com.streamr.client.utils.StreamPartition;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
-import java.io.IOException;
-import java.util.HashMap;
-import java.util.ArrayDeque;
-import java.util.UUID;
+import javax.crypto.SecretKey;
+import javax.crypto.spec.SecretKeySpec;
+import javax.xml.bind.DatatypeConverter;
+import java.util.*;
 
 public class Subscription {
     private static final Logger log = LogManager.getLogger();
@@ -21,6 +24,7 @@ public class Subscription {
     private final StreamPartition streamPartition;
     private final MessageHandler handler;
     private ResendOption resendOption;
+    private final Map<String, SecretKey> groupKeys = new HashMap<>(); // publisherId --> groupKey
 
     private final HashMap<String, MessageRef> lastReceivedMsgRef = new HashMap<>();
     private boolean resending = false;
@@ -33,15 +37,25 @@ public class Subscription {
         SUBSCRIBING, SUBSCRIBED, UNSUBSCRIBING, UNSUBSCRIBED
     }
 
-    public Subscription(String streamId, int partition, MessageHandler handler, ResendOption resendOption) {
+    public Subscription(String streamId, int partition, MessageHandler handler, ResendOption resendOption, Map<String, String> groupKeysHex) {
         this.id = UUID.randomUUID().toString();
         this.streamPartition = new StreamPartition(streamId, partition);
         this.handler = handler;
         this.resendOption = resendOption;
+        if (groupKeysHex != null) {
+            for (String publisherId: groupKeysHex.keySet()) {
+                String groupKeyHex = groupKeysHex.get(publisherId);
+                groupKeys.put(publisherId, new SecretKeySpec(DatatypeConverter.parseHexBinary(groupKeyHex), "AES"));
+            }
+        }
+    }
+
+    public Subscription(String streamId, int partition, MessageHandler handler, ResendOption resendOption) {
+        this(streamId, partition, handler, resendOption, null);
     }
 
     public Subscription(String streamId, int partition, MessageHandler handler) {
-        this(streamId, partition, handler, null);
+        this(streamId, partition, handler, null, null);
     }
 
     public String getId() {
@@ -76,11 +90,11 @@ public class Subscription {
         this.resending = resending;
     }
 
-    public void handleMessage(StreamMessage msg) throws GapDetectedException {
+    public void handleMessage(StreamMessage msg) throws GapDetectedException, UnsupportedMessageException, UnableToDecryptException {
         handleMessage(msg, false);
     }
 
-    public void handleMessage(StreamMessage msg, boolean isResend) throws GapDetectedException {
+    public void handleMessage(StreamMessage msg, boolean isResend) throws GapDetectedException, UnsupportedMessageException, UnableToDecryptException {
         String key = msg.getPublisherId() + msg.getMsgChainId();
         if (resending && !isResend) {
             queue.add(msg);
@@ -105,6 +119,10 @@ public class Subscription {
                 log.debug(String.format("Sub %s already received message: %s, lastReceivedMsgRef: %s. Ignoring message.", id, msgRef, last));
             } else {
                 lastReceivedMsgRef.put(key, msgRef);
+                SecretKey newGroupKey = EncryptionUtil.decryptStreamMessage(msg, groupKeys.get(msg.getPublisherId()));
+                if (newGroupKey != null) {
+                    groupKeys.put(msg.getPublisherId(), newGroupKey);
+                }
                 handler.onMessage(this, msg);
             }
         }

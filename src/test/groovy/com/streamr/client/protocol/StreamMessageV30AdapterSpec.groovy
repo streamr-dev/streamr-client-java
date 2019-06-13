@@ -6,8 +6,6 @@ import com.streamr.client.protocol.message_layer.MessageID
 import com.streamr.client.protocol.message_layer.MessageRef
 import com.streamr.client.protocol.message_layer.StreamMessage
 import com.streamr.client.protocol.message_layer.StreamMessage.ContentType
-import com.streamr.client.protocol.message_layer.StreamMessageV29
-import com.streamr.client.protocol.message_layer.StreamMessageV29Adapter
 import com.streamr.client.protocol.message_layer.StreamMessageV30
 import com.streamr.client.protocol.message_layer.StreamMessageV30Adapter
 import okio.Buffer
