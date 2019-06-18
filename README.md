@@ -7,11 +7,11 @@ Using this library, you can easily interact with Streamr over HTTP and websocket
 This library is work-in-progress. It is currently in a MVP stage covering a very basic subset of functionality including:
 
 - [Authentication](#authentication)
+- [Data signing](#signing)
 - [Creating Streams](#creating-streams)
 - [Looking up Streams](#looking-up-streams)
 - [Publishing events to Streams](#publishing)
-- [Subscribing to events from Streams](#subscribing)
-- [Unsubscribing from Streams](#unsubscribing)
+- [Subscribing and unsubscribing to Streams](#subscribing-unsubscribing)
 
 # Installation
 
@@ -59,8 +59,53 @@ dependencies {
 
 # Usage
 
+Every interaction with the API is done through a `StreamrClient` instance. In the following sections, we will see how to:
+- [Create a `StreamrClient` instance with different options](#options)
+- [Create Streams](#creating-streams)
+- [Look up Streams](#looking-up-streams)
+- [Publish events to Streams](#publishing)
+- [Subscribe and unsubscribe to Streams](#subscribing-unsubscribing)
+
+<a name="options"></a>
+## Instantiation and options
+
+Every interaction with the API is done through a `StreamrClient` object which is constructed with a `StreamrClientOptions` object:
+
+```java
+StreamrClientOptions options = ...
+StreamrClient client = new StreamrClient(options);
+```
+
+The complete constructor of the `StreamrClientOptions` has the following signature:
+
+```java
+StreamrClientOptions(
+  AuthenticationMethod authenticationMethod,
+  SigningOptions signingOptions,
+  EncryptionOptions encryptionOptions,
+  String websocketApiUrl,
+  String restApiUrl,
+  int gapFillTimeout,
+  int retryResendAfter
+)
+```
+
+All the classes listed above can be imported from `com.streamr.client.options.*`. Commonly, only the `AuthenticationMethod` has to be set and all the other parameters can be set to their default value, which is why there is a shorthand constructor for the `StreamrClient`:
+
+```java
+// See Authentication section
+AuthenticationMethod auth = ...
+StreamrClient client = new StreamrClient(auth); 
+```
+
+Nevertheless, the next subsections will cover every parameter of the `StreamrClientOptions` constructor:
+- [Authentication options](#authentication)
+- [Signing options](#signing)
+- [Encryption options](#)
+- [Other options](#)
+
 <a name="authentication"></a>
-## Authentication
+### Authentication
 To authenticate as a Streamr user, provide an `AuthenticationMethod` instance. We have two concrete classes that extend `AuthenticationMethod`:
 
 - `ApiKeyAuthenticationMethod(String apiKey)`
@@ -85,8 +130,58 @@ The library will automatically initiate a challenge-response protocol to allow y
 You can access public resources without authenticating. In this case you can create the instance without any arguments:
 
 ```java
-StreamrClient client = new StreamrClient(); 
+StreamrClient client = new StreamrClient();
 ```
+
+<a name="signing"></a>
+### Signing
+
+The events published to streams can be signed using an Ethereum private key and verified using the corresponding Ethereum public key. The signing options define two policies: one deciding when to sign, the other when to verify.
+
+The `SigningOptions` instance can be constructed as follows: 
+
+```java
+SigningOptions.SignatureComputationPolicy signPol = SigningOptions.SignatureComputationPolicy.AUTO; // or ALWAYS or NEVER
+SigningOptions.SignatureVerificationPolicy verPol = SigningOptions.SignatureVerificationPolicy.AUTO; // or ALWAYS or NEVER
+SigningOptions signingOptions = new SigningOptions(signPol, verPol);
+```
+
+The following table describes the meaning of the different values for the `SignatureComputationPolicy` enum.
+
+Option value | Description
+------------ | -----------
+AUTO | Default value. Published events will be signed if and only if the client is authenticated using the `EthereumAuthenticationMethod`.
+ALWAYS | The constructor will throw if the authentication method is not `EthereumAuthenticationMethod`. Will sign events otherwise.
+NEVER | Won't sign published events.
+
+The following table describes the meaning of the different values for the `SignatureVerificationPolicy` enum. Note that every stream has a list of valid Ethereum addresses that are allowed to publish. Every stream also has a metadata boolean flag set by the creator of the stream that determines whether events on the stream are supposed to be signed or not.
+
+In the following table, by "verify" we mean:
+1) Extract the Ethereum address from the signature and check it's equal to the publisher's address (verify the signature itself)
+2) Check that the set of valid publishers Ethereum addresses contains the publisher's address.
+
+Option value | Description
+------------ | -----------
+AUTO | Default value. All signed events are verified. Unsigned events are accepted if and only if the stream does not require signed data according to the metadata boolean flag.
+ALWAYS | Only signed and verified events are accepted.
+NEVER | All signed events are verified. Unsigned events are always accepted.
+
+<a name="encryption"></a>
+### Encryption
+
+Encryption is still work-in-progress. The documentation will be updated once the implementation is done.
+
+<a name="other"></a>
+### Other options
+
+The following table describes the other options of the `StreamrClientOptions` constructor and their default values.
+
+Option | Default value | Description
+------ | ------------- | -----------
+websocketApiUrl | wss://www.streamr.com/api/v1/ws | Address of the Streamr websocket endpoint to connect to.
+restApiUrl | https://www.streamr.com/api/v1 | Base URL of the Streamr REST API.
+gapFillTimeout | 5 seconds | When a gap between two received events is detected, a resend request is sent periodically until the gap is resolved. This options determines that period. 
+retryResendAfter | 5 seconds | When subscribing with a resend option (See [this](#subscribing-unsubscribing) section), the messages requested by a first resend request might not be available yet. This option determines after how much time, the resend must be requested a second time.
 
 <a name="creating-streams"></a>
 ## Creating Streams
@@ -133,8 +228,8 @@ All events are timestamped. The above example assigns the current timestamp to t
 client.publish(stream, msg, new Date());
 ```
 
-<a name="subscribing"></a>
-## Subscribing to events from Streams
+<a name="subscribing-unsubscribing"></a>
+## Subscribing and unsubscribing to Streams
 
 By subscribing to Streams, your application gets immediately notified about new events in the Stream. You provide a `MessageHandler` which gets called with new events.
 
@@ -143,13 +238,41 @@ Subscription sub = client.subscribe(stream, new MessageHandler() {
     @Override
     void onMessage(Subscription s, StreamMessage message) {
         // Here you can react to the latest message
-        System.out.println(message.getPayload().toString());
+        System.out.println(message.getContent().toString());
     }
-})
+});
 ```
 
-<a name="unsubscribing"></a>
-## Unsubscribing from Streams
+You can also choose other options such as a specific partition to subscribe to or a resend option:
+
+```java
+int partition = 0;
+MessageHandler handler = ...
+ResendOption resendOption = ...
+Subscription sub = client.subscribe(stream, partition, handler, resendOption);
+```
+
+Below are examples of ways to construct the `ResendOption`.
+
+```java
+// Resends the last 10 events
+ResendOption opt = new ResendLastOption(10);
+```
+
+```java
+// Resends the events from a specific timestamp (and sequence number) for a particular message chain of a publisher
+Date from = new Date(341298709);
+int sequenceNumber = 0;
+ResendOption opt = new ResendFromOption(from, sequenceNumber, "publisherId", "msgChainId");
+```
+
+```java
+// Resends the events between two timestamps for a particular message chain of a publisher
+Date from = new Date(341298709);
+Date to = new Date(341299000);
+// the 0s are sequence numbers
+ResendOption opt = new ResendRangeOption(from, 0, to, 0, "publisherId", "msgChainId");
+```
 
 To stop receiving events from a Stream, pass the `Subscription` object you got when subscribing to the `unsubscribe` method:
 
