@@ -180,7 +180,7 @@ Option | Default value | Description
 ------ | ------------- | -----------
 websocketApiUrl | wss://www.streamr.com/api/v1/ws | Address of the Streamr websocket endpoint to connect to.
 restApiUrl | https://www.streamr.com/api/v1 | Base URL of the Streamr REST API.
-gapFillTimeout | 5 seconds | When a gap between two received events is detected, a resend request is sent periodically until the gap is resolved. This options determines that period. 
+gapFillTimeout | 5 seconds | When a gap between two received events is detected, a resend request is sent periodically until the gap is resolved. This option determines that period. 
 retryResendAfter | 5 seconds | When subscribing with a resend option (See [this](#subscribing-unsubscribing) section), the messages requested by a first resend request might not be available yet. This option determines after how much time, the resend must be requested a second time.
 
 <a name="creating-streams"></a>
@@ -214,6 +214,7 @@ Events in Streams are key-value pairs, represented in Java as `Map` objects. Bel
 
 ```java
 // Create the message payload, which is represented as a Map
+// Each 'Object' in the Map must be serializable to JSON.
 Map<String, Object> msg = new LinkedHashMap<>();
 msg.put("foo", "bar");
 msg.put("random", Math.random());
