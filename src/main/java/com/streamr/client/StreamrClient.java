@@ -1,6 +1,7 @@
 package com.streamr.client;
 
 import com.streamr.client.authentication.ApiKeyAuthenticationMethod;
+import com.streamr.client.authentication.AuthenticationMethod;
 import com.streamr.client.authentication.EthereumAuthenticationMethod;
 import com.streamr.client.exceptions.MalformedMessageException;
 import com.streamr.client.exceptions.GapDetectedException;
@@ -123,6 +124,10 @@ public class StreamrClient extends StreamrRESTClient {
         } catch (URISyntaxException e) {
             throw new RuntimeException(e);
         }
+    }
+
+    public StreamrClient(AuthenticationMethod authenticationMethod) {
+        this(new StreamrClientOptions(authenticationMethod));
     }
 
     /*
