@@ -3,6 +3,8 @@ package com.streamr.client.options;
 import com.streamr.client.authentication.AuthenticationMethod;
 import com.streamr.client.authentication.EthereumAuthenticationMethod;
 import com.streamr.client.exceptions.InvalidOptionsException;
+import com.streamr.client.protocol.control_layer.ControlMessage;
+import com.streamr.client.protocol.message_layer.StreamMessage;
 
 import java.util.HashMap;
 
@@ -43,7 +45,7 @@ public class StreamrClientOptions {
                                 EncryptionOptions encryptionOptions, String websocketApiUrl, String restApiUrl) {
         this(authenticationMethod, signingOptions);
         this.encryptionOptions = encryptionOptions;
-        this.websocketApiUrl = websocketApiUrl;
+        this.websocketApiUrl = addMissingQueryString(websocketApiUrl);
         this.restApiUrl = restApiUrl;
     }
 
@@ -101,5 +103,32 @@ public class StreamrClientOptions {
 
     public int getRetryResendAfter() {
         return retryResendAfter;
+    }
+
+    private String addMissingQueryString(String url) {
+        String[] parts = url.split("\\?");
+        if (parts.length == 1) { // no query string
+            return url + "?controlLayerVersion=" + ControlMessage.LATEST_VERSION +
+                    "&messageLayerVersion=" + StreamMessage.LATEST_VERSION;
+        } else {
+            String[] params = parts[1].split("&");
+            boolean missingControlLayer = true;
+            boolean missingMessageLayer = true;
+            for (String p: params) {
+                if (p.startsWith("controlLayerVersion=")) {
+                    missingControlLayer = false;
+                } else if (p.startsWith("messageLayerVersion=")) {
+                    missingMessageLayer = false;
+                }
+            }
+            String result = url;
+            if (missingControlLayer) {
+                result += "&controlLayerVersion=" + ControlMessage.LATEST_VERSION;
+            }
+            if (missingMessageLayer) {
+                result += "&messageLayerVersion=" + StreamMessage.LATEST_VERSION;
+            }
+            return result;
+        }
     }
 }
