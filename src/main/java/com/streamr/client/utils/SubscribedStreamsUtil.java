@@ -71,4 +71,9 @@ public class SubscribedStreamsUtil {
         }
         return publishers;
     }
+
+    public void clearAndClose() {
+        streamsPerStreamId.clearAndClose();
+        publishersPerStreamId.clearAndClose();
+    }
 }

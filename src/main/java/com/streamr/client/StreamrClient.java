@@ -134,7 +134,9 @@ public class StreamrClient extends StreamrRESTClient {
      */
 
     public void onOpen() {}
-    public void onClose() {}
+    public void onClose() {
+        subscribedStreamsUtil.clearAndClose();
+    }
     public void onError(Exception ex) {}
 
     public WebSocketClient getWebsocket() {
