@@ -1,10 +1,12 @@
 package com.streamr.client.utils
 
 import com.streamr.client.exceptions.InvalidGroupKeyException
+import com.streamr.client.exceptions.SigningRequiredException
 import com.streamr.client.protocol.message_layer.StreamMessage
 import com.streamr.client.protocol.message_layer.StreamMessageV31
 import com.streamr.client.rest.Stream
 import org.apache.commons.codec.binary.Hex
+import org.ethereum.crypto.ECKey
 import spock.lang.Specification
 
 import java.security.SecureRandom
@@ -193,5 +195,60 @@ class MessageCreationUtilSpec extends Specification {
         then:
         assert msg2.encryptionType == StreamMessage.EncryptionType.NEW_KEY_AND_AES
         assert msg2.getSerializedContent().length() == 122 // 16*2 + 32*2 + 13*2 (IV + key of 32 bytes + msg of 13 chars)
+    }
+
+    void "should not be able to create unsigned group key request"() {
+        when:
+        msgCreationUtil.createGroupKeyRequest("", "", "", null, null)
+        then:
+        SigningRequiredException e = thrown SigningRequiredException
+        e.message == "Cannot create unsigned group key request. Must authenticate with an Ethereum account"
+    }
+
+    void "creates correct group key request"() {
+        String withoutPrefix = "23bead9b499af21c4c16e4511b3b6b08c3e22e76e0591f5ab5ba8d4c3a5b1820"
+        ECKey account = ECKey.fromPrivate(new BigInteger(withoutPrefix, 16))
+        SigningUtil signingUtil = new SigningUtil(account)
+        MessageCreationUtil util = new MessageCreationUtil("subscriberId", signingUtil)
+        when:
+        StreamMessage msg = util.createGroupKeyRequest(
+                "publisherInboxAddress", "streamId", "rsaPublicKey",
+                new Date(123), new Date(456))
+        then:
+        msg.getStreamId() == "publisherInboxAddress"
+        msg.getPublisherId() == "subscriberId"
+        msg.getContentType() == StreamMessage.ContentType.GROUP_KEY_REQUEST
+        msg.getEncryptionType() == StreamMessage.EncryptionType.NONE
+        msg.getContent().get("streamId") == "streamId"
+        msg.getContent().get("publicKey") == "rsaPublicKey"
+        ((Map<String, Object>) msg.getContent().get("range")).get("start") == 123
+        ((Map<String, Object>) msg.getContent().get("range")).get("end") == 456
+        msg.getSignature() != null
+    }
+
+    void "should not be able to create unsigned group key response"() {
+        when:
+        msgCreationUtil.createGroupKeyResponse("", "", null)
+        then:
+        SigningRequiredException e = thrown SigningRequiredException
+        e.message == "Cannot create unsigned group key response. Must authenticate with an Ethereum account"
+    }
+
+    void "creates correct group key response"() {
+        String withoutPrefix = "23bead9b499af21c4c16e4511b3b6b08c3e22e76e0591f5ab5ba8d4c3a5b1820"
+        ECKey account = ECKey.fromPrivate(new BigInteger(withoutPrefix, 16))
+        SigningUtil signingUtil = new SigningUtil(account)
+        MessageCreationUtil util = new MessageCreationUtil("publisherId", signingUtil)
+        GroupKey k1 = new GroupKey("group-key-1", new Date(123))
+        GroupKey k2 = new GroupKey("group-key-2", new Date(456))
+        when:
+        StreamMessage msg = util.createGroupKeyResponse("subscriberInboxAddress", "streamId", [k1, k2])
+        then:
+        msg.getStreamId() == "subscriberInboxAddress"
+        msg.getContentType() == StreamMessage.ContentType.GROUP_KEY_RESPONSE_SIMPLE
+        msg.getEncryptionType() == StreamMessage.EncryptionType.RSA
+        msg.getContent().get("streamId") == "streamId"
+        msg.getContent().get("keys") == [k1.toMap(), k2.toMap()]
+        msg.getSignature() != null
     }
 }

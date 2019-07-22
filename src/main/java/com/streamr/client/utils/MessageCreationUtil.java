@@ -1,5 +1,6 @@
 package com.streamr.client.utils;
 
+import com.streamr.client.exceptions.SigningRequiredException;
 import com.streamr.client.protocol.message_layer.*;
 import com.streamr.client.protocol.message_layer.StreamMessage.EncryptionType;
 import com.streamr.client.rest.Stream;
@@ -14,7 +15,9 @@ import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
 import java.util.Date;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
+import java.util.stream.Collectors;
 
 public class MessageCreationUtil {
 
@@ -76,6 +79,52 @@ public class MessageCreationUtil {
         if (signingUtil != null) {
             signingUtil.signStreamMessage(streamMessage);
         }
+        return streamMessage;
+    }
+
+    public StreamMessage createGroupKeyRequest(String publisherAddress, String streamId, String rsaPublicKey, Date start, Date end) {
+        if (signingUtil == null) {
+            throw new SigningRequiredException("Cannot create unsigned group key request. Must authenticate with an Ethereum account");
+        }
+        Map<String, Object> data = new HashMap<>();
+        data.put("streamId", streamId);
+        data.put("publicKey", rsaPublicKey);
+        if (start != null && end != null) {
+            Map<String, Long> range = new HashMap<>();
+            range.put("start", start.getTime());
+            range.put("end", end.getTime());
+            data.put("range", range);
+        }
+
+        String key = publisherAddress + "0"; // streamId + streamPartition
+        long timestamp = (new Date()).getTime();
+        long sequenceNumber = getNextSequenceNumber(key, timestamp);
+        MessageID msgId = new MessageID(publisherAddress, 0, timestamp, sequenceNumber, publisherId, msgChainId);
+        MessageRef prevMsgRef = refsPerStreamAndPartition.get(key);
+        StreamMessage streamMessage = new StreamMessageV31(
+                msgId, prevMsgRef, StreamMessage.ContentType.GROUP_KEY_REQUEST, EncryptionType.NONE, data,
+                StreamMessage.SignatureType.SIGNATURE_TYPE_NONE, null);
+        signingUtil.signStreamMessage(streamMessage);
+        return streamMessage;
+    }
+
+    public StreamMessage createGroupKeyResponse(String subscriberAddress, String streamId, List<GroupKey> encryptedGroupKeys) {
+        if (signingUtil == null) {
+            throw new SigningRequiredException("Cannot create unsigned group key response. Must authenticate with an Ethereum account");
+        }
+        Map<String, Object> data = new HashMap<>();
+        data.put("streamId", streamId);
+        data.put("keys", encryptedGroupKeys.stream().map(k -> k.toMap()).collect(Collectors.toList()));
+
+        String key = subscriberAddress + "0"; // streamId + streamPartition
+        long timestamp = (new Date()).getTime();
+        long sequenceNumber = getNextSequenceNumber(key, timestamp);
+        MessageID msgId = new MessageID(subscriberAddress, 0, timestamp, sequenceNumber, publisherId, msgChainId);
+        MessageRef prevMsgRef = refsPerStreamAndPartition.get(key);
+        StreamMessage streamMessage = new StreamMessageV31(
+                msgId, prevMsgRef, StreamMessage.ContentType.GROUP_KEY_RESPONSE_SIMPLE, EncryptionType.RSA, data,
+                StreamMessage.SignatureType.SIGNATURE_TYPE_NONE, null);
+        signingUtil.signStreamMessage(streamMessage);
         return streamMessage;
     }
 
