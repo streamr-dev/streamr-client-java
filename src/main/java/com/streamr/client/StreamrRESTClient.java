@@ -9,6 +9,7 @@ import com.streamr.client.exceptions.ResourceNotFoundException;
 import com.streamr.client.options.StreamrClientOptions;
 import com.streamr.client.rest.Publishers;
 import com.streamr.client.rest.Stream;
+import com.streamr.client.rest.Subscribers;
 import com.streamr.client.rest.UserInfo;
 import com.streamr.client.utils.HttpUtils;
 import okhttp3.*;
@@ -24,6 +25,7 @@ public abstract class StreamrRESTClient extends AbstractStreamrClient {
     public static final JsonAdapter<Stream> streamJsonAdapter = MOSHI.adapter(Stream.class);
     public static final JsonAdapter<UserInfo> userInfoJsonAdapter = MOSHI.adapter(UserInfo.class);
     public static final JsonAdapter<Publishers> publishersJsonAdapter = MOSHI.adapter(Publishers.class);
+    public static final JsonAdapter<Subscribers> subscribersJsonAdapter = MOSHI.adapter(Subscribers.class);
     public static final JsonAdapter<List<Stream>> streamListJsonAdapter = MOSHI.adapter(Types.newParameterizedType(List.class, Stream.class));
 
     // private final Publisher publisher;
@@ -153,6 +155,21 @@ public abstract class StreamrRESTClient extends AbstractStreamrClient {
 
     public boolean isPublisher(String streamId, String ethAddress) throws IOException {
         HttpUrl url = HttpUrl.parse(options.getRestApiUrl() + "/streams/" + streamId + "/publisher/" + ethAddress);
+        try {
+            get(url, null);
+            return true;
+        } catch (ResourceNotFoundException e) {
+            return false;
+        }
+    }
+
+    public List<String> getSubscribers(String streamId) throws IOException {
+        HttpUrl url = HttpUrl.parse(options.getRestApiUrl() + "/streams/" + streamId + "/subscribers");
+        return get(url, subscribersJsonAdapter).getAddresses();
+    }
+
+    public boolean isSubscriber(String streamId, String ethAddress) throws IOException {
+        HttpUrl url = HttpUrl.parse(options.getRestApiUrl() + "/streams/" + streamId + "/subscriber/" + ethAddress);
         try {
             get(url, null);
             return true;
