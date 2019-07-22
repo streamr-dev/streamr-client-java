@@ -151,6 +151,16 @@ public abstract class StreamrRESTClient extends AbstractStreamrClient {
         return get(url, publishersJsonAdapter).getAddresses();
     }
 
+    public boolean isPublisher(String streamId, String ethAddress) throws IOException {
+        HttpUrl url = HttpUrl.parse(options.getRestApiUrl() + "/streams/" + streamId + "/publisher/" + ethAddress);
+        try {
+            get(url, null);
+            return true;
+        } catch (ResourceNotFoundException e) {
+            return false;
+        }
+    }
+
     public void logout() throws IOException {
         HttpUrl url = HttpUrl.parse(options.getRestApiUrl() + "/logout");
         post(url, "", null, false);

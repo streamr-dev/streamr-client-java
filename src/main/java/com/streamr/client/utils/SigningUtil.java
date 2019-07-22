@@ -43,14 +43,13 @@ public class SigningUtil {
                 new byte[]{sig.v}));
     }
 
-    public static boolean hasValidSignature(StreamMessage msg, Set<String> publishers) {
+    public static boolean hasValidSignature(StreamMessage msg) {
         if (msg.getSignature() == null) {
             return false;
         }
         String payload = getPayloadToSignOrVerify(msg, msg.getSignatureType());
         try {
-            boolean valid = verify(payload, msg.getSignature(), msg.getPublisherId());
-            return valid && publishers.contains(msg.getPublisherId());
+            return verify(payload, msg.getSignature(), msg.getPublisherId());
         } catch (SignatureException | DecoderException e) {
             throw new SignatureFailedException(e.getMessage());
         }

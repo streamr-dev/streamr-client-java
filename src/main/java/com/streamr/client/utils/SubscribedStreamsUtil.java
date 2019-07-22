@@ -4,53 +4,71 @@ import com.streamr.client.options.SigningOptions.SignatureVerificationPolicy;
 import com.streamr.client.exceptions.InvalidSignatureException;
 import com.streamr.client.protocol.message_layer.StreamMessage;
 import com.streamr.client.rest.Stream;
-import org.cache2k.Cache;
-import org.cache2k.Cache2kBuilder;
+import org.cache2k.*;
 
-import java.util.HashSet;
+import java.util.HashMap;
 import java.util.List;
 import java.util.concurrent.TimeUnit;
+import java.util.function.BiFunction;
 import java.util.function.Function;
 
 public class SubscribedStreamsUtil {
     private Cache<String, Stream> streamsPerStreamId = new Cache2kBuilder<String, Stream>() {}
         .expireAfterWrite(15, TimeUnit.MINUTES).build();
-    private Function<String,Stream> getStreamFunction;
+    private Function<String, Stream> getStreamFunction;
 
-    private Cache<String, HashSet<String>> publishersPerStreamId = new Cache2kBuilder<String, HashSet<String>>() {}
+    private Cache<String, HashMap<String, Boolean>> publishersPerStreamId = new Cache2kBuilder<String, HashMap<String, Boolean>>() {}
         .expireAfterWrite(30, TimeUnit.MINUTES).build();
-    private Function<String,List<String>> getPublishersFunction;
+    private Function<String, List<String>> getPublishersFunction;
+    private BiFunction<String, String, Boolean> isPublisherFunction;
 
     private final SignatureVerificationPolicy verifySignatures;
 
-    public SubscribedStreamsUtil(Function<String,Stream> getStreamFunction,
-                                 Function<String,List<String>> getPublishersFunction,
+    public SubscribedStreamsUtil(Function<String, Stream> getStreamFunction,
+                                 Function<String, List<String>> getPublishersFunction,
+                                 BiFunction<String, String, Boolean> isPublisherFunction,
                                  SignatureVerificationPolicy verifySignatures) {
         this.getStreamFunction = getStreamFunction;
         this.getPublishersFunction = getPublishersFunction;
+        this.isPublisherFunction = isPublisherFunction;
         this.verifySignatures = verifySignatures;
     }
 
     public void verifyStreamMessage(StreamMessage msg) throws InvalidSignatureException {
-        if (!isValid(msg)) {
-            throw new InvalidSignatureException(msg);
+        SignatureVerificationResult result = isValid(msg);
+        if (!result.isCorrect()) {
+            throw new InvalidSignatureException(msg, result.isValidPublisher());
         }
     }
 
-    private boolean isValid(StreamMessage msg) {
+    private boolean isValidPublisher(String streamId, String publisherId) {
+        Boolean isValid = getPublishers(streamId).get(publisherId);
+        if (isValid != null) {
+            return isValid;
+        }
+        boolean result = isPublisherFunction.apply(streamId, publisherId);
+        getPublishers(streamId).put(publisherId, result);
+        return result;
+    }
+
+    private SignatureVerificationResult isValid(StreamMessage msg) {
         if (verifySignatures == SignatureVerificationPolicy.ALWAYS) {
-            HashSet<String> publishers = getPublishers(msg.getStreamId());
-            return SigningUtil.hasValidSignature(msg, publishers);
+            if (!isValidPublisher(msg.getStreamId(), msg.getPublisherId())) {
+                return SignatureVerificationResult.invalidPublisher();
+            }
+            return SignatureVerificationResult.withValidPublisher(SigningUtil.hasValidSignature(msg));
         } else if (verifySignatures == SignatureVerificationPolicy.NEVER) {
-            return true;
+            return SignatureVerificationResult.fromBoolean(true);
         }
         // verifySignatures == AUTO
         if(msg.getSignature() != null) {
-            HashSet<String> publishers = getPublishers(msg.getStreamId());
-            return SigningUtil.hasValidSignature(msg, publishers);
+            if (!isValidPublisher(msg.getStreamId(), msg.getPublisherId())) {
+                return SignatureVerificationResult.invalidPublisher();
+            }
+            return SignatureVerificationResult.withValidPublisher(SigningUtil.hasValidSignature(msg));
         } else {
             Stream stream = getStream(msg.getStreamId());
-            return !stream.requiresSignedData();
+            return SignatureVerificationResult.fromBoolean(!stream.requiresSignedData());
         }
     }
 
@@ -63,10 +81,13 @@ public class SubscribedStreamsUtil {
         return s;
     }
 
-    private HashSet<String> getPublishers(String streamId) {
-        HashSet<String> publishers = publishersPerStreamId.get(streamId);
+    private HashMap<String, Boolean> getPublishers(String streamId) {
+        HashMap<String, Boolean> publishers = publishersPerStreamId.get(streamId);
         if (publishers == null) {
-            publishers = new HashSet<>(getPublishersFunction.apply(streamId));
+            publishers = new HashMap<>();
+            for (String publisher: getPublishersFunction.apply(streamId)) {
+                publishers.put(publisher, true);
+            }
             publishersPerStreamId.put(streamId, publishers);
         }
         return publishers;
