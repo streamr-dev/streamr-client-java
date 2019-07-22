@@ -1,11 +1,15 @@
 package com.streamr.client.utils;
 
 import com.streamr.client.exceptions.InvalidGroupKeyException;
+import com.streamr.client.exceptions.InvalidRSAKeyException;
 import com.streamr.client.exceptions.UnableToDecryptException;
 import com.streamr.client.protocol.message_layer.StreamMessage;
+import org.apache.commons.codec.binary.Base64;
 import org.apache.commons.codec.binary.Hex;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
+import org.spongycastle.util.io.pem.PemObject;
+import org.spongycastle.util.io.pem.PemWriter;
 
 import javax.crypto.Cipher;
 import javax.crypto.SecretKey;
@@ -13,17 +17,60 @@ import javax.crypto.spec.IvParameterSpec;
 import javax.crypto.spec.SecretKeySpec;
 import javax.xml.bind.DatatypeConverter;
 import java.io.IOException;
-import java.security.SecureRandom;
+import java.io.StringWriter;
+import java.security.*;
+import java.security.interfaces.RSAPrivateKey;
+import java.security.interfaces.RSAPublicKey;
+import java.security.spec.PKCS8EncodedKeySpec;
+import java.security.spec.X509EncodedKeySpec;
 import java.util.Arrays;
 
 public class EncryptionUtil {
     private static final Logger log = LogManager.getLogger();
     private static final SecureRandom SRAND = new SecureRandom();
-    private static final ThreadLocal<Cipher> cipher = ThreadLocal.withInitial(() -> getCipher());
+    private static final ThreadLocal<Cipher> aesCipher = ThreadLocal.withInitial(() -> getAESCipher());
+    private static final ThreadLocal<Cipher> rsaCipher = ThreadLocal.withInitial(() -> getRSACipher());
 
-    private static Cipher getCipher() {
+    private RSAPublicKey publicKey;
+    private RSAPrivateKey privateKey;
+
+    public EncryptionUtil(String publicKey, String privateKey) {
+        if (publicKey == null && privateKey == null) {
+            KeyPair pair = generateKeyPair();
+            this.publicKey = (RSAPublicKey) pair.getPublic();
+            this.privateKey = (RSAPrivateKey) pair.getPrivate();
+        } else {
+            validatePublicKey(publicKey);
+            validatePrivateKey(privateKey);
+            this.publicKey = getPublicKeyFromString(publicKey);
+            this.privateKey = getPrivateKeyFromString(privateKey);
+        }
+    }
+
+    public EncryptionUtil() {
+        this(null, null);
+    }
+
+    public byte[] decryptWithPrivateKey(String ciphertext) throws UnableToDecryptException {
+        byte[] encryptedBytes = DatatypeConverter.parseHexBinary(ciphertext);
         try {
-            return Cipher.getInstance("AES/CTR/NoPadding");
+            rsaCipher.get().init(Cipher.DECRYPT_MODE, this.privateKey);
+            return rsaCipher.get().doFinal(encryptedBytes);
+        } catch (Exception e) {
+            throw new UnableToDecryptException(ciphertext);
+        }
+    }
+
+    public String getPublicKeyAsPemString() {
+        return exportKeyAsPemString(this.publicKey, true);
+    }
+
+    public static String encryptWithPublicKey(byte[] plaintext, String publicKey) {
+        validatePublicKey(publicKey);
+        RSAPublicKey rsaPublicKey = getPublicKeyFromString(publicKey);
+        try {
+            rsaCipher.get().init(Cipher.ENCRYPT_MODE, rsaPublicKey);
+            return Hex.encodeHexString(rsaCipher.get().doFinal(plaintext));
         } catch (Exception e) {
             log.error(e);
             throw new RuntimeException(e);
@@ -35,8 +82,8 @@ public class EncryptionUtil {
             byte[] iv = new byte[16];
             SRAND.nextBytes(iv);
             IvParameterSpec ivspec = new IvParameterSpec(iv);
-            cipher.get().init(Cipher.ENCRYPT_MODE, groupKey, ivspec);
-            byte[] ciphertext = cipher.get().doFinal(plaintext);
+            aesCipher.get().init(Cipher.ENCRYPT_MODE, groupKey, ivspec);
+            byte[] ciphertext = aesCipher.get().doFinal(plaintext);
             return Hex.encodeHexString(iv) + Hex.encodeHexString(ciphertext);
         } catch (Exception e) {
             log.error(e);
@@ -47,8 +94,8 @@ public class EncryptionUtil {
     public static byte[] decrypt(String ciphertext, SecretKey groupKey) throws Exception {
         byte[] iv = DatatypeConverter.parseHexBinary(ciphertext.substring(0, 32));
         IvParameterSpec ivParameterSpec = new IvParameterSpec(iv);
-        cipher.get().init(Cipher.DECRYPT_MODE, groupKey, ivParameterSpec);
-        return cipher.get().doFinal(DatatypeConverter.parseHexBinary(ciphertext.substring(32)));
+        aesCipher.get().init(Cipher.DECRYPT_MODE, groupKey, ivParameterSpec);
+        return aesCipher.get().doFinal(DatatypeConverter.parseHexBinary(ciphertext.substring(32)));
     }
 
     /*
@@ -108,6 +155,90 @@ public class EncryptionUtil {
         String without0x = groupKeyHex.startsWith("0x") ? groupKeyHex.substring(2) : groupKeyHex;
         if (without0x.length() != 64) { // the key must be 256 bits long
             throw new InvalidGroupKeyException(without0x.length() * 4);
+        }
+    }
+
+    public static void validatePublicKey(String publicKey) {
+        if (publicKey == null || !publicKey.startsWith("-----BEGIN RSA PUBLIC KEY-----")
+                || !publicKey.endsWith("-----END RSA PUBLIC KEY-----\n")) {
+            throw new InvalidRSAKeyException(true);
+        }
+    }
+
+    public static void validatePrivateKey(String privateKey) {
+        if (privateKey == null || !privateKey.startsWith("-----BEGIN RSA PRIVATE KEY-----")
+                || !privateKey.endsWith("-----END RSA PRIVATE KEY-----\n")) {
+            throw new InvalidRSAKeyException(false);
+        }
+    }
+
+    public static String exportKeyAsPemString(Key key, boolean isPublic) {
+        StringWriter writer = new StringWriter();
+        PemWriter pemWriter = new PemWriter(writer);
+        try {
+            pemWriter.writeObject(new PemObject("RSA " + (isPublic ? "PUBLIC" : "PRIVATE")  + " KEY", key.getEncoded()));
+            pemWriter.flush();
+            pemWriter.close();
+        } catch (IOException e) {
+            log.error(e);
+            throw new RuntimeException(e);
+        }
+        return writer.toString();
+    }
+
+    private static Cipher getAESCipher() {
+        try {
+            return Cipher.getInstance("AES/CTR/NoPadding");
+        } catch (Exception e) {
+            log.error(e);
+            throw new RuntimeException(e);
+        }
+    }
+
+    private static Cipher getRSACipher() {
+        try {
+            return Cipher.getInstance("RSA");
+        } catch (Exception e) {
+            log.error(e);
+            throw new RuntimeException(e);
+        }
+    }
+
+    private static RSAPublicKey getPublicKeyFromString(String publicKey) {
+        publicKey = publicKey.replace("-----BEGIN RSA PUBLIC KEY-----\n", "");
+        publicKey = publicKey.replace("-----END RSA PUBLIC KEY-----", "");
+        byte[] encoded = Base64.decodeBase64(publicKey);
+        try {
+            KeyFactory kf = KeyFactory.getInstance("RSA");
+            return (RSAPublicKey) kf.generatePublic(new X509EncodedKeySpec(encoded));
+        } catch (Exception e) {
+            log.error(e);
+            throw new RuntimeException(e);
+        }
+    }
+
+    private static RSAPrivateKey getPrivateKeyFromString(String privateKey) {
+        privateKey = privateKey.replace("-----BEGIN RSA PRIVATE KEY-----\n", "");
+        privateKey = privateKey.replace("-----END RSA PRIVATE KEY-----", "");
+        byte[] encoded = Base64.decodeBase64(privateKey);
+        try {
+            KeyFactory kf = KeyFactory.getInstance("RSA");
+            PKCS8EncodedKeySpec keySpec = new PKCS8EncodedKeySpec(encoded);
+            return (RSAPrivateKey) kf.generatePrivate(keySpec);
+        } catch (Exception e) {
+            log.error(e);
+            throw new RuntimeException(e);
+        }
+    }
+
+    private static KeyPair generateKeyPair() {
+        try {
+            KeyPairGenerator generator = KeyPairGenerator.getInstance("RSA");
+            generator.initialize(4096, new SecureRandom());
+            return generator.generateKeyPair();
+        } catch (NoSuchAlgorithmException e) {
+            log.error(e);
+            throw new RuntimeException(e);
         }
     }
 }
