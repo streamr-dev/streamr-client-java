@@ -8,9 +8,6 @@ public class InvalidSignatureException extends RuntimeException {
         super("Invalid signature for message: "+msg.toJson());
         this.failedBecauseInvalidPublisher = validPublisher == null ? false : !validPublisher;
     }
-    public InvalidSignatureException(StreamMessage msg) {
-        this(msg, null);
-    }
 
     public boolean failedBecauseInvalidPublisher() {
         return failedBecauseInvalidPublisher;
