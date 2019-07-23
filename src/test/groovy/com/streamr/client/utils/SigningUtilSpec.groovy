@@ -57,7 +57,7 @@ class SigningUtilSpec extends Specification {
         when:
         StreamMessage msg = new StreamMessageV31(msgId, null, StreamMessage.ContentType.CONTENT_TYPE_JSON, StreamMessage.EncryptionType.NONE, [foo: 'bar'], StreamMessage.SignatureType.SIGNATURE_TYPE_NONE, null)
         then:
-        !SigningUtil.hasValidSignature(msg, ["publisherId"].toSet())
+        !SigningUtil.hasValidSignature(msg)
     }
 
     void "returns false if wrong signature"() {
@@ -65,7 +65,7 @@ class SigningUtilSpec extends Specification {
         StreamMessage msg = new StreamMessageV31(msgId, null, StreamMessage.ContentType.CONTENT_TYPE_JSON, StreamMessage.EncryptionType.NONE, [foo: 'bar'],
                 StreamMessage.SignatureType.SIGNATURE_TYPE_ETH, "0x787cd72924153c88350e808de68b68c88030cbc34d053a5c696a5893d5e6fec1687c1b6205ec99aeb3375a81bf5cb8857ae39c1b55a41b32ed6399ae8da456a61b")
         then:
-        !SigningUtil.hasValidSignature(msg, ["publisherId"].toSet())
+        !SigningUtil.hasValidSignature(msg)
     }
 
     void "returns true if correct signature"() {
@@ -75,16 +75,6 @@ class SigningUtilSpec extends Specification {
         when:
         signingUtil.signStreamMessage(msg)
         then:
-        SigningUtil.hasValidSignature(msg, [address].toSet())
-    }
-
-    void "returns false if correct signature but not from a trusted publisher"() {
-        MessageID msgId = new MessageID("streamId", 0, 425235315L, 0L, address, "msgChainId")
-        StreamMessage msg = new StreamMessageV31(msgId, null, StreamMessage.ContentType.CONTENT_TYPE_JSON, StreamMessage.EncryptionType.NONE, [foo: 'bar'],
-                StreamMessage.SignatureType.SIGNATURE_TYPE_NONE, null)
-        when:
-        signingUtil.signStreamMessage(msg)
-        then:
-        !SigningUtil.hasValidSignature(msg, ["trustedPublisher"].toSet())
+        SigningUtil.hasValidSignature(msg)
     }
 }

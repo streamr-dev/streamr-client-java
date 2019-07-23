@@ -65,6 +65,12 @@ public class StreamrClient extends StreamrRESTClient {
             } catch (IOException e) {
                 throw new RuntimeException(e);
             }
+        }, (s, p) -> {
+            try {
+                return isPublisher(s, p);
+            } catch (IOException e) {
+                throw new RuntimeException(e);
+            }
         }, options.getSigningOptions().getVerifySignatures());
 
         if (options.getAuthenticationMethod() instanceof ApiKeyAuthenticationMethod) {

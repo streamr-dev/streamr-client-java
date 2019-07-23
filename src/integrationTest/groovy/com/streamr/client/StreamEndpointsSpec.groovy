@@ -178,6 +178,17 @@ class StreamEndpointsSpec extends StreamrIntegrationSpecification {
         publishers == [client.getPublisherId()]
     }
 
+    void "isPublisher()"() {
+        Stream proto = new Stream(generateResourceName(), "This stream was created from an integration test")
+        Stream createdResult = client.createStream(proto)
+        when:
+        boolean isValid1 = client.isPublisher(createdResult.id, client.getPublisherId())
+        boolean isValid2 = client.isPublisher(createdResult.id, "wrong-address")
+        then:
+        isValid1
+        !isValid2
+    }
+
     void "not same token used after logout()"() {
         StreamrClient apiKeyClient = createClientWithApiKey("tester1-api-key")
         when:
