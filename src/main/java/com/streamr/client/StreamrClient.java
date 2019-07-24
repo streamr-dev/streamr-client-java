@@ -7,6 +7,7 @@ import com.streamr.client.exceptions.GapDetectedException;
 import com.streamr.client.options.ResendOption;
 import com.streamr.client.options.StreamrClientOptions;
 import com.streamr.client.protocol.control_layer.*;
+import com.streamr.client.rest.UserInfo;
 import com.streamr.client.utils.*;
 import org.apache.commons.codec.digest.DigestUtils;
 import org.apache.logging.log4j.LogManager;
@@ -75,7 +76,8 @@ public class StreamrClient extends StreamrRESTClient {
 
         if (options.getAuthenticationMethod() instanceof ApiKeyAuthenticationMethod) {
             try {
-                publisherId = DigestUtils.sha256Hex(getUserInfo().getUsername());
+                UserInfo info = getUserInfo();
+                publisherId = DigestUtils.sha256Hex(info.getUsername() == null ? info.getId() : info.getUsername());
             } catch (IOException e) {
                 throw new RuntimeException(e);
             }

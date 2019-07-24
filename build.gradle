@@ -91,6 +91,21 @@ signing {
 	sign configurations.archives
 }
 
+publishing {
+	publications {
+		maven(MavenPublication) {
+			groupId = 'com.streamr'
+			artifactId = 'client'
+			version = '1.1.1'
+
+			from components.java
+		}
+	}
+	repositories {
+		mavenLocal()
+	}
+}
+
 /*
 uploadArchives {
 	repositories {
