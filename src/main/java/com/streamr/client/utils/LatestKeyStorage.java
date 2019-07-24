@@ -1,0 +1,37 @@
+package com.streamr.client.utils;
+
+import com.streamr.client.exceptions.InvalidGroupKeyRequestException;
+
+import java.util.Date;
+import java.util.HashMap;
+import java.util.List;
+
+public class LatestKeyStorage extends KeyStorage {
+    private HashMap<String, GroupKey> latestGroupKeys;
+
+    public LatestKeyStorage(HashMap<String, GroupKey> publisherGroupKeys) {
+        super(publisherGroupKeys);
+        latestGroupKeys = publisherGroupKeys == null ? new HashMap<>() : publisherGroupKeys;
+    }
+
+    @Override
+    public boolean hasKey(String streamId) {
+        return latestGroupKeys.containsKey(streamId);
+    }
+
+    @Override
+    public GroupKey getLatestKey(String streamId) {
+        return latestGroupKeys.get(streamId);
+    }
+
+    @Override
+    public List<GroupKey> getKeysBetween(String streamId, Date start, Date end) {
+        throw new InvalidGroupKeyRequestException("Cannot retrieve historical keys for stream " + streamId
+                + " between " + start + " and " + end + " because only the latest key is stored.");
+    }
+
+    @Override
+    public void addKey(String streamId, GroupKey key) {
+        latestGroupKeys.put(streamId, key);
+    }
+}

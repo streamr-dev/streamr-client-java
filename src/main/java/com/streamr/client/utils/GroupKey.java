@@ -14,6 +14,10 @@ public class GroupKey {
         this.start = start;
     }
 
+    public GroupKey(String groupKeyHex) {
+        this(groupKeyHex, new Date());
+    }
+
     public String getGroupKeyHex() {
         return groupKeyHex;
     }
