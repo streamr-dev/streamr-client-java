@@ -3,11 +3,13 @@ package com.streamr.client
 import com.streamr.client.exceptions.UnableToDecryptException
 import com.streamr.client.options.ResendFromOption
 import com.streamr.client.options.ResendLastOption
+import com.streamr.client.protocol.message_layer.MessageRef
 import com.streamr.client.protocol.message_layer.StreamMessage
 import com.streamr.client.protocol.message_layer.StreamMessageV31
 import com.streamr.client.exceptions.GapDetectedException
 import com.streamr.client.utils.EncryptionUtil
 import com.streamr.client.utils.HttpUtils
+import com.streamr.client.utils.OrderedMsgChain
 import org.apache.commons.codec.binary.Hex
 import spock.lang.Specification
 
@@ -82,14 +84,14 @@ class SubscriptionSpec extends Specification {
         }
     }
 
-    void "does not handle messages (queued) during resending"() {
+    void "does not handle real-time messages (queued) during initial resending"() {
         when:
         Subscription sub = new Subscription(msg.getStreamId(), msg.getStreamPartition(), new MessageHandler() {
             @Override
             void onMessage(Subscription sub, StreamMessage message) {
                 throw new Exception("Shouldn't handle this message!")
             }
-        })
+        }, new ResendLastOption(10))
         sub.setResending(true)
         sub.handleMessage(msg)
         then:
@@ -132,34 +134,34 @@ class SubscriptionSpec extends Specification {
         noExceptionThrown()
     }
 
-    void "throws and set a GapDetectedException if a gap is detected, clears the exception when gap filled"() {
+    void "calls the gap handler if a gap is detected"() {
         StreamMessage msg1 = createMessage(1, 0, null, 0)
         StreamMessage afterMsg1 = createMessage(1, 1, null, 0)
-        StreamMessage missing = createMessage(3, 0, 1, 0)
         StreamMessage msg4 = createMessage(4, 0, 3, 0)
-        Subscription sub = new Subscription(msg1.getStreamId(), msg1.getStreamPartition(), empty)
+        Subscription sub = new Subscription(msg1.getStreamId(), msg1.getStreamPartition(), empty, null, new HashMap<String, String>(), 10L)
+        GapDetectedException ex
+        sub.setGapHandler(new OrderedMsgChain.GapHandlerFunction() {
+            @Override
+            void apply(MessageRef from, MessageRef to, String publisherId, String msgChainId) {
+                ex = new GapDetectedException(sub.getStreamId(), sub.getPartition(), from, to, publisherId, msgChainId)
+            }
+        })
         when:
         sub.handleMessage(msg1)
         then:
-        noExceptionThrown()
+        ex == null
 
         when:
         sub.handleMessage(msg4)
+        Thread.sleep(50L)
+        sub.clear()
         then:
-        GapDetectedException ex = thrown(GapDetectedException)
         ex.getStreamId() == msg1.getStreamId()
         ex.getStreamPartition() == msg1.getStreamPartition()
         ex.getFrom() == afterMsg1.getMessageRef()
         ex.getTo() == msg4.getPreviousMessageRef()
         ex.getPublisherId() == msg1.getPublisherId()
         ex.getMsgChainId() == msg1.getMsgChainId()
-        sub.getGapDetectedException(msg1.getPublisherId(), msg1.getMsgChainId()).from == ex.getFrom()
-        sub.getGapDetectedException(msg1.getPublisherId(), msg1.getMsgChainId()).to == ex.getTo()
-
-        when:
-        sub.handleMessage(missing)
-        then:
-        sub.getGapDetectedException(msg1.getPublisherId(), msg1.getMsgChainId()) == null
     }
 
     void "does not throw if different publishers"() {
@@ -173,20 +175,28 @@ class SubscriptionSpec extends Specification {
         noExceptionThrown()
     }
 
-    void "throws a GapDetectedException if a gap is detected (same timestamp but different sequence numbers)"() {
+    void "calls the gap handler if a gap is detected (same timestamp but different sequence numbers)"() {
         StreamMessage msg1 = createMessage(1, 0, null, 0)
         StreamMessage afterMsg1 = createMessage(1, 1, null, 0)
         StreamMessage msg4 = createMessage(1, 4, 1, 3)
-        Subscription sub = new Subscription(msg1.getStreamId(), msg1.getStreamPartition(), empty)
+        Subscription sub = new Subscription(msg1.getStreamId(), msg1.getStreamPartition(), empty, null, new HashMap<String, String>(), 10L)
+        GapDetectedException ex
+        sub.setGapHandler(new OrderedMsgChain.GapHandlerFunction() {
+            @Override
+            void apply(MessageRef from, MessageRef to, String publisherId, String msgChainId) {
+                ex = new GapDetectedException(sub.getStreamId(), sub.getPartition(), from, to, publisherId, msgChainId)
+            }
+        })
         when:
         sub.handleMessage(msg1)
         then:
-        noExceptionThrown()
+        ex == null
 
         when:
         sub.handleMessage(msg4)
+        Thread.sleep(50L)
+        sub.clear()
         then:
-        GapDetectedException ex = thrown(GapDetectedException)
         ex.getStreamId() == msg1.getStreamId()
         ex.getStreamPartition() == msg1.getStreamPartition()
         ex.getFrom() == afterMsg1.getMessageRef()
@@ -206,27 +216,6 @@ class SubscriptionSpec extends Specification {
         sub.handleMessage(msg3)
         then:
         noExceptionThrown()
-    }
-
-    void "getEffectiveResendOption() returns original resend option"() {
-        when:
-        Subscription sub = new Subscription("streamId", 0, empty, new ResendLastOption(10))
-        then:
-        ((ResendLastOption) sub.getEffectiveResendOption()).getNumberLast() == 10
-    }
-
-    void "getEffectiveResendOption() updates the original resend from option after message received"() {
-        StreamMessage msg1 = createMessage(10, 0, null, 0)
-        ResendFromOption resendFromOption = new ResendFromOption(new Date(1), 0, msg1.getPublisherId(), msg1.getMsgChainId())
-        when:
-        Subscription sub = new Subscription("streamId", 0, empty, resendFromOption)
-        sub.handleMessage(msg1)
-        ResendFromOption newResendFromOption = (ResendFromOption) sub.getEffectiveResendOption()
-        then:
-        newResendFromOption.from.timestamp == 10
-        newResendFromOption.from.sequenceNumber == 0
-        newResendFromOption.publisherId == resendFromOption.publisherId
-        newResendFromOption.msgChainId == resendFromOption.msgChainId
     }
 
     void "decrypts encrypted messages with the correct key"() {

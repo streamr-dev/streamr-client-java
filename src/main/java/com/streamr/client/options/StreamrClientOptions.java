@@ -6,8 +6,6 @@ import com.streamr.client.exceptions.InvalidOptionsException;
 import com.streamr.client.protocol.control_layer.ControlMessage;
 import com.streamr.client.protocol.message_layer.StreamMessage;
 
-import java.util.HashMap;
-
 public class StreamrClientOptions {
 
     private AuthenticationMethod authenticationMethod = null;

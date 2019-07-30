@@ -104,6 +104,7 @@ class StreamrClientSpec extends Specification {
         client.receiveMessage(new BroadcastMessage(createMsg("test-stream", 0, 0, null, null)))
         client.receiveMessage(new BroadcastMessage(createMsg("test-stream", 2, 0, 1, 0)))
         String subId = client.getSubId("test-stream", 0)
+        Thread.sleep(gapFillTimeout)
         then:
         server.expect(new ResendRangeRequest("test-stream", 0, subId, new MessageRef(0, 1), new MessageRef(1, 0), "", "", null))
         when:
@@ -129,7 +130,7 @@ class StreamrClientSpec extends Specification {
         client.receiveMessage(new BroadcastMessage(createMsg("test-stream", 2, 0, 1, 0)))
         String subId = client.getSubId("test-stream", 0)
         then:
-        Thread.sleep(gapFillTimeout + 200)
+        Thread.sleep(2 * gapFillTimeout + 200)
         server.expect(new ResendRangeRequest("test-stream", 0, subId, new MessageRef(0, 1), new MessageRef(1, 0), "", "", null))
         server.expect(new ResendRangeRequest("test-stream", 0, subId, new MessageRef(0, 1), new MessageRef(1, 0), "", "", null))
     }
