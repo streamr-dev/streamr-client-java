@@ -33,11 +33,6 @@ public class OrderingUtil {
         chain.add(unorderedMsg);
     }
 
-    public void markMessageExplicitly(StreamMessage msg) {
-        OrderedMsgChain chain = getChain(msg.getPublisherId(), msg.getMsgChainId());
-        chain.markMessageExplicitly(msg);
-    }
-
     public void clearGaps() {
         for (OrderedMsgChain chain: chains.values()) {
             chain.clearGap();

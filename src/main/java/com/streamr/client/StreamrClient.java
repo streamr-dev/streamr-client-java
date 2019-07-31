@@ -265,13 +265,6 @@ public class StreamrClient extends StreamrRESTClient {
             }
             try {
                 sub.handleMessage(message, isResend);
-            } catch (GapDetectedException e) {
-                ResendRangeRequest req = new ResendRangeRequest(e.getStreamId(), e.getStreamPartition(),
-                    sub.getId(), e.getFrom(), e.getTo(), e.getPublisherId(), e.getMsgChainId(), getSessionToken());
-                sub.setResending(true);
-                this.websocket.send(req.toJson());
-                new PeriodicResend(websocket, options.getGapFillTimeout(), sub, e.getPublisherId(),
-                    e.getMsgChainId(), getSessionToken()).start();
             } catch (Exception e) {
                 log.error(e);
             }
@@ -409,26 +402,13 @@ public class StreamrClient extends StreamrRESTClient {
 
     private void handleResendResponseNoResend(ResendResponseNoResend res) throws SubscriptionNotFoundException {
         Subscription sub = subs.get(res.getStreamId(), res.getStreamPartition());
-        endResendAndCheckQueue(sub);
+        sub.endResend();
         sub.resendDone();
     }
 
     private void handleResendResponseResent(ResendResponseResent res) throws SubscriptionNotFoundException {
         Subscription sub = subs.get(res.getStreamId(), res.getStreamPartition());
-        endResendAndCheckQueue(sub);
+        sub.endResend();
         sub.resendDone();
-    }
-
-    private void endResendAndCheckQueue(Subscription sub) {
-        try {
-            sub.endResend();
-        } catch (GapDetectedException e) {
-            ResendRangeRequest req = new ResendRangeRequest(e.getStreamId(), e.getStreamPartition(),
-                sub.getId(), e.getFrom(), e.getTo(), e.getPublisherId(), e.getMsgChainId(), getSessionToken());
-            sub.startResend();
-            this.websocket.send(req.toJson());
-            new PeriodicResend(websocket, options.getGapFillTimeout(), sub, e.getPublisherId(),
-                    e.getMsgChainId(), getSessionToken()).start();
-        }
     }
 }

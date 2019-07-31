@@ -29,10 +29,8 @@ public class Subscription {
     private ResendOption resendOption;
     private final Map<String, SecretKey> groupKeys = new HashMap<>(); // publisherId --> groupKey
 
-    private final HashMap<String, MessageRef> lastReceivedMsgRef = new HashMap<>();
     private boolean resending = false;
     private final ArrayDeque<StreamMessage> queue = new ArrayDeque<>();
-    private final HashMap<String, GapDetectedException> gapDetectedExceptions = new HashMap<>();
     private OrderingUtil orderingUtil;
     private final long gapFillTimeout;
 
@@ -55,11 +53,7 @@ public class Subscription {
         }
         orderingUtil = new OrderingUtil(streamId, partition,
                 (StreamMessage msg) -> {
-                    SecretKey newGroupKey = EncryptionUtil.decryptStreamMessage(msg, groupKeys.get(msg.getPublisherId()));
-                    if (newGroupKey != null) {
-                        groupKeys.put(msg.getPublisherId(), newGroupKey);
-                    }
-                    handler.onMessage(this, msg);
+                    decryptAndHandle(msg);
                     return null;
                 }, (MessageRef from, MessageRef to, String publisherId, String msgChainId) -> {
             throw new GapDetectedException(streamId, partition, from, to, publisherId, msgChainId);
@@ -82,7 +76,7 @@ public class Subscription {
     public void setGapHandler(OrderedMsgChain.GapHandlerFunction gapHandler) {
         orderingUtil = new OrderingUtil(streamPartition.getStreamId(), streamPartition.getPartition(),
                 (StreamMessage msg) -> {
-                    handler.onMessage(this, msg);
+                    decryptAndHandle(msg);
                     return null;
                 }, gapHandler, gapFillTimeout);
     }
@@ -130,47 +124,6 @@ public class Subscription {
         } else {
             orderingUtil.add(msg);
         }
-
-
-        /*
-        String key = msg.getPublisherId() + msg.getMsgChainId();
-        if (resending && !isResend) {
-            queue.add(msg);
-        } else if (checkForGap(msg.getPreviousMessageRef(), key) && !resending) {
-            queue.add(msg);
-            MessageRef last = lastReceivedMsgRef.get(key);
-            MessageRef from = new MessageRef(last.getTimestamp(), last.getSequenceNumber() + 1);
-            MessageRef to = msg.getPreviousMessageRef();
-            GapDetectedException e = new GapDetectedException(msg.getStreamId(), msg.getStreamPartition(), from, to, msg.getPublisherId(), msg.getMsgChainId());
-            gapDetectedExceptions.put(key, e);
-            throw e;
-        } else {
-            // The potential gap is filled if we get to this point, so we can clear the exception.
-            gapDetectedExceptions.remove(key);
-            MessageRef msgRef = msg.getMessageRef();
-            Integer res = null;
-            MessageRef last = lastReceivedMsgRef.get(key);
-            if (last != null) {
-                res = msgRef.compareTo(last);
-            }
-            if (res != null && res <= 0) {
-                log.debug(String.format("Sub %s already received message: %s, lastReceivedMsgRef: %s. Ignoring message.", id, msgRef, last));
-            } else {
-                lastReceivedMsgRef.put(key, msgRef);
-                SecretKey newGroupKey = EncryptionUtil.decryptStreamMessage(msg, groupKeys.get(msg.getPublisherId()));
-                if (newGroupKey != null) {
-                    groupKeys.put(msg.getPublisherId(), newGroupKey);
-                }
-                handler.onMessage(this, msg);
-            }
-        }*/
-    }
-
-    private void handleQueue() throws GapDetectedException {
-        while(!queue.isEmpty()) {
-            StreamMessage msg = queue.poll();
-            handleMessage(msg);
-        }
     }
 
     public boolean hasResendOptions() {
@@ -191,20 +144,8 @@ public class Subscription {
         handleQueue();
     }
 
-    public GapDetectedException getGapDetectedException(String publisherId, String msgChainId) {
-        return gapDetectedExceptions.get(publisherId + msgChainId);
-    }
-
     public boolean isSubscribed() {
         return state.equals(State.SUBSCRIBED);
-    }
-
-    private boolean checkForGap(MessageRef prev, String key) {
-        if (prev == null) {
-            return false;
-        }
-        MessageRef last = lastReceivedMsgRef.get(key);
-        return last != null && prev.compareTo(last) > 0;
     }
 
     void resendDone() {
@@ -217,5 +158,20 @@ public class Subscription {
 
     public void clear() {
         orderingUtil.clearGaps();
+    }
+
+    private void handleQueue() throws GapDetectedException {
+        while(!queue.isEmpty()) {
+            StreamMessage msg = queue.poll();
+            handleMessage(msg);
+        }
+    }
+
+    private void decryptAndHandle(StreamMessage msg) {
+        SecretKey newGroupKey = EncryptionUtil.decryptStreamMessage(msg, groupKeys.get(msg.getPublisherId()));
+        if (newGroupKey != null) {
+            groupKeys.put(msg.getPublisherId(), newGroupKey);
+        }
+        handler.onMessage(this, msg);
     }
 }

@@ -65,12 +65,6 @@ public class OrderedMsgChain {
         }
     }
 
-    public void markMessageExplicitly(StreamMessage msg) {
-        if (msg != null && isNextMessage(msg)) {
-            lastReceived = msg.getMessageRef();
-        }
-    }
-
     public void clearGap() {
         if (gap != null) {
             gap.cancel();
