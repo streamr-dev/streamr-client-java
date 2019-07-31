@@ -24,7 +24,7 @@ class OrderingUtilSpec extends Specification {
                 received = streamMessage
                 return null
             }
-        }, null, 5000L)
+        }, null, 5000L, 5000L)
         when:
         util.add(msg1)
         then:
@@ -49,7 +49,7 @@ class OrderingUtilSpec extends Specification {
                 publisherIdReceived = publisherId
                 msgChainIdReceived = msgChainId
             }
-        }, 100L)
+        }, 100L, 100L)
         when:
         util.add(msg1)
         util.add(msg4)
@@ -77,7 +77,7 @@ class OrderingUtilSpec extends Specification {
             void apply(MessageRef from, MessageRef to, String publisherId, String msgChainId) {
                 called = true
             }
-        }, 1000L)
+        }, 1000L, 1000L)
         when:
         util.add(msg1)
         util.add(msg4)

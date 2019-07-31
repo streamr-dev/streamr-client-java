@@ -15,8 +15,8 @@ public class StreamrClientOptions {
     private String websocketApiUrl = "wss://www.streamr.com/api/v1/ws?controlLayerVersion=1&messageLayerVersion=30";
     private String restApiUrl = "https://www.streamr.com/api/v1";
     private long connectionTimeoutMillis = 10 * 1000;
-    private int gapFillTimeout = 5000;
-    private int retryResendAfter = 5000;
+    private int propagationTimeout = 5000;
+    private int resendTimeout = 5000;
 
     public StreamrClientOptions() {}
 
@@ -49,10 +49,10 @@ public class StreamrClientOptions {
 
     public StreamrClientOptions(AuthenticationMethod authenticationMethod, SigningOptions signingOptions,
                                 EncryptionOptions encryptionOptions, String websocketApiUrl, String restApiUrl,
-                                int gapFillTimeout, int retryResendAfter) {
+                                int propagationTimeout, int resendTimeout) {
         this(authenticationMethod, signingOptions, encryptionOptions, websocketApiUrl, restApiUrl);
-        this.gapFillTimeout = gapFillTimeout;
-        this.retryResendAfter = retryResendAfter;
+        this.propagationTimeout = propagationTimeout;
+        this.resendTimeout = resendTimeout;
     }
 
     public AuthenticationMethod getAuthenticationMethod() {
@@ -95,12 +95,12 @@ public class StreamrClientOptions {
         return encryptionOptions;
     }
 
-    public int getGapFillTimeout() {
-        return gapFillTimeout;
+    public int getPropagationTimeout() {
+        return propagationTimeout;
     }
 
-    public int getRetryResendAfter() {
-        return retryResendAfter;
+    public int getResendTimeout() {
+        return resendTimeout;
     }
 
     private String addMissingQueryString(String url) {

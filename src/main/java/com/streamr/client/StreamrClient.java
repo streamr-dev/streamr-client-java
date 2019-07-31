@@ -327,7 +327,8 @@ public class StreamrClient extends StreamrRESTClient {
         }
 
         SubscribeRequest subscribeRequest = new SubscribeRequest(stream.getId(), partition, session.getSessionToken());
-        Subscription sub = new Subscription(stream.getId(), partition, handler, resendOption, groupKeys, options.getGapFillTimeout());
+        Subscription sub = new Subscription(stream.getId(), partition, handler, resendOption, groupKeys,
+                options.getPropagationTimeout(), options.getResendTimeout());
         sub.setGapHandler((MessageRef from, MessageRef to, String publisherId, String msgChainId) -> {
             ResendRangeRequest req = new ResendRangeRequest(stream.getId(), partition,
                     sub.getId(), from, to, publisherId, msgChainId, getSessionToken());
@@ -384,7 +385,7 @@ public class StreamrClient extends StreamrRESTClient {
             ResendOption resendOption = sub.getResendOption();
             ControlMessage req = resendOption.toRequest(res.getStreamId(), res.getStreamPartition(), sub.getId(), this.getSessionToken());
             this.websocket.send(req.toJson());
-            OneTimeResend resend = new OneTimeResend(websocket, req, options.getRetryResendAfter(), sub);
+            OneTimeResend resend = new OneTimeResend(websocket, req, options.getResendTimeout(), sub);
             secondResends.put(sub.getId(), resend);
             resend.start();
         }

@@ -21,7 +21,8 @@ import java.util.*;
 
 public class Subscription {
     private static final Logger log = LogManager.getLogger();
-    public static final long DEFAULT_GAP_FILL_TIMEOUT = 5000L;
+    public static final long DEFAULT_PROPAGATION_TIMEOUT = 5000L;
+    public static final long DEFAULT_RESEND_TIMEOUT = 5000L;
 
     private final String id;
     private final StreamPartition streamPartition;
@@ -32,7 +33,8 @@ public class Subscription {
     private boolean resending = false;
     private final ArrayDeque<StreamMessage> queue = new ArrayDeque<>();
     private OrderingUtil orderingUtil;
-    private final long gapFillTimeout;
+    private final long propagationTimeout;
+    private final long resendTimeout;
 
     private State state;
 
@@ -40,7 +42,8 @@ public class Subscription {
         SUBSCRIBING, SUBSCRIBED, UNSUBSCRIBING, UNSUBSCRIBED
     }
 
-    public Subscription(String streamId, int partition, MessageHandler handler, ResendOption resendOption, Map<String, String> groupKeysHex, long gapFillTimeout) {
+    public Subscription(String streamId, int partition, MessageHandler handler, ResendOption resendOption, Map<String, String> groupKeysHex,
+                        long propagationTimeout, long resendTimeout) {
         this.id = UUID.randomUUID().toString();
         this.streamPartition = new StreamPartition(streamId, partition);
         this.handler = handler;
@@ -57,12 +60,13 @@ public class Subscription {
                     return null;
                 }, (MessageRef from, MessageRef to, String publisherId, String msgChainId) -> {
             throw new GapDetectedException(streamId, partition, from, to, publisherId, msgChainId);
-        }, gapFillTimeout);
-        this.gapFillTimeout = gapFillTimeout;
+        }, propagationTimeout, resendTimeout);
+        this.propagationTimeout = propagationTimeout;
+        this.resendTimeout = resendTimeout;
     }
 
     public Subscription(String streamId, int partition, MessageHandler handler, ResendOption resendOption, Map<String, String> groupKeysHex) {
-        this(streamId, partition, handler, resendOption, groupKeysHex, DEFAULT_GAP_FILL_TIMEOUT);
+        this(streamId, partition, handler, resendOption, groupKeysHex, DEFAULT_PROPAGATION_TIMEOUT, DEFAULT_RESEND_TIMEOUT);
     }
 
     public Subscription(String streamId, int partition, MessageHandler handler, ResendOption resendOption) {
@@ -78,7 +82,7 @@ public class Subscription {
                 (StreamMessage msg) -> {
                     decryptAndHandle(msg);
                     return null;
-                }, gapHandler, gapFillTimeout);
+                }, gapHandler, propagationTimeout, resendTimeout);
     }
 
     public String getId() {

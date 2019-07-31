@@ -12,20 +12,22 @@ public class OrderingUtil {
     private Function<StreamMessage, Void> inOrderHandler;
     private OrderedMsgChain.GapHandlerFunction gapHandler;
     private Function<GapFillFailedException, Void> gapFillFailedHandler;
-    private long gapFillTimeout;
+    private long propagationTimeout;
+    private long resendTimeout;
     private HashMap<String, OrderedMsgChain> chains = new HashMap<>();
     public OrderingUtil(String streamId, int streamPartition, Function<StreamMessage, Void> inOrderHandler,
-                        OrderedMsgChain.GapHandlerFunction gapHandler, Function<GapFillFailedException, Void> gapFillFailedHandler, long gapFillTimeout) {
+                        OrderedMsgChain.GapHandlerFunction gapHandler, Function<GapFillFailedException, Void> gapFillFailedHandler, long propagationTimeout, long resendTimeout) {
         this.streamId = streamId;
         this.streamPartition = streamPartition;
         this.inOrderHandler = inOrderHandler;
         this.gapHandler = gapHandler;
         this.gapFillFailedHandler = gapFillFailedHandler;
-        this.gapFillTimeout = gapFillTimeout;
+        this.propagationTimeout = propagationTimeout;
+        this.resendTimeout = resendTimeout;
     }
     public OrderingUtil(String streamId, int streamPartition, Function<StreamMessage, Void> inOrderHandler,
-                        OrderedMsgChain.GapHandlerFunction gapHandler, long gapFillTimeout) {
-        this(streamId, streamPartition, inOrderHandler, gapHandler, (GapFillFailedException e) -> { throw e; }, gapFillTimeout);
+                        OrderedMsgChain.GapHandlerFunction gapHandler, long propagationTimeout, long resendTimeout) {
+        this(streamId, streamPartition, inOrderHandler, gapHandler, (GapFillFailedException e) -> { throw e; }, propagationTimeout, resendTimeout);
     }
 
     public void add(StreamMessage unorderedMsg) {
@@ -43,7 +45,7 @@ public class OrderingUtil {
         String key = publisherId + msgChainId;
         if (!chains.containsKey(key)) {
             chains.put(key, new OrderedMsgChain(publisherId, msgChainId, inOrderHandler,
-                    gapHandler, gapFillFailedHandler, gapFillTimeout));
+                    gapHandler, gapFillFailedHandler, propagationTimeout, resendTimeout));
         }
         return chains.get(key);
     }

@@ -28,7 +28,7 @@ class OrderedMsgChainSpec extends Specification {
                         received.add(streamMessage)
                         return null
                     }
-                }, null, 5000L)
+                }, null, 5000L, 5000L)
         when:
         util.add(msg1)
         util.add(msg2)
@@ -45,7 +45,7 @@ class OrderedMsgChainSpec extends Specification {
                         received.add(streamMessage)
                         return null
                     }
-                }, null, 5000L)
+                }, null, 5000L, 5000L)
         when:
         util.add(msg1)
         util.add(msg1)
@@ -68,7 +68,7 @@ class OrderedMsgChainSpec extends Specification {
             void apply(MessageRef from, MessageRef to, String publisherId, String msgChainId) {
 
             }
-        }, 5000L)
+        }, 5000L, 5000L)
         when:
         util.add(msg1)
         util.add(msg2)
@@ -90,7 +90,7 @@ class OrderedMsgChainSpec extends Specification {
                         received.add(streamMessage)
                         return null
                     }
-                }, null, 5000L)
+                }, null, 5000L, 5000L)
         when:
         util.add(msg1)
         util.add(m2)
@@ -114,7 +114,7 @@ class OrderedMsgChainSpec extends Specification {
             void apply(MessageRef from, MessageRef to, String publisherId, String msgChainId) {
                 unexpected = new RuntimeException("Unexpected gap fill request")
             }
-        }, 300L)
+        }, 300L, 300L)
         when:
         util.add(msg1)
         util.add(msg5)
@@ -150,7 +150,7 @@ class OrderedMsgChainSpec extends Specification {
                     expected = e
                     return null
                 }
-            }, 100L)
+            }, 100L, 100L)
         } catch (GapFillFailedException e) {
             expected = e
         }
@@ -184,7 +184,7 @@ class OrderedMsgChainSpec extends Specification {
             void apply(MessageRef from, MessageRef to, String publisherId, String msgChainId) {
 
             }
-        }, 5000L)
+        }, 5000L, 5000L)
         when:
         util.add(msg1)
         for (StreamMessage msg: shuffled) {

@@ -21,7 +21,8 @@ public class OrderedMsgChain {
     private Function<StreamMessage, Void> inOrderHandler;
     private GapHandlerFunction gapHandler;
     private Function<GapFillFailedException, Void> gapFillFailedHandler;
-    private long gapFillTimeout;
+    private long propagationTimeout;
+    private long resendTimeout;
     private PriorityQueue<StreamMessage> queue;
     private MessageRef lastReceived = null;
     private Timer gap = null;
@@ -29,13 +30,14 @@ public class OrderedMsgChain {
     private GapFillFailedException gapException = null;
 
     public OrderedMsgChain(String publisherId, String msgChainId, Function<StreamMessage, Void> inOrderHandler,
-                           GapHandlerFunction gapHandler, Function<GapFillFailedException, Void> gapFillFailedHandler, long gapFillTimeout) {
+                           GapHandlerFunction gapHandler, Function<GapFillFailedException, Void> gapFillFailedHandler, long propagationTimeout, long resendTimeout) {
         this.publisherId = publisherId;
         this.msgChainId = msgChainId;
         this.inOrderHandler = inOrderHandler;
         this.gapHandler = gapHandler;
         this.gapFillFailedHandler = gapFillFailedHandler;
-        this.gapFillTimeout = gapFillTimeout;
+        this.propagationTimeout = propagationTimeout;
+        this.resendTimeout = resendTimeout;
         queue = new PriorityQueue<>(new Comparator<StreamMessage>() {
             @Override
             public int compare(StreamMessage o1, StreamMessage o2) {
@@ -44,8 +46,8 @@ public class OrderedMsgChain {
         });
     }
     public OrderedMsgChain(String publisherId, String msgChainId, Function<StreamMessage, Void> inOrderHandler,
-                           GapHandlerFunction gapHandler, long gapFillTimeout) {
-        this(publisherId, msgChainId, inOrderHandler, gapHandler, (GapFillFailedException e) -> { throw e; }, gapFillTimeout);
+                           GapHandlerFunction gapHandler, long propagationTimeout, long resendTimeout) {
+        this(publisherId, msgChainId, inOrderHandler, gapHandler, (GapFillFailedException e) -> { throw e; }, propagationTimeout, resendTimeout);
     }
 
     public void add(StreamMessage unorderedMsg) {
@@ -120,7 +122,7 @@ public class OrderedMsgChain {
                 }
             }
         };
-        gap.schedule(task, gapFillTimeout, gapFillTimeout);
+        gap.schedule(task, propagationTimeout, resendTimeout);
     }
 
     @FunctionalInterface
