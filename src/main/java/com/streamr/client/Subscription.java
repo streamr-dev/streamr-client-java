@@ -8,6 +8,8 @@ import com.streamr.client.protocol.message_layer.MessageRef;
 import com.streamr.client.protocol.message_layer.StreamMessage;
 import com.streamr.client.exceptions.GapDetectedException;
 import com.streamr.client.utils.EncryptionUtil;
+import com.streamr.client.utils.OrderedMsgChain;
+import com.streamr.client.utils.OrderingUtil;
 import com.streamr.client.utils.StreamPartition;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
@@ -19,6 +21,8 @@ import java.util.*;
 
 public class Subscription {
     private static final Logger log = LogManager.getLogger();
+    public static final long DEFAULT_PROPAGATION_TIMEOUT = 5000L;
+    public static final long DEFAULT_RESEND_TIMEOUT = 5000L;
 
     private final String id;
     private final StreamPartition streamPartition;
@@ -26,10 +30,11 @@ public class Subscription {
     private ResendOption resendOption;
     private final Map<String, SecretKey> groupKeys = new HashMap<>(); // publisherId --> groupKey
 
-    private final HashMap<String, MessageRef> lastReceivedMsgRef = new HashMap<>();
     private boolean resending = false;
     private final ArrayDeque<StreamMessage> queue = new ArrayDeque<>();
-    private final HashMap<String, GapDetectedException> gapDetectedExceptions = new HashMap<>();
+    private OrderingUtil orderingUtil;
+    private final long propagationTimeout;
+    private final long resendTimeout;
 
     private State state;
 
@@ -37,7 +42,8 @@ public class Subscription {
         SUBSCRIBING, SUBSCRIBED, UNSUBSCRIBING, UNSUBSCRIBED
     }
 
-    public Subscription(String streamId, int partition, MessageHandler handler, ResendOption resendOption, Map<String, String> groupKeysHex) {
+    public Subscription(String streamId, int partition, MessageHandler handler, ResendOption resendOption, Map<String, String> groupKeysHex,
+                        long propagationTimeout, long resendTimeout) {
         this.id = UUID.randomUUID().toString();
         this.streamPartition = new StreamPartition(streamId, partition);
         this.handler = handler;
@@ -48,6 +54,19 @@ public class Subscription {
                 groupKeys.put(publisherId, new SecretKeySpec(DatatypeConverter.parseHexBinary(groupKeyHex), "AES"));
             }
         }
+        orderingUtil = new OrderingUtil(streamId, partition,
+                (StreamMessage msg) -> {
+                    decryptAndHandle(msg);
+                    return null;
+                }, (MessageRef from, MessageRef to, String publisherId, String msgChainId) -> {
+            throw new GapDetectedException(streamId, partition, from, to, publisherId, msgChainId);
+        }, propagationTimeout, resendTimeout);
+        this.propagationTimeout = propagationTimeout;
+        this.resendTimeout = resendTimeout;
+    }
+
+    public Subscription(String streamId, int partition, MessageHandler handler, ResendOption resendOption, Map<String, String> groupKeysHex) {
+        this(streamId, partition, handler, resendOption, groupKeysHex, DEFAULT_PROPAGATION_TIMEOUT, DEFAULT_RESEND_TIMEOUT);
     }
 
     public Subscription(String streamId, int partition, MessageHandler handler, ResendOption resendOption) {
@@ -56,6 +75,14 @@ public class Subscription {
 
     public Subscription(String streamId, int partition, MessageHandler handler) {
         this(streamId, partition, handler, null, null);
+    }
+
+    public void setGapHandler(OrderedMsgChain.GapHandlerFunction gapHandler) {
+        orderingUtil = new OrderingUtil(streamPartition.getStreamId(), streamPartition.getPartition(),
+                (StreamMessage msg) -> {
+                    decryptAndHandle(msg);
+                    return null;
+                }, gapHandler, propagationTimeout, resendTimeout);
     }
 
     public String getId() {
@@ -95,43 +122,11 @@ public class Subscription {
     }
 
     public void handleMessage(StreamMessage msg, boolean isResend) throws GapDetectedException, UnsupportedMessageException, UnableToDecryptException {
-        String key = msg.getPublisherId() + msg.getMsgChainId();
-        if (resending && !isResend) {
+        // we queue real-time messages until the initial resend (subscribe with resend options) is completed.
+        if(hasResendOptions() && !isResend) {
             queue.add(msg);
-        } else if (checkForGap(msg.getPreviousMessageRef(), key) && !resending) {
-            queue.add(msg);
-            MessageRef last = lastReceivedMsgRef.get(key);
-            MessageRef from = new MessageRef(last.getTimestamp(), last.getSequenceNumber() + 1);
-            MessageRef to = msg.getPreviousMessageRef();
-            GapDetectedException e = new GapDetectedException(msg.getStreamId(), msg.getStreamPartition(), from, to, msg.getPublisherId(), msg.getMsgChainId());
-            gapDetectedExceptions.put(key, e);
-            throw e;
         } else {
-            // The potential gap is filled if we get to this point, so we can clear the exception.
-            gapDetectedExceptions.remove(key);
-            MessageRef msgRef = msg.getMessageRef();
-            Integer res = null;
-            MessageRef last = lastReceivedMsgRef.get(key);
-            if (last != null) {
-                res = msgRef.compareTo(last);
-            }
-            if (res != null && res <= 0) {
-                log.debug(String.format("Sub %s already received message: %s, lastReceivedMsgRef: %s. Ignoring message.", id, msgRef, last));
-            } else {
-                lastReceivedMsgRef.put(key, msgRef);
-                SecretKey newGroupKey = EncryptionUtil.decryptStreamMessage(msg, groupKeys.get(msg.getPublisherId()));
-                if (newGroupKey != null) {
-                    groupKeys.put(msg.getPublisherId(), newGroupKey);
-                }
-                handler.onMessage(this, msg);
-            }
-        }
-    }
-
-    private void handleQueue() throws GapDetectedException {
-        while(!queue.isEmpty()) {
-            StreamMessage msg = queue.poll();
-            handleMessage(msg);
+            orderingUtil.add(msg);
         }
     }
 
@@ -139,24 +134,7 @@ public class Subscription {
         return resendOption != null;
     }
 
-    /**
-     * Resend needs can change if messages have already been received.
-     * This function always returns the effective resend options:
-     *
-     * If messages have been received and 'resendOption' is a ResendFromOption,
-     * then it is updated with the latest received message.
-     */
-    public ResendOption getEffectiveResendOption() {
-        if (resendOption instanceof ResendFromOption) {
-            ResendFromOption resendFromOption = (ResendFromOption) resendOption;
-            if (resendFromOption.getPublisherId() != null && resendFromOption.getMsgChainId() != null) {
-                String key = resendFromOption.getPublisherId() + resendFromOption.getMsgChainId();
-                MessageRef last = lastReceivedMsgRef.get(key);
-                if (last != null) {
-                    return new ResendFromOption(last, resendFromOption.getPublisherId(), resendFromOption.getMsgChainId());
-                }
-            }
-        }
+    public ResendOption getResendOption() {
         return resendOption;
     }
 
@@ -166,23 +144,12 @@ public class Subscription {
 
     public void endResend() throws GapDetectedException {
         resending = false;
+        resendOption = null;
         handleQueue();
-    }
-
-    public GapDetectedException getGapDetectedException(String publisherId, String msgChainId) {
-        return gapDetectedExceptions.get(publisherId + msgChainId);
     }
 
     public boolean isSubscribed() {
         return state.equals(State.SUBSCRIBED);
-    }
-
-    private boolean checkForGap(MessageRef prev, String key) {
-        if (prev == null) {
-            return false;
-        }
-        MessageRef last = lastReceivedMsgRef.get(key);
-        return last != null && prev.compareTo(last) > 0;
     }
 
     void resendDone() {
@@ -191,5 +158,24 @@ public class Subscription {
         }
 
         this.handler.done(this);
+    }
+
+    public void clear() {
+        orderingUtil.clearGaps();
+    }
+
+    private void handleQueue() throws GapDetectedException {
+        while(!queue.isEmpty()) {
+            StreamMessage msg = queue.poll();
+            handleMessage(msg);
+        }
+    }
+
+    private void decryptAndHandle(StreamMessage msg) {
+        SecretKey newGroupKey = EncryptionUtil.decryptStreamMessage(msg, groupKeys.get(msg.getPublisherId()));
+        if (newGroupKey != null) {
+            groupKeys.put(msg.getPublisherId(), newGroupKey);
+        }
+        handler.onMessage(this, msg);
     }
 }

@@ -56,7 +56,7 @@ public class TestWebSocketServer extends WebSocketServer {
         }
         String received = msgs.poll();
         String expected = msg.toJson();
-        boolean res = received.equals(expected);
+        boolean res = received != null && received.equals(expected);
         if (!res) {
             System.out.println("Expected: "+expected);
             System.out.println("But received: "+received);

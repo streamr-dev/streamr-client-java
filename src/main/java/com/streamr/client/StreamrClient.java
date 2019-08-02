@@ -7,6 +7,7 @@ import com.streamr.client.exceptions.GapDetectedException;
 import com.streamr.client.options.ResendOption;
 import com.streamr.client.options.StreamrClientOptions;
 import com.streamr.client.protocol.control_layer.*;
+import com.streamr.client.protocol.message_layer.MessageRef;
 import com.streamr.client.rest.UserInfo;
 import com.streamr.client.utils.*;
 import org.apache.commons.codec.digest.DigestUtils;
@@ -264,13 +265,6 @@ public class StreamrClient extends StreamrRESTClient {
             }
             try {
                 sub.handleMessage(message, isResend);
-            } catch (GapDetectedException e) {
-                ResendRangeRequest req = new ResendRangeRequest(e.getStreamId(), e.getStreamPartition(),
-                    sub.getId(), e.getFrom(), e.getTo(), e.getPublisherId(), e.getMsgChainId(), getSessionToken());
-                sub.setResending(true);
-                this.websocket.send(req.toJson());
-                new PeriodicResend(websocket, options.getGapFillTimeout(), sub, e.getPublisherId(),
-                    e.getMsgChainId(), getSessionToken()).start();
             } catch (Exception e) {
                 log.error(e);
             }
@@ -333,7 +327,14 @@ public class StreamrClient extends StreamrRESTClient {
         }
 
         SubscribeRequest subscribeRequest = new SubscribeRequest(stream.getId(), partition, session.getSessionToken());
-        Subscription sub = new Subscription(stream.getId(), partition, handler, resendOption, groupKeys);
+        Subscription sub = new Subscription(stream.getId(), partition, handler, resendOption, groupKeys,
+                options.getPropagationTimeout(), options.getResendTimeout());
+        sub.setGapHandler((MessageRef from, MessageRef to, String publisherId, String msgChainId) -> {
+            ResendRangeRequest req = new ResendRangeRequest(stream.getId(), partition,
+                    sub.getId(), from, to, publisherId, msgChainId, getSessionToken());
+            sub.setResending(true);
+            this.websocket.send(req.toJson());
+        });
         subs.add(sub);
         sub.setState(Subscription.State.SUBSCRIBING);
         this.websocket.send(subscribeRequest.toJson());
@@ -381,10 +382,10 @@ public class StreamrClient extends StreamrRESTClient {
         Subscription sub = subs.get(res.getStreamId(), res.getStreamPartition());
         sub.setState(Subscription.State.SUBSCRIBED);
         if (sub.hasResendOptions()) {
-            ResendOption resendOption = sub.getEffectiveResendOption();
+            ResendOption resendOption = sub.getResendOption();
             ControlMessage req = resendOption.toRequest(res.getStreamId(), res.getStreamPartition(), sub.getId(), this.getSessionToken());
             this.websocket.send(req.toJson());
-            OneTimeResend resend = new OneTimeResend(websocket, req, options.getRetryResendAfter(), sub);
+            OneTimeResend resend = new OneTimeResend(websocket, req, options.getResendTimeout(), sub);
             secondResends.put(sub.getId(), resend);
             resend.start();
         }
@@ -402,26 +403,13 @@ public class StreamrClient extends StreamrRESTClient {
 
     private void handleResendResponseNoResend(ResendResponseNoResend res) throws SubscriptionNotFoundException {
         Subscription sub = subs.get(res.getStreamId(), res.getStreamPartition());
-        endResendAndCheckQueue(sub);
+        sub.endResend();
         sub.resendDone();
     }
 
     private void handleResendResponseResent(ResendResponseResent res) throws SubscriptionNotFoundException {
         Subscription sub = subs.get(res.getStreamId(), res.getStreamPartition());
-        endResendAndCheckQueue(sub);
+        sub.endResend();
         sub.resendDone();
-    }
-
-    private void endResendAndCheckQueue(Subscription sub) {
-        try {
-            sub.endResend();
-        } catch (GapDetectedException e) {
-            ResendRangeRequest req = new ResendRangeRequest(e.getStreamId(), e.getStreamPartition(),
-                sub.getId(), e.getFrom(), e.getTo(), e.getPublisherId(), e.getMsgChainId(), getSessionToken());
-            sub.startResend();
-            this.websocket.send(req.toJson());
-            new PeriodicResend(websocket, options.getGapFillTimeout(), sub, e.getPublisherId(),
-                    e.getMsgChainId(), getSessionToken()).start();
-        }
     }
 }
