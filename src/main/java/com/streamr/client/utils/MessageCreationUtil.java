@@ -34,14 +34,14 @@ public class MessageCreationUtil {
         this(publisherId, signingUtil, new HashMap<>());
     }
 
-    public MessageCreationUtil(String publisherId, SigningUtil signingUtil, Map<String, String> groupKeysHex) {
+    public MessageCreationUtil(String publisherId, SigningUtil signingUtil, Map<String, GroupKey> groupKeys) {
         this.publisherId = publisherId;
         msgChainId = RandomStringUtils.randomAlphanumeric(20);
         this.signingUtil = signingUtil;
-        for (String streamId: groupKeysHex.keySet()) {
-            String groupKeyHex = groupKeysHex.get(streamId);
+        for (String streamId: groupKeys.keySet()) {
+            String groupKeyHex = groupKeys.get(streamId).getGroupKeyHex();
             EncryptionUtil.validateGroupKey(groupKeyHex);
-            groupKeys.put(streamId, new SecretKeySpec(DatatypeConverter.parseHexBinary(groupKeyHex), "AES"));
+            this.groupKeys.put(streamId, new SecretKeySpec(DatatypeConverter.parseHexBinary(groupKeyHex), "AES"));
         }
     }
 
@@ -49,10 +49,11 @@ public class MessageCreationUtil {
         return createStreamMessage(stream, payload, timestamp, partitionKey, null);
     }
 
-    public StreamMessage createStreamMessage(Stream stream, Map<String, Object> payload, Date timestamp, String partitionKey, String groupKeyHex) {
-        if (groupKeyHex != null) {
-            EncryptionUtil.validateGroupKey(groupKeyHex);
+    public StreamMessage createStreamMessage(Stream stream, Map<String, Object> payload, Date timestamp, String partitionKey, GroupKey groupKey) {
+        if (groupKey != null) {
+            EncryptionUtil.validateGroupKey(groupKey.getGroupKeyHex());
         }
+        String groupKeyHex = groupKey == null ? null : groupKey.getGroupKeyHex();
 
         int streamPartition = getStreamPartition(stream.getPartitions(), partitionKey);
         String key = stream.getId() + streamPartition;

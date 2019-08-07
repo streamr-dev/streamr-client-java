@@ -7,6 +7,7 @@ import com.streamr.client.exceptions.UnsupportedMessageException;
 import com.streamr.client.protocol.message_layer.MessageRef;
 import com.streamr.client.protocol.message_layer.StreamMessage;
 import com.streamr.client.utils.EncryptionUtil;
+import com.streamr.client.utils.GroupKey;
 import com.streamr.client.utils.OrderedMsgChain;
 import com.streamr.client.utils.OrderingUtil;
 
@@ -16,14 +17,14 @@ import java.util.Map;
 
 public abstract class BasicSubscription extends Subscription {
     protected OrderingUtil orderingUtil;
-    public BasicSubscription(String streamId, int partition, MessageHandler handler, Map<String, String> groupKeysHex,
+    public BasicSubscription(String streamId, int partition, MessageHandler handler, Map<String, GroupKey> groupKeys,
                              long propagationTimeout, long resendTimeout) {
-        super(streamId, partition, handler, groupKeysHex, propagationTimeout, resendTimeout);
+        super(streamId, partition, handler, groupKeys, propagationTimeout, resendTimeout);
         setOrderingUtil();
     }
 
-    public BasicSubscription(String streamId, int partition, MessageHandler handler, Map<String, String> groupKeysHex) {
-        super(streamId, partition, handler, groupKeysHex);
+    public BasicSubscription(String streamId, int partition, MessageHandler handler, Map<String, GroupKey> groupKeys) {
+        super(streamId, partition, handler, groupKeys);
         setOrderingUtil();
     }
 

@@ -26,10 +26,10 @@ class MessageCreationUtilSpec extends Specification {
         message = [foo: "bar"]
     }
 
-    String genKey(int keyLength) {
+    GroupKey genKey(int keyLength) {
         byte[] keyBytes = new byte[keyLength]
         secureRandom.nextBytes(keyBytes)
-        return Hex.encodeHexString(keyBytes)
+        return new GroupKey(Hex.encodeHexString(keyBytes))
     }
 
     void "fields are set. No encryption if no key is defined."() {
@@ -142,7 +142,7 @@ class MessageCreationUtilSpec extends Specification {
     }
 
     void "creates encrypted messages when key defined in constructor"() {
-        String key = genKey(32)
+        GroupKey key = genKey(32)
         MessageCreationUtil util = new MessageCreationUtil("publisherId", null, [(stream.id): key])
         when:
         StreamMessageV31 msg = (StreamMessageV31) util.createStreamMessage(stream, message, new Date(), null)
@@ -152,7 +152,7 @@ class MessageCreationUtilSpec extends Specification {
     }
 
     void "throws if the key is not 256 bits long"() {
-        String key = genKey(16)
+        GroupKey key = genKey(16)
         when:
         new MessageCreationUtil("publisherId", null, [(stream.id): key])
         then:
@@ -165,7 +165,7 @@ class MessageCreationUtilSpec extends Specification {
     }
 
     void "creates encrypted messages when key defined in createStreamMessage() and use the same key later"() {
-        String key = genKey(32)
+        GroupKey key = genKey(32)
         when:
         StreamMessageV31 msg1 = (StreamMessageV31) msgCreationUtil.createStreamMessage(stream, message, new Date(), null, key)
         then:
@@ -183,8 +183,8 @@ class MessageCreationUtilSpec extends Specification {
     }
 
     void "should update the key when redefined"() {
-        String key1 = genKey(32)
-        String key2 = genKey(32)
+        GroupKey key1 = genKey(32)
+        GroupKey key2 = genKey(32)
         when:
         StreamMessageV31 msg1 = (StreamMessageV31) msgCreationUtil.createStreamMessage(stream, message, new Date(), null, key1)
         then:

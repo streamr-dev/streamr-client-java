@@ -9,6 +9,7 @@ import com.streamr.client.protocol.message_layer.StreamMessageV31
 import com.streamr.client.subs.HistoricalSubscription
 import com.streamr.client.subs.Subscription
 import com.streamr.client.utils.EncryptionUtil
+import com.streamr.client.utils.GroupKey
 import com.streamr.client.utils.HttpUtils
 import com.streamr.client.utils.OrderedMsgChain
 import org.apache.commons.codec.binary.Hex
@@ -40,10 +41,10 @@ class HistoricalSubscriptionSpec extends Specification {
         }
     }
 
-    String genKey() {
+    GroupKey genKey() {
         byte[] keyBytes = new byte[32]
         secureRandom.nextBytes(keyBytes)
-        return Hex.encodeHexString(keyBytes)
+        return new GroupKey(Hex.encodeHexString(keyBytes))
     }
 
     SecureRandom secureRandom = new SecureRandom()
@@ -204,8 +205,8 @@ class HistoricalSubscriptionSpec extends Specification {
     }
 
     void "decrypts encrypted messages with the correct key"() {
-        String groupKeyHex = genKey()
-        SecretKey groupKey = new SecretKeySpec(DatatypeConverter.parseHexBinary(groupKeyHex), "AES")
+        GroupKey key = genKey()
+        SecretKey groupKey = new SecretKeySpec(DatatypeConverter.parseHexBinary(key.groupKeyHex), "AES")
         Map plaintext = [foo: 'bar']
         String ciphertext = EncryptionUtil.encrypt(HttpUtils.mapAdapter.toJson(plaintext).getBytes(StandardCharsets.UTF_8), groupKey)
         Map received = null
@@ -216,7 +217,7 @@ class HistoricalSubscriptionSpec extends Specification {
             void onMessage(Subscription sub, StreamMessage message) {
                 received = message.getContent()
             }
-        }, null, ['publisherId': groupKeyHex])
+        }, null, ['publisherId': key])
         when:
         sub.handleResentMessage(msg1)
         then:
@@ -224,9 +225,9 @@ class HistoricalSubscriptionSpec extends Specification {
     }
 
     void "cannot decrypt encrypted messages with the wrong key"() {
-        String groupKeyHex = genKey()
-        String wrongGroupKeyHex = genKey()
-        SecretKey groupKey = new SecretKeySpec(DatatypeConverter.parseHexBinary(groupKeyHex), "AES")
+        GroupKey key = genKey()
+        GroupKey wrongGroupKey = genKey()
+        SecretKey groupKey = new SecretKeySpec(DatatypeConverter.parseHexBinary(key.groupKeyHex), "AES")
         Map plaintext = [foo: 'bar']
         String ciphertext = EncryptionUtil.encrypt(HttpUtils.mapAdapter.toJson(plaintext).getBytes(StandardCharsets.UTF_8), groupKey)
         Map received = null
@@ -237,7 +238,7 @@ class HistoricalSubscriptionSpec extends Specification {
             void onMessage(Subscription sub, StreamMessage message) {
                 received = message.getContent()
             }
-        }, null, ['publisherId': wrongGroupKeyHex])
+        }, null, ['publisherId': wrongGroupKey])
         when:
         sub.handleResentMessage(msg1)
         then:
@@ -245,24 +246,25 @@ class HistoricalSubscriptionSpec extends Specification {
     }
 
     void "decrypts first message, updates key, decrypts second message"() {
-        String groupKey1Hex = genKey()
-        SecretKey groupKey1 = new SecretKeySpec(DatatypeConverter.parseHexBinary(groupKey1Hex), "AES")
+        GroupKey groupKey1 = genKey()
+        String groupKey1Hex = groupKey1.groupKeyHex
+        SecretKey secretKey1 = new SecretKeySpec(DatatypeConverter.parseHexBinary(groupKey1Hex), "AES")
         byte[] key2Bytes = new byte[32]
         secureRandom.nextBytes(key2Bytes)
         String groupKey2Hex = Hex.encodeHexString(key2Bytes)
-        SecretKey groupKey2 = new SecretKeySpec(DatatypeConverter.parseHexBinary(groupKey2Hex), "AES")
+        SecretKey secretKey2 = new SecretKeySpec(DatatypeConverter.parseHexBinary(groupKey2Hex), "AES")
 
         Map content1 = [foo: 'bar']
         byte[] content1Bytes = HttpUtils.mapAdapter.toJson(content1).getBytes(StandardCharsets.UTF_8)
         byte[] plaintext1 = new byte[key2Bytes.length + content1Bytes.length]
         System.arraycopy(key2Bytes, 0, plaintext1, 0, key2Bytes.length)
         System.arraycopy(content1Bytes, 0, plaintext1, key2Bytes.length, content1Bytes.length)
-        String ciphertext1 = EncryptionUtil.encrypt(plaintext1, groupKey1)
+        String ciphertext1 = EncryptionUtil.encrypt(plaintext1, secretKey1)
         StreamMessageV31 msg1 = new StreamMessageV31("streamId", 0, 0, 0, "publisherId", "",
                 null, null, StreamMessage.ContentType.CONTENT_TYPE_JSON, StreamMessage.EncryptionType.NEW_KEY_AND_AES, ciphertext1, StreamMessage.SignatureType.SIGNATURE_TYPE_NONE, null)
 
         Map content2 = [hello: 'world']
-        String ciphertext2 = EncryptionUtil.encrypt(HttpUtils.mapAdapter.toJson(content2).getBytes(StandardCharsets.UTF_8), groupKey2)
+        String ciphertext2 = EncryptionUtil.encrypt(HttpUtils.mapAdapter.toJson(content2).getBytes(StandardCharsets.UTF_8), secretKey2)
         StreamMessageV31 msg2 = new StreamMessageV31("streamId", 0, 1, 0, "publisherId", "",
                 0, 0, StreamMessage.ContentType.CONTENT_TYPE_JSON, StreamMessage.EncryptionType.AES, ciphertext2, StreamMessage.SignatureType.SIGNATURE_TYPE_NONE, null)
 
@@ -279,7 +281,7 @@ class HistoricalSubscriptionSpec extends Specification {
                 }
 
             }
-        }, null, ['publisherId': groupKey1Hex])
+        }, null, ['publisherId': groupKey1])
         when:
         sub.handleResentMessage(msg1)
         then:

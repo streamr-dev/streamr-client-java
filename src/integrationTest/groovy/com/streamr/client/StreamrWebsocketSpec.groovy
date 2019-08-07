@@ -7,6 +7,7 @@ import com.streamr.client.protocol.message_layer.StreamMessageV31
 import com.streamr.client.rest.Stream
 import com.streamr.client.protocol.message_layer.StreamMessage
 import com.streamr.client.subs.Subscription
+import com.streamr.client.utils.GroupKey
 import org.apache.commons.codec.binary.Hex
 import spock.util.concurrent.PollingConditions
 
@@ -17,10 +18,10 @@ class StreamrWebsocketSpec extends StreamrIntegrationSpecification {
 	private StreamrClient client
 	private SecureRandom secureRandom = new SecureRandom()
 
-	String genKey() {
+	GroupKey genKey() {
 		byte[] keyBytes = new byte[32]
 		secureRandom.nextBytes(keyBytes)
-		return Hex.encodeHexString(keyBytes)
+		return new GroupKey(Hex.encodeHexString(keyBytes))
 	}
 
 	void setup() {
@@ -148,9 +149,9 @@ class StreamrWebsocketSpec extends StreamrIntegrationSpecification {
 
 	void "subscriber can decrypt messages when he knows the keys used to encrypt"() {
 		Stream stream = client.createStream(new Stream(generateResourceName(), ""))
-		String keyHex = genKey()
-		HashMap<String, String> keys = new HashMap<>()
-		keys.put(client.getPublisherId(), keyHex)
+		GroupKey key = genKey()
+		HashMap<String, GroupKey> keys = new HashMap<>()
+		keys.put(client.getPublisherId(), key)
 
 		when:
 		// Subscribe to the stream
@@ -165,7 +166,7 @@ class StreamrWebsocketSpec extends StreamrIntegrationSpecification {
 
 		Thread.sleep(2000)
 
-		client.publish(stream, [test: 'clear text'], new Date(), keyHex)
+		client.publish(stream, [test: 'clear text'], new Date(), key)
 
 		Thread.sleep(2000)
 

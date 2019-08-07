@@ -6,6 +6,7 @@ import com.streamr.client.exceptions.UnableToDecryptException;
 import com.streamr.client.exceptions.UnsupportedMessageException;
 import com.streamr.client.options.ResendOption;
 import com.streamr.client.protocol.message_layer.StreamMessage;
+import com.streamr.client.utils.GroupKey;
 import com.streamr.client.utils.OrderedMsgChain;
 
 import javax.crypto.SecretKey;
@@ -33,24 +34,24 @@ public abstract class Subscription {
         SUBSCRIBING, SUBSCRIBED, UNSUBSCRIBING, UNSUBSCRIBED
     }
 
-    public Subscription(String streamId, int partition, MessageHandler handler, Map<String, String> groupKeysHex,
+    public Subscription(String streamId, int partition, MessageHandler handler, Map<String, GroupKey> groupKeys,
                         long propagationTimeout, long resendTimeout) {
         this.id = UUID.randomUUID().toString();
         this.streamId = streamId;
         this.partition = partition;
         this.handler = handler;
-        if (groupKeysHex != null) {
-            for (String publisherId: groupKeysHex.keySet()) {
-                String groupKeyHex = groupKeysHex.get(publisherId);
-                groupKeys.put(publisherId, new SecretKeySpec(DatatypeConverter.parseHexBinary(groupKeyHex), "AES"));
+        if (groupKeys != null) {
+            for (String publisherId: groupKeys.keySet()) {
+                String groupKeyHex = groupKeys.get(publisherId).getGroupKeyHex();
+                this.groupKeys.put(publisherId, new SecretKeySpec(DatatypeConverter.parseHexBinary(groupKeyHex), "AES"));
             }
         }
         this.propagationTimeout = propagationTimeout;
         this.resendTimeout = resendTimeout;
     }
 
-    public Subscription(String streamId, int partition, MessageHandler handler, Map<String, String> groupKeysHex) {
-        this(streamId, partition, handler, groupKeysHex, DEFAULT_PROPAGATION_TIMEOUT, DEFAULT_RESEND_TIMEOUT);
+    public Subscription(String streamId, int partition, MessageHandler handler, Map<String, GroupKey> groupKeys) {
+        this(streamId, partition, handler, groupKeys, DEFAULT_PROPAGATION_TIMEOUT, DEFAULT_RESEND_TIMEOUT);
     }
 
     public Subscription(String streamId, int partition, MessageHandler handler) {

@@ -6,6 +6,7 @@ import com.streamr.client.exceptions.UnableToDecryptException;
 import com.streamr.client.exceptions.UnsupportedMessageException;
 import com.streamr.client.options.ResendOption;
 import com.streamr.client.protocol.message_layer.StreamMessage;
+import com.streamr.client.utils.GroupKey;
 
 import java.util.Map;
 import java.util.function.Function;
@@ -13,20 +14,20 @@ import java.util.function.Function;
 public class HistoricalSubscription extends BasicSubscription {
     private ResendOption resendOption;
     private Function<StreamMessage, Void> onRealTimeMsg;
-    public HistoricalSubscription(String streamId, int partition, MessageHandler handler, ResendOption resendOption, Map<String, String> groupKeysHex,
+    public HistoricalSubscription(String streamId, int partition, MessageHandler handler, ResendOption resendOption, Map<String, GroupKey> groupKeys,
                                   long propagationTimeout, long resendTimeout, Function<StreamMessage, Void> onRealTimeMsg) {
-        super(streamId, partition, handler, groupKeysHex, propagationTimeout, resendTimeout);
+        super(streamId, partition, handler, groupKeys, propagationTimeout, resendTimeout);
         this.resendOption = resendOption;
         this.onRealTimeMsg = onRealTimeMsg;
     }
 
-    public HistoricalSubscription(String streamId, int partition, MessageHandler handler, ResendOption resendOption, Map<String, String> groupKeysHex,
+    public HistoricalSubscription(String streamId, int partition, MessageHandler handler, ResendOption resendOption, Map<String, GroupKey> groupKeys,
                                   long propagationTimeout, long resendTimeout) {
-        this(streamId, partition, handler, resendOption, groupKeysHex, propagationTimeout, resendTimeout, null);
+        this(streamId, partition, handler, resendOption, groupKeys, propagationTimeout, resendTimeout, null);
     }
 
-    public HistoricalSubscription(String streamId, int partition, MessageHandler handler, ResendOption resendOption, Map<String, String> groupKeysHex) {
-        super(streamId, partition, handler, groupKeysHex);
+    public HistoricalSubscription(String streamId, int partition, MessageHandler handler, ResendOption resendOption, Map<String, GroupKey> groupKeys) {
+        super(streamId, partition, handler, groupKeys);
         this.resendOption = resendOption;
     }
 

@@ -6,18 +6,19 @@ import com.streamr.client.exceptions.UnableToDecryptException;
 import com.streamr.client.exceptions.UnsupportedMessageException;
 import com.streamr.client.options.ResendOption;
 import com.streamr.client.protocol.message_layer.StreamMessage;
+import com.streamr.client.utils.GroupKey;
 
 import java.util.Map;
 
 public class RealTimeSubscription extends BasicSubscription {
     private boolean resending = false;
-    public RealTimeSubscription(String streamId, int partition, MessageHandler handler, Map<String, String> groupKeysHex,
+    public RealTimeSubscription(String streamId, int partition, MessageHandler handler, Map<String, GroupKey> groupKeys,
                                 long propagationTimeout, long resendTimeout) {
-        super(streamId, partition, handler, groupKeysHex, propagationTimeout, resendTimeout);
+        super(streamId, partition, handler, groupKeys, propagationTimeout, resendTimeout);
     }
 
-    public RealTimeSubscription(String streamId, int partition, MessageHandler handler, Map<String, String> groupKeysHex) {
-        super(streamId, partition, handler, groupKeysHex);
+    public RealTimeSubscription(String streamId, int partition, MessageHandler handler, Map<String, GroupKey> groupKeys) {
+        super(streamId, partition, handler, groupKeys);
     }
 
     public RealTimeSubscription(String streamId, int partition, MessageHandler handler) {

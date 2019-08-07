@@ -91,6 +91,13 @@ public class KeyExchangeUtil {
             log.error(e);
             return;
         }
+        String streamId = (String) content.get("streamId");
+        // A valid publisher of the client's inbox stream could send key responses for other streams to which
+        // the publisher doesn't have write permissions. Thus the following additional check is necessary.
+        if (!addressValidityUtil.isValidPublisher(streamId, groupKeyResponse.getPublisherId())) {
+            throw new InvalidGroupKeyResponseException("Received group key from an invalid publisher "
+                    + groupKeyResponse.getPublisherId() + " for stream " + streamId);
+        }
         if (encryptionUtil == null) {
             throw new InvalidGroupKeyResponseException("Cannot decrypt group key response without the private key.");
         }
@@ -100,7 +107,7 @@ public class KeyExchangeUtil {
             EncryptionUtil.validateGroupKey(decryptedKey.getGroupKeyHex());
             decryptedKeys.add(decryptedKey);
         }
-        setGroupKeysFunction.apply((String) content.get("streamId"), groupKeyResponse.getPublisherId(), decryptedKeys);
+        setGroupKeysFunction.apply(streamId, groupKeyResponse.getPublisherId(), decryptedKeys);
     }
 
     @FunctionalInterface
