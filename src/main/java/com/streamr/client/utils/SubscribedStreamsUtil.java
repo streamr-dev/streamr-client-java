@@ -16,21 +16,14 @@ public class SubscribedStreamsUtil {
     private Cache<String, Stream> streamsPerStreamId = new Cache2kBuilder<String, Stream>() {}
         .expireAfterWrite(15, TimeUnit.MINUTES).build();
     private Function<String, Stream> getStreamFunction;
-
-    private Cache<String, HashMap<String, Boolean>> publishersPerStreamId = new Cache2kBuilder<String, HashMap<String, Boolean>>() {}
-        .expireAfterWrite(30, TimeUnit.MINUTES).build();
-    private Function<String, List<String>> getPublishersFunction;
-    private BiFunction<String, String, Boolean> isPublisherFunction;
-
+    private final AddressValidityUtil addressValidityUtil;
     private final SignatureVerificationPolicy verifySignatures;
 
     public SubscribedStreamsUtil(Function<String, Stream> getStreamFunction,
-                                 Function<String, List<String>> getPublishersFunction,
-                                 BiFunction<String, String, Boolean> isPublisherFunction,
+                                 AddressValidityUtil addressValidityUtil,
                                  SignatureVerificationPolicy verifySignatures) {
         this.getStreamFunction = getStreamFunction;
-        this.getPublishersFunction = getPublishersFunction;
-        this.isPublisherFunction = isPublisherFunction;
+        this.addressValidityUtil = addressValidityUtil;
         this.verifySignatures = verifySignatures;
     }
 
@@ -41,19 +34,9 @@ public class SubscribedStreamsUtil {
         }
     }
 
-    private boolean isValidPublisher(String streamId, String publisherId) {
-        Boolean isValid = getPublishers(streamId).get(publisherId);
-        if (isValid != null) {
-            return isValid;
-        }
-        boolean result = isPublisherFunction.apply(streamId, publisherId);
-        getPublishers(streamId).put(publisherId, result);
-        return result;
-    }
-
     private SignatureVerificationResult isValid(StreamMessage msg) {
         if (verifySignatures == SignatureVerificationPolicy.ALWAYS) {
-            if (!isValidPublisher(msg.getStreamId(), msg.getPublisherId())) {
+            if (!addressValidityUtil.isValidPublisher(msg.getStreamId(), msg.getPublisherId())) {
                 return SignatureVerificationResult.invalidPublisher();
             }
             return SignatureVerificationResult.withValidPublisher(SigningUtil.hasValidSignature(msg));
@@ -62,7 +45,7 @@ public class SubscribedStreamsUtil {
         }
         // verifySignatures == AUTO
         if(msg.getSignature() != null) {
-            if (!isValidPublisher(msg.getStreamId(), msg.getPublisherId())) {
+            if (!addressValidityUtil.isValidPublisher(msg.getStreamId(), msg.getPublisherId())) {
                 return SignatureVerificationResult.invalidPublisher();
             }
             return SignatureVerificationResult.withValidPublisher(SigningUtil.hasValidSignature(msg));
@@ -81,20 +64,8 @@ public class SubscribedStreamsUtil {
         return s;
     }
 
-    private HashMap<String, Boolean> getPublishers(String streamId) {
-        HashMap<String, Boolean> publishers = publishersPerStreamId.get(streamId);
-        if (publishers == null) {
-            publishers = new HashMap<>();
-            for (String publisher: getPublishersFunction.apply(streamId)) {
-                publishers.put(publisher, true);
-            }
-            publishersPerStreamId.put(streamId, publishers);
-        }
-        return publishers;
-    }
-
     public void clearAndClose() {
         streamsPerStreamId.clearAndClose();
-        publishersPerStreamId.clearAndClose();
+        addressValidityUtil.clearAndClose();
     }
 }

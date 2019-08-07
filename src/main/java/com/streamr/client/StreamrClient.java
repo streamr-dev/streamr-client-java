@@ -53,15 +53,21 @@ public class StreamrClient extends StreamrRESTClient {
     private String publisherId = null;
     private final MessageCreationUtil msgCreationUtil;
     private final SubscribedStreamsUtil subscribedStreamsUtil;
+    private final AddressValidityUtil addressValidityUtil;
 
     private final HashMap<String, OneTimeResend> secondResends = new HashMap<>();
 
     public StreamrClient(StreamrClientOptions options) {
         super(options);
-
-        subscribedStreamsUtil = new SubscribedStreamsUtil(id -> {
+        addressValidityUtil = new AddressValidityUtil(id -> {
             try {
-                return getStream(id);
+                return getSubscribers(id);
+            } catch (IOException e) {
+                throw new RuntimeException(e);
+            }
+        }, (s, p) -> {
+            try {
+                return isSubscriber(s, p);
             } catch (IOException e) {
                 throw new RuntimeException(e);
             }
@@ -77,7 +83,14 @@ public class StreamrClient extends StreamrRESTClient {
             } catch (IOException e) {
                 throw new RuntimeException(e);
             }
-        }, options.getSigningOptions().getVerifySignatures());
+        });
+        subscribedStreamsUtil = new SubscribedStreamsUtil(id -> {
+            try {
+                return getStream(id);
+            } catch (IOException e) {
+                throw new RuntimeException(e);
+            }
+        }, addressValidityUtil, options.getSigningOptions().getVerifySignatures());
 
         if (options.getAuthenticationMethod() instanceof ApiKeyAuthenticationMethod) {
             try {
