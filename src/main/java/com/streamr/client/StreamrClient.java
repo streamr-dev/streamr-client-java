@@ -296,6 +296,10 @@ public class StreamrClient extends StreamrRESTClient {
             options.getEncryptionOptions().getPublisherGroupKeys().put(stream.getId(), groupKeyHex);
         }
         StreamMessage streamMessage = msgCreationUtil.createStreamMessage(stream, payload, timestamp, null, groupKeyHex);
+        publish(streamMessage);
+    }
+
+    private void publish(StreamMessage streamMessage) {
         PublishRequest req = new PublishRequest(streamMessage, getSessionToken());
         getWebsocket().send(req.toJson());
     }

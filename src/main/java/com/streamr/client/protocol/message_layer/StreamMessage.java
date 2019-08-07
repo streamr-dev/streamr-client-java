@@ -256,6 +256,9 @@ public abstract class StreamMessage implements ITimestamped {
             if (!content.containsKey("publicKey")) {
                 throw new MalformedMessageException("Content of type " + ContentType.GROUP_KEY_REQUEST + " must contain a 'publicKey' field.");
             }
+            if (!content.containsKey("streamId")) {
+                throw new MalformedMessageException("Content of type " + ContentType.GROUP_KEY_REQUEST + " must contain a 'streamId' field.");
+            }
             if (content.containsKey("range")) {
                 try {
                     Map<String, Object> range = (Map<String, Object>) content.get("range");
@@ -268,6 +271,9 @@ public abstract class StreamMessage implements ITimestamped {
 
             }
         } else if (contentType == ContentType.GROUP_KEY_RESPONSE_SIMPLE) {
+            if (!content.containsKey("streamId")) {
+                throw new MalformedMessageException("Content of type " + ContentType.GROUP_KEY_REQUEST + " must contain a 'streamId' field.");
+            }
             if (!content.containsKey("keys")) {
                 throw new MalformedMessageException("Content of type " + ContentType.GROUP_KEY_RESPONSE_SIMPLE + " must contain a 'keys' field.");
             }
@@ -284,8 +290,14 @@ public abstract class StreamMessage implements ITimestamped {
             }
 
         } else if (contentType == ContentType.GROUP_KEY_RESET_SIMPLE) {
-            if (!content.containsKey("groupKey") || !content.containsKey("start")) {
-                throw new MalformedMessageException("Content of type " + ContentType.GROUP_KEY_RESET_SIMPLE + " must contain 'groupKey' and 'start' fields.");
+            if (!content.containsKey("streamId")) {
+                throw new MalformedMessageException("Content of type " + ContentType.GROUP_KEY_REQUEST + " must contain a 'streamId' field.");
+            }
+            if (!content.containsKey("groupKey")) {
+                throw new MalformedMessageException("Content of type " + ContentType.GROUP_KEY_RESET_SIMPLE + " must contain a 'groupKey' field.");
+            }
+            if (!content.containsKey("start")) {
+                throw new MalformedMessageException("Content of type " + ContentType.GROUP_KEY_RESET_SIMPLE + " must contain a 'start' field.");
             }
         }
     }

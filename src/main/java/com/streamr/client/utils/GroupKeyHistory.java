@@ -1,6 +1,7 @@
 package com.streamr.client.utils;
 
-import java.util.*;
+import java.util.ArrayList;
+import java.util.Date;
 
 public class GroupKeyHistory {
     ArrayList<GroupKey> keys = new ArrayList<>();
@@ -18,7 +19,7 @@ public class GroupKeyHistory {
         return keys.get(keys.size() - 1);
     }
 
-    public List<GroupKey> getKeysBetween(long start, long end) {
+    public ArrayList<GroupKey> getKeysBetween(long start, long end) {
         if (start > end) {
             throw new IllegalArgumentException("'start' must be less or equal to 'end'");
         }
@@ -36,7 +37,7 @@ public class GroupKeyHistory {
         return selected;
     }
 
-    public List<GroupKey> getKeysBetween(Date start, Date end) {
+    public ArrayList<GroupKey> getKeysBetween(Date start, Date end) {
         return getKeysBetween(start.getTime(), end.getTime());
     }
 

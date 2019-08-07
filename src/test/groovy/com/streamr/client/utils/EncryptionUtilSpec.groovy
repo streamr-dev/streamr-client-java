@@ -1,6 +1,7 @@
 package com.streamr.client.utils
 
 import com.streamr.client.exceptions.InvalidRSAKeyException
+import org.apache.commons.codec.binary.Hex
 import spock.lang.Specification
 
 import java.nio.charset.StandardCharsets
@@ -24,6 +25,14 @@ class EncryptionUtilSpec extends Specification {
         byte[] plaintext = "some random text".getBytes(StandardCharsets.UTF_8)
         when:
         String ciphertext = EncryptionUtil.encryptWithPublicKey(plaintext, util.getPublicKeyAsPemString())
+        then:
+        util.decryptWithPrivateKey(ciphertext) == plaintext
+    }
+    void "rsa decryption after encryption equals the initial plaintext (hex string)"() {
+        EncryptionUtil util = new EncryptionUtil()
+        byte[] plaintext = "some random text".getBytes(StandardCharsets.UTF_8)
+        when:
+        String ciphertext = EncryptionUtil.encryptWithPublicKey(Hex.encodeHexString(plaintext), util.getPublicKeyAsPemString())
         then:
         util.decryptWithPrivateKey(ciphertext) == plaintext
     }

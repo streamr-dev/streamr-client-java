@@ -1,8 +1,8 @@
 package com.streamr.client.utils;
 
+import java.util.ArrayList;
 import java.util.Date;
 import java.util.HashMap;
-import java.util.List;
 
 public abstract class KeyStorage {
     public KeyStorage(HashMap<String, GroupKey> publisherGroupKeys){
@@ -13,7 +13,7 @@ public abstract class KeyStorage {
 
     public abstract GroupKey getLatestKey(String streamId);
 
-    public abstract List<GroupKey> getKeysBetween(String streamId, Date start, Date end);
+    public abstract ArrayList<GroupKey> getKeysBetween(String streamId, Date start, Date end);
 
     public abstract void addKey(String streamId, GroupKey key);
 }

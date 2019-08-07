@@ -77,6 +77,11 @@ public class EncryptionUtil {
         }
     }
 
+    public static String encryptWithPublicKey(String plaintextHex, String publicKey) {
+        byte[] plaintext = DatatypeConverter.parseHexBinary(plaintextHex);
+        return encryptWithPublicKey(plaintext, publicKey);
+    }
+
     public static String encrypt(byte[] plaintext, SecretKey groupKey) {
         try {
             byte[] iv = new byte[16];

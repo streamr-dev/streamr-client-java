@@ -3,7 +3,6 @@ package com.streamr.client.utils;
 import java.util.ArrayList;
 import java.util.Date;
 import java.util.HashMap;
-import java.util.List;
 
 public class KeyHistoryStorage extends KeyStorage {
     private HashMap<String, GroupKeyHistory> histories = new HashMap<>();
@@ -27,7 +26,7 @@ public class KeyHistoryStorage extends KeyStorage {
     }
 
     @Override
-    public List<GroupKey> getKeysBetween(String streamId, Date start, Date end) {
+    public ArrayList<GroupKey> getKeysBetween(String streamId, Date start, Date end) {
         GroupKeyHistory history = histories.get(streamId);
         return history == null ? new ArrayList<>() : history.getKeysBetween(start, end);
     }
