@@ -5,9 +5,10 @@ import com.streamr.client.options.ResendLastOption
 import com.streamr.client.protocol.message_layer.MessageRef
 import com.streamr.client.protocol.message_layer.StreamMessage
 import com.streamr.client.protocol.message_layer.StreamMessageV31
+import com.streamr.client.subs.Subscription
 import com.streamr.client.utils.OrderedMsgChain
 import spock.lang.Specification
-import subscription.CombinedSubscription
+import com.streamr.client.subs.CombinedSubscription
 
 class CombinedSubscriptionSpec extends Specification {
     StreamMessage createMessage(long timestamp, long sequenceNumber, Long previousTimestamp, Long previousSequenceNumber) {

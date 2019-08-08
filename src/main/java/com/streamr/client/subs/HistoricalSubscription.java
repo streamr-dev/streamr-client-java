@@ -1,4 +1,4 @@
-package subscription;
+package com.streamr.client.subs;
 
 import com.streamr.client.MessageHandler;
 import com.streamr.client.exceptions.GapDetectedException;
@@ -66,7 +66,7 @@ public class HistoricalSubscription extends BasicSubscription {
 
     @Override
     public void endResend() throws GapDetectedException {
-        this.handler.done(null);
+        this.handler.done(this);
     }
 
     @Override

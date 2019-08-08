@@ -1,4 +1,4 @@
-package subscription;
+package com.streamr.client.subs;
 
 import com.streamr.client.MessageHandler;
 import com.streamr.client.exceptions.GapDetectedException;
@@ -12,7 +12,6 @@ import com.streamr.client.utils.OrderingUtil;
 
 import javax.crypto.SecretKey;
 import java.util.ArrayList;
-import java.util.HashMap;
 import java.util.Map;
 
 public abstract class BasicSubscription extends Subscription {

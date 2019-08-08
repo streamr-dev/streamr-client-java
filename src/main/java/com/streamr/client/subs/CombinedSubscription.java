@@ -1,4 +1,4 @@
-package subscription;
+package com.streamr.client.subs;
 
 import com.streamr.client.MessageHandler;
 import com.streamr.client.exceptions.GapDetectedException;
@@ -19,11 +19,12 @@ public class CombinedSubscription extends Subscription {
         super(streamId, partition, handler, groupKeysHex, propagationTimeout, resendTimeout);
         MessageHandler wrapperHandler = new MessageHandler() {
             @Override
-            public void onMessage(com.streamr.client.Subscription sub, StreamMessage message) {
+            public void onMessage(Subscription sub, StreamMessage message) {
                 handler.onMessage(sub, message);
             }
             @Override
-            public void done(com.streamr.client.Subscription s) {
+            public void done(Subscription s) {
+                handler.done(s);
                 RealTimeSubscription realTime = new RealTimeSubscription(streamId, partition, handler, groupKeysHex, propagationTimeout, resendTimeout);
                 realTime.setGapHandler(sub.getGapHandler());
                 realTime.setLastMessageRefs(sub.getChains());
@@ -40,6 +41,7 @@ public class CombinedSubscription extends Subscription {
         });
     }
 
+    @Override
     public void setGapHandler(OrderedMsgChain.GapHandlerFunction gapHandler) {
         sub.setGapHandler(gapHandler);
     }

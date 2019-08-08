@@ -16,6 +16,7 @@ import com.streamr.client.protocol.message_layer.MessageRef
 import com.streamr.client.protocol.message_layer.StreamMessage
 import com.streamr.client.protocol.message_layer.StreamMessageV31
 import com.streamr.client.rest.Stream
+import com.streamr.client.subs.Subscription
 import spock.lang.Specification
 
 class StreamrClientSpec extends Specification {

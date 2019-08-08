@@ -1,4 +1,4 @@
-package subscription;
+package com.streamr.client.subs;
 
 import com.streamr.client.MessageHandler;
 import com.streamr.client.exceptions.GapDetectedException;
@@ -6,6 +6,7 @@ import com.streamr.client.exceptions.UnableToDecryptException;
 import com.streamr.client.exceptions.UnsupportedMessageException;
 import com.streamr.client.options.ResendOption;
 import com.streamr.client.protocol.message_layer.StreamMessage;
+import com.streamr.client.utils.OrderedMsgChain;
 
 import javax.crypto.SecretKey;
 import javax.crypto.spec.SecretKeySpec;
@@ -28,7 +29,7 @@ public abstract class Subscription {
 
     private State state;
 
-    enum State {
+    public enum State {
         SUBSCRIBING, SUBSCRIBED, UNSUBSCRIBING, UNSUBSCRIBED
     }
 
@@ -95,6 +96,8 @@ public abstract class Subscription {
     public abstract void handleRealTimeMessage(StreamMessage msg) throws GapDetectedException, UnsupportedMessageException, UnableToDecryptException;
 
     public abstract void handleResentMessage(StreamMessage msg) throws GapDetectedException, UnsupportedMessageException, UnableToDecryptException;
+
+    public abstract void setGapHandler(OrderedMsgChain.GapHandlerFunction gapHandler);
 
     public abstract void clear();
 }

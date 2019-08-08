@@ -5,12 +5,13 @@ import com.streamr.client.exceptions.UnableToDecryptException
 import com.streamr.client.protocol.message_layer.MessageRef
 import com.streamr.client.protocol.message_layer.StreamMessage
 import com.streamr.client.protocol.message_layer.StreamMessageV31
+import com.streamr.client.subs.RealTimeSubscription
+import com.streamr.client.subs.Subscription
 import com.streamr.client.utils.EncryptionUtil
 import com.streamr.client.utils.HttpUtils
 import com.streamr.client.utils.OrderedMsgChain
 import org.apache.commons.codec.binary.Hex
 import spock.lang.Specification
-import subscription.RealTimeSubscription
 
 import javax.crypto.SecretKey
 import javax.crypto.spec.SecretKeySpec

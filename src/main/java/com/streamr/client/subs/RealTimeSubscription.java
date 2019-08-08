@@ -1,4 +1,4 @@
-package subscription;
+package com.streamr.client.subs;
 
 import com.streamr.client.MessageHandler;
 import com.streamr.client.exceptions.GapDetectedException;
@@ -52,7 +52,7 @@ public class RealTimeSubscription extends BasicSubscription {
     @Override
     public void endResend() throws GapDetectedException {
         resending = false;
-        this.handler.done(null);
+        this.handler.done(this);
     }
 
     @Override
