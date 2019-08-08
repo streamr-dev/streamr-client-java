@@ -1,8 +1,10 @@
 package com.streamr.client.utils;
 
 import com.streamr.client.exceptions.GapFillFailedException;
+import com.streamr.client.protocol.message_layer.MessageRef;
 import com.streamr.client.protocol.message_layer.StreamMessage;
 
+import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.function.Function;
 
@@ -48,6 +50,25 @@ public class OrderingUtil {
                     gapHandler, gapFillFailedHandler, propagationTimeout, resendTimeout));
         }
         return chains.get(key);
+    }
+
+    public ArrayList<OrderedMsgChain> getChains() {
+        return new ArrayList<>(chains.values());
+    }
+
+    public OrderedMsgChain.GapHandlerFunction getGapHandler() {
+        return gapHandler;
+    }
+
+    public void setLastMessageRefs(ArrayList<OrderedMsgChain> previousChains) {
+        for (OrderedMsgChain chain: previousChains) {
+            String key = chain.getPublisherId() + chain.getMsgChainId();
+            OrderedMsgChain newChain = new OrderedMsgChain(chain.getPublisherId(), chain.getMsgChainId(),
+                    inOrderHandler, gapHandler, gapFillFailedHandler, propagationTimeout, resendTimeout);
+            newChain.setLastReceived(chain.getLastReceived());
+            chains.put(key, newChain);
+
+        }
     }
 
 }

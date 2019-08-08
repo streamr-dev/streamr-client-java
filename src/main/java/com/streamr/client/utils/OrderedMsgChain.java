@@ -77,6 +77,22 @@ public class OrderedMsgChain {
         }
     }
 
+    public String getPublisherId() {
+        return publisherId;
+    }
+
+    public String getMsgChainId() {
+        return msgChainId;
+    }
+
+    public void setLastReceived(MessageRef lastReceived) {
+        this.lastReceived = lastReceived;
+    }
+
+    public MessageRef getLastReceived() {
+        return lastReceived;
+    }
+
     private boolean isNextMessage(StreamMessage msg) {
         boolean isFirstMessage = lastReceived == null;
         return isFirstMessage
