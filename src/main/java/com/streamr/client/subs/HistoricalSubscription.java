@@ -8,13 +8,13 @@ import com.streamr.client.options.ResendOption;
 import com.streamr.client.protocol.message_layer.StreamMessage;
 
 import java.util.Map;
-import java.util.function.Consumer;
+import java.util.function.Function;
 
 public class HistoricalSubscription extends BasicSubscription {
     private ResendOption resendOption;
-    private Consumer<StreamMessage> onRealTimeMsg;
+    private Function<StreamMessage, Void> onRealTimeMsg;
     public HistoricalSubscription(String streamId, int partition, MessageHandler handler, ResendOption resendOption, Map<String, String> groupKeysHex,
-                                  long propagationTimeout, long resendTimeout, Consumer<StreamMessage> onRealTimeMsg) {
+                                  long propagationTimeout, long resendTimeout, Function<StreamMessage, Void> onRealTimeMsg) {
         super(streamId, partition, handler, groupKeysHex, propagationTimeout, resendTimeout);
         this.resendOption = resendOption;
         this.onRealTimeMsg = onRealTimeMsg;
@@ -72,7 +72,7 @@ public class HistoricalSubscription extends BasicSubscription {
     @Override
     public void handleRealTimeMessage(StreamMessage msg) throws GapDetectedException, UnsupportedMessageException, UnableToDecryptException {
         if (onRealTimeMsg != null) {
-            onRealTimeMsg.accept(msg);
+            onRealTimeMsg.apply(msg);
         }
     }
 }
