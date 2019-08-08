@@ -29,6 +29,8 @@ import java.net.URI;
 import java.net.URISyntaxException;
 import java.nio.channels.NotYetConnectedException;
 import java.util.*;
+import java.util.function.BiFunction;
+import java.util.function.Function;
 
 /**
  * Extends the StreamrRESTClient with methods for using the websocket protocol.
@@ -225,10 +227,10 @@ public class StreamrClient extends StreamrRESTClient {
                 try {
                     if (message.getType() == BroadcastMessage.TYPE) {
                         BroadcastMessage msg = (BroadcastMessage) message;
-                        handleMessage(msg.getStreamMessage(), false);
+                        handleMessage(msg.getStreamMessage(), (s, m) -> { s.handleRealTimeMessage(m); return null; });
                     } else if (message.getType() == UnicastMessage.TYPE) {
                         UnicastMessage msg = (UnicastMessage) message;
-                        handleMessage(msg.getStreamMessage(), true);
+                        handleMessage(msg.getStreamMessage(), (s, m) -> { s.handleResentMessage(m); return null; });
                     } else if (message.getType() == SubscribeResponse.TYPE) {
                         handleSubcribeResponse((SubscribeResponse)message);
                     } else if (message.getType() == UnsubscribeResponse.TYPE) {
@@ -251,7 +253,8 @@ public class StreamrClient extends StreamrRESTClient {
         }
     }
 
-    private void handleMessage(StreamMessage message, boolean isResend) throws SubscriptionNotFoundException {
+    private void handleMessage(StreamMessage message,
+                               BiFunction<Subscription, StreamMessage, Void> subMsgHandler) throws SubscriptionNotFoundException {
         log.debug(message.getStreamId() + ": " + message.getSerializedContent());
 
         subscribedStreamsUtil.verifyStreamMessage(message);
@@ -267,11 +270,7 @@ public class StreamrClient extends StreamrRESTClient {
                 secondResends.remove(sub.getId());
             }
             try {
-                if (isResend) {
-                    sub.handleResentMessage(message);
-                } else {
-                    sub.handleRealTimeMessage(message);
-                }
+                subMsgHandler.apply(sub, message);
             } catch (Exception e) {
                 log.error(e);
             }
