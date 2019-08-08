@@ -2,16 +2,16 @@ package com.streamr.client
 
 import com.streamr.client.exceptions.GapDetectedException
 import com.streamr.client.exceptions.UnableToDecryptException
+import com.streamr.client.options.ResendLastOption
 import com.streamr.client.protocol.message_layer.MessageRef
 import com.streamr.client.protocol.message_layer.StreamMessage
 import com.streamr.client.protocol.message_layer.StreamMessageV31
-import com.streamr.client.subs.Subscription
 import com.streamr.client.utils.EncryptionUtil
 import com.streamr.client.utils.HttpUtils
 import com.streamr.client.utils.OrderedMsgChain
 import org.apache.commons.codec.binary.Hex
 import spock.lang.Specification
-import subscription.RealTimeSubscription
+import subscription.HistoricalSubscription
 
 import javax.crypto.SecretKey
 import javax.crypto.spec.SecretKeySpec
@@ -19,7 +19,7 @@ import javax.xml.bind.DatatypeConverter
 import java.nio.charset.StandardCharsets
 import java.security.SecureRandom
 
-class RealTimeSubscriptionSpec extends Specification {
+class HistoricalSubscriptionSpec extends Specification {
     StreamMessageV31 msg = new StreamMessageV31("stream-id", 0, (new Date()).getTime(), 0, "publisherId", "msgChainId",
             null, 0, StreamMessage.ContentType.CONTENT_TYPE_JSON, StreamMessage.EncryptionType.NONE, "{}", StreamMessage.SignatureType.SIGNATURE_TYPE_NONE, null)
 
@@ -50,13 +50,13 @@ class RealTimeSubscriptionSpec extends Specification {
     void "calls the message handler"() {
         StreamMessage received
         when:
-        RealTimeSubscription sub = new RealTimeSubscription(msg.getStreamId(), msg.getStreamPartition(), new MessageHandler() {
+        HistoricalSubscription sub = new HistoricalSubscription(msg.getStreamId(), msg.getStreamPartition(), new MessageHandler() {
             @Override
             void onMessage(Subscription sub, StreamMessage message) {
                 received = message
             }
         })
-        sub.handleRealTimeMessage(msg)
+        sub.handleResentMessage(msg)
         then:
         received.toJson() == msg.toJson()
     }
@@ -68,14 +68,14 @@ class RealTimeSubscriptionSpec extends Specification {
         }
         ArrayList<StreamMessage> received = new ArrayList<>()
         when:
-        RealTimeSubscription sub = new RealTimeSubscription(msg.getStreamId(), msg.getStreamPartition(), new MessageHandler() {
+        HistoricalSubscription sub = new HistoricalSubscription(msg.getStreamId(), msg.getStreamPartition(), new MessageHandler() {
             @Override
             void onMessage(Subscription sub, StreamMessage message) {
                 received.add(message)
             }
         })
         for (int i=0;i<5;i++) {
-            sub.handleRealTimeMessage(msgs.get(i))
+            sub.handleResentMessage(msgs.get(i))
         }
         then:
         for (int i=0;i<5;i++) {
@@ -83,26 +83,25 @@ class RealTimeSubscriptionSpec extends Specification {
         }
     }
 
-    void "handles resent messages during resending"() {
-        StreamMessage received
+    void "does not handle real-time messages (queued)"() {
         when:
-        RealTimeSubscription sub = new RealTimeSubscription(msg.getStreamId(), msg.getStreamPartition(), new MessageHandler() {
+        HistoricalSubscription sub = new HistoricalSubscription(msg.getStreamId(), msg.getStreamPartition(), new MessageHandler() {
             @Override
             void onMessage(Subscription sub, StreamMessage message) {
-                received = message
+                throw new Exception("Shouldn't handle this message!")
             }
-        })
+        }, new ResendLastOption(10))
         sub.setResending(true)
-        sub.handleResentMessage(msg)
+        sub.handleRealTimeMessage(msg)
         then:
-        received.toJson() == msg.toJson()
+        noExceptionThrown()
     }
 
     void "ignores duplicate messages"() {
         StreamMessage received
         int counter = 0
         when:
-        RealTimeSubscription sub = new RealTimeSubscription(msg.getStreamId(), msg.getStreamPartition(), new MessageHandler() {
+        HistoricalSubscription sub = new HistoricalSubscription(msg.getStreamId(), msg.getStreamPartition(), new MessageHandler() {
             @Override
             void onMessage(Subscription sub, StreamMessage message) {
                 received = message
@@ -112,8 +111,8 @@ class RealTimeSubscriptionSpec extends Specification {
                 }
             }
         })
-        sub.handleRealTimeMessage(msg)
-        sub.handleRealTimeMessage(msg)
+        sub.handleResentMessage(msg)
+        sub.handleResentMessage(msg)
         then:
         received.toJson() == msg.toJson()
         noExceptionThrown()
@@ -123,7 +122,7 @@ class RealTimeSubscriptionSpec extends Specification {
         StreamMessage msg1 = createMessage(1, 0, null, 0)
         StreamMessage afterMsg1 = createMessage(1, 1, null, 0)
         StreamMessage msg4 = createMessage(4, 0, 3, 0)
-        RealTimeSubscription sub = new RealTimeSubscription(msg1.getStreamId(), msg1.getStreamPartition(), empty, new HashMap<String, String>(), 10L, 10L)
+        HistoricalSubscription sub = new HistoricalSubscription(msg1.getStreamId(), msg1.getStreamPartition(), empty, null, new HashMap<String, String>(), 10L, 10L)
         GapDetectedException ex
         sub.setGapHandler(new OrderedMsgChain.GapHandlerFunction() {
             @Override
@@ -132,12 +131,12 @@ class RealTimeSubscriptionSpec extends Specification {
             }
         })
         when:
-        sub.handleRealTimeMessage(msg1)
+        sub.handleResentMessage(msg1)
         then:
         ex == null
 
         when:
-        sub.handleRealTimeMessage(msg4)
+        sub.handleResentMessage(msg4)
         Thread.sleep(50L)
         sub.clear()
         then:
@@ -153,9 +152,9 @@ class RealTimeSubscriptionSpec extends Specification {
         StreamMessage msg1 = createMessage(1, 0, null, 0, "publisher1")
         StreamMessage msg4 = createMessage(4, 0, 3, 0, "publisher2")
         when:
-        RealTimeSubscription sub = new RealTimeSubscription(msg1.getStreamId(), msg1.getStreamPartition(), empty)
-        sub.handleRealTimeMessage(msg1)
-        sub.handleRealTimeMessage(msg4)
+        HistoricalSubscription sub = new HistoricalSubscription(msg1.getStreamId(), msg1.getStreamPartition(), empty)
+        sub.handleResentMessage(msg1)
+        sub.handleResentMessage(msg4)
         then:
         noExceptionThrown()
     }
@@ -164,7 +163,7 @@ class RealTimeSubscriptionSpec extends Specification {
         StreamMessage msg1 = createMessage(1, 0, null, 0)
         StreamMessage afterMsg1 = createMessage(1, 1, null, 0)
         StreamMessage msg4 = createMessage(1, 4, 1, 3)
-        RealTimeSubscription sub = new RealTimeSubscription(msg1.getStreamId(), msg1.getStreamPartition(), empty, new HashMap<String, String>(), 10L, 10L)
+        HistoricalSubscription sub = new HistoricalSubscription(msg1.getStreamId(), msg1.getStreamPartition(), empty, null, new HashMap<String, String>(), 10L, 10L)
         GapDetectedException ex
         sub.setGapHandler(new OrderedMsgChain.GapHandlerFunction() {
             @Override
@@ -173,12 +172,12 @@ class RealTimeSubscriptionSpec extends Specification {
             }
         })
         when:
-        sub.handleRealTimeMessage(msg1)
+        sub.handleResentMessage(msg1)
         then:
         ex == null
 
         when:
-        sub.handleRealTimeMessage(msg4)
+        sub.handleResentMessage(msg4)
         Thread.sleep(50L)
         sub.clear()
         then:
@@ -195,10 +194,10 @@ class RealTimeSubscriptionSpec extends Specification {
         StreamMessage msg2 = createMessage(1, 1, 1, 0)
         StreamMessage msg3 = createMessage(4, 0, 1, 1)
         when:
-        RealTimeSubscription sub = new RealTimeSubscription(msg1.getStreamId(), msg1.getStreamPartition(), empty)
-        sub.handleRealTimeMessage(msg1)
-        sub.handleRealTimeMessage(msg2)
-        sub.handleRealTimeMessage(msg3)
+        HistoricalSubscription sub = new HistoricalSubscription(msg1.getStreamId(), msg1.getStreamPartition(), empty)
+        sub.handleResentMessage(msg1)
+        sub.handleResentMessage(msg2)
+        sub.handleResentMessage(msg3)
         then:
         noExceptionThrown()
     }
@@ -211,14 +210,14 @@ class RealTimeSubscriptionSpec extends Specification {
         Map received = null
         StreamMessageV31 msg1 = new StreamMessageV31("streamId", 0, 0, 0, "publisherId", "",
                 null, null, StreamMessage.ContentType.CONTENT_TYPE_JSON, StreamMessage.EncryptionType.AES, ciphertext, StreamMessage.SignatureType.SIGNATURE_TYPE_NONE, null)
-        RealTimeSubscription sub = new RealTimeSubscription("streamId", 0, new MessageHandler() {
+        HistoricalSubscription sub = new HistoricalSubscription("streamId", 0, new MessageHandler() {
             @Override
             void onMessage(Subscription sub, StreamMessage message) {
                 received = message.getContent()
             }
-        }, ['publisherId': groupKeyHex])
+        }, null, ['publisherId': groupKeyHex])
         when:
-        sub.handleRealTimeMessage(msg1)
+        sub.handleResentMessage(msg1)
         then:
         received == plaintext
     }
@@ -232,14 +231,14 @@ class RealTimeSubscriptionSpec extends Specification {
         Map received = null
         StreamMessageV31 msg1 = new StreamMessageV31("streamId", 0, 0, 0, "publisherId", "",
                 null, null, StreamMessage.ContentType.CONTENT_TYPE_JSON, StreamMessage.EncryptionType.AES, ciphertext, StreamMessage.SignatureType.SIGNATURE_TYPE_NONE, null)
-        RealTimeSubscription sub = new RealTimeSubscription("streamId", 0, new MessageHandler() {
+        HistoricalSubscription sub = new HistoricalSubscription("streamId", 0, new MessageHandler() {
             @Override
             void onMessage(Subscription sub, StreamMessage message) {
                 received = message.getContent()
             }
-        }, ['publisherId': wrongGroupKeyHex])
+        }, null, ['publisherId': wrongGroupKeyHex])
         when:
-        sub.handleRealTimeMessage(msg1)
+        sub.handleResentMessage(msg1)
         then:
         thrown UnableToDecryptException
     }
@@ -269,7 +268,7 @@ class RealTimeSubscriptionSpec extends Specification {
         Map received1 = null
         Map received2 = null
 
-        RealTimeSubscription sub = new RealTimeSubscription("streamId", 0, new MessageHandler() {
+        HistoricalSubscription sub = new HistoricalSubscription("streamId", 0, new MessageHandler() {
             @Override
             void onMessage(Subscription sub, StreamMessage message) {
                 if (received1 == null) {
@@ -279,13 +278,13 @@ class RealTimeSubscriptionSpec extends Specification {
                 }
 
             }
-        }, ['publisherId': groupKey1Hex])
+        }, null, ['publisherId': groupKey1Hex])
         when:
-        sub.handleRealTimeMessage(msg1)
+        sub.handleResentMessage(msg1)
         then:
         received1 == content1
         when:
-        sub.handleRealTimeMessage(msg2)
+        sub.handleResentMessage(msg2)
         then:
         received2 == content2
     }
