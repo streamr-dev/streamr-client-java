@@ -6,6 +6,9 @@
       <module name="cloud-broker_main" target="1.8" />
       <module name="cloud-broker_performanceTest" target="1.8" />
       <module name="cloud-broker_test" target="1.8" />
+      <module name="com.streamr-streamr-client-java_integrationTest" target="1.8" />
+      <module name="com.streamr-streamr-client-java_main" target="1.8" />
+      <module name="com.streamr-streamr-client-java_test" target="1.8" />
       <module name="streamr-client-java_integrationTest" target="1.8" />
       <module name="streamr-client-java_main" target="1.8" />
       <module name="streamr-client-java_test" target="1.8" />
