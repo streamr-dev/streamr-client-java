@@ -1,23 +1,23 @@
 package com.streamr.client.utils;
 
 import com.streamr.client.exceptions.GapFillFailedException;
-import com.streamr.client.protocol.message_layer.MessageRef;
 import com.streamr.client.protocol.message_layer.StreamMessage;
 
 import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.function.Consumer;
 import java.util.function.Function;
 
 public class OrderingUtil {
     private String streamId;
     private int streamPartition;
-    private Function<StreamMessage, Void> inOrderHandler;
+    private Consumer<StreamMessage> inOrderHandler;
     private OrderedMsgChain.GapHandlerFunction gapHandler;
     private Function<GapFillFailedException, Void> gapFillFailedHandler;
     private long propagationTimeout;
     private long resendTimeout;
     private HashMap<String, OrderedMsgChain> chains = new HashMap<>();
-    public OrderingUtil(String streamId, int streamPartition, Function<StreamMessage, Void> inOrderHandler,
+    public OrderingUtil(String streamId, int streamPartition, Consumer<StreamMessage> inOrderHandler,
                         OrderedMsgChain.GapHandlerFunction gapHandler, Function<GapFillFailedException, Void> gapFillFailedHandler, long propagationTimeout, long resendTimeout) {
         this.streamId = streamId;
         this.streamPartition = streamPartition;
@@ -27,7 +27,7 @@ public class OrderingUtil {
         this.propagationTimeout = propagationTimeout;
         this.resendTimeout = resendTimeout;
     }
-    public OrderingUtil(String streamId, int streamPartition, Function<StreamMessage, Void> inOrderHandler,
+    public OrderingUtil(String streamId, int streamPartition, Consumer<StreamMessage> inOrderHandler,
                         OrderedMsgChain.GapHandlerFunction gapHandler, long propagationTimeout, long resendTimeout) {
         this(streamId, streamPartition, inOrderHandler, gapHandler, (GapFillFailedException e) -> { throw e; }, propagationTimeout, resendTimeout);
     }
@@ -60,7 +60,7 @@ public class OrderingUtil {
         return gapHandler;
     }
 
-    public void setLastMessageRefs(ArrayList<OrderedMsgChain> previousChains) {
+    public void addChains(ArrayList<OrderedMsgChain> previousChains) {
         for (OrderedMsgChain chain: previousChains) {
             String key = chain.getPublisherId() + chain.getMsgChainId();
             OrderedMsgChain newChain = new OrderedMsgChain(chain.getPublisherId(), chain.getMsgChainId(),

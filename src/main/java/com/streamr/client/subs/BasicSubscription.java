@@ -44,20 +44,13 @@ public abstract class BasicSubscription extends Subscription {
 
     private void setOrderingUtil() {
         orderingUtil = new OrderingUtil(streamId, partition,
-                (StreamMessage msg) -> {
-                    decryptAndHandle(msg);
-                    return null;
-                }, (MessageRef from, MessageRef to, String publisherId, String msgChainId) -> {
+                this::decryptAndHandle, (MessageRef from, MessageRef to, String publisherId, String msgChainId) -> {
             throw new GapDetectedException(streamId, partition, from, to, publisherId, msgChainId);
         }, this.propagationTimeout, this.resendTimeout);
     }
 
     public void setGapHandler(OrderedMsgChain.GapHandlerFunction gapHandler) {
-        orderingUtil = new OrderingUtil(streamId, partition,
-                (StreamMessage msg) -> {
-                    decryptAndHandle(msg);
-                    return null;
-                }, gapHandler, propagationTimeout, resendTimeout);
+        orderingUtil = new OrderingUtil(streamId, partition, this::decryptAndHandle, gapHandler, propagationTimeout, resendTimeout);
     }
 
     public OrderedMsgChain.GapHandlerFunction getGapHandler() {
@@ -72,8 +65,8 @@ public abstract class BasicSubscription extends Subscription {
         handler.onMessage(null, msg);
     }
 
-    public void setLastMessageRefs(ArrayList<OrderedMsgChain> chains) {
-        orderingUtil.setLastMessageRefs(chains);
+    public void addChains(ArrayList<OrderedMsgChain> chains) {
+        orderingUtil.addChains(chains);
     }
 
     public ArrayList<OrderedMsgChain> getChains() {

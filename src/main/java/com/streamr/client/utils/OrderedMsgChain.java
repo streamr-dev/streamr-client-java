@@ -10,6 +10,7 @@ import java.util.Comparator;
 import java.util.PriorityQueue;
 import java.util.Timer;
 import java.util.TimerTask;
+import java.util.function.Consumer;
 import java.util.function.Function;
 
 public class OrderedMsgChain {
@@ -18,7 +19,7 @@ public class OrderedMsgChain {
 
     private String publisherId;
     private String msgChainId;
-    private Function<StreamMessage, Void> inOrderHandler;
+    private Consumer<StreamMessage> inOrderHandler;
     private GapHandlerFunction gapHandler;
     private Function<GapFillFailedException, Void> gapFillFailedHandler;
     private long propagationTimeout;
@@ -29,7 +30,7 @@ public class OrderedMsgChain {
     private int gapRequestCount = 0;
     private GapFillFailedException gapException = null;
 
-    public OrderedMsgChain(String publisherId, String msgChainId, Function<StreamMessage, Void> inOrderHandler,
+    public OrderedMsgChain(String publisherId, String msgChainId, Consumer<StreamMessage> inOrderHandler,
                            GapHandlerFunction gapHandler, Function<GapFillFailedException, Void> gapFillFailedHandler, long propagationTimeout, long resendTimeout) {
         this.publisherId = publisherId;
         this.msgChainId = msgChainId;
@@ -45,7 +46,7 @@ public class OrderedMsgChain {
             }
         });
     }
-    public OrderedMsgChain(String publisherId, String msgChainId, Function<StreamMessage, Void> inOrderHandler,
+    public OrderedMsgChain(String publisherId, String msgChainId, Consumer<StreamMessage> inOrderHandler,
                            GapHandlerFunction gapHandler, long propagationTimeout, long resendTimeout) {
         this(publisherId, msgChainId, inOrderHandler, gapHandler, (GapFillFailedException e) -> { throw e; }, propagationTimeout, resendTimeout);
     }
@@ -118,7 +119,7 @@ public class OrderedMsgChain {
 
     private void process(StreamMessage msg) {
         lastReceived = msg.getMessageRef();
-        inOrderHandler.apply(msg);
+        inOrderHandler.accept(msg);
     }
 
     private void scheduleGap() {

@@ -27,7 +27,7 @@ public class CombinedSubscription extends Subscription {
                 handler.done(s);
                 RealTimeSubscription realTime = new RealTimeSubscription(streamId, partition, handler, groupKeysHex, propagationTimeout, resendTimeout);
                 realTime.setGapHandler(sub.getGapHandler());
-                realTime.setLastMessageRefs(sub.getChains());
+                realTime.addChains(sub.getChains());
                 while(!queue.isEmpty()) {
                     StreamMessage msg = queue.poll();
                     realTime.handleRealTimeMessage(msg);
@@ -37,7 +37,6 @@ public class CombinedSubscription extends Subscription {
         };
         sub = new HistoricalSubscription(streamId, partition, wrapperHandler, resendOption, groupKeysHex, propagationTimeout, resendTimeout, msg -> {
             queue.push(msg);
-            return null;
         });
     }
 
