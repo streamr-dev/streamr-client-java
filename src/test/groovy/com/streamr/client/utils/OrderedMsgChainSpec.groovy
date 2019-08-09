@@ -6,6 +6,7 @@ import com.streamr.client.protocol.message_layer.StreamMessage;
 import com.streamr.client.protocol.message_layer.StreamMessageV31;
 import spock.lang.Specification
 
+import java.util.function.Consumer
 import java.util.function.Function
 import java.util.stream.Collectors;
 
@@ -21,14 +22,12 @@ class OrderedMsgChainSpec extends Specification {
     StreamMessage msg5 = createMessage(5, 4)
     void "handles ordered messages in order"() {
         ArrayList<StreamMessage> received = []
-        OrderedMsgChain util = new OrderedMsgChain("publisherId", "msgChainId",
-                new Function<StreamMessage, Void>() {
-                    @Override
-                    Void apply(StreamMessage streamMessage) {
-                        received.add(streamMessage)
-                        return null
-                    }
-                }, null, 5000L, 5000L)
+        OrderedMsgChain util = new OrderedMsgChain("publisherId", "msgChainId", new Consumer<StreamMessage>() {
+            @Override
+            void accept(StreamMessage streamMessage) {
+                received.add(streamMessage)
+            }
+        }, null, 5000L, 5000L)
         when:
         util.add(msg1)
         util.add(msg2)
@@ -39,11 +38,10 @@ class OrderedMsgChainSpec extends Specification {
     void "drops duplicates"() {
         ArrayList<StreamMessage> received = []
         OrderedMsgChain util = new OrderedMsgChain("publisherId", "msgChainId",
-                new Function<StreamMessage, Void>() {
+                new Consumer<StreamMessage>() {
                     @Override
-                    Void apply(StreamMessage streamMessage) {
+                    void accept(StreamMessage streamMessage) {
                         received.add(streamMessage)
-                        return null
                     }
                 }, null, 5000L, 5000L)
         when:
@@ -57,11 +55,10 @@ class OrderedMsgChainSpec extends Specification {
     void "handles unordered messages in order"() {
         ArrayList<StreamMessage> received = []
         OrderedMsgChain util = new OrderedMsgChain("publisherId", "msgChainId",
-                new Function<StreamMessage, Void>() {
+                new Consumer<StreamMessage>() {
                     @Override
-                    Void apply(StreamMessage streamMessage) {
+                    void accept(StreamMessage streamMessage) {
                         received.add(streamMessage)
-                        return null
                     }
                 }, new OrderedMsgChain.GapHandlerFunction() {
             @Override
@@ -84,11 +81,10 @@ class OrderedMsgChainSpec extends Specification {
         StreamMessage m4 = createMessage(7, null)
         ArrayList<StreamMessage> received = []
         OrderedMsgChain util = new OrderedMsgChain("publisherId", "msgChainId",
-                new Function<StreamMessage, Void>() {
+                new Consumer<StreamMessage>() {
                     @Override
-                    Void apply(StreamMessage streamMessage) {
+                    void accept(StreamMessage streamMessage) {
                         received.add(streamMessage)
-                        return null
                     }
                 }, null, 5000L, 5000L)
         when:
@@ -103,11 +99,10 @@ class OrderedMsgChainSpec extends Specification {
         ArrayList<StreamMessage> received = []
         RuntimeException unexpected
         OrderedMsgChain util = new OrderedMsgChain("publisherId", "msgChainId",
-                new Function<StreamMessage, Void>() {
+                new Consumer<StreamMessage>() {
                     @Override
-                    Void apply(StreamMessage streamMessage) {
+                    void accept(StreamMessage streamMessage) {
                         received.add(streamMessage)
-                        return null
                     }
                 }, new OrderedMsgChain.GapHandlerFunction() {
             @Override
@@ -133,11 +128,10 @@ class OrderedMsgChainSpec extends Specification {
         GapFillFailedException expected
         try {
             util = new OrderedMsgChain("publisherId", "msgChainId",
-                    new Function<StreamMessage, Void>() {
+                    new Consumer<StreamMessage>() {
                         @Override
-                        Void apply(StreamMessage streamMessage) {
+                        void accept(StreamMessage streamMessage) {
                             received.add(streamMessage)
-                            return null
                         }
                     }, new OrderedMsgChain.GapHandlerFunction() {
                 @Override
@@ -173,11 +167,10 @@ class OrderedMsgChainSpec extends Specification {
         Collections.shuffle(shuffled)
         ArrayList<StreamMessage> received = []
         OrderedMsgChain util = new OrderedMsgChain("publisherId", "msgChainId",
-                new Function<StreamMessage, Void>() {
+                new Consumer<StreamMessage>() {
                     @Override
-                    Void apply(StreamMessage streamMessage) {
+                    void accept(StreamMessage streamMessage) {
                         received.add(streamMessage)
-                        return null
                     }
                 }, new OrderedMsgChain.GapHandlerFunction() {
             @Override
