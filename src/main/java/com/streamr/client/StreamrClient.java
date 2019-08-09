@@ -3,12 +3,15 @@ package com.streamr.client;
 import com.streamr.client.authentication.ApiKeyAuthenticationMethod;
 import com.streamr.client.authentication.AuthenticationMethod;
 import com.streamr.client.authentication.EthereumAuthenticationMethod;
-import com.streamr.client.exceptions.GapDetectedException;
 import com.streamr.client.options.ResendOption;
 import com.streamr.client.options.StreamrClientOptions;
 import com.streamr.client.protocol.control_layer.*;
 import com.streamr.client.protocol.message_layer.MessageRef;
 import com.streamr.client.rest.UserInfo;
+import com.streamr.client.subs.CombinedSubscription;
+import com.streamr.client.subs.HistoricalSubscription;
+import com.streamr.client.subs.RealTimeSubscription;
+import com.streamr.client.subs.Subscription;
 import com.streamr.client.utils.*;
 import org.apache.commons.codec.digest.DigestUtils;
 import org.apache.logging.log4j.LogManager;
@@ -26,6 +29,7 @@ import java.net.URI;
 import java.net.URISyntaxException;
 import java.nio.channels.NotYetConnectedException;
 import java.util.*;
+import java.util.function.BiConsumer;
 
 /**
  * Extends the StreamrRESTClient with methods for using the websocket protocol.
@@ -222,10 +226,10 @@ public class StreamrClient extends StreamrRESTClient {
                 try {
                     if (message.getType() == BroadcastMessage.TYPE) {
                         BroadcastMessage msg = (BroadcastMessage) message;
-                        handleMessage(msg.getStreamMessage(), false);
+                        handleMessage(msg.getStreamMessage(), Subscription::handleRealTimeMessage);
                     } else if (message.getType() == UnicastMessage.TYPE) {
                         UnicastMessage msg = (UnicastMessage) message;
-                        handleMessage(msg.getStreamMessage(), true);
+                        handleMessage(msg.getStreamMessage(), Subscription::handleResentMessage);
                     } else if (message.getType() == SubscribeResponse.TYPE) {
                         handleSubcribeResponse((SubscribeResponse)message);
                     } else if (message.getType() == UnsubscribeResponse.TYPE) {
@@ -248,7 +252,8 @@ public class StreamrClient extends StreamrRESTClient {
         }
     }
 
-    private void handleMessage(StreamMessage message, boolean isResend) throws SubscriptionNotFoundException {
+    private void handleMessage(StreamMessage message,
+                               BiConsumer<Subscription, StreamMessage> subMsgHandler) throws SubscriptionNotFoundException {
         log.debug(message.getStreamId() + ": " + message.getSerializedContent());
 
         subscribedStreamsUtil.verifyStreamMessage(message);
@@ -264,7 +269,7 @@ public class StreamrClient extends StreamrRESTClient {
                 secondResends.remove(sub.getId());
             }
             try {
-                sub.handleMessage(message, isResend);
+                subMsgHandler.accept(sub, message);
             } catch (Exception e) {
                 log.error(e);
             }
@@ -313,6 +318,11 @@ public class StreamrClient extends StreamrRESTClient {
 
     public Subscription subscribe(Stream stream, int partition, MessageHandler handler, ResendOption resendOption,
                                   Map<String, String> groupKeys) {
+        return subscribe(stream, partition, handler, resendOption, groupKeys, false);
+    }
+
+    public Subscription subscribe(Stream stream, int partition, MessageHandler handler, ResendOption resendOption,
+                                  Map<String, String> groupKeys, boolean isExplicitResend) {
         if (!getState().equals(State.Connected)) {
             connect();
         }
@@ -327,8 +337,18 @@ public class StreamrClient extends StreamrRESTClient {
         }
 
         SubscribeRequest subscribeRequest = new SubscribeRequest(stream.getId(), partition, session.getSessionToken());
-        Subscription sub = new Subscription(stream.getId(), partition, handler, resendOption, groupKeys,
-                options.getPropagationTimeout(), options.getResendTimeout());
+
+        Subscription sub;
+        if (resendOption == null) {
+            sub = new RealTimeSubscription(stream.getId(), partition, handler, groupKeys,
+                    options.getPropagationTimeout(), options.getResendTimeout());
+        } else if (isExplicitResend) {
+            sub = new HistoricalSubscription(stream.getId(), partition, handler, resendOption, groupKeys,
+                    options.getPropagationTimeout(), options.getResendTimeout());
+        } else {
+            sub = new CombinedSubscription(stream.getId(), partition, handler, resendOption, groupKeys,
+                    options.getPropagationTimeout(), options.getResendTimeout());
+        }
         sub.setGapHandler((MessageRef from, MessageRef to, String publisherId, String msgChainId) -> {
             ResendRangeRequest req = new ResendRangeRequest(stream.getId(), partition,
                     sub.getId(), from, to, publisherId, msgChainId, getSessionToken());
@@ -364,7 +384,7 @@ public class StreamrClient extends StreamrRESTClient {
             }
         };
 
-        subscribe(stream, partition, a, resendOption);
+        subscribe(stream, partition, a, resendOption, null, true);
     }
 
     /*
@@ -398,18 +418,17 @@ public class StreamrClient extends StreamrRESTClient {
 
     private void handleResendResponseResending(ResendResponseResending res) throws SubscriptionNotFoundException {
         Subscription sub = subs.get(res.getStreamId(), res.getStreamPartition());
+        sub.startResend();
         log.debug("Resending started for subscription "+sub.getId());
     }
 
     private void handleResendResponseNoResend(ResendResponseNoResend res) throws SubscriptionNotFoundException {
         Subscription sub = subs.get(res.getStreamId(), res.getStreamPartition());
         sub.endResend();
-        sub.resendDone();
     }
 
     private void handleResendResponseResent(ResendResponseResent res) throws SubscriptionNotFoundException {
         Subscription sub = subs.get(res.getStreamId(), res.getStreamPartition());
         sub.endResend();
-        sub.resendDone();
     }
 }

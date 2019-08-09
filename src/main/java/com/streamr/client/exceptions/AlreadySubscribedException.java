@@ -1,6 +1,6 @@
 package com.streamr.client.exceptions;
 
-import com.streamr.client.Subscription;
+import com.streamr.client.subs.Subscription;
 
 public class AlreadySubscribedException extends RuntimeException {
     public AlreadySubscribedException(Subscription sub) {

@@ -1,7 +1,8 @@
 package com.streamr.client.utils
 
-import com.streamr.client.Subscription
 import com.streamr.client.exceptions.SubscriptionNotFoundException
+import com.streamr.client.subs.RealTimeSubscription
+import com.streamr.client.subs.Subscription
 import spock.lang.Specification
 
 class SubscriptionsSpec extends Specification {
@@ -13,7 +14,7 @@ class SubscriptionsSpec extends Specification {
 	}
 
 	void "subscriptions can be added and retrieved"() {
-		Subscription sub = new Subscription("stream", 0, null)
+		Subscription sub = new RealTimeSubscription("stream", 0, null)
 
 		when:
 		subs.add(sub)
@@ -23,7 +24,7 @@ class SubscriptionsSpec extends Specification {
 	}
 
 	void "getting non-existent sub throws"() {
-		Subscription sub = new Subscription("stream", 0, null)
+		Subscription sub = new RealTimeSubscription("stream", 0, null)
 		subs.add(sub)
 
 		when:
@@ -34,7 +35,7 @@ class SubscriptionsSpec extends Specification {
 	}
 
 	void "subscriptions can be added and removed"() {
-		Subscription sub = new Subscription("stream", 0, null)
+		Subscription sub = new RealTimeSubscription("stream", 0, null)
 
 		when:
 		subs.add(sub)

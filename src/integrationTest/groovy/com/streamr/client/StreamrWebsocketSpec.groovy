@@ -6,6 +6,7 @@ import com.streamr.client.options.ResendRangeOption
 import com.streamr.client.protocol.message_layer.StreamMessageV31
 import com.streamr.client.rest.Stream
 import com.streamr.client.protocol.message_layer.StreamMessage
+import com.streamr.client.subs.Subscription
 import org.apache.commons.codec.binary.Hex
 import spock.util.concurrent.PollingConditions
 

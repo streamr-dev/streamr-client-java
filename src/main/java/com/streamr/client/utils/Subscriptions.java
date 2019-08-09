@@ -1,8 +1,8 @@
 package com.streamr.client.utils;
 
-import com.streamr.client.Subscription;
 import com.streamr.client.exceptions.AlreadySubscribedException;
 import com.streamr.client.exceptions.SubscriptionNotFoundException;
+import com.streamr.client.subs.Subscription;
 
 import java.util.HashMap;
 import java.util.Map;

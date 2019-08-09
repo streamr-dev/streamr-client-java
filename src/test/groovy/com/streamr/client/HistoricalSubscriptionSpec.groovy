@@ -1,12 +1,13 @@
 package com.streamr.client
 
+import com.streamr.client.exceptions.GapDetectedException
 import com.streamr.client.exceptions.UnableToDecryptException
-import com.streamr.client.options.ResendFromOption
 import com.streamr.client.options.ResendLastOption
 import com.streamr.client.protocol.message_layer.MessageRef
 import com.streamr.client.protocol.message_layer.StreamMessage
 import com.streamr.client.protocol.message_layer.StreamMessageV31
-import com.streamr.client.exceptions.GapDetectedException
+import com.streamr.client.subs.HistoricalSubscription
+import com.streamr.client.subs.Subscription
 import com.streamr.client.utils.EncryptionUtil
 import com.streamr.client.utils.HttpUtils
 import com.streamr.client.utils.OrderedMsgChain
@@ -19,8 +20,7 @@ import javax.xml.bind.DatatypeConverter
 import java.nio.charset.StandardCharsets
 import java.security.SecureRandom
 
-class SubscriptionSpec extends Specification {
-
+class HistoricalSubscriptionSpec extends Specification {
     StreamMessageV31 msg = new StreamMessageV31("stream-id", 0, (new Date()).getTime(), 0, "publisherId", "msgChainId",
             null, 0, StreamMessage.ContentType.CONTENT_TYPE_JSON, StreamMessage.EncryptionType.NONE, "{}", StreamMessage.SignatureType.SIGNATURE_TYPE_NONE, null)
 
@@ -51,13 +51,13 @@ class SubscriptionSpec extends Specification {
     void "calls the message handler"() {
         StreamMessage received
         when:
-        Subscription sub = new Subscription(msg.getStreamId(), msg.getStreamPartition(), new MessageHandler() {
+        HistoricalSubscription sub = new HistoricalSubscription(msg.getStreamId(), msg.getStreamPartition(), new MessageHandler() {
             @Override
             void onMessage(Subscription sub, StreamMessage message) {
                 received = message
             }
         })
-        sub.handleMessage(msg)
+        sub.handleResentMessage(msg)
         then:
         received.toJson() == msg.toJson()
     }
@@ -69,14 +69,14 @@ class SubscriptionSpec extends Specification {
         }
         ArrayList<StreamMessage> received = new ArrayList<>()
         when:
-        Subscription sub = new Subscription(msg.getStreamId(), msg.getStreamPartition(), new MessageHandler() {
+        HistoricalSubscription sub = new HistoricalSubscription(msg.getStreamId(), msg.getStreamPartition(), new MessageHandler() {
             @Override
             void onMessage(Subscription sub, StreamMessage message) {
                 received.add(message)
             }
         })
         for (int i=0;i<5;i++) {
-            sub.handleMessage(msgs.get(i))
+            sub.handleResentMessage(msgs.get(i))
         }
         then:
         for (int i=0;i<5;i++) {
@@ -84,40 +84,25 @@ class SubscriptionSpec extends Specification {
         }
     }
 
-    void "does not handle real-time messages (queued) during initial resending"() {
+    void "does not handle real-time messages (queued)"() {
         when:
-        Subscription sub = new Subscription(msg.getStreamId(), msg.getStreamPartition(), new MessageHandler() {
+        HistoricalSubscription sub = new HistoricalSubscription(msg.getStreamId(), msg.getStreamPartition(), new MessageHandler() {
             @Override
             void onMessage(Subscription sub, StreamMessage message) {
                 throw new Exception("Shouldn't handle this message!")
             }
         }, new ResendLastOption(10))
         sub.setResending(true)
-        sub.handleMessage(msg)
+        sub.handleRealTimeMessage(msg)
         then:
         noExceptionThrown()
-    }
-
-    void "handles messages during resending if isResend=true"() {
-        StreamMessage received
-        when:
-        Subscription sub = new Subscription(msg.getStreamId(), msg.getStreamPartition(), new MessageHandler() {
-            @Override
-            void onMessage(Subscription sub, StreamMessage message) {
-                received = message
-            }
-        })
-        sub.setResending(true)
-        sub.handleMessage(msg, true)
-        then:
-        received.toJson() == msg.toJson()
     }
 
     void "ignores duplicate messages"() {
         StreamMessage received
         int counter = 0
         when:
-        Subscription sub = new Subscription(msg.getStreamId(), msg.getStreamPartition(), new MessageHandler() {
+        HistoricalSubscription sub = new HistoricalSubscription(msg.getStreamId(), msg.getStreamPartition(), new MessageHandler() {
             @Override
             void onMessage(Subscription sub, StreamMessage message) {
                 received = message
@@ -127,8 +112,8 @@ class SubscriptionSpec extends Specification {
                 }
             }
         })
-        sub.handleMessage(msg)
-        sub.handleMessage(msg)
+        sub.handleResentMessage(msg)
+        sub.handleResentMessage(msg)
         then:
         received.toJson() == msg.toJson()
         noExceptionThrown()
@@ -138,7 +123,7 @@ class SubscriptionSpec extends Specification {
         StreamMessage msg1 = createMessage(1, 0, null, 0)
         StreamMessage afterMsg1 = createMessage(1, 1, null, 0)
         StreamMessage msg4 = createMessage(4, 0, 3, 0)
-        Subscription sub = new Subscription(msg1.getStreamId(), msg1.getStreamPartition(), empty, null, new HashMap<String, String>(), 10L, 10L)
+        HistoricalSubscription sub = new HistoricalSubscription(msg1.getStreamId(), msg1.getStreamPartition(), empty, null, new HashMap<String, String>(), 10L, 10L)
         GapDetectedException ex
         sub.setGapHandler(new OrderedMsgChain.GapHandlerFunction() {
             @Override
@@ -147,12 +132,12 @@ class SubscriptionSpec extends Specification {
             }
         })
         when:
-        sub.handleMessage(msg1)
+        sub.handleResentMessage(msg1)
         then:
         ex == null
 
         when:
-        sub.handleMessage(msg4)
+        sub.handleResentMessage(msg4)
         Thread.sleep(50L)
         sub.clear()
         then:
@@ -168,9 +153,9 @@ class SubscriptionSpec extends Specification {
         StreamMessage msg1 = createMessage(1, 0, null, 0, "publisher1")
         StreamMessage msg4 = createMessage(4, 0, 3, 0, "publisher2")
         when:
-        Subscription sub = new Subscription(msg1.getStreamId(), msg1.getStreamPartition(), empty)
-        sub.handleMessage(msg1)
-        sub.handleMessage(msg4)
+        HistoricalSubscription sub = new HistoricalSubscription(msg1.getStreamId(), msg1.getStreamPartition(), empty)
+        sub.handleResentMessage(msg1)
+        sub.handleResentMessage(msg4)
         then:
         noExceptionThrown()
     }
@@ -179,7 +164,7 @@ class SubscriptionSpec extends Specification {
         StreamMessage msg1 = createMessage(1, 0, null, 0)
         StreamMessage afterMsg1 = createMessage(1, 1, null, 0)
         StreamMessage msg4 = createMessage(1, 4, 1, 3)
-        Subscription sub = new Subscription(msg1.getStreamId(), msg1.getStreamPartition(), empty, null, new HashMap<String, String>(), 10L, 10L)
+        HistoricalSubscription sub = new HistoricalSubscription(msg1.getStreamId(), msg1.getStreamPartition(), empty, null, new HashMap<String, String>(), 10L, 10L)
         GapDetectedException ex
         sub.setGapHandler(new OrderedMsgChain.GapHandlerFunction() {
             @Override
@@ -188,12 +173,12 @@ class SubscriptionSpec extends Specification {
             }
         })
         when:
-        sub.handleMessage(msg1)
+        sub.handleResentMessage(msg1)
         then:
         ex == null
 
         when:
-        sub.handleMessage(msg4)
+        sub.handleResentMessage(msg4)
         Thread.sleep(50L)
         sub.clear()
         then:
@@ -210,10 +195,10 @@ class SubscriptionSpec extends Specification {
         StreamMessage msg2 = createMessage(1, 1, 1, 0)
         StreamMessage msg3 = createMessage(4, 0, 1, 1)
         when:
-        Subscription sub = new Subscription(msg1.getStreamId(), msg1.getStreamPartition(), empty)
-        sub.handleMessage(msg1)
-        sub.handleMessage(msg2)
-        sub.handleMessage(msg3)
+        HistoricalSubscription sub = new HistoricalSubscription(msg1.getStreamId(), msg1.getStreamPartition(), empty)
+        sub.handleResentMessage(msg1)
+        sub.handleResentMessage(msg2)
+        sub.handleResentMessage(msg3)
         then:
         noExceptionThrown()
     }
@@ -226,14 +211,14 @@ class SubscriptionSpec extends Specification {
         Map received = null
         StreamMessageV31 msg1 = new StreamMessageV31("streamId", 0, 0, 0, "publisherId", "",
                 null, null, StreamMessage.ContentType.CONTENT_TYPE_JSON, StreamMessage.EncryptionType.AES, ciphertext, StreamMessage.SignatureType.SIGNATURE_TYPE_NONE, null)
-        Subscription sub = new Subscription("streamId", 0, new MessageHandler() {
+        HistoricalSubscription sub = new HistoricalSubscription("streamId", 0, new MessageHandler() {
             @Override
             void onMessage(Subscription sub, StreamMessage message) {
                 received = message.getContent()
             }
         }, null, ['publisherId': groupKeyHex])
         when:
-        sub.handleMessage(msg1)
+        sub.handleResentMessage(msg1)
         then:
         received == plaintext
     }
@@ -247,14 +232,14 @@ class SubscriptionSpec extends Specification {
         Map received = null
         StreamMessageV31 msg1 = new StreamMessageV31("streamId", 0, 0, 0, "publisherId", "",
                 null, null, StreamMessage.ContentType.CONTENT_TYPE_JSON, StreamMessage.EncryptionType.AES, ciphertext, StreamMessage.SignatureType.SIGNATURE_TYPE_NONE, null)
-        Subscription sub = new Subscription("streamId", 0, new MessageHandler() {
+        HistoricalSubscription sub = new HistoricalSubscription("streamId", 0, new MessageHandler() {
             @Override
             void onMessage(Subscription sub, StreamMessage message) {
                 received = message.getContent()
             }
         }, null, ['publisherId': wrongGroupKeyHex])
         when:
-        sub.handleMessage(msg1)
+        sub.handleResentMessage(msg1)
         then:
         thrown UnableToDecryptException
     }
@@ -284,7 +269,7 @@ class SubscriptionSpec extends Specification {
         Map received1 = null
         Map received2 = null
 
-        Subscription sub = new Subscription("streamId", 0, new MessageHandler() {
+        HistoricalSubscription sub = new HistoricalSubscription("streamId", 0, new MessageHandler() {
             @Override
             void onMessage(Subscription sub, StreamMessage message) {
                 if (received1 == null) {
@@ -296,11 +281,11 @@ class SubscriptionSpec extends Specification {
             }
         }, null, ['publisherId': groupKey1Hex])
         when:
-        sub.handleMessage(msg1)
+        sub.handleResentMessage(msg1)
         then:
         received1 == content1
         when:
-        sub.handleMessage(msg2)
+        sub.handleResentMessage(msg2)
         then:
         received2 == content2
     }

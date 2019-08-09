@@ -5,6 +5,7 @@ import com.streamr.client.protocol.message_layer.StreamMessage
 import com.streamr.client.protocol.message_layer.StreamMessageV31
 import spock.lang.Specification
 
+import java.util.function.Consumer
 import java.util.function.Function
 
 class OrderingUtilSpec extends Specification {
@@ -18,11 +19,10 @@ class OrderingUtilSpec extends Specification {
     StreamMessage msg4 = createMessage(4, 3)
     void "calls the message handler when a message is received"() {
         StreamMessage received
-        OrderingUtil util = new OrderingUtil("streamId", 0, new Function<StreamMessage, Void>() {
+        OrderingUtil util = new OrderingUtil("streamId", 0, new Consumer<StreamMessage>() {
             @Override
-            Void apply(StreamMessage streamMessage) {
+            void accept(StreamMessage streamMessage) {
                 received = streamMessage
-                return null
             }
         }, null, 5000L, 5000L)
         when:
@@ -36,10 +36,10 @@ class OrderingUtilSpec extends Specification {
         String publisherIdReceived
         String msgChainIdReceived
 
-        OrderingUtil util = new OrderingUtil("streamId", 0, new Function<StreamMessage, Void>() {
+        OrderingUtil util = new OrderingUtil("streamId", 0, new Consumer<StreamMessage>() {
             @Override
-            Void apply(StreamMessage streamMessage) {
-                return null
+            void accept(StreamMessage streamMessage) {
+
             }
         }, new OrderedMsgChain.GapHandlerFunction() {
             @Override
@@ -67,10 +67,10 @@ class OrderingUtilSpec extends Specification {
     void "does not call gap handler when gap detected but resolved before request should be sent"() {
         boolean called = false
 
-        OrderingUtil util = new OrderingUtil("streamId", 0, new Function<StreamMessage, Void>() {
+        OrderingUtil util = new OrderingUtil("streamId", 0, new Consumer<StreamMessage>() {
             @Override
-            Void apply(StreamMessage streamMessage) {
-                return null
+            void accept(StreamMessage streamMessage) {
+
             }
         }, new OrderedMsgChain.GapHandlerFunction() {
             @Override
