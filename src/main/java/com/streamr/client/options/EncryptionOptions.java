@@ -1,28 +1,36 @@
 package com.streamr.client.options;
 
+import com.streamr.client.utils.EncryptionUtil;
 import com.streamr.client.utils.GroupKey;
 
+import java.security.interfaces.RSAPrivateKey;
+import java.security.interfaces.RSAPublicKey;
 import java.util.HashMap;
 
 public class EncryptionOptions {
     private HashMap<String, GroupKey> publisherGroupKeys; // streamId --> groupKeyHex
     private HashMap<String, HashMap<String, GroupKey>> subscriberGroupKeys; // streamId --> (publisherId --> groupKeyHex)
     private boolean publisherStoreKeyHistory = true;
-    private String rsaPublicKey; // in the PEM format
-    private String rsaPrivateKey; // in the PEM format
-
-    public EncryptionOptions() {
-        this.publisherGroupKeys = new HashMap<>();
-        this.subscriberGroupKeys = new HashMap<>();
-    }
+    private RSAPublicKey rsaPublicKey;
+    private RSAPrivateKey rsaPrivateKey;
 
     public EncryptionOptions(HashMap<String, GroupKey> publisherGroupKeys, HashMap<String, HashMap<String, GroupKey>> subscriberGroupKeys,
                              boolean publisherStoreKeyHistory, String rsaPublicKey, String rsaPrivateKey) {
         this.publisherGroupKeys = publisherGroupKeys;
         this.subscriberGroupKeys = subscriberGroupKeys;
         this.publisherStoreKeyHistory = publisherStoreKeyHistory;
-        this.rsaPublicKey = rsaPublicKey;
-        this.rsaPrivateKey = rsaPrivateKey;
+        EncryptionUtil.validatePublicKey(rsaPublicKey);
+        this.rsaPublicKey = EncryptionUtil.getPublicKeyFromString(rsaPublicKey);
+        EncryptionUtil.validatePrivateKey(rsaPrivateKey);
+        this.rsaPrivateKey = EncryptionUtil.getPrivateKeyFromString(rsaPrivateKey);
+    }
+
+    public EncryptionOptions(HashMap<String, GroupKey> publisherGroupKeys, HashMap<String, HashMap<String, GroupKey>> subscriberGroupKeys) {
+        this(publisherGroupKeys, subscriberGroupKeys, true, null, null);
+    }
+
+    public EncryptionOptions() {
+        this(new HashMap<>(), new HashMap<>(), true, null, null);
     }
 
     public HashMap<String, GroupKey> getPublisherGroupKeys() {
@@ -37,11 +45,11 @@ public class EncryptionOptions {
         return publisherStoreKeyHistory;
     }
 
-    public String getRsaPublicKey() {
+    public RSAPublicKey getRsaPublicKey() {
         return rsaPublicKey;
     }
 
-    public String getRsaPrivateKey() {
+    public RSAPrivateKey getRsaPrivateKey() {
         return rsaPrivateKey;
     }
 

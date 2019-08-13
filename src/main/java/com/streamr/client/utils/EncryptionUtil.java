@@ -34,16 +34,14 @@ public class EncryptionUtil {
     private RSAPublicKey publicKey;
     private RSAPrivateKey privateKey;
 
-    public EncryptionUtil(String publicKey, String privateKey) {
-        if (publicKey == null && privateKey == null) {
+    public EncryptionUtil(RSAPublicKey rsaPublicKey, RSAPrivateKey rsaPrivateKey) {
+        if (rsaPublicKey == null && rsaPrivateKey == null) {
             KeyPair pair = generateKeyPair();
             this.publicKey = (RSAPublicKey) pair.getPublic();
             this.privateKey = (RSAPrivateKey) pair.getPrivate();
         } else {
-            validatePublicKey(publicKey);
-            validatePrivateKey(privateKey);
-            this.publicKey = getPublicKeyFromString(publicKey);
-            this.privateKey = getPrivateKeyFromString(privateKey);
+            this.publicKey = rsaPublicKey;
+            this.privateKey = rsaPrivateKey;
         }
     }
 
@@ -212,7 +210,7 @@ public class EncryptionUtil {
         }
     }
 
-    private static RSAPublicKey getPublicKeyFromString(String publicKey) {
+    public static RSAPublicKey getPublicKeyFromString(String publicKey) {
         publicKey = publicKey.replace("-----BEGIN RSA PUBLIC KEY-----\n", "");
         publicKey = publicKey.replace("-----END RSA PUBLIC KEY-----", "");
         byte[] encoded = Base64.decodeBase64(publicKey);
@@ -225,7 +223,7 @@ public class EncryptionUtil {
         }
     }
 
-    private static RSAPrivateKey getPrivateKeyFromString(String privateKey) {
+    public static RSAPrivateKey getPrivateKeyFromString(String privateKey) {
         privateKey = privateKey.replace("-----BEGIN RSA PRIVATE KEY-----\n", "");
         privateKey = privateKey.replace("-----END RSA PRIVATE KEY-----", "");
         byte[] encoded = Base64.decodeBase64(privateKey);

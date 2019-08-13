@@ -1,10 +1,12 @@
 package com.streamr.client
 
+import com.streamr.client.exceptions.InvalidRSAKeyException
 import com.streamr.client.options.EncryptionOptions
 import com.streamr.client.options.SigningOptions
 import com.streamr.client.options.StreamrClientOptions
 import com.streamr.client.protocol.control_layer.ControlMessage
 import com.streamr.client.protocol.message_layer.StreamMessage
+import com.streamr.client.utils.EncryptionUtil
 import spock.lang.Specification
 
 class StreamrClientOptionsSpec extends Specification {
@@ -31,5 +33,20 @@ class StreamrClientOptionsSpec extends Specification {
         StreamrClientOptions options = new StreamrClientOptions(null, SigningOptions.getDefault(), EncryptionOptions.getDefault(), url, "")
         then:
         options.getWebsocketApiUrl() == expectedUrl
+    }
+    void "throws if invalid public key passed to constructor"() {
+        when:
+        new EncryptionOptions(null, null, true, "wrong-format", null)
+        then:
+        InvalidRSAKeyException e = thrown InvalidRSAKeyException
+        e.message == "Must be a valid RSA public key in the PEM format."
+    }
+    void "throws if invalid private key passed to constructor"() {
+        EncryptionUtil util = new EncryptionUtil()
+        when:
+        new EncryptionOptions(null, null, true, util.publicKeyAsPemString, "wrong-format")
+        then:
+        InvalidRSAKeyException e = thrown InvalidRSAKeyException
+        e.message == "Must be a valid RSA private key in the PEM format."
     }
 }

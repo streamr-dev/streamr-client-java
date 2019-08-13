@@ -1,6 +1,5 @@
 package com.streamr.client.utils
 
-import com.streamr.client.exceptions.InvalidRSAKeyException
 import org.apache.commons.codec.binary.Hex
 import spock.lang.Specification
 
@@ -9,6 +8,8 @@ import java.security.KeyPair
 import java.security.KeyPairGenerator
 import java.security.NoSuchAlgorithmException
 import java.security.SecureRandom
+import java.security.interfaces.RSAPrivateKey
+import java.security.interfaces.RSAPublicKey
 
 class EncryptionUtilSpec extends Specification {
     KeyPair genKeyPair() {
@@ -36,27 +37,10 @@ class EncryptionUtilSpec extends Specification {
         then:
         util.decryptWithPrivateKey(ciphertext) == plaintext
     }
-    void "throws if invalid public key passed to constructor"() {
-        when:
-        new EncryptionUtil("wrong-format", null)
-        then:
-        InvalidRSAKeyException e = thrown InvalidRSAKeyException
-        e.message == "Must be a valid RSA public key in the PEM format."
-    }
-    void "throws if invalid private key passed to constructor"() {
-        String pemKey = EncryptionUtil.exportKeyAsPemString(genKeyPair().public, true)
-        when:
-        new EncryptionUtil(pemKey, "wrong-format")
-        then:
-        InvalidRSAKeyException e = thrown InvalidRSAKeyException
-        e.message == "Must be a valid RSA private key in the PEM format."
-    }
     void "does not throw when valid keys passed to constructor"() {
         KeyPair keyPair = genKeyPair()
-        String publicKey = EncryptionUtil.exportKeyAsPemString(keyPair.public, true)
-        String privateKey = EncryptionUtil.exportKeyAsPemString(keyPair.private, false)
         when:
-        new EncryptionUtil(publicKey, privateKey)
+        new EncryptionUtil((RSAPublicKey) keyPair.public, (RSAPrivateKey) keyPair.private)
         then:
         noExceptionThrown()
     }
