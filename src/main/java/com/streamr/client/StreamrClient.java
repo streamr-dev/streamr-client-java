@@ -54,7 +54,7 @@ public class StreamrClient extends StreamrRESTClient {
     private final KeyStorage keyStorage;
     private final KeyExchangeUtil keyExchangeUtil;
 
-    private final Stream inbox;
+    private Stream inbox;
     private Subscription inboxSub;
 
     private final HashMap<String, OneTimeResend> secondResends = new HashMap<>();
@@ -103,6 +103,11 @@ public class StreamrClient extends StreamrRESTClient {
             }
         } else if (options.getAuthenticationMethod() instanceof EthereumAuthenticationMethod) {
             publisherId = ((EthereumAuthenticationMethod) options.getAuthenticationMethod()).getAddress();
+            try {
+                inbox = getStream(publisherId);
+            } catch (IOException e) {
+                throw new RuntimeException(e);
+            }
         }
         SigningUtil signingUtil = null;
         if (options.getPublishSignedMsgs()) {
@@ -115,7 +120,7 @@ public class StreamrClient extends StreamrRESTClient {
         encryptionUtil = new EncryptionUtil(options.getEncryptionOptions().getRsaPublicKey(),
                 options.getEncryptionOptions().getRsaPrivateKey());
         keyExchangeUtil = new KeyExchangeUtil(keyStorage, msgCreationUtil, encryptionUtil, addressValidityUtil,
-                m -> { publish(m); return null; }, this::setGroupKeys);
+                this::publish, this::setGroupKeys);
 
         try {
             this.websocket = new WebSocketClient(new URI(options.getWebsocketApiUrl())) {
@@ -157,17 +162,6 @@ public class StreamrClient extends StreamrRESTClient {
             };
         } catch (URISyntaxException e) {
             throw new RuntimeException(e);
-        }
-
-        if (getPublisherId() != null) {
-            try {
-                inbox = getStream(getPublisherId());
-            } catch (IOException e) {
-                throw new RuntimeException(e);
-            }
-        } else {
-            inbox = null;
-            log.warn("Not subscribing to inbox stream since no authentication method was provided");
         }
     }
 

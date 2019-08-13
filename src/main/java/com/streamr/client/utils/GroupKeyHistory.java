@@ -3,6 +3,10 @@ package com.streamr.client.utils;
 import java.util.ArrayList;
 import java.util.Date;
 
+/*
+This class contains the history of keys used to publish encrypted messages. The different methods are
+used to create encrypted messages and to answer group key requests from subscribers.
+ */
 public class GroupKeyHistory {
     ArrayList<GroupKey> keys = new ArrayList<>();
     public GroupKeyHistory() {

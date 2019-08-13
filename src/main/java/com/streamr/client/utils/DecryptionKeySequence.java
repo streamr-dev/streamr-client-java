@@ -8,6 +8,9 @@ import javax.crypto.spec.SecretKeySpec;
 import javax.xml.bind.DatatypeConverter;
 import java.util.ArrayList;
 
+/*
+This class is used when trying to decrypt historical messages that were encrypted with different keys.
+ */
 public class DecryptionKeySequence {
     private ArrayList<SecretKey> keys = new ArrayList<>();
     private int currentIndex = 0;
@@ -27,7 +30,7 @@ public class DecryptionKeySequence {
             if (nextKey == null) {
                 throw e;
             }
-            // try to decrypt with the next key
+            // try to decrypt with the next key (if any)
             EncryptionUtil.decryptStreamMessage(msg, nextKey);
             // if successful (no error thrown), update the current key
             currentIndex++;

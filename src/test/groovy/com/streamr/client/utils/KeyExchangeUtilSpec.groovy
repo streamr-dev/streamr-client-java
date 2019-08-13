@@ -11,6 +11,7 @@ import spock.lang.Specification
 
 import java.security.SecureRandom
 import java.util.function.BiFunction
+import java.util.function.Consumer
 import java.util.function.Function
 
 class KeyExchangeUtilSpec extends Specification {
@@ -29,7 +30,7 @@ class KeyExchangeUtilSpec extends Specification {
     MessageCreationUtil messageCreationUtil
     Function<String, List<String>> getSubscribers
     BiFunction<String, String, Boolean> isSubscriber
-    Function<StreamMessage, Void> publish
+    Consumer<StreamMessage> publish
     KeyExchangeUtil.SetGroupKeysFunction setGroupKeysFunction
     StreamMessage published
     StreamMessage response = new StreamMessageV31(new MessageID("subscriberId", 0, 5145, 0, "publisherId", ""), null,
@@ -53,11 +54,10 @@ class KeyExchangeUtilSpec extends Specification {
                 return streamId == "streamId" && subscriberId == "subscriberId"
             }
         }
-        publish = new Function<StreamMessage, Void>() {
+        publish = new Consumer<StreamMessage>() {
             @Override
-            Void apply(StreamMessage streamMessage) {
+            void accept(StreamMessage streamMessage) {
                 published = streamMessage
-                return null
             }
         }
         setGroupKeysFunction = new KeyExchangeUtil.SetGroupKeysFunction() {

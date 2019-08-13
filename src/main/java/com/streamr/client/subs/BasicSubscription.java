@@ -6,7 +6,6 @@ import com.streamr.client.exceptions.UnableToDecryptException;
 import com.streamr.client.exceptions.UnsupportedMessageException;
 import com.streamr.client.protocol.message_layer.MessageRef;
 import com.streamr.client.protocol.message_layer.StreamMessage;
-import com.streamr.client.utils.GroupKey;
 import com.streamr.client.utils.OrderedMsgChain;
 import com.streamr.client.utils.OrderingUtil;
 import org.apache.logging.log4j.LogManager;
@@ -21,9 +20,9 @@ public abstract class BasicSubscription extends Subscription {
     protected HashSet<String> waitingForGroupKey = new HashSet<>();
     protected ArrayDeque<StreamMessage> encryptedMsgsQueue = new ArrayDeque<>();
     protected final GroupKeyRequestFunction groupKeyRequestFunction;
-    public BasicSubscription(String streamId, int partition, MessageHandler handler, Map<String, GroupKey> groupKeys,
+    public BasicSubscription(String streamId, int partition, MessageHandler handler,
                              GroupKeyRequestFunction groupKeyRequestFunction, long propagationTimeout, long resendTimeout) {
-        super(streamId, partition, handler, groupKeys, propagationTimeout, resendTimeout);
+        super(streamId, partition, handler, propagationTimeout, resendTimeout);
         orderingUtil = new OrderingUtil(streamId, partition,
                 this::handleInOrder, (MessageRef from, MessageRef to, String publisherId, String msgChainId) -> {
             throw new GapDetectedException(streamId, partition, from, to, publisherId, msgChainId);
@@ -32,17 +31,13 @@ public abstract class BasicSubscription extends Subscription {
                 : ((publisherId, start, end) -> log.warn("Group key missing for stream " + streamId + " and publisher " + publisherId + " but no handler is set."));
     }
 
-    public BasicSubscription(String streamId, int partition, MessageHandler handler, Map<String, GroupKey> groupKeys,
+    public BasicSubscription(String streamId, int partition, MessageHandler handler,
                              GroupKeyRequestFunction groupKeyRequestFunction) {
-        this(streamId, partition, handler, groupKeys, groupKeyRequestFunction, Subscription.DEFAULT_PROPAGATION_TIMEOUT, Subscription.DEFAULT_RESEND_TIMEOUT);
-    }
-
-    public BasicSubscription(String streamId, int partition, MessageHandler handler, Map<String, GroupKey> groupKeys) {
-        this(streamId, partition, handler, groupKeys, null, Subscription.DEFAULT_PROPAGATION_TIMEOUT, Subscription.DEFAULT_RESEND_TIMEOUT);
+        this(streamId, partition, handler, groupKeyRequestFunction, Subscription.DEFAULT_PROPAGATION_TIMEOUT, Subscription.DEFAULT_RESEND_TIMEOUT);
     }
 
     public BasicSubscription(String streamId, int partition, MessageHandler handler) {
-        this(streamId, partition, handler, null, null, Subscription.DEFAULT_PROPAGATION_TIMEOUT, Subscription.DEFAULT_RESEND_TIMEOUT);
+        this(streamId, partition, handler, null, Subscription.DEFAULT_PROPAGATION_TIMEOUT, Subscription.DEFAULT_RESEND_TIMEOUT);
     }
 
     @Override
@@ -67,7 +62,7 @@ public abstract class BasicSubscription extends Subscription {
     protected void handleInOrder(StreamMessage msg) {
         if (!waitingForGroupKey.contains(msg.getPublisherId())) {
             boolean success = decryptOrRequestGroupKey(msg);
-            if (success) {
+            if (success) { // the message was successfully decrypted
                 handler.onMessage(this, msg);
             }
         } else {

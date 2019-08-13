@@ -25,7 +25,7 @@ public class HistoricalSubscription extends BasicSubscription {
     public HistoricalSubscription(String streamId, int partition, MessageHandler handler, ResendOption resendOption,
                                   Map<String, GroupKey> groupKeys, GroupKeyRequestFunction groupKeyRequestFunction,
                                   long propagationTimeout, long resendTimeout, Function<StreamMessage, Void> onRealTimeMsg) {
-        super(streamId, partition, handler, groupKeys, groupKeyRequestFunction, propagationTimeout, resendTimeout);
+        super(streamId, partition, handler, groupKeyRequestFunction, propagationTimeout, resendTimeout);
         this.resendOption = resendOption;
         this.onRealTimeMsg = onRealTimeMsg;
         if (groupKeys != null) {
@@ -62,8 +62,8 @@ public class HistoricalSubscription extends BasicSubscription {
         if (keySequences.containsKey(publisherId)) {
             throw new InvalidGroupKeyResponseException("Received historical keys for publisher " + publisherId + " for a second time.");
         }
-
         keySequences.put(publisherId, new DecryptionKeySequence(groupKeys));
+        // handle the historical messages received while we were waiting for the historical group keys
         waitingForGroupKey.remove(publisherId);
         while (!encryptedMsgsQueue.isEmpty()) {
             handleInOrder(encryptedMsgsQueue.poll());

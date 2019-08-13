@@ -6,6 +6,10 @@ import java.util.ArrayList;
 import java.util.Date;
 import java.util.HashMap;
 
+/*
+This key storage is used when the publisher only wants to store the latest key used to encrypt messages,
+not the previous ones. This will prevent the publisher to answer historical group key requests.
+ */
 public class LatestKeyStorage extends KeyStorage {
     private HashMap<String, GroupKey> latestGroupKeys;
 

@@ -8,7 +8,9 @@ import java.util.List;
 import java.util.concurrent.TimeUnit;
 import java.util.function.BiFunction;
 import java.util.function.Function;
-
+/*
+This util contains methods to check if an Ethereum address is a valid publisher/subscriber (using REST endpoints).
+ */
 public class AddressValidityUtil {
     private final Cache<String, HashMap<String, Boolean>> subscribersPerStreamId = new Cache2kBuilder<String, HashMap<String, Boolean>>() {}
             .expireAfterWrite(30, TimeUnit.MINUTES).build();
@@ -42,9 +44,11 @@ public class AddressValidityUtil {
 
     private boolean isValid(String streamId, String address, Function<String, HashMap<String, Boolean>> getAddresses,
                             BiFunction<String, String, Boolean> isFunction) {
+        // check the local cache
         Boolean valid = getAddresses.apply(streamId).get(address);
-        if (valid == null) {
+        if (valid == null) { // cache miss
             valid = isFunction.apply(streamId, address);
+            // update cache
             getAddresses.apply(streamId).put(address, valid);
         }
         return valid;

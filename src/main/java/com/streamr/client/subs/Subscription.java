@@ -8,10 +8,6 @@ import com.streamr.client.options.ResendOption;
 import com.streamr.client.protocol.message_layer.StreamMessage;
 import com.streamr.client.utils.GroupKey;
 import com.streamr.client.utils.OrderedMsgChain;
-
-import javax.crypto.SecretKey;
-import javax.crypto.spec.SecretKeySpec;
-import javax.xml.bind.DatatypeConverter;
 import java.util.*;
 
 public abstract class Subscription {
@@ -22,7 +18,6 @@ public abstract class Subscription {
     protected final int partition;
     private final String id;
     protected final MessageHandler handler;
-    protected final Map<String, SecretKey> groupKeys = new HashMap<>(); // publisherId --> groupKey
     protected final long propagationTimeout;
     protected final long resendTimeout;
 
@@ -32,28 +27,18 @@ public abstract class Subscription {
         SUBSCRIBING, SUBSCRIBED, UNSUBSCRIBING, UNSUBSCRIBED
     }
 
-    public Subscription(String streamId, int partition, MessageHandler handler, Map<String, GroupKey> groupKeys,
+    public Subscription(String streamId, int partition, MessageHandler handler,
                         long propagationTimeout, long resendTimeout) {
         this.id = UUID.randomUUID().toString();
         this.streamId = streamId;
         this.partition = partition;
         this.handler = handler;
-        if (groupKeys != null) {
-            for (String publisherId: groupKeys.keySet()) {
-                String groupKeyHex = groupKeys.get(publisherId).getGroupKeyHex();
-                this.groupKeys.put(publisherId, new SecretKeySpec(DatatypeConverter.parseHexBinary(groupKeyHex), "AES"));
-            }
-        }
         this.propagationTimeout = propagationTimeout;
         this.resendTimeout = resendTimeout;
     }
 
-    public Subscription(String streamId, int partition, MessageHandler handler, Map<String, GroupKey> groupKeys) {
-        this(streamId, partition, handler, groupKeys, DEFAULT_PROPAGATION_TIMEOUT, DEFAULT_RESEND_TIMEOUT);
-    }
-
     public Subscription(String streamId, int partition, MessageHandler handler) {
-        this(streamId, partition, handler, null);
+        this(streamId, partition, handler, DEFAULT_PROPAGATION_TIMEOUT, DEFAULT_RESEND_TIMEOUT);
     }
 
     public String getId() {

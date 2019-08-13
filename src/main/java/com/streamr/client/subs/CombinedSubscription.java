@@ -19,7 +19,7 @@ public class CombinedSubscription extends Subscription {
     public CombinedSubscription(String streamId, int partition, MessageHandler handler, ResendOption resendOption,
                                 Map<String, GroupKey> groupKeys, GroupKeyRequestFunction groupKeyRequestFunction,
                                 long propagationTimeout, long resendTimeout) {
-        super(streamId, partition, handler, groupKeys, propagationTimeout, resendTimeout);
+        super(streamId, partition, handler, propagationTimeout, resendTimeout);
         MessageHandler wrapperHandler = new MessageHandler() {
             @Override
             public void onMessage(Subscription sub, StreamMessage message) {
@@ -28,9 +28,12 @@ public class CombinedSubscription extends Subscription {
             @Override
             public void done(Subscription s) {
                 handler.done(s);
+                // once the initial resend is done, switch to real time
                 RealTimeSubscription realTime = new RealTimeSubscription(streamId, partition, handler, groupKeys, groupKeyRequestFunction, propagationTimeout, resendTimeout);
                 realTime.setGapHandler(sub.getGapHandler());
+                // set the last received references to the last references of the resent messages
                 realTime.setLastMessageRefs(sub.getChains());
+                // handle the real time messages received during the initial resend
                 while(!queue.isEmpty()) {
                     StreamMessage msg = queue.poll();
                     realTime.handleRealTimeMessage(msg);
@@ -38,6 +41,7 @@ public class CombinedSubscription extends Subscription {
                 sub = realTime;
             }
         };
+        // starts to request the initial resend
         sub = new HistoricalSubscription(streamId, partition, wrapperHandler, resendOption, groupKeys, groupKeyRequestFunction, propagationTimeout, resendTimeout, msg -> {
             queue.push(msg);
             return null;

@@ -4,6 +4,10 @@ import java.util.ArrayList;
 import java.util.Date;
 import java.util.HashMap;
 
+/*
+This key storage is used when the publisher wants to store all keys used to encrypt messages in order to
+answer group key requests for historical keys.
+ */
 public class KeyHistoryStorage extends KeyStorage {
     private HashMap<String, GroupKeyHistory> histories = new HashMap<>();
 

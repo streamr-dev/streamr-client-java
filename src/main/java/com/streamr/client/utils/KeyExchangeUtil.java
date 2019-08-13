@@ -8,6 +8,7 @@ import org.apache.logging.log4j.Logger;
 
 import java.io.IOException;
 import java.util.*;
+import java.util.function.Consumer;
 import java.util.function.Function;
 
 public class KeyExchangeUtil {
@@ -17,12 +18,12 @@ public class KeyExchangeUtil {
     private final MessageCreationUtil messageCreationUtil;
     private final EncryptionUtil encryptionUtil;
     private final AddressValidityUtil addressValidityUtil;
-    private final Function<StreamMessage, Void> publishFunction;
+    private final Consumer<StreamMessage> publishFunction;
     private final SetGroupKeysFunction setGroupKeysFunction;
 
 
     public KeyExchangeUtil(KeyStorage keyStorage, MessageCreationUtil messageCreationUtil, EncryptionUtil encryptionUtil,
-                           AddressValidityUtil addressValidityUtil, Function<StreamMessage, Void> publishFunction,
+                           AddressValidityUtil addressValidityUtil, Consumer<StreamMessage> publishFunction,
                            SetGroupKeysFunction setGroupKeysFunction) {
         this.keyStorage = keyStorage;
         this.messageCreationUtil = messageCreationUtil;
@@ -75,7 +76,7 @@ public class KeyExchangeUtil {
             encryptedGroupKeys.add(key.getEncrypted((String) content.get("publicKey")));
         }
         StreamMessage response = messageCreationUtil.createGroupKeyResponse(subscriberId, streamId, encryptedGroupKeys);
-        publishFunction.apply(response);
+        publishFunction.accept(response);
     }
 
     public void handleGroupKeyResponse(StreamMessage groupKeyResponse) {
