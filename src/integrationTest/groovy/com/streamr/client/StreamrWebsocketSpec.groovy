@@ -184,6 +184,77 @@ class StreamrWebsocketSpec extends StreamrIntegrationSpecification {
 		msg.getContent() == [test: 'another clear text']
 	}
 
+	void "subscriber can get the group key and decrypt encrypted messages using an RSA key pair"() {
+		Stream stream = client.createStream(new Stream(generateResourceName(), ""))
+		GroupKey key = genKey()
+
+		when:
+		// Subscribe to the stream without knowing the group key
+		StreamMessageV31 msg
+		client.subscribe(stream, new MessageHandler() {
+			@Override
+			void onMessage(Subscription s, StreamMessage message) {
+				//reaching this point ensures that the signature verification and decryption didn't throw
+				msg = (StreamMessageV31) message
+			}
+		})
+
+		Thread.sleep(2000)
+
+		client.publish(stream, [test: 'clear text'], new Date(), key)
+		// waiting for the key exchange mechanism to happen under the hood
+		Thread.sleep(3000)
+
+		then:
+		// the subscriber got the group key and can decrypt
+		msg.getContent() == [test: 'clear text']
+
+		when:
+		// publishing a second message with a new group key
+		client.publish(stream, [test: 'another clear text'], new Date(), genKey())
+
+		Thread.sleep(2000)
+
+		then:
+		// no need to explicitly give the new group key to the subscriber
+		msg.getContent() == [test: 'another clear text']
+	}
+
+	void "subscriber can get the historical keys and decrypt old encrypted messages using an RSA key pair"() {
+		Stream stream = client.createStream(new Stream(generateResourceName(), ""))
+		// publishing historical messages with different group keys before subscribing
+		client.publish(stream, [test: 'clear text'], new Date(), genKey())
+		client.publish(stream, [test: 'another clear text'], new Date(), genKey())
+		Thread.sleep(3000)
+
+		when:
+		// Subscribe to the stream with resend last without knowing the group keys
+		StreamMessageV31 msg1 = null
+		StreamMessageV31 msg2 = null
+		client.subscribe(stream, 0, new MessageHandler() {
+			@Override
+			void onMessage(Subscription s, StreamMessage message) {
+				//reaching this point ensures that the signature verification and decryption didn't throw
+				if (msg1 == null) {
+					msg1 = (StreamMessageV31) message
+				} else if (msg2 == null) {
+					msg2 = (StreamMessageV31) message
+				} else {
+					throw new RuntimeException("Received unexpected message: " + message.toJson())
+				}
+
+			}
+		}, new ResendLastOption(2))
+
+		// waiting for the resend and the key exchange mechanism to happen under the hood
+		Thread.sleep(3000)
+
+		then:
+		// the subscriber got the group keys and can decrypt the old messages
+		msg1.getContent() == [test: 'clear text']
+		msg2.getContent() == [test: 'another clear text']
+	}
+
 	void "subscribe with resend last"() {
 		Subscription sub
 

@@ -8,10 +8,14 @@ public class KeyHistoryStorage extends KeyStorage {
     private HashMap<String, GroupKeyHistory> histories = new HashMap<>();
 
     public KeyHistoryStorage(HashMap<String, GroupKey> publisherGroupKeys) {
-        super(publisherGroupKeys);
+        super();
         for (String streamId: publisherGroupKeys.keySet()) {
             histories.put(streamId, new GroupKeyHistory(publisherGroupKeys.get(streamId)));
         }
+    }
+
+    public KeyHistoryStorage() {
+        this(null);
     }
 
     @Override

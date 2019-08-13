@@ -172,7 +172,7 @@ public abstract class StreamMessage implements ITimestamped {
 
     public Map<String, Object> getContent() throws IOException, EncryptedContentNotParsableException {
         if (content == null) {
-            if (encryptionType != EncryptionType.NONE) {
+            if (encryptionType == EncryptionType.AES || encryptionType == EncryptionType.NEW_KEY_AND_AES) {
                 throw new EncryptedContentNotParsableException(encryptionType);
             }
             this.content = HttpUtils.mapAdapter.fromJson(serializedContent);
@@ -194,11 +194,13 @@ public abstract class StreamMessage implements ITimestamped {
     }
 
     public void setSerializedContent(String serializedContent) throws IOException {
-        this.serializedContent = serializedContent;
         if (this.encryptionType == EncryptionType.NONE) {
             this.content = HttpUtils.mapAdapter.fromJson(serializedContent);
             validateContent(content, contentType);
+        } else {
+            this.content = null;
         }
+        this.serializedContent = serializedContent;
     }
 
     public void setSerializedContent(byte[] serializedContent) throws IOException {

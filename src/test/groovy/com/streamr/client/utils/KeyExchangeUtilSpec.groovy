@@ -14,6 +14,16 @@ import java.util.function.BiFunction
 import java.util.function.Function
 
 class KeyExchangeUtilSpec extends Specification {
+    SecureRandom secureRandom = new SecureRandom()
+    GroupKey genKey(int keyLength) {
+        return genKey(keyLength, new Date())
+    }
+
+    GroupKey genKey(int keyLength, Date start) {
+        byte[] keyBytes = new byte[keyLength]
+        secureRandom.nextBytes(keyBytes)
+        return new GroupKey(Hex.encodeHexString(keyBytes), start)
+    }
     KeyExchangeUtil util
     KeyStorage storage
     MessageCreationUtil messageCreationUtil
@@ -25,7 +35,8 @@ class KeyExchangeUtilSpec extends Specification {
     StreamMessage response = new StreamMessageV31(new MessageID("subscriberId", 0, 5145, 0, "publisherId", ""), null,
             StreamMessage.ContentType.GROUP_KEY_RESPONSE_SIMPLE, StreamMessage.EncryptionType.RSA, "response", StreamMessage.SignatureType.SIGNATURE_TYPE_ETH, "signature")
     EncryptionUtil encryptionUtil = new EncryptionUtil()
-    AddressValidityUtil addressValidityUtil = new AddressValidityUtil({ String id -> new ArrayList<>()}, { String s1, String s2 -> s1 == "streamId" && s2 == "subscriberId"}, null, null)
+    AddressValidityUtil addressValidityUtil = new AddressValidityUtil({ String id -> new ArrayList<>()}, { String s1, String s2 -> s1 == "streamId" && s2 == "subscriberId"},
+            { String id -> new ArrayList<>()}, { String s, String p -> true})
     GroupKey received
     void setup() {
         storage = Mock(KeyStorage)
@@ -99,7 +110,7 @@ class KeyExchangeUtilSpec extends Specification {
         Map<String, Object> content = ["publicKey": encryptionUtil.publicKeyAsPemString, "streamId": "streamId"]
         StreamMessage request = new StreamMessageV31(id, null, StreamMessage.ContentType.GROUP_KEY_REQUEST,
                 StreamMessage.EncryptionType.NONE, content, StreamMessage.SignatureType.SIGNATURE_TYPE_ETH, "signature")
-        GroupKey key = new GroupKey("1234", 123)
+        GroupKey key = genKey(32, new Date(123))
         when:
         util.handleGroupKeyRequest(request)
         then:
@@ -118,11 +129,12 @@ class KeyExchangeUtilSpec extends Specification {
     }
     void "should send group key response (range of keys)"() {
         MessageID id = new MessageID("publisherInbox", 0, 414, 0, "subscriberId", "msgChainId")
-        Map<String, Object> content = ["publicKey": encryptionUtil.publicKeyAsPemString, "streamId": "streamId", "range": ["start": 123L, "end": 456L]]
+        // Need to use Double because Moshi parser converts all JSON numbers to double
+        Map<String, Object> content = ["publicKey": encryptionUtil.publicKeyAsPemString, "streamId": "streamId", "range": ["start": new Double(123), "end": new Double(456)]]
         StreamMessage request = new StreamMessageV31(id, null, StreamMessage.ContentType.GROUP_KEY_REQUEST,
                 StreamMessage.EncryptionType.NONE, content, StreamMessage.SignatureType.SIGNATURE_TYPE_ETH, "signature")
-        GroupKey key1 = new GroupKey("1234", 123L)
-        GroupKey key2 = new GroupKey("5678", 300L)
+        GroupKey key1 = genKey(32, new Date(123))
+        GroupKey key2 = genKey(32, new Date(300))
         when:
         util.handleGroupKeyRequest(request)
         then:
@@ -173,7 +185,8 @@ class KeyExchangeUtilSpec extends Specification {
         String encryptedGroupKeyHex = EncryptionUtil.encryptWithPublicKey(groupKeyHex, encryptionUtil.getPublicKeyAsPemString())
 
         MessageID id = new MessageID("subscriberInbox", 0, 414, 0, "publisherId", "msgChainId")
-        Map<String, Object> content = ["keys": [["groupKey": encryptedGroupKeyHex, "start": 123L]], "streamId": "streamId"]
+        // Need to use Double because the Moshi parser converts all JSON numbers to double
+        Map<String, Object> content = ["keys": [["groupKey": encryptedGroupKeyHex, "start": new Double(123)]], "streamId": "streamId"]
         StreamMessage response = new StreamMessageV31(id, null, StreamMessage.ContentType.GROUP_KEY_RESPONSE_SIMPLE,
                 StreamMessage.EncryptionType.NONE, content, StreamMessage.SignatureType.SIGNATURE_TYPE_ETH, "signature")
         when:
@@ -190,7 +203,8 @@ class KeyExchangeUtilSpec extends Specification {
         String encryptedGroupKeyHex = EncryptionUtil.encryptWithPublicKey(groupKeyHex, encryptionUtil.getPublicKeyAsPemString())
 
         MessageID id = new MessageID("subscriberInbox", 0, 414, 0, "publisherId", "msgChainId")
-        Map<String, Object> content = ["keys": [["groupKey": encryptedGroupKeyHex, "start": 123L]], "streamId": "streamId"]
+        // Need to use Double because the Moshi parser converts all JSON numbers to double
+        Map<String, Object> content = ["keys": [["groupKey": encryptedGroupKeyHex, "start": new Double(123)]], "streamId": "streamId"]
         StreamMessage response = new StreamMessageV31(id, null, StreamMessage.ContentType.GROUP_KEY_RESPONSE_SIMPLE,
                 StreamMessage.EncryptionType.NONE, content, StreamMessage.SignatureType.SIGNATURE_TYPE_ETH, "signature")
         when:

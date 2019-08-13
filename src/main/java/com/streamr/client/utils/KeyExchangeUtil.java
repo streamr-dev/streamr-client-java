@@ -56,8 +56,9 @@ public class KeyExchangeUtil {
         ArrayList<GroupKey> keys;
         if (content.containsKey("range")) {
             Map<String, Object> range = (Map<String, Object>) content.get("range");
-            long start = (long) range.get("start");
-            long end = (long) range.get("end");
+            // Need to use Double because Moshi parser converts all JSON numbers to double
+            long start = ((Double) range.get("start")).longValue();
+            long end = ((Double) range.get("end")).longValue();
             keys = keyStorage.getKeysBetween(streamId, new Date(start), new Date(end));
         } else {
             keys = new ArrayList<>();
@@ -103,8 +104,7 @@ public class KeyExchangeUtil {
         }
         ArrayList<GroupKey> decryptedKeys = new ArrayList<>();
         for (Map<String, Object> map: (ArrayList<Map<String, Object>>) content.get("keys")) {
-            GroupKey decryptedKey = GroupKey.fromMap(map).getDecrypted(encryptionUtil);
-            EncryptionUtil.validateGroupKey(decryptedKey.getGroupKeyHex());
+            GroupKey decryptedKey = GroupKey.fromMap(map, true).getDecrypted(encryptionUtil);
             decryptedKeys.add(decryptedKey);
         }
         setGroupKeysFunction.apply(streamId, groupKeyResponse.getPublisherId(), decryptedKeys);

@@ -12,9 +12,7 @@ import com.streamr.client.utils.OrderedMsgChain;
 import javax.crypto.SecretKey;
 import javax.crypto.spec.SecretKeySpec;
 import javax.xml.bind.DatatypeConverter;
-import java.util.HashMap;
-import java.util.Map;
-import java.util.UUID;
+import java.util.*;
 
 public abstract class Subscription {
     public static final long DEFAULT_PROPAGATION_TIMEOUT = 5000L;
@@ -100,5 +98,12 @@ public abstract class Subscription {
 
     public abstract void setGapHandler(OrderedMsgChain.GapHandlerFunction gapHandler);
 
+    public abstract void setGroupKeys(String publisherId, ArrayList<GroupKey> groupKeys);
+
     public abstract void clear();
+
+    @FunctionalInterface
+    public interface GroupKeyRequestFunction {
+        void apply(String publisherId, Date start, Date end);
+    }
 }

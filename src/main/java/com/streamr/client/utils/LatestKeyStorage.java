@@ -10,8 +10,12 @@ public class LatestKeyStorage extends KeyStorage {
     private HashMap<String, GroupKey> latestGroupKeys;
 
     public LatestKeyStorage(HashMap<String, GroupKey> publisherGroupKeys) {
-        super(publisherGroupKeys);
+        super();
         latestGroupKeys = publisherGroupKeys == null ? new HashMap<>() : publisherGroupKeys;
+    }
+
+    public LatestKeyStorage() {
+        this(null);
     }
 
     @Override

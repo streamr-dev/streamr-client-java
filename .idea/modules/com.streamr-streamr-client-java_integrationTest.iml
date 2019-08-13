@@ -13,8 +13,8 @@
     </content>
     <orderEntry type="inheritedJdk" />
     <orderEntry type="sourceFolder" forTests="false" />
-    <orderEntry type="module" module-name="com.streamr-streamr-client-java_main" />
     <orderEntry type="library" name="Gradle: org.apache.logging.log4j:log4j-core:2.7" level="project" />
+    <orderEntry type="module" module-name="com.streamr-streamr-client-java_main" />
     <orderEntry type="library" name="Gradle: com.squareup.okhttp3:okhttp:3.10.0" level="project" />
     <orderEntry type="library" name="Gradle: com.squareup.moshi:moshi:1.6.0" level="project" />
     <orderEntry type="library" name="Gradle: com.squareup.moshi:moshi-adapters:1.6.0" level="project" />

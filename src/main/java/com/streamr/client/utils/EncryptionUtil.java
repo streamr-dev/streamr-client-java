@@ -97,6 +97,7 @@ public class EncryptionUtil {
     }
 
     public static byte[] decrypt(String ciphertext, SecretKey groupKey) throws Exception {
+        if (groupKey == null) throw new InvalidGroupKeyException(0);
         byte[] iv = DatatypeConverter.parseHexBinary(ciphertext.substring(0, 32));
         IvParameterSpec ivParameterSpec = new IvParameterSpec(iv);
         aesCipher.get().init(Cipher.DECRYPT_MODE, groupKey, ivParameterSpec);
@@ -140,17 +141,19 @@ public class EncryptionUtil {
     message content and returns null.
      */
     public static SecretKey decryptStreamMessage(StreamMessage streamMessage, SecretKey groupKey) throws UnableToDecryptException {
+        StreamMessage.EncryptionType encryptionType = streamMessage.getEncryptionType();
         try {
-            if (streamMessage.getEncryptionType() == StreamMessage.EncryptionType.AES) {
+            if (encryptionType == StreamMessage.EncryptionType.AES) {
                 streamMessage.setEncryptionType(StreamMessage.EncryptionType.NONE);
                 streamMessage.setSerializedContent(decrypt(streamMessage.getSerializedContent(), groupKey));
-            } else if (streamMessage.getEncryptionType() == StreamMessage.EncryptionType.NEW_KEY_AND_AES) {
+            } else if (encryptionType == StreamMessage.EncryptionType.NEW_KEY_AND_AES) {
                 byte[] plaintext = EncryptionUtil.decrypt(streamMessage.getSerializedContent(), groupKey);
                 streamMessage.setEncryptionType(StreamMessage.EncryptionType.NONE);
                 streamMessage.setSerializedContent(Arrays.copyOfRange(plaintext, 32, plaintext.length));
                 return new SecretKeySpec(Arrays.copyOfRange(plaintext, 0, 32), "AES");
             }
         } catch (Exception e) {
+            streamMessage.setEncryptionType(encryptionType);
             throw new UnableToDecryptException(streamMessage.getSerializedContent());
         }
         return null;

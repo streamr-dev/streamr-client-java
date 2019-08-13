@@ -171,12 +171,12 @@ class StreamMessageV31AdapterSpec extends Specification {
 	}
 
 	void "fromJson() with content types other than JSON"() {
-		String json28 = "[31,[\"7wa7APtlTq6EC5iTCBy6dw\",0,1528228173462,0,\"publisherId\",\"1\"],null,28,0,\"{\\\"publicKey\\\":\\\"some-public-key\\\",\\\"range\\\":{\\\"start\\\":1,\\\"end\\\":2}}\",0,null]"
+		String json28 = "[31,[\"7wa7APtlTq6EC5iTCBy6dw\",0,1528228173462,0,\"publisherId\",\"1\"],null,28,0,\"{\\\"streamId\\\":\\\"some-stream-id\\\",\\\"publicKey\\\":\\\"some-public-key\\\",\\\"range\\\":{\\\"start\\\":1,\\\"end\\\":2}}\",0,null]"
 		String json28Wrong = "[31,[\"7wa7APtlTq6EC5iTCBy6dw\",0,1528228173462,0,\"publisherId\",\"1\"],null,28,0,\"{\\\"wrongField\\\":\\\"some-public-key\\\"}\",0,null]"
-		String json29 = "[31,[\"7wa7APtlTq6EC5iTCBy6dw\",0,1528228173462,0,\"publisherId\",\"1\"],null,29,0,\"{\\\"keys\\\":[{\\\"groupKey\\\":\\\"some-group-key\\\",\\\"start\\\":123}]}\",0,null]"
+		String json29 = "[31,[\"7wa7APtlTq6EC5iTCBy6dw\",0,1528228173462,0,\"publisherId\",\"1\"],null,29,0,\"{\\\"streamId\\\":\\\"some-stream-id\\\",\\\"keys\\\":[{\\\"groupKey\\\":\\\"some-group-key\\\",\\\"start\\\":123}]}\",0,null]"
 		String json29Wrong1 = "[31,[\"7wa7APtlTq6EC5iTCBy6dw\",0,1528228173462,0,\"publisherId\",\"1\"],null,29,0,\"{\\\"keys\\\":1233}\",0,null]"
 		String json29Wrong2 = "[31,[\"7wa7APtlTq6EC5iTCBy6dw\",0,1528228173462,0,\"publisherId\",\"1\"],null,29,0,\"{\\\"keys\\\":[{\\\"groupKey\\\":\\\"some-group-key\\\",\\\"wrongField\\\":123}]}\",0,null]"
-		String json30 = "[31,[\"7wa7APtlTq6EC5iTCBy6dw\",0,1528228173462,0,\"publisherId\",\"1\"],null,30,0,\"{\\\"groupKey\\\":\\\"some new group key\\\",\\\"start\\\":123}\",0,null]"
+		String json30 = "[31,[\"7wa7APtlTq6EC5iTCBy6dw\",0,1528228173462,0,\"publisherId\",\"1\"],null,30,0,\"{\\\"streamId\\\":\\\"some-stream-id\\\",\\\"groupKey\\\":\\\"some new group key\\\",\\\"start\\\":123}\",0,null]"
 		String json30Wrong = "[31,[\"7wa7APtlTq6EC5iTCBy6dw\",0,1528228173462,0,\"publisherId\",\"1\"],null,30,0,\"{\\\"groupKey\\\":\\\"some new group key\\\",\\\"wrongField\\\":123}\",0,null]"
 
 		when:
@@ -223,14 +223,9 @@ class StreamMessageV31AdapterSpec extends Specification {
 	}
 
 	void "getContent() throws if encrypted"() {
-		StreamMessageV31 msg1 = new StreamMessageV31("", 0, 0L, 0, "", "", 0L, 0, ContentType.CONTENT_TYPE_JSON, EncryptionType.RSA, "encrypted content", StreamMessage.SignatureType.SIGNATURE_TYPE_NONE, null)
 		StreamMessageV31 msg2 = new StreamMessageV31("", 0, 0L, 0, "", "", 0L, 0, ContentType.CONTENT_TYPE_JSON, EncryptionType.AES, "encrypted content", StreamMessage.SignatureType.SIGNATURE_TYPE_NONE, null)
 		StreamMessageV31 msg3 = new StreamMessageV31("", 0, 0L, 0, "", "", 0L, 0, ContentType.CONTENT_TYPE_JSON, EncryptionType.NEW_KEY_AND_AES, "encrypted content", StreamMessage.SignatureType.SIGNATURE_TYPE_NONE, null)
 
-		when:
-		msg1.getContent()
-		then:
-		thrown EncryptedContentNotParsableException
 		when:
 		msg2.getContent()
 		then:

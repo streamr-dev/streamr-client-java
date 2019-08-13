@@ -2,19 +2,32 @@ package com.streamr.client.subs;
 
 import com.streamr.client.MessageHandler;
 import com.streamr.client.exceptions.GapDetectedException;
+import com.streamr.client.exceptions.InvalidGroupKeyResponseException;
 import com.streamr.client.exceptions.UnableToDecryptException;
 import com.streamr.client.exceptions.UnsupportedMessageException;
 import com.streamr.client.options.ResendOption;
 import com.streamr.client.protocol.message_layer.StreamMessage;
+import com.streamr.client.utils.EncryptionUtil;
 import com.streamr.client.utils.GroupKey;
 
+import javax.crypto.SecretKey;
+import javax.crypto.spec.SecretKeySpec;
+import javax.xml.bind.DatatypeConverter;
+import java.util.ArrayList;
+import java.util.HashSet;
 import java.util.Map;
 
 public class RealTimeSubscription extends BasicSubscription {
     private boolean resending = false;
+    private HashSet<String> alreadyFailedToDecrypt = new HashSet<>();
     public RealTimeSubscription(String streamId, int partition, MessageHandler handler, Map<String, GroupKey> groupKeys,
-                                long propagationTimeout, long resendTimeout) {
-        super(streamId, partition, handler, groupKeys, propagationTimeout, resendTimeout);
+                                GroupKeyRequestFunction groupKeyRequestFunction, long propagationTimeout, long resendTimeout) {
+        super(streamId, partition, handler, groupKeys, groupKeyRequestFunction, propagationTimeout, resendTimeout);
+    }
+
+    public RealTimeSubscription(String streamId, int partition, MessageHandler handler, Map<String, GroupKey> groupKeys,
+                                GroupKeyRequestFunction groupKeyRequestFunction) {
+        super(streamId, partition, handler, groupKeys, groupKeyRequestFunction);
     }
 
     public RealTimeSubscription(String streamId, int partition, MessageHandler handler, Map<String, GroupKey> groupKeys) {
@@ -23,6 +36,40 @@ public class RealTimeSubscription extends BasicSubscription {
 
     public RealTimeSubscription(String streamId, int partition, MessageHandler handler) {
         super(streamId, partition, handler);
+    }
+
+    @Override
+    public void setGroupKeys(String publisherId, ArrayList<GroupKey> groupKeys) {
+        if (groupKeys.size() != 1) {
+            throw new InvalidGroupKeyResponseException("Received "+groupKeys.size()+ " group keys for a real time subscription. Expected one.");
+        }
+        this.groupKeys.put(publisherId, new SecretKeySpec(DatatypeConverter.parseHexBinary(groupKeys.get(0).getGroupKeyHex()), "AES"));
+        waitingForGroupKey.remove(publisherId);
+        while (!encryptedMsgsQueue.isEmpty()) {
+            handleInOrder(encryptedMsgsQueue.poll());
+        }
+    }
+
+    @Override
+    public boolean decryptOrRequestGroupKey(StreamMessage msg) {
+        try {
+            SecretKey newGroupKey = EncryptionUtil.decryptStreamMessage(msg, groupKeys.get(msg.getPublisherId()));
+            alreadyFailedToDecrypt.remove(msg.getPublisherId());
+            if (newGroupKey != null) {
+                groupKeys.put(msg.getPublisherId(), newGroupKey);
+            }
+            return true;
+        } catch (UnableToDecryptException e) {
+            if (alreadyFailedToDecrypt.contains(msg.getPublisherId())) {
+                throw e;
+            }
+            groupKeyRequestFunction.apply(msg.getPublisherId(), null, null);
+            waitingForGroupKey.add(msg.getPublisherId());
+            encryptedMsgsQueue.offer(msg);
+            alreadyFailedToDecrypt.add(msg.getPublisherId());
+            return false;
+        }
+
     }
 
     @Override

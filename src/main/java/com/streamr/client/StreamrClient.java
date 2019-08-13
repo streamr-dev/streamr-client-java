@@ -8,10 +8,7 @@ import com.streamr.client.options.StreamrClientOptions;
 import com.streamr.client.protocol.control_layer.*;
 import com.streamr.client.protocol.message_layer.MessageRef;
 import com.streamr.client.rest.UserInfo;
-import com.streamr.client.subs.CombinedSubscription;
-import com.streamr.client.subs.HistoricalSubscription;
-import com.streamr.client.subs.RealTimeSubscription;
-import com.streamr.client.subs.Subscription;
+import com.streamr.client.subs.*;
 import com.streamr.client.utils.*;
 import org.apache.commons.codec.digest.DigestUtils;
 import org.apache.logging.log4j.LogManager;
@@ -51,9 +48,14 @@ public class StreamrClient extends StreamrRESTClient {
     private Exception errorWhileConnecting = null;
 
     private String publisherId = null;
+    private final EncryptionUtil encryptionUtil;
     private final MessageCreationUtil msgCreationUtil;
     private final SubscribedStreamsUtil subscribedStreamsUtil;
     private final KeyStorage keyStorage;
+    private final KeyExchangeUtil keyExchangeUtil;
+
+    private final Stream inbox;
+    private Subscription inboxSub;
 
     private final HashMap<String, OneTimeResend> secondResends = new HashMap<>();
 
@@ -107,12 +109,12 @@ public class StreamrClient extends StreamrRESTClient {
             signingUtil = new SigningUtil(((EthereumAuthenticationMethod) options.getAuthenticationMethod()).getAccount());
         }
         HashMap<String, GroupKey> publisherKeys = options.getEncryptionOptions().getPublisherGroupKeys();
-        msgCreationUtil = new MessageCreationUtil(publisherId, signingUtil, publisherKeys);
         keyStorage = options.getEncryptionOptions().getPublisherStoreKeyHistory() ? new KeyHistoryStorage(publisherKeys)
                 : new LatestKeyStorage(publisherKeys);
-        EncryptionUtil encryptionUtil = new EncryptionUtil(options.getEncryptionOptions().getRsaPublicKey(),
+        msgCreationUtil = new MessageCreationUtil(publisherId, signingUtil, keyStorage);
+        encryptionUtil = new EncryptionUtil(options.getEncryptionOptions().getRsaPublicKey(),
                 options.getEncryptionOptions().getRsaPrivateKey());
-        KeyExchangeUtil keyExchangeUtil = new KeyExchangeUtil(keyStorage, msgCreationUtil, encryptionUtil, addressValidityUtil,
+        keyExchangeUtil = new KeyExchangeUtil(keyStorage, msgCreationUtil, encryptionUtil, addressValidityUtil,
                 m -> { publish(m); return null; }, this::setGroupKeys);
 
         try {
@@ -156,24 +158,17 @@ public class StreamrClient extends StreamrRESTClient {
         } catch (URISyntaxException e) {
             throw new RuntimeException(e);
         }
-        Stream inbox;
-        try {
-            inbox = getStream(getPublisherId());
-        } catch (IOException e) {
-            throw new RuntimeException(e);
-        }
-        subscribe(inbox, new MessageHandler() {
-            @Override
-            public void onMessage(Subscription sub, StreamMessage message) {
-                if (message.getContentType().equals(StreamMessage.ContentType.GROUP_KEY_REQUEST)) {
-                    keyExchangeUtil.handleGroupKeyRequest(message);
-                } else if (message.getContentType().equals(StreamMessage.ContentType.GROUP_KEY_RESPONSE_SIMPLE)) {
-                    keyExchangeUtil.handleGroupKeyResponse(message);
-                } else {
-                    log.warn("Cannot handle message with content type: " + message.getContentType());
-                }
+
+        if (getPublisherId() != null) {
+            try {
+                inbox = getStream(getPublisherId());
+            } catch (IOException e) {
+                throw new RuntimeException(e);
             }
-        });
+        } else {
+            inbox = null;
+            log.warn("Not subscribing to inbox stream since no authentication method was provided");
+        }
     }
 
     public StreamrClient(AuthenticationMethod authenticationMethod) {
@@ -198,6 +193,10 @@ public class StreamrClient extends StreamrRESTClient {
      * Connects the websocket. Blocks until connected, or throws if the connection times out.
      */
     public void connect() throws ConnectionTimeoutException {
+        if (state == State.Connected) {
+            log.warn("Tried to connect when already connected.");
+            return;
+        }
         log.info("Connecting to " + options.getWebsocketApiUrl() + "...");
         state = State.Connecting;
 
@@ -210,6 +209,21 @@ public class StreamrClient extends StreamrRESTClient {
             throw new RuntimeException(ex);
         } else if (state != State.Connected) {
             throw new ConnectionTimeoutException(options.getWebsocketApiUrl());
+        }
+
+        if (inbox != null && inboxSub == null) {
+            inboxSub = subscribe(inbox, new MessageHandler() {
+                @Override
+                public void onMessage(Subscription sub, StreamMessage message) {
+                    if (message.getContentType().equals(StreamMessage.ContentType.GROUP_KEY_REQUEST)) {
+                        keyExchangeUtil.handleGroupKeyRequest(message);
+                    } else if (message.getContentType().equals(StreamMessage.ContentType.GROUP_KEY_RESPONSE_SIMPLE)) {
+                        keyExchangeUtil.handleGroupKeyResponse(message);
+                    } else {
+                        log.warn("Cannot handle message with content type: " + message.getContentType());
+                    }
+                }
+            });
         }
     }
 
@@ -377,14 +391,15 @@ public class StreamrClient extends StreamrRESTClient {
         SubscribeRequest subscribeRequest = new SubscribeRequest(stream.getId(), partition, session.getSessionToken());
 
         Subscription sub;
+        Subscription.GroupKeyRequestFunction requestFunction = (publisherId, start, end) -> sendGroupKeyRequest(stream.getId(), publisherId, start, end);
         if (resendOption == null) {
             sub = new RealTimeSubscription(stream.getId(), partition, handler, groupKeys,
-                    options.getPropagationTimeout(), options.getResendTimeout());
+                    requestFunction, options.getPropagationTimeout(), options.getResendTimeout());
         } else if (isExplicitResend) {
             sub = new HistoricalSubscription(stream.getId(), partition, handler, resendOption, groupKeys,
-                    options.getPropagationTimeout(), options.getResendTimeout());
+                    requestFunction, options.getPropagationTimeout(), options.getResendTimeout());
         } else {
-            sub = new CombinedSubscription(stream.getId(), partition, handler, resendOption, groupKeys,
+            sub = new CombinedSubscription(stream.getId(), partition, handler, resendOption, groupKeys, requestFunction,
                     options.getPropagationTimeout(), options.getResendTimeout());
         }
         sub.setGapHandler((MessageRef from, MessageRef to, String publisherId, String msgChainId) -> {
@@ -484,7 +499,15 @@ public class StreamrClient extends StreamrRESTClient {
             getKeysPerPublisher(streamId).put(publisherId, last);
         }
         for (Subscription sub: subs.getAllForStreamId(streamId)) {
-            // TODO: set group keys for each sub using "publisherId" and "keys"
+            sub.setGroupKeys(publisherId, keys);
         }
+    }
+
+    private void sendGroupKeyRequest(String streamId, String publisherId, Date start, Date end) {
+        if (!getState().equals(State.Connected)) {
+            connect();
+        }
+        StreamMessage request = msgCreationUtil.createGroupKeyRequest(publisherId, streamId, encryptionUtil.getPublicKeyAsPemString(), start, end);
+        publish(request);
     }
 }

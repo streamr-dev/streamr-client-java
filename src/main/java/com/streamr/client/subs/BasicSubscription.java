@@ -6,31 +6,43 @@ import com.streamr.client.exceptions.UnableToDecryptException;
 import com.streamr.client.exceptions.UnsupportedMessageException;
 import com.streamr.client.protocol.message_layer.MessageRef;
 import com.streamr.client.protocol.message_layer.StreamMessage;
-import com.streamr.client.utils.EncryptionUtil;
 import com.streamr.client.utils.GroupKey;
 import com.streamr.client.utils.OrderedMsgChain;
 import com.streamr.client.utils.OrderingUtil;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 
-import javax.crypto.SecretKey;
-import java.util.ArrayList;
-import java.util.Map;
+import java.util.*;
 
 public abstract class BasicSubscription extends Subscription {
+    private static final Logger log = LogManager.getLogger();
+
     protected OrderingUtil orderingUtil;
+    protected HashSet<String> waitingForGroupKey = new HashSet<>();
+    protected ArrayDeque<StreamMessage> encryptedMsgsQueue = new ArrayDeque<>();
+    protected final GroupKeyRequestFunction groupKeyRequestFunction;
     public BasicSubscription(String streamId, int partition, MessageHandler handler, Map<String, GroupKey> groupKeys,
-                             long propagationTimeout, long resendTimeout) {
+                             GroupKeyRequestFunction groupKeyRequestFunction, long propagationTimeout, long resendTimeout) {
         super(streamId, partition, handler, groupKeys, propagationTimeout, resendTimeout);
-        setOrderingUtil();
+        orderingUtil = new OrderingUtil(streamId, partition,
+                this::handleInOrder, (MessageRef from, MessageRef to, String publisherId, String msgChainId) -> {
+            throw new GapDetectedException(streamId, partition, from, to, publisherId, msgChainId);
+        }, this.propagationTimeout, this.resendTimeout);
+        this.groupKeyRequestFunction = groupKeyRequestFunction != null ? groupKeyRequestFunction
+                : ((publisherId, start, end) -> log.warn("Group key missing for stream " + streamId + " and publisher " + publisherId + " but no handler is set."));
+    }
+
+    public BasicSubscription(String streamId, int partition, MessageHandler handler, Map<String, GroupKey> groupKeys,
+                             GroupKeyRequestFunction groupKeyRequestFunction) {
+        this(streamId, partition, handler, groupKeys, groupKeyRequestFunction, Subscription.DEFAULT_PROPAGATION_TIMEOUT, Subscription.DEFAULT_RESEND_TIMEOUT);
     }
 
     public BasicSubscription(String streamId, int partition, MessageHandler handler, Map<String, GroupKey> groupKeys) {
-        super(streamId, partition, handler, groupKeys);
-        setOrderingUtil();
+        this(streamId, partition, handler, groupKeys, null, Subscription.DEFAULT_PROPAGATION_TIMEOUT, Subscription.DEFAULT_RESEND_TIMEOUT);
     }
 
     public BasicSubscription(String streamId, int partition, MessageHandler handler) {
-        super(streamId, partition, handler);
-        setOrderingUtil();
+        this(streamId, partition, handler, null, null, Subscription.DEFAULT_PROPAGATION_TIMEOUT, Subscription.DEFAULT_RESEND_TIMEOUT);
     }
 
     @Override
@@ -43,28 +55,24 @@ public abstract class BasicSubscription extends Subscription {
         orderingUtil.clearGaps();
     }
 
-    private void setOrderingUtil() {
-        orderingUtil = new OrderingUtil(streamId, partition,
-                this::decryptAndHandle, (MessageRef from, MessageRef to, String publisherId, String msgChainId) -> {
-            throw new GapDetectedException(streamId, partition, from, to, publisherId, msgChainId);
-        }, this.propagationTimeout, this.resendTimeout);
-    }
-
     public void setGapHandler(OrderedMsgChain.GapHandlerFunction gapHandler) {
         orderingUtil = new OrderingUtil(streamId, partition,
-                this::decryptAndHandle, gapHandler, propagationTimeout, resendTimeout);
+                this::handleInOrder, gapHandler, propagationTimeout, resendTimeout);
     }
 
     public OrderedMsgChain.GapHandlerFunction getGapHandler() {
         return orderingUtil.getGapHandler();
     }
 
-    private void decryptAndHandle(StreamMessage msg) {
-        SecretKey newGroupKey = EncryptionUtil.decryptStreamMessage(msg, groupKeys.get(msg.getPublisherId()));
-        if (newGroupKey != null) {
-            groupKeys.put(msg.getPublisherId(), newGroupKey);
+    protected void handleInOrder(StreamMessage msg) {
+        if (!waitingForGroupKey.contains(msg.getPublisherId())) {
+            boolean success = decryptOrRequestGroupKey(msg);
+            if (success) {
+                handler.onMessage(this, msg);
+            }
+        } else {
+            encryptedMsgsQueue.offer(msg);
         }
-        handler.onMessage(null, msg);
     }
 
     public void setLastMessageRefs(ArrayList<OrderedMsgChain> chains) {
@@ -74,4 +82,6 @@ public abstract class BasicSubscription extends Subscription {
     public ArrayList<OrderedMsgChain> getChains() {
         return orderingUtil.getChains();
     }
+
+    public abstract boolean decryptOrRequestGroupKey(StreamMessage msg);
 }

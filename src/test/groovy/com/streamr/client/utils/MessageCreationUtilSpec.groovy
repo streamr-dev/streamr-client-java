@@ -1,6 +1,5 @@
 package com.streamr.client.utils
 
-import com.streamr.client.exceptions.InvalidGroupKeyException
 import com.streamr.client.exceptions.SigningRequiredException
 import com.streamr.client.protocol.message_layer.StreamMessage
 import com.streamr.client.protocol.message_layer.StreamMessageV31
@@ -12,13 +11,15 @@ import spock.lang.Specification
 import java.security.SecureRandom
 
 class MessageCreationUtilSpec extends Specification {
+    KeyStorage keyStorage
     MessageCreationUtil msgCreationUtil
     Stream stream
     SecureRandom secureRandom
     Map message
 
     void setup() {
-        msgCreationUtil = new MessageCreationUtil("publisherId", null)
+        keyStorage = new LatestKeyStorage()
+        msgCreationUtil = new MessageCreationUtil("publisherId", null, keyStorage)
         stream = new Stream("test-stream", "")
         stream.id = "stream-id"
         stream.partitions = 1
@@ -27,9 +28,13 @@ class MessageCreationUtilSpec extends Specification {
     }
 
     GroupKey genKey(int keyLength) {
+        return genKey(keyLength, new Date())
+    }
+
+    GroupKey genKey(int keyLength, Date start) {
         byte[] keyBytes = new byte[keyLength]
         secureRandom.nextBytes(keyBytes)
-        return new GroupKey(Hex.encodeHexString(keyBytes))
+        return new GroupKey(Hex.encodeHexString(keyBytes), start)
     }
 
     void "fields are set. No encryption if no key is defined."() {
@@ -53,7 +58,7 @@ class MessageCreationUtilSpec extends Specification {
 
     void "signer is called"() {
         SigningUtil signingUtil = Mock(SigningUtil)
-        MessageCreationUtil msgCreationUtil2 = new MessageCreationUtil("publisherId", signingUtil)
+        MessageCreationUtil msgCreationUtil2 = new MessageCreationUtil("publisherId", signingUtil, keyStorage)
         when:
         msgCreationUtil2.createStreamMessage(stream, message, new Date(), null)
         then:
@@ -143,7 +148,8 @@ class MessageCreationUtilSpec extends Specification {
 
     void "creates encrypted messages when key defined in constructor"() {
         GroupKey key = genKey(32)
-        MessageCreationUtil util = new MessageCreationUtil("publisherId", null, [(stream.id): key])
+        keyStorage.addKey(stream.id, key)
+        MessageCreationUtil util = new MessageCreationUtil("publisherId", null, keyStorage)
         when:
         StreamMessageV31 msg = (StreamMessageV31) util.createStreamMessage(stream, message, new Date(), null)
         then:
@@ -151,24 +157,12 @@ class MessageCreationUtilSpec extends Specification {
         assert msg.getSerializedContent().length() == 58 // 16*2 + 13*2 (hex string made of IV + msg of 13 chars)
     }
 
-    void "throws if the key is not 256 bits long"() {
-        GroupKey key = genKey(16)
-        when:
-        new MessageCreationUtil("publisherId", null, [(stream.id): key])
-        then:
-        thrown InvalidGroupKeyException
-
-        when:
-        msgCreationUtil.createStreamMessage(stream, message, new Date(), null, key)
-        then:
-        thrown InvalidGroupKeyException
-    }
-
     void "creates encrypted messages when key defined in createStreamMessage() and use the same key later"() {
         GroupKey key = genKey(32)
         when:
         StreamMessageV31 msg1 = (StreamMessageV31) msgCreationUtil.createStreamMessage(stream, message, new Date(), null, key)
         then:
+        assert keyStorage.getLatestKey(stream.id) == key
         assert msg1.encryptionType == StreamMessage.EncryptionType.AES
         assert msg1.getSerializedContent().length() == 58
         when:
@@ -188,11 +182,13 @@ class MessageCreationUtilSpec extends Specification {
         when:
         StreamMessageV31 msg1 = (StreamMessageV31) msgCreationUtil.createStreamMessage(stream, message, new Date(), null, key1)
         then:
+        keyStorage.getLatestKey(stream.id) == key1
         assert msg1.encryptionType == StreamMessage.EncryptionType.AES
         assert msg1.getSerializedContent().length() == 58
         when:
         StreamMessageV31 msg2 = (StreamMessageV31) msgCreationUtil.createStreamMessage(stream, message, new Date(), null, key2)
         then:
+        keyStorage.getLatestKey(stream.id) == key2
         assert msg2.encryptionType == StreamMessage.EncryptionType.NEW_KEY_AND_AES
         assert msg2.getSerializedContent().length() == 122 // 16*2 + 32*2 + 13*2 (IV + key of 32 bytes + msg of 13 chars)
     }
@@ -209,7 +205,7 @@ class MessageCreationUtilSpec extends Specification {
         String withoutPrefix = "23bead9b499af21c4c16e4511b3b6b08c3e22e76e0591f5ab5ba8d4c3a5b1820"
         ECKey account = ECKey.fromPrivate(new BigInteger(withoutPrefix, 16))
         SigningUtil signingUtil = new SigningUtil(account)
-        MessageCreationUtil util = new MessageCreationUtil("subscriberId", signingUtil)
+        MessageCreationUtil util = new MessageCreationUtil("subscriberId", signingUtil, keyStorage)
         when:
         StreamMessage msg = util.createGroupKeyRequest(
                 "publisherInboxAddress", "streamId", "rsaPublicKey",
@@ -238,9 +234,9 @@ class MessageCreationUtilSpec extends Specification {
         String withoutPrefix = "23bead9b499af21c4c16e4511b3b6b08c3e22e76e0591f5ab5ba8d4c3a5b1820"
         ECKey account = ECKey.fromPrivate(new BigInteger(withoutPrefix, 16))
         SigningUtil signingUtil = new SigningUtil(account)
-        MessageCreationUtil util = new MessageCreationUtil("publisherId", signingUtil)
-        GroupKey k1 = new GroupKey("group-key-1", new Date(123))
-        GroupKey k2 = new GroupKey("group-key-2", new Date(456))
+        MessageCreationUtil util = new MessageCreationUtil("publisherId", signingUtil, keyStorage)
+        GroupKey k1 = genKey(32, new Date(123))
+        GroupKey k2 = genKey(32, new Date(4556))
         when:
         StreamMessage msg = util.createGroupKeyResponse("subscriberInboxAddress", "streamId", [k1, k2])
         then:

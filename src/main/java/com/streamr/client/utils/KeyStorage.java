@@ -5,9 +5,6 @@ import java.util.Date;
 import java.util.HashMap;
 
 public abstract class KeyStorage {
-    public KeyStorage(HashMap<String, GroupKey> publisherGroupKeys){
-
-    }
 
     public abstract boolean hasKey(String streamId);
 

@@ -10,12 +10,14 @@ import com.streamr.client.utils.GroupKey;
 import com.streamr.client.utils.OrderedMsgChain;
 
 import java.util.ArrayDeque;
+import java.util.ArrayList;
 import java.util.Map;
 
 public class CombinedSubscription extends Subscription {
     private BasicSubscription sub;
     private final ArrayDeque<StreamMessage> queue = new ArrayDeque<>();
-    public CombinedSubscription(String streamId, int partition, MessageHandler handler, ResendOption resendOption, Map<String, GroupKey> groupKeys,
+    public CombinedSubscription(String streamId, int partition, MessageHandler handler, ResendOption resendOption,
+                                Map<String, GroupKey> groupKeys, GroupKeyRequestFunction groupKeyRequestFunction,
                                 long propagationTimeout, long resendTimeout) {
         super(streamId, partition, handler, groupKeys, propagationTimeout, resendTimeout);
         MessageHandler wrapperHandler = new MessageHandler() {
@@ -26,7 +28,7 @@ public class CombinedSubscription extends Subscription {
             @Override
             public void done(Subscription s) {
                 handler.done(s);
-                RealTimeSubscription realTime = new RealTimeSubscription(streamId, partition, handler, groupKeys, propagationTimeout, resendTimeout);
+                RealTimeSubscription realTime = new RealTimeSubscription(streamId, partition, handler, groupKeys, groupKeyRequestFunction, propagationTimeout, resendTimeout);
                 realTime.setGapHandler(sub.getGapHandler());
                 realTime.setLastMessageRefs(sub.getChains());
                 while(!queue.isEmpty()) {
@@ -36,7 +38,7 @@ public class CombinedSubscription extends Subscription {
                 sub = realTime;
             }
         };
-        sub = new HistoricalSubscription(streamId, partition, wrapperHandler, resendOption, groupKeys, propagationTimeout, resendTimeout, msg -> {
+        sub = new HistoricalSubscription(streamId, partition, wrapperHandler, resendOption, groupKeys, groupKeyRequestFunction, propagationTimeout, resendTimeout, msg -> {
             queue.push(msg);
             return null;
         });
@@ -45,6 +47,11 @@ public class CombinedSubscription extends Subscription {
     @Override
     public void setGapHandler(OrderedMsgChain.GapHandlerFunction gapHandler) {
         sub.setGapHandler(gapHandler);
+    }
+
+    @Override
+    public void setGroupKeys(String publisherId, ArrayList<GroupKey> groupKeys) {
+        sub.setGroupKeys(publisherId, groupKeys);
     }
 
     @Override
