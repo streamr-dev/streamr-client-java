@@ -19,10 +19,14 @@ public class EncryptionOptions {
         this.publisherGroupKeys = publisherGroupKeys;
         this.subscriberGroupKeys = subscriberGroupKeys;
         this.publisherStoreKeyHistory = publisherStoreKeyHistory;
-        EncryptionUtil.validatePublicKey(rsaPublicKey);
-        this.rsaPublicKey = EncryptionUtil.getPublicKeyFromString(rsaPublicKey);
-        EncryptionUtil.validatePrivateKey(rsaPrivateKey);
-        this.rsaPrivateKey = EncryptionUtil.getPrivateKeyFromString(rsaPrivateKey);
+        if (rsaPublicKey != null) {
+            EncryptionUtil.validatePublicKey(rsaPublicKey);
+            this.rsaPublicKey = EncryptionUtil.getPublicKeyFromString(rsaPublicKey);
+        }
+        if (rsaPrivateKey != null) {
+            EncryptionUtil.validatePrivateKey(rsaPrivateKey);
+            this.rsaPrivateKey = EncryptionUtil.getPrivateKeyFromString(rsaPrivateKey);
+        }
     }
 
     public EncryptionOptions(HashMap<String, GroupKey> publisherGroupKeys, HashMap<String, HashMap<String, GroupKey>> subscriberGroupKeys) {
