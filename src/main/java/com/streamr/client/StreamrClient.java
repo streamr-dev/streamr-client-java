@@ -289,13 +289,17 @@ public class StreamrClient extends StreamrRESTClient {
     }
 
     public void publish(Stream stream, Map<String, Object> payload, Date timestamp, String groupKeyHex) {
+        publish(stream, payload, timestamp, groupKeyHex, null);
+    }
+
+    public void publish(Stream stream, Map<String, Object> payload, Date timestamp, String groupKeyHex, String partitionKey) {
         if (!getState().equals(StreamrClient.State.Connected)) {
             connect();
         }
         if (groupKeyHex != null) {
             options.getEncryptionOptions().getPublisherGroupKeys().put(stream.getId(), groupKeyHex);
         }
-        StreamMessage streamMessage = msgCreationUtil.createStreamMessage(stream, payload, timestamp, null, groupKeyHex);
+        StreamMessage streamMessage = msgCreationUtil.createStreamMessage(stream, payload, timestamp, partitionKey, groupKeyHex);
         PublishRequest req = new PublishRequest(streamMessage, getSessionToken());
         getWebsocket().send(req.toJson());
     }
