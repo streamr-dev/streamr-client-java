@@ -165,7 +165,7 @@ class StreamrWebsocketSpec extends StreamrIntegrationSpecification {
 
 		Thread.sleep(2000)
 
-		client.publish(stream, [test: 'clear text'], new Date(), keyHex)
+		client.publish(stream, [test: 'clear text'], new Date(), null, keyHex)
 
 		Thread.sleep(2000)
 
@@ -174,7 +174,7 @@ class StreamrWebsocketSpec extends StreamrIntegrationSpecification {
 
 		when:
 		// publishing a second message with a new group key
-		client.publish(stream, [test: 'another clear text'], new Date(), genKey())
+		client.publish(stream, [test: 'another clear text'], new Date(), null, genKey())
 
 		Thread.sleep(2000)
 
