@@ -288,11 +288,11 @@ public class StreamrClient extends StreamrRESTClient {
         publish(stream, payload, timestamp, null);
     }
 
-    public void publish(Stream stream, Map<String, Object> payload, Date timestamp, String groupKeyHex) {
-        publish(stream, payload, timestamp, groupKeyHex, null);
+    public void publish(Stream stream, Map<String, Object> payload, Date timestamp, String partitionKey) {
+        publish(stream, payload, timestamp, partitionKey, null);
     }
 
-    public void publish(Stream stream, Map<String, Object> payload, Date timestamp, String groupKeyHex, String partitionKey) {
+    public void publish(Stream stream, Map<String, Object> payload, Date timestamp, String partitionKey, String groupKeyHex) {
         if (!getState().equals(StreamrClient.State.Connected)) {
             connect();
         }
