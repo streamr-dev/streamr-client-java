@@ -64,7 +64,7 @@ public class StreamrClientOptions {
     }
 
     public void setWebsocketApiUrl(String websocketApiUrl) {
-        this.websocketApiUrl = websocketApiUrl;
+        this.websocketApiUrl = addMissingQueryString(websocketApiUrl);
     }
 
     public String getRestApiUrl() {
