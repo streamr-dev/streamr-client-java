@@ -28,6 +28,8 @@ public class ControlMessageAdapter extends JsonAdapter<ControlMessage> {
         adapters.put(ResendLastRequest.TYPE, new ResendLastRequestAdapter());
         adapters.put(ResendFromRequest.TYPE, new ResendFromRequestAdapter());
         adapters.put(ResendRangeRequest.TYPE, new ResendRangeRequestAdapter());
+        adapters.put(DeleteRequest.TYPE, new DeleteRequestAdapter());
+        adapters.put(DeleteResponse.TYPE, new DeleteResponseAdapter());
     }
 
     @Override

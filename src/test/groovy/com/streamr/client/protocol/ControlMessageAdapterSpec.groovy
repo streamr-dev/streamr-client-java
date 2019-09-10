@@ -4,6 +4,8 @@ import com.squareup.moshi.JsonReader
 import com.streamr.client.protocol.control_layer.BroadcastMessage
 import com.streamr.client.protocol.control_layer.ControlMessage
 import com.streamr.client.protocol.control_layer.ControlMessageAdapter
+import com.streamr.client.protocol.control_layer.DeleteRequest
+import com.streamr.client.protocol.control_layer.DeleteResponse
 import com.streamr.client.protocol.control_layer.ErrorResponse
 import com.streamr.client.protocol.control_layer.PublishRequest
 import com.streamr.client.protocol.control_layer.ResendFromRequest
@@ -148,6 +150,22 @@ class ControlMessageAdapterSpec extends Specification {
         ControlMessage msg = fromJson(adapter, json)
         then:
         msg instanceof ResendRangeRequest
+        msg.toJson() == json
+    }
+    def "DeleteRequest"() {
+        String json = '[1,14,"streamId",0,123,456]'
+        when:
+        ControlMessage msg = fromJson(adapter, json)
+        then:
+        msg instanceof DeleteRequest
+        msg.toJson() == json
+    }
+    def "DeleteResponse"() {
+        String json = '[1,15,"streamId",0,false]'
+        when:
+        ControlMessage msg = fromJson(adapter, json)
+        then:
+        msg instanceof DeleteResponse
         msg.toJson() == json
     }
 }
