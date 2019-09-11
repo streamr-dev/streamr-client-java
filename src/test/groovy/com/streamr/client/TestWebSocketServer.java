@@ -5,8 +5,10 @@ import org.java_websocket.WebSocket;
 import org.java_websocket.handshake.ClientHandshake;
 import org.java_websocket.server.WebSocketServer;
 
+import java.io.IOException;
 import java.net.InetSocketAddress;
 import java.util.LinkedList;
+import java.util.function.Function;
 
 public class TestWebSocketServer extends WebSocketServer {
     private LinkedList<String> msgs = new LinkedList<>();
@@ -60,6 +62,27 @@ public class TestWebSocketServer extends WebSocketServer {
         if (!res) {
             System.out.println("Expected: "+expected);
             System.out.println("But received: "+received);
+        }
+        return res;
+    }
+
+    public boolean expect(Function<ControlMessage, Boolean> test) {
+        if (msgs.isEmpty()) {
+            try {
+                Thread.sleep(50); // give time to the client to send the expected request
+            } catch (InterruptedException e) {
+                e.printStackTrace();
+            }
+        }
+        ControlMessage received;
+        try {
+            received = ControlMessage.fromJson(msgs.poll());
+        } catch (IOException e) {
+            throw new RuntimeException(e);
+        }
+        boolean res = received != null && test.apply(received);
+        if (!res) {
+            System.out.println("Received message didn't pass test: "+received);
         }
         return res;
     }

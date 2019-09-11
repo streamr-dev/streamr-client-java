@@ -12,8 +12,9 @@ public class DeleteResponseAdapter extends ControlLayerAdapter<DeleteResponse> {
     public DeleteResponse fromJson(JsonReader reader) throws IOException {
         String streamId = reader.nextString();
         int streamPartition = reader.nextInt();
+        String requestId = reader.nextString();
         boolean status = reader.nextBoolean();
-        return new DeleteResponse(streamId, streamPartition, status);
+        return new DeleteResponse(streamId, streamPartition, requestId, status);
     }
 
     @Override
@@ -23,6 +24,7 @@ public class DeleteResponseAdapter extends ControlLayerAdapter<DeleteResponse> {
         writer.value(DeleteResponse.TYPE);
         writer.value(value.getStreamId());
         writer.value(value.getStreamPartition());
+        writer.value(value.getRequestId());
         writer.value(value.getStatus());
         writer.endArray();
     }

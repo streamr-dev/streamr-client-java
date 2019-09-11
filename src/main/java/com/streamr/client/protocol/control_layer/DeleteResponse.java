@@ -5,13 +5,16 @@ public class DeleteResponse extends ControlMessage {
 
     private final String streamId;
     private final int streamPartition;
+    // the same as the requestId of the DeleteRequest that corresponds to this DeleteResponse
+    private final String requestId;
     // true if the deletion was successful, false otherwise
     private final boolean status;
 
-    public DeleteResponse(String streamId, int streamPartition, boolean status) {
+    public DeleteResponse(String streamId, int streamPartition, String requestId, boolean status) {
         super(TYPE);
         this.streamId = streamId;
         this.streamPartition = streamPartition;
+        this.requestId = requestId;
         this.status = status;
     }
 
@@ -21,6 +24,10 @@ public class DeleteResponse extends ControlMessage {
 
     public int getStreamPartition() {
         return streamPartition;
+    }
+
+    public String getRequestId() {
+        return requestId;
     }
 
     public boolean getStatus() {

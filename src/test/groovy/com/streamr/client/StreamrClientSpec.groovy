@@ -5,6 +5,8 @@ import com.streamr.client.options.ResendLastOption
 import com.streamr.client.options.SigningOptions
 import com.streamr.client.options.StreamrClientOptions
 import com.streamr.client.protocol.control_layer.BroadcastMessage
+import com.streamr.client.protocol.control_layer.ControlMessage
+import com.streamr.client.protocol.control_layer.DeleteRequest
 import com.streamr.client.protocol.control_layer.ResendLastRequest
 import com.streamr.client.protocol.control_layer.ResendRangeRequest
 import com.streamr.client.protocol.control_layer.ResendResponseResent
@@ -18,6 +20,8 @@ import com.streamr.client.protocol.message_layer.StreamMessageV31
 import com.streamr.client.rest.Stream
 import com.streamr.client.subs.Subscription
 import spock.lang.Specification
+
+import java.util.function.Function
 
 class StreamrClientSpec extends Specification {
 
@@ -120,7 +124,7 @@ class StreamrClientSpec extends Specification {
         Stream stream = new Stream("", "")
         stream.setId("test-stream")
         when:
-        client.subscribe(stream, new MessageHandler() {
+        Subscription sub = client.subscribe(stream, new MessageHandler() {
             @Override
             void onMessage(Subscription sub, StreamMessage message) {
             }
@@ -134,5 +138,63 @@ class StreamrClientSpec extends Specification {
         Thread.sleep(2 * gapFillTimeout + 200)
         server.expect(new ResendRangeRequest("test-stream", 0, subId, new MessageRef(0, 1), new MessageRef(1, 0), "", "", null))
         server.expect(new ResendRangeRequest("test-stream", 0, subId, new MessageRef(0, 1), new MessageRef(1, 0), "", "", null))
+        client.unsubscribe(sub)
+    }
+
+    void "deleteAll() sends DeleteRequest"() {
+        Stream stream = new Stream("", "")
+        stream.setId("test-stream")
+        when:
+        client.deleteAll(stream, 0)
+        then:
+        server.expect(new Function<ControlMessage, Boolean>() {
+            @Override
+            Boolean apply(ControlMessage controlMessage) {
+                DeleteRequest request = (DeleteRequest) controlMessage
+                return request.streamId == stream.id && request.streamPartition == 0 &&
+                        request.requestId != null && request.fromTimestamp == null && request.toTimestamp == null
+            }
+        })
+    }
+
+    void "deleteFrom() sends DeleteRequest"() {
+        Stream stream = new Stream("", "")
+        stream.setId("test-stream")
+        when:
+        client.deleteFrom(stream, 0, 987L)
+        then:
+        server.expect(new Function<ControlMessage, Boolean>() {
+            @Override
+            Boolean apply(ControlMessage controlMessage) {
+                DeleteRequest request = (DeleteRequest) controlMessage
+                return request.streamId == stream.id && request.streamPartition == 0 &&
+                        request.requestId != null && request.fromTimestamp == 987L && request.toTimestamp == null
+            }
+        })
+    }
+
+    void "deleteBetween() sends DeleteRequest"() {
+        Stream stream = new Stream("", "")
+        stream.setId("test-stream")
+        when:
+        client.deleteBetween(stream, 0, 123L, 456L)
+        then:
+        server.expect(new Function<ControlMessage, Boolean>() {
+            @Override
+            Boolean apply(ControlMessage controlMessage) {
+                DeleteRequest request = (DeleteRequest) controlMessage
+                return request.streamId == stream.id && request.streamPartition == 0 &&
+                        request.requestId != null && request.fromTimestamp == 123L && request.toTimestamp == 456L
+            }
+        })
+    }
+
+    void "deleteBetween() throws if invalid range"() {
+        Stream stream = new Stream("", "")
+        stream.setId("test-stream")
+        when:
+        client.deleteBetween(stream, 0, 987L, 456L)
+        then:
+        thrown(IllegalArgumentException)
     }
 }

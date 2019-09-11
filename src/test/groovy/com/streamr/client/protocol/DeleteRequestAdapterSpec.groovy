@@ -31,22 +31,23 @@ class DeleteRequestAdapterSpec extends Specification {
     }
 
     void "fromJson"() {
-        String json = '[1,14,"streamId",0,123,456]'
+        String json = '[1,14,"streamId",0,"requestId",123,456]'
         when:
         DeleteRequest msg = toMsg(adapter, json)
         then:
         msg.streamId == "streamId"
         msg.streamPartition == 0
+        msg.requestId == "requestId"
         msg.fromTimestamp == 123L
         msg.toTimestamp == 456L
     }
 
     void "toJson"() {
-        DeleteRequest request = new DeleteRequest("streamId", 0, 123L, 456L)
+        DeleteRequest request = new DeleteRequest("streamId", 0, "requestId", 123L, 456L)
         when:
         adapter.toJson(buffer, request)
 
         then:
-        buffer.readString(utf8) == '[1,14,"streamId",0,123,456]'
+        buffer.readString(utf8) == '[1,14,"streamId",0,"requestId",123,456]'
     }
 }

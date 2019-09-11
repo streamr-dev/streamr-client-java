@@ -33,7 +33,7 @@ class DeleteResponseAdapterSpec extends Specification {
     }
 
     void "fromJson"() {
-        String json = '[1,15,"streamId",0,true]'
+        String json = '[1,15,"streamId",0,"requestId",true]'
         when:
         DeleteResponse msg = toMsg(adapter, json)
         then:
@@ -43,11 +43,11 @@ class DeleteResponseAdapterSpec extends Specification {
     }
 
     void "toJson"() {
-        DeleteResponse response = new DeleteResponse("streamId", 0, true)
+        DeleteResponse response = new DeleteResponse("streamId", 0, "requestId", true)
         when:
         adapter.toJson(buffer, response)
 
         then:
-        buffer.readString(utf8) == '[1,15,"streamId",0,true]'
+        buffer.readString(utf8) == '[1,15,"streamId",0,"requestId",true]'
     }
 }

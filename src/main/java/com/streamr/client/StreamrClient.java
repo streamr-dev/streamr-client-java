@@ -3,6 +3,7 @@ package com.streamr.client;
 import com.streamr.client.authentication.ApiKeyAuthenticationMethod;
 import com.streamr.client.authentication.AuthenticationMethod;
 import com.streamr.client.authentication.EthereumAuthenticationMethod;
+import com.streamr.client.exceptions.UnexpectedMessageException;
 import com.streamr.client.options.ResendOption;
 import com.streamr.client.options.StreamrClientOptions;
 import com.streamr.client.protocol.control_layer.*;
@@ -16,6 +17,8 @@ import com.streamr.client.utils.*;
 import org.apache.commons.codec.digest.DigestUtils;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
+import org.cache2k.Cache;
+import org.cache2k.Cache2kBuilder;
 import org.java_websocket.client.WebSocketClient;
 import org.java_websocket.handshake.ServerHandshake;
 import com.streamr.client.exceptions.ConnectionTimeoutException;
@@ -29,6 +32,7 @@ import java.net.URI;
 import java.net.URISyntaxException;
 import java.nio.channels.NotYetConnectedException;
 import java.util.*;
+import java.util.concurrent.TimeUnit;
 import java.util.function.BiConsumer;
 
 /**
@@ -55,6 +59,8 @@ public class StreamrClient extends StreamrRESTClient {
     private final SubscribedStreamsUtil subscribedStreamsUtil;
 
     private final HashMap<String, OneTimeResend> secondResends = new HashMap<>();
+    private final Cache<String, DeleteRequest> onGoingDeleteRequests = new Cache2kBuilder<String, DeleteRequest>() {}
+            .expireAfterWrite(5, TimeUnit.MINUTES).build();
 
     public StreamrClient(StreamrClientOptions options) {
         super(options);
@@ -240,6 +246,8 @@ public class StreamrClient extends StreamrRESTClient {
                         handleResendResponseNoResend((ResendResponseNoResend)message);
                     } else if (message.getType() == ResendResponseResent.TYPE) {
                         handleResendResponseResent((ResendResponseResent)message);
+                    } else if (message.getType() == DeleteResponse.TYPE) {
+                        handleDeleteResponse((DeleteResponse)message);
                     }
                 } catch (Exception e) {
                     log.error("Error handling message: " + message, e);
@@ -399,7 +407,30 @@ public class StreamrClient extends StreamrRESTClient {
         UnsubscribeRequest unsubscribeRequest = new UnsubscribeRequest(sub.getStreamId(), sub.getPartition());
         sub.setState(Subscription.State.UNSUBSCRIBING);
         sub.setResending(false);
+        sub.clear();
         this.websocket.send(unsubscribeRequest.toJson());
+    }
+
+    public void deleteAll(Stream stream, int partition) {
+        deleteBetween(stream, partition, null, null);
+    }
+
+    public void deleteFrom(Stream stream, int partition, Long fromTimestamp) {
+        deleteBetween(stream, partition, fromTimestamp, null);
+    }
+
+    public void deleteBetween(Stream stream, int partition, Long fromTimestamp, Long toTimestamp) {
+        if (fromTimestamp != null && toTimestamp != null && fromTimestamp > toTimestamp) {
+            throw new IllegalArgumentException("Expected 'fromTimestamp' to be smaller or equal to 'toTimestamp'," +
+                    " but received " + fromTimestamp + ">" + toTimestamp);
+        }
+        if (!getState().equals(State.Connected)) {
+            connect();
+        }
+        String requestId = UUID.randomUUID().toString();
+        DeleteRequest deleteRequest = new DeleteRequest(stream.getId(), partition, requestId, fromTimestamp, toTimestamp);
+        onGoingDeleteRequests.put(requestId, deleteRequest);
+        this.websocket.send(deleteRequest.toJson());
     }
 
     private void handleSubcribeResponse(SubscribeResponse res) throws SubscriptionNotFoundException {
@@ -434,5 +465,15 @@ public class StreamrClient extends StreamrRESTClient {
     private void handleResendResponseResent(ResendResponseResent res) throws SubscriptionNotFoundException {
         Subscription sub = subs.get(res.getStreamId(), res.getStreamPartition());
         sub.endResend();
+    }
+
+    private void handleDeleteResponse(DeleteResponse deleteResponse) {
+        DeleteRequest request = onGoingDeleteRequests.get(deleteResponse.getRequestId());
+        if (request == null) {
+            throw new UnexpectedMessageException(deleteResponse);
+        }
+        String logMsg = deleteResponse.getStatus() ? "Successfully deleted " : "Failed to delete ";
+        log.info(logMsg + request.getDeletionMessage());
+        onGoingDeleteRequests.remove(deleteResponse.getRequestId());
     }
 }

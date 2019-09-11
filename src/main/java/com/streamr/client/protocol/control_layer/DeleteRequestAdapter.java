@@ -12,9 +12,10 @@ public class DeleteRequestAdapter extends ControlLayerAdapter<DeleteRequest> {
     public DeleteRequest fromJson(JsonReader reader) throws IOException {
         String streamId = reader.nextString();
         int streamPartition = reader.nextInt();
+        String requestId = reader.nextString();
         Long fromTimestamp = nullSafe(reader, JsonReader::nextLong);
         Long toTimestamp = nullSafe(reader, JsonReader::nextLong);
-        return new DeleteRequest(streamId, streamPartition, fromTimestamp, toTimestamp);
+        return new DeleteRequest(streamId, streamPartition, requestId, fromTimestamp, toTimestamp);
     }
 
     @Override
@@ -24,6 +25,7 @@ public class DeleteRequestAdapter extends ControlLayerAdapter<DeleteRequest> {
         writer.value(DeleteRequest.TYPE);
         writer.value(value.getStreamId());
         writer.value(value.getStreamPartition());
+        writer.value(value.getRequestId());
         writer.value(value.getFromTimestamp());
         writer.value(value.getToTimestamp());
         writer.endArray();
