@@ -473,7 +473,12 @@ public class StreamrClient extends StreamrRESTClient {
             throw new UnexpectedMessageException(deleteResponse);
         }
         String logMsg = deleteResponse.getStatus() ? "Successfully deleted " : "Failed to delete ";
-        log.info(logMsg + request.getDeletionMessage());
+        logMsg += request.getDeletionMessage();
+        if (deleteResponse.getStatus()) {
+            log.info(logMsg);
+        } else {
+            log.warn(logMsg);
+        }
         onGoingDeleteRequests.remove(deleteResponse.getRequestId());
     }
 }
