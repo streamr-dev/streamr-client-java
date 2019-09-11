@@ -153,7 +153,7 @@ class ControlMessageAdapterSpec extends Specification {
         msg.toJson() == json
     }
     def "DeleteRequest"() {
-        String json = '[1,14,"streamId",0,123,456]'
+        String json = '[1,14,"streamId",0,"requestId",123,456]'
         when:
         ControlMessage msg = fromJson(adapter, json)
         then:
@@ -161,7 +161,7 @@ class ControlMessageAdapterSpec extends Specification {
         msg.toJson() == json
     }
     def "DeleteResponse"() {
-        String json = '[1,15,"streamId",0,false]'
+        String json = '[1,15,"streamId",0,"requestId",false]'
         when:
         ControlMessage msg = fromJson(adapter, json)
         then:
