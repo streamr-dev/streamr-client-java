@@ -101,8 +101,8 @@ StreamrClient client = new StreamrClient(auth);
 Nevertheless, the next subsections will cover every parameter of the `StreamrClientOptions` constructor:
 - [Authentication options](#authentication)
 - [Signing options](#signing)
-- [Encryption options](#)
-- [Other options](#)
+- [Encryption options](#encryption)
+- [Other options](#other-options)
 
 <a name="authentication"></a>
 ### Authentication
@@ -171,7 +171,26 @@ NEVER | All signed events are verified. Unsigned events are always accepted.
 
 Encryption is still work-in-progress. The documentation will be updated once the implementation is done.
 
-<a name="other"></a>
+Events published can be encrypted with AES-256 symmetric group keys. For now, they must be set at construction time for the publisher and the subscribers. Later, a secure key exchange protocol will allow the publisher to share the key with their subscribers.
+
+The `EncryptionOptions` instance can be constructed as follows:
+
+```java
+// stream --> group key
+HashMap<String, String> publisherGroupKeys = new HashMap<>();
+// every AES-256 group key must be represented as a hex string ("0x" prefix is optional)
+publisherGroupKeys.put("streamId", "0x...");
+
+// streamId --> (publisherId --> groupKeyHex)
+HashMap<String, HashMap<String, String>> subscriberGroupKeys = ...;
+
+EncryptionOptions encryptionOptions = new EncryptionOptions(publisherGroupKeys, subscriberGroupKeys);
+
+// can also be constructed using default values which are empty HashMaps
+EncryptionOptions defaultOptions = EncryptionOptions.getDefault();
+```
+
+<a name="other-options"></a>
 ### Other options
 
 The following table describes the other options of the `StreamrClientOptions` constructor and their default values.
@@ -227,6 +246,21 @@ All events are timestamped. The above example assigns the current timestamp to t
 
 ```java
 client.publish(stream, msg, new Date());
+```
+
+By default the stream partition is 0, but you can publish using a specific partition key:
+```java
+client.publish(stream, msg, new Date(), "myPartitionKey");
+```
+
+The events can be encrypted using AES-256 in CTR mode. The group keys can be set at construction (See [encryption options](#encryption)). But in order to prevent new subscribers to eavesdrop and then decrypt past messages, the key can be updated at will when publishing:
+
+```java
+String newGroupKey = "0x..."
+// The key is updated to be 'newGroupKey' and sent along with 'msg'
+client.publish(stream, msg, new Date(), null, newGroupKey)
+// next messages are encrypted with 'newGroupKey'
+client.publish(stream, msg2)
 ```
 
 <a name="subscribing-unsubscribing"></a>
