@@ -38,7 +38,6 @@ public class StreamrClient extends StreamrRESTClient {
 
     private static final Logger log = LogManager.getLogger();
 
-    private static final long CONNECTION_RETRY_INTERVAL = 5000;
     private static final int CONNECTION_MAX_RETRIES = 10;
 
     // Underlying websocket implementation
@@ -134,7 +133,7 @@ public class StreamrClient extends StreamrRESTClient {
                     log.error(ex);
                     if (ex instanceof IOException) {
                         try {
-                            Thread.sleep(CONNECTION_RETRY_INTERVAL);
+                            Thread.sleep(options.getConnectionTimeoutMillis());
                         } catch (InterruptedException e) {
                             e.printStackTrace();
                         }
@@ -177,7 +176,9 @@ public class StreamrClient extends StreamrRESTClient {
         initWebsocket();
         websocket.connect();
         waitForState(State.Connected);
-        StreamrClient.this.subs.forEach(StreamrClient.this::resubscribe);
+        if (getState() == State.Connected) {
+            StreamrClient.this.subs.forEach(StreamrClient.this::resubscribe);
+        }
     }
 
     /**
@@ -214,12 +215,7 @@ public class StreamrClient extends StreamrRESTClient {
             if (iter >= CONNECTION_MAX_RETRIES) {
                 throw new ConnectionTimeoutException(options.getWebsocketApiUrl());
             }
-            log.warn("Failed to connect to " + options.getWebsocketApiUrl() + ". Going to retry in " + CONNECTION_RETRY_INTERVAL + " ms...");
-            try {
-                Thread.sleep(CONNECTION_RETRY_INTERVAL);
-            } catch (InterruptedException e) {
-                e.printStackTrace();
-            }
+            log.warn("Failed to connect to " + options.getWebsocketApiUrl() + ". Going to retry.");
             connect(iter + 1);
         }
         log.info("Connected to " + options.getWebsocketApiUrl());
