@@ -1,10 +1,13 @@
 package com.streamr.client
 
+import com.streamr.client.authentication.ApiKeyAuthenticationMethod
 import com.streamr.client.options.EncryptionOptions
 import com.streamr.client.options.ResendLastOption
 import com.streamr.client.options.SigningOptions
 import com.streamr.client.options.StreamrClientOptions
 import com.streamr.client.protocol.control_layer.BroadcastMessage
+import com.streamr.client.protocol.control_layer.ControlMessage
+import com.streamr.client.protocol.control_layer.PublishRequest
 import com.streamr.client.protocol.control_layer.ResendLastRequest
 import com.streamr.client.protocol.control_layer.ResendRangeRequest
 import com.streamr.client.protocol.control_layer.ResendResponseResent
@@ -18,6 +21,8 @@ import com.streamr.client.protocol.message_layer.StreamMessageV31
 import com.streamr.client.rest.Stream
 import com.streamr.client.subs.Subscription
 import spock.lang.Specification
+
+import java.util.function.Function
 
 class StreamrClientSpec extends Specification {
 
@@ -38,7 +43,8 @@ class StreamrClientSpec extends Specification {
     void setup() {
         server.clear()
         SigningOptions signingOptions = new SigningOptions(SigningOptions.SignatureComputationPolicy.NEVER, SigningOptions.SignatureVerificationPolicy.NEVER)
-        StreamrClientOptions options = new StreamrClientOptions(null, signingOptions, EncryptionOptions.getDefault(), server.getWsUrl(), "", gapFillTimeout, retryResendAfter)
+
+        StreamrClientOptions options = new StreamrClientOptions(new ApiKeyAuthenticationMethod("apikey"), signingOptions, EncryptionOptions.getDefault(), server.getWsUrl(), "", gapFillTimeout, retryResendAfter)
         client = new TestingStreamrClient(options)
     }
 
@@ -58,12 +64,12 @@ class StreamrClientSpec extends Specification {
             }
         }, new ResendLastOption(10))
         then:
-        server.expect(new SubscribeRequest("test-stream", 0, null))
+        server.expect(new SubscribeRequest("test-stream", 0, client.getSessionToken()))
         when:
         client.receiveMessage(new SubscribeResponse("test-stream", 0))
         then:
         String subId = client.getSubId("test-stream", 0)
-        server.expect(new ResendLastRequest("test-stream", 0, subId, 10, null))
+        server.expect(new ResendLastRequest("test-stream", 0, subId, 10, client.getSessionToken()))
         server.noOtherMessagesReceived()
         when:
         client.receiveMessage(new UnicastMessage(subId, createMsg("test-stream", 0, 0, null, null)))
@@ -81,13 +87,13 @@ class StreamrClientSpec extends Specification {
             void onMessage(Subscription sub, StreamMessage message) {
             }
         }, new ResendLastOption(10))
-        server.expect(new SubscribeRequest("test-stream", 0, null))
+        server.expect(new SubscribeRequest("test-stream", 0, client.getSessionToken()))
         client.receiveMessage(new SubscribeResponse("test-stream", 0))
         String subId = client.getSubId("test-stream", 0)
         then:
         Thread.sleep(retryResendAfter + 200)
-        server.expect(new ResendLastRequest("test-stream", 0, subId, 10, null))
-        server.expect(new ResendLastRequest("test-stream", 0, subId, 10, null))
+        server.expect(new ResendLastRequest("test-stream", 0, subId, 10, client.getSessionToken()))
+        server.expect(new ResendLastRequest("test-stream", 0, subId, 10, client.getSessionToken()))
         server.noOtherMessagesReceived()
     }
 
@@ -100,14 +106,14 @@ class StreamrClientSpec extends Specification {
             void onMessage(Subscription sub, StreamMessage message) {
             }
         })
-        server.expect(new SubscribeRequest("test-stream", 0, null))
+        server.expect(new SubscribeRequest("test-stream", 0, client.getSessionToken()))
         client.receiveMessage(new SubscribeResponse("test-stream", 0))
         client.receiveMessage(new BroadcastMessage(createMsg("test-stream", 0, 0, null, null)))
         client.receiveMessage(new BroadcastMessage(createMsg("test-stream", 2, 0, 1, 0)))
         String subId = client.getSubId("test-stream", 0)
         Thread.sleep(gapFillTimeout)
         then:
-        server.expect(new ResendRangeRequest("test-stream", 0, subId, new MessageRef(0, 1), new MessageRef(1, 0), "", "", null))
+        server.expect(new ResendRangeRequest("test-stream", 0, subId, new MessageRef(0, 1), new MessageRef(1, 0), "", "", client.getSessionToken()))
         when:
         client.receiveMessage(new UnicastMessage(subId, createMsg("test-stream", 1, 0, 0, 0)))
         client.receiveMessage(new ResendResponseResent("test-stream", 0, subId))
@@ -125,14 +131,42 @@ class StreamrClientSpec extends Specification {
             void onMessage(Subscription sub, StreamMessage message) {
             }
         })
-        server.expect(new SubscribeRequest("test-stream", 0, null))
+        server.expect(new SubscribeRequest("test-stream", 0, client.getSessionToken()))
         client.receiveMessage(new SubscribeResponse("test-stream", 0))
         client.receiveMessage(new BroadcastMessage(createMsg("test-stream", 0, 0, null, null)))
         client.receiveMessage(new BroadcastMessage(createMsg("test-stream", 2, 0, 1, 0)))
         String subId = client.getSubId("test-stream", 0)
         then:
         Thread.sleep(2 * gapFillTimeout + 200)
-        server.expect(new ResendRangeRequest("test-stream", 0, subId, new MessageRef(0, 1), new MessageRef(1, 0), "", "", null))
-        server.expect(new ResendRangeRequest("test-stream", 0, subId, new MessageRef(0, 1), new MessageRef(1, 0), "", "", null))
+        server.expect(new ResendRangeRequest("test-stream", 0, subId, new MessageRef(0, 1), new MessageRef(1, 0), "", "", client.getSessionToken()))
+        server.expect(new ResendRangeRequest("test-stream", 0, subId, new MessageRef(0, 1), new MessageRef(1, 0), "", "", client.getSessionToken()))
+    }
+
+    void "client reconnects while publishing if server is temporarily down"() {
+        when:
+        Stream stream = new Stream("", "")
+        stream.setId("test-stream")
+        stream.setPartitions(1)
+        Thread serverRestart = new Thread(){
+            void run(){
+                server.stop()
+                server = new TestWebSocketServer("localhost", 6000)
+                sleep(2000)
+                server.start()
+            }
+        }
+        then:
+        client.publish(stream, ["test": 1])
+        Thread.sleep(200)
+        client.publish(stream, ["test": 2])
+        serverRestart.start()
+        Thread.sleep(200)
+        client.publish(stream, ["test": 3])
+        Thread.sleep(200)
+        client.publish(stream, ["test": 4])
+        Thread.sleep(200)
+        client.publish(stream, ["test": 5])
+        Thread.sleep(200)
+        client.publish(stream, ["test": 6])
     }
 }

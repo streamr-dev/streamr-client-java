@@ -5,8 +5,10 @@ import org.java_websocket.WebSocket;
 import org.java_websocket.handshake.ClientHandshake;
 import org.java_websocket.server.WebSocketServer;
 
+import java.io.IOException;
 import java.net.InetSocketAddress;
 import java.util.LinkedList;
+import java.util.function.Function;
 
 public class TestWebSocketServer extends WebSocketServer {
     private LinkedList<String> msgs = new LinkedList<>();

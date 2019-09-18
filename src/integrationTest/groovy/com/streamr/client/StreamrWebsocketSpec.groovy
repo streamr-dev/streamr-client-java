@@ -105,6 +105,7 @@ class StreamrWebsocketSpec extends StreamrIntegrationSpecification {
 		}
 
 		then:
+		Thread.sleep(2000)
 		// All messages have been received by subscriber
 		msgCount == 10
 		timeout > 0
