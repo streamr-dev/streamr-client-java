@@ -37,7 +37,7 @@ public abstract class AuthenticationMethod {
      */
     protected abstract LoginResponse login(String restApiUrl) throws IOException;
 
-    protected BufferedSource post(String endpoint, String requestBody) throws IOException {
+    protected Response post(String endpoint, String requestBody) throws IOException {
         OkHttpClient client = new OkHttpClient();
 
         Request request = new Request.Builder()
@@ -47,12 +47,8 @@ public abstract class AuthenticationMethod {
 
         // Execute the request and retrieve the response.
         Response response = client.newCall(request).execute();
-        try {
-            HttpUtils.assertSuccessful(response);
-            return response.body().source();
-        } finally {
-            response.close();
-        }
+        HttpUtils.assertSuccessful(response);
+        return response;
     }
 
     protected LoginResponse parse(BufferedSource json) throws IOException {
