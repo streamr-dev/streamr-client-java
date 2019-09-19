@@ -6,6 +6,7 @@ import com.streamr.client.subs.Subscription;
 
 import java.util.HashMap;
 import java.util.Map;
+import java.util.function.Consumer;
 
 public class Subscriptions {
 
@@ -41,5 +42,9 @@ public class Subscriptions {
         } else {
             throw new SubscriptionNotFoundException(sub.getStreamId(), sub.getPartition());
         }
+    }
+
+    public void forEach(Consumer<Subscription> f) {
+        subsByKey.values().forEach(f);
     }
 }
