@@ -38,8 +38,6 @@ public class StreamrClient extends StreamrRESTClient {
 
     private static final Logger log = LogManager.getLogger();
 
-    private static final int CONNECTION_MAX_RETRIES = 10;
-
     // Underlying websocket implementation
     private WebSocketClient websocket;
 
@@ -185,10 +183,10 @@ public class StreamrClient extends StreamrRESTClient {
      * Connects the websocket. Blocks until connected, or throws if the connection times out.
      */
     public void connect() throws ConnectionTimeoutException {
-        connect(0);
+        connect(true);
     }
 
-    private void connect(int iter) throws ConnectionTimeoutException {
+    private void connect(boolean firstTrial) throws ConnectionTimeoutException {
         if (state == State.Connected) {
             log.warn("Trying to connect when already connected to " + options.getWebsocketApiUrl());
             return;
@@ -198,7 +196,7 @@ public class StreamrClient extends StreamrRESTClient {
         }
         state = State.Connecting;
 
-        if (iter == 0) {
+        if (firstTrial) {
             log.info("Connecting to " + options.getWebsocketApiUrl() + "...");
             websocket.connect();
             waitForState(State.Connected);
@@ -212,11 +210,8 @@ public class StreamrClient extends StreamrRESTClient {
             errorWhileConnecting = null;
             throw new RuntimeException(ex);
         } else if (state != State.Connected) {
-            if (iter >= CONNECTION_MAX_RETRIES) {
-                throw new ConnectionTimeoutException(options.getWebsocketApiUrl());
-            }
             log.warn("Failed to connect to " + options.getWebsocketApiUrl() + ". Going to retry.");
-            connect(iter + 1);
+            connect(false);
         }
         log.info("Connected to " + options.getWebsocketApiUrl());
     }
