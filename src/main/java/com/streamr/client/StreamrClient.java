@@ -130,8 +130,9 @@ public class StreamrClient extends StreamrRESTClient {
                 public void onError(Exception ex) {
                     log.error(ex);
                     if (ex instanceof IOException) {
+                        log.warn("Disconnected. Attempting to reconnect in " + options.getReconnectRetryInterval() / 1000 + " seconds.");
                         try {
-                            Thread.sleep(options.getConnectionTimeoutMillis());
+                            Thread.sleep(options.getReconnectRetryInterval());
                         } catch (InterruptedException e) {
                             e.printStackTrace();
                         }
@@ -192,6 +193,7 @@ public class StreamrClient extends StreamrRESTClient {
             return;
         } else if (state == State.Connecting) {
             log.warn("Trying to connect when already connecting to " + options.getWebsocketApiUrl());
+            waitForState(State.Connected);
             return;
         }
         state = State.Connecting;
@@ -210,7 +212,12 @@ public class StreamrClient extends StreamrRESTClient {
             errorWhileConnecting = null;
             throw new RuntimeException(ex);
         } else if (state != State.Connected) {
-            log.warn("Failed to connect to " + options.getWebsocketApiUrl() + ". Going to retry.");
+            log.warn("Failed to connect to " + options.getWebsocketApiUrl() + ". Going to retry in " + options.getReconnectRetryInterval() / 1000 + " seconds.");
+            try {
+                Thread.sleep(options.getReconnectRetryInterval());
+            } catch (InterruptedException e) {
+                e.printStackTrace();
+            }
             connect(false);
         }
         log.info("Connected to " + options.getWebsocketApiUrl());
