@@ -13,12 +13,14 @@ import java.util.function.BiFunction;
 import java.util.function.Function;
 
 public class SubscribedStreamsUtil {
+    private static final int STREAM_EXPIRATION = 15;
+    private static final int PUBLISHERS_EXPIRATION = 30;
     private Cache<String, Stream> streamsPerStreamId = new Cache2kBuilder<String, Stream>() {}
-        .expireAfterWrite(15, TimeUnit.MINUTES).build();
+        .expireAfterWrite(STREAM_EXPIRATION, TimeUnit.MINUTES).build();
     private Function<String, Stream> getStreamFunction;
 
     private Cache<String, HashMap<String, Boolean>> publishersPerStreamId = new Cache2kBuilder<String, HashMap<String, Boolean>>() {}
-        .expireAfterWrite(30, TimeUnit.MINUTES).build();
+        .expireAfterWrite(PUBLISHERS_EXPIRATION, TimeUnit.MINUTES).build();
     private Function<String, List<String>> getPublishersFunction;
     private BiFunction<String, String, Boolean> isPublisherFunction;
 
@@ -32,6 +34,22 @@ public class SubscribedStreamsUtil {
         this.getPublishersFunction = getPublishersFunction;
         this.isPublisherFunction = isPublisherFunction;
         this.verifySignatures = verifySignatures;
+    }
+
+    private Cache<String, Stream> safeGetStreamCache() {
+        if (streamsPerStreamId.isClosed()) {
+            streamsPerStreamId = new Cache2kBuilder<String, Stream>() {}
+                    .expireAfterWrite(STREAM_EXPIRATION, TimeUnit.MINUTES).build();
+        }
+        return streamsPerStreamId;
+    }
+
+    private Cache<String, HashMap<String, Boolean>> safeGetPublishersCache() {
+        if (publishersPerStreamId.isClosed()) {
+            publishersPerStreamId = new Cache2kBuilder<String, HashMap<String, Boolean>>() {}
+                    .expireAfterWrite(PUBLISHERS_EXPIRATION, TimeUnit.MINUTES).build();
+        }
+        return publishersPerStreamId;
     }
 
     public void verifyStreamMessage(StreamMessage msg) throws InvalidSignatureException {
@@ -73,22 +91,22 @@ public class SubscribedStreamsUtil {
     }
 
     private Stream getStream(String streamId) {
-        Stream s = streamsPerStreamId.get(streamId);
+        Stream s = safeGetStreamCache().get(streamId);
         if (s == null) {
             s = getStreamFunction.apply(streamId);
-            streamsPerStreamId.put(streamId, s);
+            safeGetStreamCache().put(streamId, s);
         }
         return s;
     }
 
     private HashMap<String, Boolean> getPublishers(String streamId) {
-        HashMap<String, Boolean> publishers = publishersPerStreamId.get(streamId);
+        HashMap<String, Boolean> publishers = safeGetPublishersCache().get(streamId);
         if (publishers == null) {
             publishers = new HashMap<>();
             for (String publisher: getPublishersFunction.apply(streamId)) {
                 publishers.put(publisher, true);
             }
-            publishersPerStreamId.put(streamId, publishers);
+            safeGetPublishersCache().put(streamId, publishers);
         }
         return publishers;
     }
