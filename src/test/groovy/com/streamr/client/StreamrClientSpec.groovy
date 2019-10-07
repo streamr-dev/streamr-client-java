@@ -126,7 +126,7 @@ class StreamrClientSpec extends Specification {
         Stream stream = new Stream("", "")
         stream.setId("test-stream")
         when:
-        client.subscribe(stream, new MessageHandler() {
+        Subscription sub = client.subscribe(stream, new MessageHandler() {
             @Override
             void onMessage(Subscription sub, StreamMessage message) {
             }
@@ -135,11 +135,89 @@ class StreamrClientSpec extends Specification {
         client.receiveMessage(new SubscribeResponse("test-stream", 0))
         client.receiveMessage(new BroadcastMessage(createMsg("test-stream", 0, 0, null, null)))
         client.receiveMessage(new BroadcastMessage(createMsg("test-stream", 2, 0, 1, 0)))
-        String subId = client.getSubId("test-stream", 0)
+
         then:
         Thread.sleep(2 * gapFillTimeout + 200)
-        server.expect(new ResendRangeRequest("test-stream", 0, subId, new MessageRef(0, 1), new MessageRef(1, 0), "", "", client.getSessionToken()))
-        server.expect(new ResendRangeRequest("test-stream", 0, subId, new MessageRef(0, 1), new MessageRef(1, 0), "", "", client.getSessionToken()))
+        server.expect(new ResendRangeRequest("test-stream", 0, sub.id, new MessageRef(0, 1), new MessageRef(1, 0), "", "", client.getSessionToken()))
+        server.expect(new ResendRangeRequest("test-stream", 0, sub.id, new MessageRef(0, 1), new MessageRef(1, 0), "", "", client.getSessionToken()))
+    }
+
+    void "processes waiting messages from queue after gap is filled successfully"() {
+        Stream stream = new Stream("", "")
+        stream.setId("test-stream")
+        List<StreamMessage> messages = []
+
+        when:
+        Subscription sub = client.subscribe(stream, new MessageHandler() {
+            @Override
+            void onMessage(Subscription sub, StreamMessage message) {
+                println "Received message ${message.getMessageRef().getTimestamp()}"
+                messages.add(message)
+            }
+        })
+        then:
+        server.expect(new SubscribeRequest("test-stream", 0, client.getSessionToken()))
+
+        when:
+        client.receiveMessage(new SubscribeResponse("test-stream", 0))
+        client.receiveMessage(new BroadcastMessage(createMsg("test-stream", 0, 0, null, null)))
+        // This message should get queued and processed after successful gapfill
+        client.receiveMessage(new BroadcastMessage(createMsg("test-stream", 2, 0, 1, 0)))
+        Thread.sleep(gapFillTimeout + 200)
+
+        then:
+        messages.last().getMessageRef().getTimestamp() == 0
+        server.expect(new ResendRangeRequest("test-stream", 0, sub.id, new MessageRef(0, 1), new MessageRef(1, 0), "", "", client.getSessionToken()))
+
+        when: "gap is filled"
+        client.receiveMessage(new UnicastMessage(client.getSubId(stream.id, 0), createMsg("test-stream", 1, 0, 0, 0)))
+        client.receiveMessage(new ResendResponseResent(stream.id, 0, client.getSubId(stream.id, 0)))
+
+        then: "all messages are processed"
+        messages.last().getMessageRef().getTimestamp() == 2
+    }
+
+    void "sends a new gapfill request after a gap is partially filled"() {
+        Stream stream = new Stream("", "")
+        stream.setId("test-stream")
+        List<StreamMessage> messages = []
+
+        when:
+        client.subscribe(stream, new MessageHandler() {
+            @Override
+            void onMessage(Subscription sub, StreamMessage message) {
+                println "Received message ${message.getMessageRef().getTimestamp()}"
+                messages.add(message)
+            }
+        })
+        then:
+        server.expect(new SubscribeRequest("test-stream", 0, client.getSessionToken()))
+
+        when: "gap is detected"
+        client.receiveMessage(new SubscribeResponse("test-stream", 0))
+        client.receiveMessage(new BroadcastMessage(createMsg("test-stream", 0, 0, null, null)))
+        // This message should get eventually processed
+        client.receiveMessage(new BroadcastMessage(createMsg("test-stream", 3, 0, 2, 0)))
+        Thread.sleep(gapFillTimeout + 200)
+
+        then: "resend request is sent"
+        messages.last().getMessageRef().getTimestamp() == 0
+        server.expect(new ResendRangeRequest("test-stream", 0, client.getSubId(stream.id, 0), new MessageRef(0, 1), new MessageRef(2, 0), "", "", client.getSessionToken()))
+
+        when: "half of the gap is filled (message 2 still missing)"
+        client.receiveMessage(new UnicastMessage(client.getSubId(stream.id, 0), createMsg("test-stream", 1, 0, 0, 0)))
+        client.receiveMessage(new ResendResponseResent(stream.id, 0, client.getSubId(stream.id, 0)))
+        Thread.sleep(gapFillTimeout + 200)
+
+        then: "a new resend should be sent after gapFillTimeout"
+        server.expect(new ResendRangeRequest("test-stream", 0, client.getSubId(stream.id, 0), new MessageRef(1, 1), new MessageRef(2, 0), "", "", client.getSessionToken()))
+
+        when: "the final missing message is received"
+        client.receiveMessage(new UnicastMessage(client.getSubId(stream.id, 0), createMsg("test-stream", 2, 0, 1, 0)))
+        client.receiveMessage(new ResendResponseResent(stream.id, 0, client.getSubId(stream.id, 0)))
+
+        then: "the queued message is processed"
+        messages.last().getMessageRef().getTimestamp() == 3
     }
 
     void "client reconnects while publishing if server is temporarily down"() {
