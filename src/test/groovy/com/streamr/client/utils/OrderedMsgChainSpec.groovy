@@ -142,7 +142,7 @@ class OrderedMsgChainSpec extends Specification {
                 @Override
                 Void apply(GapFillFailedException e) {
                     expected = e
-                    return null
+                    throw e // mimic behavior of default handler
                 }
             }, 100L, 100L)
         } catch (GapFillFailedException e) {
@@ -152,10 +152,15 @@ class OrderedMsgChainSpec extends Specification {
         util.add(msg1)
         util.add(msg3)
         Thread.sleep(1200L)
+
         then:
         expected != null
         gapHandlerCount == 10
+
+        then: "gap should be cleared"
+        !util.hasGap()
     }
+
     void "handles unordered messages in order (large randomized test)"() {
         ArrayList<StreamMessage> expected = [msg1]
         ArrayList<StreamMessage> shuffled = []

@@ -78,6 +78,10 @@ public class OrderedMsgChain {
         }
     }
 
+    public boolean hasGap() {
+        return gap != null;
+    }
+
     public String getPublisherId() {
         return publisherId;
     }
@@ -134,8 +138,11 @@ public class OrderedMsgChain {
                     gapRequestCount++;
                     gapHandler.apply(from, to, publisherId, msgChainId);
                 } else {
-                    gapFillFailedHandler.apply(new GapFillFailedException(from, to, publisherId, msgChainId, MAX_GAP_REQUESTS));
-                    clearGap();
+                    try {
+                        gapFillFailedHandler.apply(new GapFillFailedException(from, to, publisherId, msgChainId, MAX_GAP_REQUESTS));
+                    } finally {
+                        clearGap();
+                    }
                 }
             }
         };
