@@ -5,6 +5,7 @@ import com.streamr.client.protocol.message_layer.MessageID
 import com.streamr.client.protocol.message_layer.StreamMessage
 import com.streamr.client.protocol.message_layer.StreamMessageV31
 import com.streamr.client.rest.Stream
+import org.cache2k.core.CacheClosedException
 import spock.lang.Specification
 import com.streamr.client.options.SigningOptions.SignatureVerificationPolicy
 
@@ -34,6 +35,15 @@ class SubscribedStreamsUtilSpec extends Specification {
     SubscribedStreamsUtil getUtil(SignatureVerificationPolicy verifySignatures) {
         return new SubscribedStreamsUtil({ String id -> stream }, { String id -> publishers },
                 { String s, String p -> p == "publisherId2"}, verifySignatures)
+    }
+
+    void "can open the caches again after they have been closed (no CacheClosedException)"() {
+        when:
+        SubscribedStreamsUtil util = getUtil(SignatureVerificationPolicy.ALWAYS)
+        util.clearAndClose()
+        util.verifyStreamMessage(msgUnsigned)
+        then:
+        thrown(InvalidSignatureException)
     }
 
     void "should return true without verifying if policy is 'never' for both signed and unsigned messages"() {
