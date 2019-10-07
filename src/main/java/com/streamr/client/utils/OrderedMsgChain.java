@@ -142,6 +142,13 @@ public class OrderedMsgChain {
                         gapFillFailedHandler.apply(new GapFillFailedException(from, to, publisherId, msgChainId, MAX_GAP_REQUESTS));
                     } finally {
                         clearGap();
+
+                        // TODO: make it configurable how to handle this error situation.
+                        // Currently unrecoverable gaps are just ignored, and processing continues from the next
+                        // message after the gap.
+                        log.warn("Unable to fill gap: Max retries reached! Ignoring the error and continuing from the first processable message: " + queue.peek().getMessageRef());
+                        lastReceived = queue.peek().getPreviousMessageRef();
+                        checkQueue();
                     }
                 }
             }
