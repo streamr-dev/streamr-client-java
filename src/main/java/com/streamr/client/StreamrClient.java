@@ -295,6 +295,9 @@ public class StreamrClient extends StreamrRESTClient {
                         handleResendResponseNoResend((ResendResponseNoResend)message);
                     } else if (message.getType() == ResendResponseResent.TYPE) {
                         handleResendResponseResent((ResendResponseResent)message);
+                    } else if (message.getType() == ErrorResponse.TYPE) {
+                        ErrorResponse error = (ErrorResponse) message;
+                        log.error("Protocol error message: '{}'", error.getErrorMessage());
                     }
                 } catch (Exception e) {
                     log.error("Error handling message: " + message, e);
