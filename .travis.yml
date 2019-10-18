@@ -5,6 +5,8 @@ branches:
   only:
   - master
   - "/^v\\d+\\.\\d+(\\.\\d+)?(-\\S*)?$/"
+install:
+  - ./gradlew assemble -x signArchives
 jobs:
   include:
   - stage: Unit tests
