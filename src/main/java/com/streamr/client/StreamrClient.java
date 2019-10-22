@@ -56,6 +56,11 @@ public class StreamrClient extends StreamrRESTClient {
 
     private final HashMap<String, OneTimeResend> secondResends = new HashMap<>();
 
+    private ErrorMessageHandler errorMessageHandler;
+    public void setErrorMessageHandler(ErrorMessageHandler errorMessageHandler) {
+        this.errorMessageHandler = errorMessageHandler;
+    }
+
     public StreamrClient(StreamrClientOptions options) {
         super(options);
 
@@ -297,7 +302,11 @@ public class StreamrClient extends StreamrRESTClient {
                         handleResendResponseResent((ResendResponseResent)message);
                     } else if (message.getType() == ErrorResponse.TYPE) {
                         ErrorResponse error = (ErrorResponse) message;
-                        log.error("Protocol error message: '{}'", error.getErrorMessage());
+                        if (this.errorMessageHandler != null) {
+                            this.errorMessageHandler.onErrorMessage(error);
+                        } else {
+                            log.error("Protocol error message: '{}'", error.getErrorMessage());
+                        }
                     }
                 } catch (Exception e) {
                     log.error("Error handling message: " + message, e);

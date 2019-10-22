@@ -8,6 +8,7 @@ This library is work-in-progress. It is currently in a MVP stage covering a very
 
 - [Authentication](#authentication)
 - [Data signing](#signing)
+- [Handling Errors](#handling-errors)
 - [Creating Streams](#creating-streams)
 - [Looking up Streams](#looking-up-streams)
 - [Publishing events to Streams](#publishing)
@@ -201,6 +202,17 @@ websocketApiUrl | wss://www.streamr.com/api/v1/ws | Address of the Streamr webso
 restApiUrl | https://www.streamr.com/api/v1 | Base URL of the Streamr REST API.
 gapFillTimeout | 5 seconds | When a gap between two received events is detected, a resend request is sent periodically until the gap is resolved. This option determines that period. 
 retryResendAfter | 5 seconds | When subscribing with a resend option (See [this](#subscribing-unsubscribing) section), the messages requested by a first resend request might not be available yet. This option determines after how much time, the resend must be requested a second time.
+
+<a name="handling-errors"></a>
+## Handling Errors
+
+You can customize error handling by registering an error handler.
+```java
+client.setErrorMessageHandler({ ErrorResponse error ->
+    // handle error
+})
+```
+If no error message handler is register then the error is logged.
 
 <a name="creating-streams"></a>
 ## Creating Streams
