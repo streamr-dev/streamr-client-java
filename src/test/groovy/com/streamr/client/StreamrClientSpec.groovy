@@ -7,6 +7,7 @@ import com.streamr.client.options.SigningOptions
 import com.streamr.client.options.StreamrClientOptions
 import com.streamr.client.protocol.control_layer.BroadcastMessage
 import com.streamr.client.protocol.control_layer.ControlMessage
+import com.streamr.client.protocol.control_layer.ErrorResponse
 import com.streamr.client.protocol.control_layer.PublishRequest
 import com.streamr.client.protocol.control_layer.ResendLastRequest
 import com.streamr.client.protocol.control_layer.ResendRangeRequest
@@ -168,5 +169,18 @@ class StreamrClientSpec extends Specification {
         client.publish(stream, ["test": 5])
         Thread.sleep(200)
         client.publish(stream, ["test": 6])
+    }
+
+    void "error message handler is called"() {
+        setup:
+        boolean errorIsHandled = false
+        when:
+        client.setErrorMessageHandler({ ErrorResponse error ->
+            errorIsHandled = true
+        })
+        ErrorResponse err = new ErrorResponse("error occured")
+        client.handleMessage(err.toJson())
+        then:
+        errorIsHandled
     }
 }
