@@ -57,9 +57,6 @@ public class StreamrClient extends StreamrRESTClient {
     private final HashMap<String, OneTimeResend> secondResends = new HashMap<>();
 
     private ErrorMessageHandler errorMessageHandler;
-    public void setErrorMessageHandler(ErrorMessageHandler errorMessageHandler) {
-        this.errorMessageHandler = errorMessageHandler;
-    }
 
     public StreamrClient(StreamrClientOptions options) {
         super(options);
@@ -243,6 +240,10 @@ public class StreamrClient extends StreamrRESTClient {
         } else if (state != State.Disconnected) {
             throw new ConnectionTimeoutException(options.getWebsocketApiUrl());
         }
+    }
+
+    public void setErrorMessageHandler(ErrorMessageHandler errorMessageHandler) {
+        this.errorMessageHandler = errorMessageHandler;
     }
 
     private void waitForState(State target) {
