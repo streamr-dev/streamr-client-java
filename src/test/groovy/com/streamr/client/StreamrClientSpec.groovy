@@ -36,7 +36,6 @@ class StreamrClientSpec extends Specification {
         SigningOptions signingOptions = new SigningOptions(SigningOptions.SignatureComputationPolicy.NEVER, SigningOptions.SignatureVerificationPolicy.NEVER)
 
         StreamrClientOptions options = new StreamrClientOptions(new ApiKeyAuthenticationMethod("apikey"), signingOptions, EncryptionOptions.getDefault(), server.getWsUrl(), "", gapFillTimeout, retryResendAfter)
-        options.setReconnectRetryInterval(1000)
         client = new TestingStreamrClient(options)
     }
 
@@ -164,6 +163,8 @@ class StreamrClientSpec extends Specification {
 
     void "subscribed client reconnects if server is temporarily down"() {
         when:
+        client.options.reconnectRetryInterval = 1000
+
         Stream stream = new Stream("", "")
         stream.setId("test-stream")
         stream.setPartitions(1)
