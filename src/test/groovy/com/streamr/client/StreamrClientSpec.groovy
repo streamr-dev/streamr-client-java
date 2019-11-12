@@ -5,16 +5,7 @@ import com.streamr.client.options.EncryptionOptions
 import com.streamr.client.options.ResendLastOption
 import com.streamr.client.options.SigningOptions
 import com.streamr.client.options.StreamrClientOptions
-import com.streamr.client.protocol.control_layer.BroadcastMessage
-import com.streamr.client.protocol.control_layer.ControlMessage
-import com.streamr.client.protocol.control_layer.ErrorResponse
-import com.streamr.client.protocol.control_layer.PublishRequest
-import com.streamr.client.protocol.control_layer.ResendLastRequest
-import com.streamr.client.protocol.control_layer.ResendRangeRequest
-import com.streamr.client.protocol.control_layer.ResendResponseResent
-import com.streamr.client.protocol.control_layer.SubscribeRequest
-import com.streamr.client.protocol.control_layer.SubscribeResponse
-import com.streamr.client.protocol.control_layer.UnicastMessage
+import com.streamr.client.protocol.control_layer.*
 import com.streamr.client.protocol.message_layer.MessageID
 import com.streamr.client.protocol.message_layer.MessageRef
 import com.streamr.client.protocol.message_layer.StreamMessage
@@ -22,8 +13,7 @@ import com.streamr.client.protocol.message_layer.StreamMessageV31
 import com.streamr.client.rest.Stream
 import com.streamr.client.subs.Subscription
 import spock.lang.Specification
-
-import java.util.function.Function
+import spock.util.concurrent.PollingConditions
 
 class StreamrClientSpec extends Specification {
 
@@ -46,6 +36,7 @@ class StreamrClientSpec extends Specification {
         SigningOptions signingOptions = new SigningOptions(SigningOptions.SignatureComputationPolicy.NEVER, SigningOptions.SignatureVerificationPolicy.NEVER)
 
         StreamrClientOptions options = new StreamrClientOptions(new ApiKeyAuthenticationMethod("apikey"), signingOptions, EncryptionOptions.getDefault(), server.getWsUrl(), "", gapFillTimeout, retryResendAfter)
+        options.setReconnectRetryInterval(1000)
         client = new TestingStreamrClient(options)
     }
 
@@ -169,6 +160,43 @@ class StreamrClientSpec extends Specification {
         client.publish(stream, ["test": 5])
         Thread.sleep(200)
         client.publish(stream, ["test": 6])
+    }
+
+    void "subscribed client reconnects if server is temporarily down"() {
+        when:
+        Stream stream = new Stream("", "")
+        stream.setId("test-stream")
+        stream.setPartitions(1)
+
+        List<StreamMessage> receivedMessages = new ArrayList<>()
+        client.subscribe(stream, new MessageHandler() {
+            @Override
+            void onMessage(Subscription sub, StreamMessage message) {
+                receivedMessages.push(message)
+            }
+        })
+
+        new Thread() {
+            void run() {
+                server.sendSubscribeToAll(stream.getId(), 0)
+                server.sendToAll(stream, Collections.singletonMap("key", "msg #1"))
+                sleep(250)
+                server.stop()
+                server = new TestWebSocketServer("localhost", 6000)
+                sleep(250)
+                server.start()
+                sleep(1000)
+                server.sendSubscribeToAll(stream.getId(), 0)
+                server.sendToAll(stream, Collections.singletonMap("key", "msg #2"))
+            }
+        }.start()
+
+        PollingConditions conditions = new PollingConditions(timeout: 10, initialDelay: 1.25, factor: 1)
+
+        then:
+        conditions.eventually {
+            receivedMessages.size() == 2
+        }
     }
 
     void "error message handler is called"() {
