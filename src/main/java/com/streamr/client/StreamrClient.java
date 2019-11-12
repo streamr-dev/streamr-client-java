@@ -58,8 +58,6 @@ public class StreamrClient extends StreamrRESTClient {
 
     private ErrorMessageHandler errorMessageHandler;
 
-    private boolean userRequestedDisconnect = false;
-
     public StreamrClient(StreamrClientOptions options) {
         super(options);
 
@@ -125,10 +123,9 @@ public class StreamrClient extends StreamrRESTClient {
                 public void onClose(int code, String reason, boolean remote) {
                     log.info("Connection closed! Code: " + code + ", Reason: " + reason);
                     state = State.Disconnected;
-                    if (!userRequestedDisconnect) {
+                    if (remote) {
                         sleepThenReconnect();
-                    }
-                    if (!remote) {
+                    } else {
                         StreamrClient.this.onClose();
                     }
                 }
@@ -137,9 +134,7 @@ public class StreamrClient extends StreamrRESTClient {
                 public void onError(Exception ex) {
                     log.error(ex);
                     if (ex instanceof IOException) {
-                        if (!userRequestedDisconnect) {
-                            sleepThenReconnect();
-                        }
+                        sleepThenReconnect();
                     } else {
                         if (state == State.Connecting) {
                             errorWhileConnecting = ex;
@@ -180,6 +175,7 @@ public class StreamrClient extends StreamrRESTClient {
             Thread.sleep(options.getReconnectRetryInterval());
         } catch (InterruptedException e) {
             e.printStackTrace();
+            Thread.currentThread().interrupt();
         }
         this.reconnect();
     }
@@ -201,7 +197,6 @@ public class StreamrClient extends StreamrRESTClient {
     }
 
     private void connect(boolean firstTrial) throws ConnectionTimeoutException {
-        userRequestedDisconnect = false;
         if (state == State.Connected) {
             log.warn("Trying to connect when already connected to " + options.getWebsocketApiUrl());
             return;
@@ -242,7 +237,6 @@ public class StreamrClient extends StreamrRESTClient {
      */
     public void disconnect() throws ConnectionTimeoutException {
         log.info("Disconnecting...");
-        userRequestedDisconnect = true;
         state = State.Disconnecting;
 
         websocket.close();
