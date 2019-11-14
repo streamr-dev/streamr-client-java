@@ -340,14 +340,15 @@ class StreamrWebsocketSpec extends StreamrIntegrationSpecification {
 
 		when:
 		for (int i = 0; i <= 10; i++) {
-			client.publish(stream, [i: i])
+			Date date = new Date()
+			client.publish(stream, [i: i], date)
 
 			if (i == 3) {
-				resendFromDate = new Date()
+				resendFromDate = new Date(date.getTime() + 1)
 			}
 
 			if (i == 7) {
-				resendToDate = new Date()
+				resendToDate = new Date(date.getTime() - 1)
 			}
 		}
 		Thread.sleep(5000) // wait to land in storage
