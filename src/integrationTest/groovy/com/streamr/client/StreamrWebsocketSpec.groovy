@@ -192,7 +192,7 @@ class StreamrWebsocketSpec extends StreamrIntegrationSpecification {
 
 		when:
 		client.publish(stream, [i: 1])
-		Thread.sleep(2000)
+		Thread.sleep(5000) // wait to land in storage
 		// Subscribe to the stream
 		sub = client.subscribe(stream, 0, new MessageHandler() {
 			@Override
@@ -246,21 +246,21 @@ class StreamrWebsocketSpec extends StreamrIntegrationSpecification {
 
 		Stream stream = client.createStream(new Stream(generateResourceName(), ""))
 
-		Map<String, Object>[] receivedMsg = new Map<String, Object>[5]
+		List receivedMsg = []
 		boolean done = false
 
 		when:
 		for (int i = 0; i <= 10; i++) {
 			client.publish(stream, [i: i])
 		}
-		Thread.sleep(2000)
+		Thread.sleep(5000) // wait to land in storage
 
 		int i = 0
 		// Subscribe to the stream
 		client.resend(stream, 0, new MessageHandler() {
 			@Override
 			void onMessage(Subscription s, StreamMessage message) {
-				receivedMsg[i++] = message.getContent()
+				receivedMsg.push(message.getContent())
 			}
 			void done(Subscription sub) {
 				done = true
@@ -268,7 +268,7 @@ class StreamrWebsocketSpec extends StreamrIntegrationSpecification {
 		}, new ResendLastOption(5))
 
 		then:
-		Map<String, Object>[] expectedMessages = [
+		List expectedMessages = [
 			Collections.singletonMap("i", 6.0),
 			Collections.singletonMap("i", 7.0),
 			Collections.singletonMap("i", 8.0),
@@ -288,7 +288,7 @@ class StreamrWebsocketSpec extends StreamrIntegrationSpecification {
 
 		Stream stream = client.createStream(new Stream(generateResourceName(), ""))
 
-		Map<String, Object>[] receivedMsg = new Map<String, Object>[3]
+		List receivedMsg = []
 		boolean done = false
 		Date resendFromDate
 
@@ -300,14 +300,14 @@ class StreamrWebsocketSpec extends StreamrIntegrationSpecification {
 				resendFromDate = new Date()
 			}
 		}
-		Thread.sleep(2000)
+		Thread.sleep(5000) // wait to land in storage
 
 		int i = 0
 		// Subscribe to the stream
 		client.resend(stream, 0, new MessageHandler() {
 			@Override
 			void onMessage(Subscription s, StreamMessage message) {
-				receivedMsg[i++] = message.getContent()
+				receivedMsg.push(message.getContent())
 			}
 			void done(Subscription sub) {
 				done = true
@@ -315,7 +315,7 @@ class StreamrWebsocketSpec extends StreamrIntegrationSpecification {
 		}, new ResendFromOption(resendFromDate))
 
 		then:
-		Map<String, Object>[] expectedMessages = [
+		List expectedMessages = [
 				Collections.singletonMap("i", 8.0),
 				Collections.singletonMap("i", 9.0),
 				Collections.singletonMap("i", 10.0)
@@ -333,7 +333,7 @@ class StreamrWebsocketSpec extends StreamrIntegrationSpecification {
 
 		Stream stream = client.createStream(new Stream(generateResourceName(), ""))
 
-		Map<String, Object>[] receivedMsg = new Map<String, Object>[3]
+		List receivedMsg = []
 		boolean done = false
 		Date resendFromDate
 		Date resendToDate
@@ -350,14 +350,14 @@ class StreamrWebsocketSpec extends StreamrIntegrationSpecification {
 				resendToDate = new Date()
 			}
 		}
-		Thread.sleep(2000)
+		Thread.sleep(5000) // wait to land in storage
 
 		int i = 0
 		// Subscribe to the stream
 		client.resend(stream, 0, new MessageHandler() {
 			@Override
 			void onMessage(Subscription s, StreamMessage message) {
-				receivedMsg[i++] = message.getContent()
+				receivedMsg.push(message.getContent())
 			}
 			void done(Subscription sub) {
 				done = true
@@ -365,7 +365,7 @@ class StreamrWebsocketSpec extends StreamrIntegrationSpecification {
 		}, new ResendRangeOption(resendFromDate, resendToDate))
 
 		then:
-		Map<String, Object>[] expectedMessages = [
+		List expectedMessages = [
 				Collections.singletonMap("i", 4.0),
 				Collections.singletonMap("i", 5.0),
 				Collections.singletonMap("i", 6.0)
