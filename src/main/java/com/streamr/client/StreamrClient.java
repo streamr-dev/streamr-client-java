@@ -186,6 +186,8 @@ public class StreamrClient extends StreamrRESTClient {
         waitForState(State.Connected);
         if (getState() == State.Connected) {
             StreamrClient.this.subs.forEach(StreamrClient.this::resubscribe);
+        } else {
+            sleepThenReconnect();
         }
     }
 
