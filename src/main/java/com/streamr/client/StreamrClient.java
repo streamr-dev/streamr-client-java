@@ -57,9 +57,6 @@ public class StreamrClient extends StreamrRESTClient {
     private final HashMap<String, OneTimeResend> secondResends = new HashMap<>();
 
     private ErrorMessageHandler errorMessageHandler;
-    public void setErrorMessageHandler(ErrorMessageHandler errorMessageHandler) {
-        this.errorMessageHandler = errorMessageHandler;
-    }
 
     public StreamrClient(StreamrClientOptions options) {
         super(options);
@@ -126,7 +123,9 @@ public class StreamrClient extends StreamrRESTClient {
                 public void onClose(int code, String reason, boolean remote) {
                     log.info("Connection closed! Code: " + code + ", Reason: " + reason);
                     state = State.Disconnected;
-                    if (!remote) {
+                    if (remote) {
+                        sleepThenReconnect();
+                    } else {
                         StreamrClient.this.onClose();
                     }
                 }
@@ -135,13 +134,7 @@ public class StreamrClient extends StreamrRESTClient {
                 public void onError(Exception ex) {
                     log.error(ex);
                     if (ex instanceof IOException) {
-                        log.warn("Disconnected. Attempting to reconnect in " + options.getReconnectRetryInterval() / 1000 + " seconds.");
-                        try {
-                            Thread.sleep(options.getReconnectRetryInterval());
-                        } catch (InterruptedException e) {
-                            e.printStackTrace();
-                        }
-                        StreamrClient.this.reconnect();
+                        sleepThenReconnect();
                     } else {
                         if (state == State.Connecting) {
                             errorWhileConnecting = ex;
@@ -174,6 +167,17 @@ public class StreamrClient extends StreamrRESTClient {
 
     public WebSocketClient getWebsocket() {
         return websocket;
+    }
+
+    private void sleepThenReconnect() {
+        log.warn("Disconnected. Attempting to reconnect in " + options.getReconnectRetryInterval() / 1000 + " seconds.");
+        try {
+            Thread.sleep(options.getReconnectRetryInterval());
+        } catch (InterruptedException e) {
+            e.printStackTrace();
+            Thread.currentThread().interrupt();
+        }
+        this.reconnect();
     }
 
     private void reconnect() {
@@ -243,6 +247,10 @@ public class StreamrClient extends StreamrRESTClient {
         } else if (state != State.Disconnected) {
             throw new ConnectionTimeoutException(options.getWebsocketApiUrl());
         }
+    }
+
+    public void setErrorMessageHandler(ErrorMessageHandler errorMessageHandler) {
+        this.errorMessageHandler = errorMessageHandler;
     }
 
     private void waitForState(State target) {
