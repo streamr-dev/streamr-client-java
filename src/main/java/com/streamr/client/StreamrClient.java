@@ -16,6 +16,7 @@ import com.streamr.client.utils.*;
 import org.apache.commons.codec.digest.DigestUtils;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
+import org.java_websocket.WebSocket;
 import org.java_websocket.client.WebSocketClient;
 import org.java_websocket.handshake.ServerHandshake;
 import com.streamr.client.exceptions.ConnectionTimeoutException;
@@ -179,6 +180,9 @@ public class StreamrClient extends StreamrRESTClient {
         // Forcefully close connection without handshake before forgetting reference to websocket Object.
         // Guards against hanging WebSocket threads/connections due to potential logic errors.
         if (this.websocket != null) {
+            if (state == State.Connected || this.websocket.getReadyState().equals(WebSocket.READYSTATE.OPEN)) {
+                log.warn("Discarding connected websocket; potential bug.");
+            }
             this.websocket.closeConnection(0, "force close");
         }
         initWebsocket();
