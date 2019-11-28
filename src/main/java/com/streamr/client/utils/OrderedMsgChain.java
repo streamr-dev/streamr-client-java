@@ -17,6 +17,8 @@ public class OrderedMsgChain {
     private static final Logger log = LogManager.getLogger();
     private static final int MAX_GAP_REQUESTS = 10;
 
+    static final int MAX_QUEUE_SIZE = 5000;
+
     private String publisherId;
     private String msgChainId;
     private Consumer<StreamMessage> inOrderHandler;
@@ -64,7 +66,12 @@ public class OrderedMsgChain {
             if (gap == null) {
                 scheduleGap();
             }
-            queue.offer(unorderedMsg);
+            // Prevent memory exhaustion under unusual conditions by limiting the queue size
+            if (queue.size() < MAX_QUEUE_SIZE) {
+                queue.offer(unorderedMsg);
+            } else {
+                throw new IllegalStateException("Queue is full! Message: " + unorderedMsg.toJson());
+            }
         }
     }
 
