@@ -17,7 +17,7 @@ public class OrderedMsgChain {
     private static final Logger log = LogManager.getLogger();
     private static final int MAX_GAP_REQUESTS = 10;
 
-    static final int MAX_QUEUE_SIZE = 5000;
+    static final int MAX_QUEUE_SIZE = 10000;
 
     private String publisherId;
     private String msgChainId;
