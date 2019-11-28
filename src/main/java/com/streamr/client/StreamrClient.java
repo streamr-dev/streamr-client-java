@@ -44,7 +44,11 @@ public class StreamrClient extends StreamrRESTClient {
     protected final Subscriptions subs = new Subscriptions();
 
     public enum State {
-        Connecting, Connected, Disconnecting, Disconnected
+        Connecting,     // waiting for connection to be established
+        Sleeping,       // waiting for connection to be established
+        Connected,      // everything ok
+        Disconnecting,  // _client_ initiated disconnection in progress
+        Disconnected    // initial state or _client_ initiated disconnection done
     }
 
     private State state = State.Disconnected;
@@ -57,6 +61,7 @@ public class StreamrClient extends StreamrRESTClient {
     private final HashMap<String, OneTimeResend> secondResends = new HashMap<>();
 
     private ErrorMessageHandler errorMessageHandler;
+    private boolean firstTrial = true;
 
     public StreamrClient(StreamrClientOptions options) {
         super(options);
@@ -96,8 +101,6 @@ public class StreamrClient extends StreamrRESTClient {
             signingUtil = new SigningUtil(((EthereumAuthenticationMethod) options.getAuthenticationMethod()).getAccount());
         }
         msgCreationUtil = new MessageCreationUtil(publisherId, signingUtil, options.getEncryptionOptions().getPublisherGroupKeys());
-
-        initWebsocket();
     }
 
     public StreamrClient(AuthenticationMethod authenticationMethod) {
@@ -122,26 +125,25 @@ public class StreamrClient extends StreamrRESTClient {
                 @Override
                 public void onClose(int code, String reason, boolean remote) {
                     log.info("Connection closed! Code: " + code + ", Reason: " + reason);
-                    state = State.Disconnected;
                     if (remote) {
                         sleepThenReconnect();
                     } else {
+                        state = State.Disconnected;
                         StreamrClient.this.onClose();
+
+                        if (errorWhileConnecting != null) {
+                            throw new RuntimeException(errorWhileConnecting);
+                        }
                     }
                 }
 
                 @Override
                 public void onError(Exception ex) {
                     log.error(ex);
-                    if (ex instanceof IOException) {
-                        sleepThenReconnect();
-                    } else {
-                        if (state == State.Connecting) {
-                            errorWhileConnecting = ex;
-                        }
-
-                        StreamrClient.this.onError(ex);
+                    if (state == State.Connecting) {
+                        errorWhileConnecting = ex;
                     }
+                    StreamrClient.this.onError(ex);
                 }
 
                 @Override
@@ -165,11 +167,8 @@ public class StreamrClient extends StreamrRESTClient {
     }
     public void onError(Exception ex) {}
 
-    public WebSocketClient getWebsocket() {
-        return websocket;
-    }
-
     private void sleepThenReconnect() {
+        state = State.Sleeping;
         log.warn("Disconnected. Attempting to reconnect in " + options.getReconnectRetryInterval() / 1000 + " seconds.");
         try {
             Thread.sleep(options.getReconnectRetryInterval());
@@ -181,9 +180,15 @@ public class StreamrClient extends StreamrRESTClient {
     }
 
     private void reconnect() {
+        // Forcefully close connection without handshake before forgetting reference to websocket Object.
+        // Guards against hanging WebSocket threads/connections due to potential logic errors.
+        if (this.websocket != null) {
+            this.websocket.closeConnection(0, "force close");
+        }
         initWebsocket();
+        state = State.Connecting;
         websocket.connect();
-        waitForState(State.Connected);
+        waitForStateOrGiveUpAfterConnectionTimeout(State.Connected);
         if (getState() == State.Connected) {
             StreamrClient.this.subs.forEach(StreamrClient.this::resubscribe);
         } else {
@@ -195,28 +200,23 @@ public class StreamrClient extends StreamrRESTClient {
      * Connects the websocket. Blocks until connected, or throws if the connection times out.
      */
     public void connect() throws ConnectionTimeoutException {
-        connect(true);
-    }
-
-    private void connect(boolean firstTrial) throws ConnectionTimeoutException {
         if (state == State.Connected) {
             log.warn("Trying to connect when already connected to " + options.getWebsocketApiUrl());
             return;
-        } else if (state == State.Connecting) {
+        } else if (state == State.Connecting || state == State.Sleeping) {
             log.warn("Trying to connect when already connecting to " + options.getWebsocketApiUrl());
-            waitForState(State.Connected);
+            waitForStateOrGiveUpAfterConnectionTimeout(State.Connected);
             return;
         }
-        state = State.Connecting;
 
         if (firstTrial) {
             log.info("Connecting to " + options.getWebsocketApiUrl() + "...");
-            websocket.connect();
-            waitForState(State.Connected);
+            firstTrial = false;
         } else {
             log.info("Reconnecting to " + options.getWebsocketApiUrl() + "...");
-            reconnect();
         }
+        reconnect();
+        waitForStateOrGiveUpAfterConnectionTimeout(State.Connected);
 
         if (errorWhileConnecting != null) {
             Exception ex = errorWhileConnecting;
@@ -229,7 +229,7 @@ public class StreamrClient extends StreamrRESTClient {
             } catch (InterruptedException e) {
                 e.printStackTrace();
             }
-            connect(false);
+            connect();
         }
         log.info("Connected to " + options.getWebsocketApiUrl());
     }
@@ -240,22 +240,14 @@ public class StreamrClient extends StreamrRESTClient {
     public void disconnect() throws ConnectionTimeoutException {
         log.info("Disconnecting...");
         state = State.Disconnecting;
-
         websocket.close();
-        waitForState(State.Disconnected);
-
-        if (errorWhileConnecting != null) {
-            throw new RuntimeException(errorWhileConnecting);
-        } else if (state != State.Disconnected) {
-            throw new ConnectionTimeoutException(options.getWebsocketApiUrl());
-        }
     }
 
     public void setErrorMessageHandler(ErrorMessageHandler errorMessageHandler) {
         this.errorMessageHandler = errorMessageHandler;
     }
 
-    private void waitForState(State target) {
+    private void waitForStateOrGiveUpAfterConnectionTimeout(State target) {
         long iterations = options.getConnectionTimeoutMillis() / 100;
         while (errorWhileConnecting == null && state != target && iterations > 0) {
             try {
@@ -268,8 +260,12 @@ public class StreamrClient extends StreamrRESTClient {
     }
 
     private void send(ControlMessage message) {
-        if (getState() != State.Connected) {
+        if (getState() == State.Disconnected) {
             connect();
+        }
+        waitForStateOrGiveUpAfterConnectionTimeout(State.Connected);
+        if (getState() != State.Connected) {
+            throw new RuntimeException("send failed: after waiting, state was not connected");
         }
         this.websocket.send(message.toJson());
     }
@@ -370,15 +366,12 @@ public class StreamrClient extends StreamrRESTClient {
     }
 
     public void publish(Stream stream, Map<String, Object> payload, Date timestamp, String partitionKey, String groupKeyHex) {
-        if (!getState().equals(StreamrClient.State.Connected)) {
-            connect();
-        }
         if (groupKeyHex != null) {
             options.getEncryptionOptions().getPublisherGroupKeys().put(stream.getId(), groupKeyHex);
         }
         StreamMessage streamMessage = msgCreationUtil.createStreamMessage(stream, payload, timestamp, partitionKey, groupKeyHex);
         PublishRequest req = new PublishRequest(streamMessage, getSessionToken());
-        getWebsocket().send(req.toJson());
+        send(req);
     }
 
     /*
