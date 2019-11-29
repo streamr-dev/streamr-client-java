@@ -25,6 +25,10 @@ public class ResendRangeRequest extends ControlMessage {
         this.publisherId = publisherId;
         this.msgChainId = msgChainId;
         this.sessionToken = sessionToken;
+
+        if (fromMsgRef.compareTo(toMsgRef) > 0) {
+            throw new IllegalArgumentException(String.format("fromMsgRef (%s) must be less than or equal to toMsgRef (%s)", fromMsgRef.toString(), toMsgRef.toString()));
+        }
     }
 
     public String getStreamId() {
