@@ -211,6 +211,26 @@ class OrderedMsgChainSpec extends Specification {
         result
     }
 
+    void "throws if the queue is full"() {
+        final int received = 0;
+        OrderedMsgChain util = new OrderedMsgChain("publisherId", "msgChainId", new Consumer<StreamMessage>() {
+            @Override
+            void accept(StreamMessage streamMessage) {
+                received++;
+            }
+        }, null, 5000L, 5000L)
+
+        when:
+        util.add(createMessage(-1, null))
+        // there's a gap between the above and the below messages, so below messages are queued
+        for (int i=1; i<=OrderedMsgChain.MAX_QUEUE_SIZE + 1; i++) {
+            util.add(createMessage(i, i-1))
+        }
+
+        then:
+        thrown(IllegalStateException)
+    }
+
     void "is thread-safe"() {
         int received = 0
         OrderedMsgChain.GapHandlerFunction gapHandler = Mock(OrderedMsgChain.GapHandlerFunction)

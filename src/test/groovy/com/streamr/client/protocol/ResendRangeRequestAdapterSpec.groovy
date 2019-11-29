@@ -69,6 +69,16 @@ class ResendRangeRequestAdapterSpec extends Specification {
 		msg.getSessionToken() == null
 	}
 
+	void "fromJson (from > to)"() {
+		String json = '[1,13,"streamId",0,"subId",[143415425455,0],[143415425000,0],"publisherId","msgChainId","sessionToken"]'
+
+		when:
+		ResendRangeRequest msg = toMsg(adapter, json)
+
+		then:
+		thrown(IllegalArgumentException)
+	}
+	
 	void "toJson"() {
 		MessageRef from = new MessageRef(143415425455L, 0L)
 		MessageRef to = new MessageRef(14341542564555L, 7L)
