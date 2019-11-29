@@ -39,14 +39,6 @@ class StreamrClientSpec extends Specification {
         client = new TestingStreamrClient(options)
     }
 
-    void cleanup() {
-        /*
-        if (client.getState() != StreamrClient.State.Disconnected) {
-            client.disconnect()
-        }
-         */
-    }
-
     StreamMessageV31 createMsg(String streamId, long timestamp, long sequenceNumber, Long prevTimestamp, Long prevSequenceNumber) {
         MessageID msgId = new MessageID(streamId, 0, timestamp, sequenceNumber, "", "")
         MessageRef prev = prevTimestamp == null ? null : new MessageRef(prevTimestamp, prevSequenceNumber)
