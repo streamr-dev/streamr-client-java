@@ -51,7 +51,7 @@ public class OrderedMsgChain {
         this(publisherId, msgChainId, inOrderHandler, gapHandler, (GapFillFailedException e) -> { throw e; }, propagationTimeout, resendTimeout);
     }
 
-    public void add(StreamMessage unorderedMsg) {
+    public synchronized void add(StreamMessage unorderedMsg) {
         MessageRef ref = unorderedMsg.getMessageRef();
         if (lastReceived != null && ref.compareTo(lastReceived) <= 0) {
             log.debug("Already received message: " + ref + ", lastReceivedMsgRef: " + lastReceived + ". Ignoring message.");
@@ -68,7 +68,7 @@ public class OrderedMsgChain {
         }
     }
 
-    public void clearGap() {
+    public synchronized void clearGap() {
         if (gap != null) {
             gap.cancel();
             gap = null;
@@ -78,7 +78,7 @@ public class OrderedMsgChain {
         }
     }
 
-    public boolean hasGap() {
+    public synchronized boolean hasGap() {
         return gap != null;
     }
 
@@ -90,11 +90,11 @@ public class OrderedMsgChain {
         return msgChainId;
     }
 
-    public void setLastReceived(MessageRef lastReceived) {
+    public synchronized void setLastReceived(MessageRef lastReceived) {
         this.lastReceived = lastReceived;
     }
 
-    public MessageRef getLastReceived() {
+    public synchronized MessageRef getLastReceived() {
         return lastReceived;
     }
 
