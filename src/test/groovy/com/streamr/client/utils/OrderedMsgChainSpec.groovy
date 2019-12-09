@@ -231,7 +231,9 @@ class OrderedMsgChainSpec extends Specification {
         thrown(IllegalStateException)
     }
 
-    void "is thread-safe"() {
+    // Warning: non-deterministic test. If you see flakiness in this test, it may indicate
+    // something is wrong in the thread-safety of the class under test.
+    void "handles input from multiple threads correctly"() {
         int received = 0
         OrderedMsgChain.GapHandlerFunction gapHandler = Mock(OrderedMsgChain.GapHandlerFunction)
         OrderedMsgChain util = new OrderedMsgChain("publisherId", "msgChainId", new Consumer<StreamMessage>() {
