@@ -117,13 +117,18 @@ public class OrderedMsgChain {
     private void checkQueue() {
         while (!queue.isEmpty()) {
             StreamMessage msg = queue.peek();
-            if (msg !=null && isNextMessage(msg)) {
+            if (msg != null && isNextMessage(msg)) {
                 queue.poll();
+
                 // If the next message is found in the queue, any gap must have been filled, so clear the timer
                 clearGap();
                 process(msg);
+            } else if (msg != null && lastReceived != null && msg.getMessageRef().compareTo(lastReceived) <= 0) {
+                // If there are old (already received) messages in the queue for any reason, remove them
+                queue.poll();
             } else {
-                return;
+                // Nothing further can be processed from the queue
+                break;
             }
         }
     }
@@ -140,14 +145,23 @@ public class OrderedMsgChain {
             @Override
             public void run() {
                 synchronized (OrderedMsgChain.this) {
-                    // Make sure the gap hasn't been canceled by another thread
-                    if (gap == null) {
+                    // Make sure nothing further can be processed from the queue
+                    checkQueue();
+
+                    // Make sure a gapfill is still scheduled and there is a queued message
+                    if (gap == null || queue.isEmpty()) {
                         return;
                     }
 
-                    // Request gapfill or fail if max requests reached
                     MessageRef from = new MessageRef(lastReceived.getTimestamp(), lastReceived.getSequenceNumber() + 1);
                     MessageRef to = queue.peek().getPreviousMessageRef();
+
+                    // Sanity check
+                    if (from.compareTo(to) > 0) {
+                        throw new IllegalStateException(String.format("From (%s) is after to (%s)!", from.toString(), to.toString()));
+                    }
+
+                    // Request gapfill or fail if max requests reached
                     if (gapRequestCount < MAX_GAP_REQUESTS) {
                         gapRequestCount++;
                         gapHandler.apply(from, to, publisherId, msgChainId);
