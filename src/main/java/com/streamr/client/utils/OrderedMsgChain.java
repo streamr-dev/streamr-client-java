@@ -75,7 +75,7 @@ public class OrderedMsgChain {
         }
     }
 
-    public synchronized void clearGap() {
+    synchronized void clearGap() {
         if (gap != null) {
             gap.cancel();
             gap = null;
@@ -115,7 +115,7 @@ public class OrderedMsgChain {
     }
 
     private void checkQueue() {
-        while(!queue.isEmpty()) {
+        while (!queue.isEmpty()) {
             StreamMessage msg = queue.peek();
             if (msg !=null && isNextMessage(msg)) {
                 queue.poll();
@@ -139,23 +139,31 @@ public class OrderedMsgChain {
         TimerTask task = new TimerTask() {
             @Override
             public void run() {
-                MessageRef from = new MessageRef(lastReceived.getTimestamp(), lastReceived.getSequenceNumber() + 1);
-                MessageRef to = queue.peek().getPreviousMessageRef();
-                if (gapRequestCount < MAX_GAP_REQUESTS) {
-                    gapRequestCount++;
-                    gapHandler.apply(from, to, publisherId, msgChainId);
-                } else {
-                    try {
-                        gapFillFailedHandler.apply(new GapFillFailedException(from, to, publisherId, msgChainId, MAX_GAP_REQUESTS));
-                    } finally {
-                        clearGap();
+                synchronized (OrderedMsgChain.this) {
+                    // Make sure the gap hasn't been canceled by another thread
+                    if (gap == null) {
+                        return;
+                    }
 
-                        // TODO: make it configurable how to handle this error situation.
-                        // Currently unrecoverable gaps are just ignored, and processing continues from the next
-                        // message after the gap.
-                        log.warn("Unable to fill gap: Max retries reached! Ignoring the error and continuing from the first processable message: " + queue.peek().getMessageRef());
-                        lastReceived = queue.peek().getPreviousMessageRef();
-                        checkQueue();
+                    // Request gapfill or fail if max requests reached
+                    MessageRef from = new MessageRef(lastReceived.getTimestamp(), lastReceived.getSequenceNumber() + 1);
+                    MessageRef to = queue.peek().getPreviousMessageRef();
+                    if (gapRequestCount < MAX_GAP_REQUESTS) {
+                        gapRequestCount++;
+                        gapHandler.apply(from, to, publisherId, msgChainId);
+                    } else {
+                        try {
+                            gapFillFailedHandler.apply(new GapFillFailedException(from, to, publisherId, msgChainId, MAX_GAP_REQUESTS));
+                        } finally {
+                            clearGap();
+
+                            // TODO: make it configurable how to handle this error situation.
+                            // Currently unrecoverable gaps are just ignored, and processing continues from the next
+                            // message after the gap.
+                            log.warn("Unable to fill gap: Max retries reached! Ignoring the error and continuing from the first processable message: " + queue.peek().getMessageRef());
+                            lastReceived = queue.peek().getPreviousMessageRef();
+                            checkQueue();
+                        }
                     }
                 }
             }
