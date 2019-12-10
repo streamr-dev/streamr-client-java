@@ -5,6 +5,7 @@ import com.streamr.client.protocol.message_layer.MessageRef;
 import com.streamr.client.protocol.message_layer.StreamMessage;
 import com.streamr.client.protocol.message_layer.StreamMessageV31;
 import spock.lang.Specification
+import spock.util.concurrent.PollingConditions
 
 import java.util.function.Consumer
 import java.util.function.Function
@@ -229,4 +230,33 @@ class OrderedMsgChainSpec extends Specification {
         then:
         thrown(IllegalStateException)
     }
+
+    // Warning: non-deterministic test. If you see flakiness in this test, it may indicate
+    // something is wrong in the thread-safety of the class under test.
+    void "handles input from multiple threads correctly"() {
+        int received = 0
+        OrderedMsgChain.GapHandlerFunction gapHandler = Mock(OrderedMsgChain.GapHandlerFunction)
+        OrderedMsgChain util = new OrderedMsgChain("publisherId", "msgChainId", new Consumer<StreamMessage>() {
+            @Override
+            void accept(StreamMessage streamMessage) {
+                received++
+            }
+        }, gapHandler, 5000L, 5000L)
+        when:
+        Closure produce = {
+            for (int i=0; i<1000; i++) {
+                util.add(createMessage(i, (i == 0 ? null : i - 1)))
+            }
+        }
+        // Start 2 threads that produce the same messages in parallel
+        Thread.start(produce)
+        Thread.start(produce)
+
+        then:
+        new PollingConditions(timeout: 10).eventually {
+            received == 1000
+        }
+        0 * gapHandler.apply(_, _, _, _)
+    }
+
 }

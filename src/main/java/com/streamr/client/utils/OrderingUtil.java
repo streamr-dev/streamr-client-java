@@ -43,7 +43,7 @@ public class OrderingUtil {
         }
     }
 
-    private OrderedMsgChain getChain(String publisherId, String msgChainId) {
+    private synchronized OrderedMsgChain getChain(String publisherId, String msgChainId) {
         String key = publisherId + msgChainId;
         if (!chains.containsKey(key)) {
             chains.put(key, new OrderedMsgChain(publisherId, msgChainId, inOrderHandler,
@@ -60,7 +60,7 @@ public class OrderingUtil {
         return gapHandler;
     }
 
-    public void addChains(ArrayList<OrderedMsgChain> previousChains) {
+    public synchronized void addChains(ArrayList<OrderedMsgChain> previousChains) {
         for (OrderedMsgChain chain: previousChains) {
             String key = chain.getPublisherId() + chain.getMsgChainId();
             OrderedMsgChain newChain = new OrderedMsgChain(chain.getPublisherId(), chain.getMsgChainId(),

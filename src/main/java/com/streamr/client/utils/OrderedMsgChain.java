@@ -53,7 +53,7 @@ public class OrderedMsgChain {
         this(publisherId, msgChainId, inOrderHandler, gapHandler, (GapFillFailedException e) -> { throw e; }, propagationTimeout, resendTimeout);
     }
 
-    public void add(StreamMessage unorderedMsg) {
+    public synchronized void add(StreamMessage unorderedMsg) {
         MessageRef ref = unorderedMsg.getMessageRef();
         if (lastReceived != null && ref.compareTo(lastReceived) <= 0) {
             log.debug("Already received message: " + ref + ", lastReceivedMsgRef: " + lastReceived + ". Ignoring message.");
@@ -75,7 +75,7 @@ public class OrderedMsgChain {
         }
     }
 
-    public void clearGap() {
+    synchronized void clearGap() {
         if (gap != null) {
             gap.cancel();
             gap = null;
@@ -85,7 +85,7 @@ public class OrderedMsgChain {
         }
     }
 
-    public boolean hasGap() {
+    public synchronized boolean hasGap() {
         return gap != null;
     }
 
@@ -97,11 +97,11 @@ public class OrderedMsgChain {
         return msgChainId;
     }
 
-    public void setLastReceived(MessageRef lastReceived) {
+    public synchronized void setLastReceived(MessageRef lastReceived) {
         this.lastReceived = lastReceived;
     }
 
-    public MessageRef getLastReceived() {
+    public synchronized MessageRef getLastReceived() {
         return lastReceived;
     }
 
@@ -115,15 +115,20 @@ public class OrderedMsgChain {
     }
 
     private void checkQueue() {
-        while(!queue.isEmpty()) {
+        while (!queue.isEmpty()) {
             StreamMessage msg = queue.peek();
-            if (msg !=null && isNextMessage(msg)) {
+            if (msg != null && isNextMessage(msg)) {
                 queue.poll();
+
                 // If the next message is found in the queue, any gap must have been filled, so clear the timer
                 clearGap();
                 process(msg);
+            } else if (msg != null && lastReceived != null && msg.getMessageRef().compareTo(lastReceived) <= 0) {
+                // If there are old (already received) messages in the queue for any reason, remove them
+                queue.poll();
             } else {
-                return;
+                // Nothing further can be processed from the queue
+                break;
             }
         }
     }
@@ -139,23 +144,40 @@ public class OrderedMsgChain {
         TimerTask task = new TimerTask() {
             @Override
             public void run() {
-                MessageRef from = new MessageRef(lastReceived.getTimestamp(), lastReceived.getSequenceNumber() + 1);
-                MessageRef to = queue.peek().getPreviousMessageRef();
-                if (gapRequestCount < MAX_GAP_REQUESTS) {
-                    gapRequestCount++;
-                    gapHandler.apply(from, to, publisherId, msgChainId);
-                } else {
-                    try {
-                        gapFillFailedHandler.apply(new GapFillFailedException(from, to, publisherId, msgChainId, MAX_GAP_REQUESTS));
-                    } finally {
-                        clearGap();
+                synchronized (OrderedMsgChain.this) {
+                    // Make sure nothing further can be processed from the queue
+                    checkQueue();
 
-                        // TODO: make it configurable how to handle this error situation.
-                        // Currently unrecoverable gaps are just ignored, and processing continues from the next
-                        // message after the gap.
-                        log.warn("Unable to fill gap: Max retries reached! Ignoring the error and continuing from the first processable message: " + queue.peek().getMessageRef());
-                        lastReceived = queue.peek().getPreviousMessageRef();
-                        checkQueue();
+                    // Make sure a gapfill is still scheduled and there is a queued message
+                    if (gap == null || queue.isEmpty()) {
+                        return;
+                    }
+
+                    MessageRef from = new MessageRef(lastReceived.getTimestamp(), lastReceived.getSequenceNumber() + 1);
+                    MessageRef to = queue.peek().getPreviousMessageRef();
+
+                    // Sanity check
+                    if (from.compareTo(to) > 0) {
+                        throw new IllegalStateException(String.format("From (%s) is after to (%s)!", from.toString(), to.toString()));
+                    }
+
+                    // Request gapfill or fail if max requests reached
+                    if (gapRequestCount < MAX_GAP_REQUESTS) {
+                        gapRequestCount++;
+                        gapHandler.apply(from, to, publisherId, msgChainId);
+                    } else {
+                        try {
+                            gapFillFailedHandler.apply(new GapFillFailedException(from, to, publisherId, msgChainId, MAX_GAP_REQUESTS));
+                        } finally {
+                            clearGap();
+
+                            // TODO: make it configurable how to handle this error situation.
+                            // Currently unrecoverable gaps are just ignored, and processing continues from the next
+                            // message after the gap.
+                            log.warn("Unable to fill gap: Max retries reached! Ignoring the error and continuing from the first processable message: " + queue.peek().getMessageRef());
+                            lastReceived = queue.peek().getPreviousMessageRef();
+                            checkQueue();
+                        }
                     }
                 }
             }

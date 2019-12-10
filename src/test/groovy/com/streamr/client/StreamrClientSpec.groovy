@@ -144,6 +144,7 @@ class StreamrClientSpec extends Specification {
                 server = new TestWebSocketServer("localhost", 6000)
                 sleep(2000)
                 server.start()
+                sleep(2000)
             }
         }
         then:
@@ -181,12 +182,12 @@ class StreamrClientSpec extends Specification {
             void run() {
                 server.sendSubscribeToAll(stream.getId(), 0)
                 server.sendToAll(stream, Collections.singletonMap("key", "msg #1"))
-                sleep(250)
+                sleep(2000)
                 server.stop()
                 server = new TestWebSocketServer("localhost", 6000)
-                sleep(250)
+                sleep(2000)
                 server.start()
-                sleep(1000)
+                sleep(2000)
                 server.sendSubscribeToAll(stream.getId(), 0)
                 server.sendToAll(stream, Collections.singletonMap("key", "msg #2"))
             }
