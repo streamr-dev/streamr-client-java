@@ -15,6 +15,7 @@ public class StreamrClientOptions {
     private String websocketApiUrl = "wss://www.streamr.com/api/v1/ws?controlLayerVersion=1&messageLayerVersion=30";
     private String restApiUrl = "https://www.streamr.com/api/v1";
     private long connectionTimeoutMillis = 10 * 1000;
+    private long reconnectRetryInterval = 10 * 1000;
     private int propagationTimeout = 5000;
     private int resendTimeout = 5000;
 
@@ -64,7 +65,7 @@ public class StreamrClientOptions {
     }
 
     public void setWebsocketApiUrl(String websocketApiUrl) {
-        this.websocketApiUrl = websocketApiUrl;
+        this.websocketApiUrl = addMissingQueryString(websocketApiUrl);
     }
 
     public String getRestApiUrl() {
@@ -81,6 +82,14 @@ public class StreamrClientOptions {
 
     public void setConnectionTimeoutMillis(long connectionTimeoutMillis) {
         this.connectionTimeoutMillis = connectionTimeoutMillis;
+    }
+
+    public long getReconnectRetryInterval() {
+        return reconnectRetryInterval;
+    }
+
+    public void setReconnectRetryInterval(long reconnectRetryInterval) {
+        this.reconnectRetryInterval = reconnectRetryInterval;
     }
 
     public boolean getPublishSignedMsgs() {

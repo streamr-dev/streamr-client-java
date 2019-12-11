@@ -112,11 +112,15 @@ class MessageCreationUtilSpec extends Specification {
     void "publish with sequence numbers equal to 0 (same timestamp but different partitions)"() {
         Date timestamp = new Date()
         stream.partitions = 10
+
         when:
-        StreamMessageV31 msg1 = (StreamMessageV31) msgCreationUtil.createStreamMessage(stream, message, timestamp, null)
-        StreamMessageV31 msg2 = (StreamMessageV31) msgCreationUtil.createStreamMessage(stream, message, timestamp, "partition-key-1")
-        StreamMessageV31 msg3 = (StreamMessageV31) msgCreationUtil.createStreamMessage(stream, message, timestamp, "partition-key-2")
+        // Messages should go to different partitions
+        StreamMessageV31 msg1 = (StreamMessageV31) msgCreationUtil.createStreamMessage(stream, message, timestamp, "partition-key-1")
+        StreamMessageV31 msg2 = (StreamMessageV31) msgCreationUtil.createStreamMessage(stream, message, timestamp, "partition-key-2")
+
         then:
+        assert msg1.getStreamPartition() != msg2.getStreamPartition()
+
         assert msg1.getTimestamp() == timestamp.getTime()
         assert msg1.getSequenceNumber() == 0L
         assert msg1.previousMessageRef == null
@@ -124,12 +128,6 @@ class MessageCreationUtilSpec extends Specification {
         assert msg2.getTimestamp() == timestamp.getTime()
         assert msg2.getSequenceNumber() == 0L
         assert msg2.previousMessageRef == null
-
-        assert msg2.getStreamPartition() != msg3.getStreamPartition()
-
-        assert msg3.getTimestamp() == timestamp.getTime()
-        assert msg3.getSequenceNumber() == 0L
-        assert msg3.previousMessageRef == null
     }
 
     void "partitioner behaves correctly"() {

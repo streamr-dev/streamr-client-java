@@ -8,6 +8,7 @@ import java.math.BigInteger;
 import java.util.Date;
 
 import com.streamr.client.utils.SigningUtil;
+import okhttp3.Response;
 import org.apache.commons.codec.DecoderException;
 import org.ethereum.crypto.ECKey;
 import org.apache.commons.codec.binary.Hex;
@@ -31,11 +32,28 @@ public class EthereumAuthenticationMethod extends AuthenticationMethod {
         Challenge challenge = getChallenge(restApiUrl);
         String signature = signChallenge(challenge.challenge);
         ChallengeResponse response = new ChallengeResponse(challenge, signature, address);
-        return parse(post(restApiUrl + "/login/response", challengeResponseAdapter.toJson(response)));
+        Response resp = null;
+        try {
+            resp = post(restApiUrl + "/login/response", challengeResponseAdapter.toJson(response));
+            return parse(resp.body().source());
+        } finally {
+            if (resp != null) {
+                resp.close();
+            }
+        }
     }
 
     public Challenge getChallenge(String restApiUrl) throws IOException {
-        return challengeAdapter.fromJson(post(restApiUrl + "/login/challenge/"+address, ""));
+        Response response = null;
+        try {
+            response = post(restApiUrl + "/login/challenge/"+address, "");
+            return challengeAdapter.fromJson(response.body().source());
+        } finally {
+            if (response != null) {
+                response.close();
+            }
+        }
+
     }
 
     public String getAddress() {

@@ -49,4 +49,31 @@ class StreamrClientOptionsSpec extends Specification {
         InvalidRSAKeyException e = thrown InvalidRSAKeyException
         e.message == "Must be a valid RSA private key in the PEM format."
     }
+    void "adds missing query string (in set method)"() {
+        String url = "some-url"
+        String expectedUrl = url + "?controlLayerVersion=" + ControlMessage.LATEST_VERSION + "&messageLayerVersion=" + StreamMessage.LATEST_VERSION
+        StreamrClientOptions options = new StreamrClientOptions(null, SigningOptions.getDefault(), EncryptionOptions.getDefault(), "", "")
+        when:
+        options.setWebsocketApiUrl(url)
+        then:
+        options.getWebsocketApiUrl() == expectedUrl
+    }
+    void "adds missing control layer version param (in set method)"() {
+        String url = "some-url?messageLayerVersion=31"
+        String expectedUrl = url + "&controlLayerVersion=" + ControlMessage.LATEST_VERSION
+        StreamrClientOptions options = new StreamrClientOptions(null, SigningOptions.getDefault(), EncryptionOptions.getDefault(), "", "")
+        when:
+        options.setWebsocketApiUrl(url)
+        then:
+        options.getWebsocketApiUrl() == expectedUrl
+    }
+    void "adds missing message layer version param (in set method)"() {
+        String url = "some-url?controlLayerVersion=1"
+        String expectedUrl = url + "&messageLayerVersion=" + StreamMessage.LATEST_VERSION
+        StreamrClientOptions options = new StreamrClientOptions(null, SigningOptions.getDefault(), EncryptionOptions.getDefault(), "", "")
+        when:
+        options.setWebsocketApiUrl(url)
+        then:
+        options.getWebsocketApiUrl() == expectedUrl
+    }
 }

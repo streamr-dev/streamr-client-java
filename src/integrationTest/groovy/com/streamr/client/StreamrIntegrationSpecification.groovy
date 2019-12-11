@@ -10,8 +10,8 @@ import spock.lang.Specification
 
 class StreamrIntegrationSpecification extends Specification {
 
-    protected final static DEFAULT_REST_URL = "http://localhost:8081/streamr-core/api/v1"
-    private final static DEFAULT_WEBSOCKET_URL = "ws://localhost:8890/api/v1/ws?controlLayerVersion=1&messageLayerVersion=31"
+    protected final static DEFAULT_REST_URL = "http://localhost/api/v1"
+    private final static DEFAULT_WEBSOCKET_URL = "ws://localhost/api/v1/ws"
 
     protected static String generatePrivateKey() {
         byte[] array = new byte[32]

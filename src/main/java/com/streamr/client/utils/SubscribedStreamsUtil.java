@@ -6,15 +6,13 @@ import com.streamr.client.protocol.message_layer.StreamMessage;
 import com.streamr.client.rest.Stream;
 import org.cache2k.*;
 
-import java.util.HashMap;
-import java.util.List;
 import java.util.concurrent.TimeUnit;
-import java.util.function.BiFunction;
 import java.util.function.Function;
 
 public class SubscribedStreamsUtil {
+    private static final int STREAM_EXPIRATION = 15;
     private Cache<String, Stream> streamsPerStreamId = new Cache2kBuilder<String, Stream>() {}
-        .expireAfterWrite(15, TimeUnit.MINUTES).build();
+        .expireAfterWrite(STREAM_EXPIRATION, TimeUnit.MINUTES).build();
     private Function<String, Stream> getStreamFunction;
     private final AddressValidityUtil addressValidityUtil;
     private final SignatureVerificationPolicy verifySignatures;
@@ -25,6 +23,14 @@ public class SubscribedStreamsUtil {
         this.getStreamFunction = getStreamFunction;
         this.addressValidityUtil = addressValidityUtil;
         this.verifySignatures = verifySignatures;
+    }
+
+    private Cache<String, Stream> safeGetStreamCache() {
+        if (streamsPerStreamId.isClosed()) {
+            streamsPerStreamId = new Cache2kBuilder<String, Stream>() {}
+                    .expireAfterWrite(STREAM_EXPIRATION, TimeUnit.MINUTES).build();
+        }
+        return streamsPerStreamId;
     }
 
     public void verifyStreamMessage(StreamMessage msg) throws InvalidSignatureException {
@@ -56,16 +62,16 @@ public class SubscribedStreamsUtil {
     }
 
     private Stream getStream(String streamId) {
-        Stream s = streamsPerStreamId.get(streamId);
+        Stream s = safeGetStreamCache().get(streamId);
         if (s == null) {
             s = getStreamFunction.apply(streamId);
-            streamsPerStreamId.put(streamId, s);
+            safeGetStreamCache().put(streamId, s);
         }
         return s;
     }
 
     public void clearAndClose() {
-        streamsPerStreamId.clearAndClose();
+        safeGetStreamCache().clearAndClose();
         addressValidityUtil.clearAndClose();
     }
 }

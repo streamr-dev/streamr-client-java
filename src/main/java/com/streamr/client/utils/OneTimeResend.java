@@ -29,7 +29,7 @@ public class OneTimeResend extends Thread {
                 ws.send(controlMessage.toJson());
             }
         } catch (InterruptedException e) {
-            log.error(e);
+            log.warn("Second resend request was canceled.");
         }
     }
 }

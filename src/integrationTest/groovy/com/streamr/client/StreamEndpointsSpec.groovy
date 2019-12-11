@@ -155,7 +155,7 @@ class StreamEndpointsSpec extends StreamrIntegrationSpecification {
         UserInfo info = client.getUserInfo()
 
         then:
-        info.getName() == method.address
+        info.getName() == "Anonymous User"
         info.getUsername() == method.address
     }
 

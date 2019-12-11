@@ -60,7 +60,7 @@ public class SigningUtil {
             StringBuilder sb = new StringBuilder(msg.getStreamId());
             sb.append(msg.getStreamPartition());
             sb.append(msg.getTimestamp());
-            sb.append(msg.getPublisherId());
+            sb.append(msg.getPublisherId().toLowerCase());
             sb.append(msg.getSerializedContent());
             return sb.toString();
         } else if (signatureType == StreamMessage.SignatureType.SIGNATURE_TYPE_ETH) {
@@ -68,7 +68,7 @@ public class SigningUtil {
             sb.append(msg.getStreamPartition());
             sb.append(msg.getTimestamp());
             sb.append(msg.getSequenceNumber());
-            sb.append(msg.getPublisherId());
+            sb.append(msg.getPublisherId().toLowerCase());
             sb.append(msg.getMsgChainId());
             if (msg.getPreviousMessageRef() != null) {
                 sb.append(msg.getPreviousMessageRef().getTimestamp());

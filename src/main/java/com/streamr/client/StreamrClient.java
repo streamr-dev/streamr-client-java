@@ -36,7 +36,7 @@ public class StreamrClient extends StreamrRESTClient {
     private static final Logger log = LogManager.getLogger();
 
     // Underlying websocket implementation
-    private final WebSocketClient websocket;
+    private WebSocketClient websocket;
 
     protected final Subscriptions subs = new Subscriptions();
 
@@ -58,6 +58,8 @@ public class StreamrClient extends StreamrRESTClient {
     private Subscription inboxSub;
 
     private final HashMap<String, OneTimeResend> secondResends = new HashMap<>();
+
+    private ErrorMessageHandler errorMessageHandler;
 
     public StreamrClient(StreamrClientOptions options) {
         super(options);
@@ -122,6 +124,14 @@ public class StreamrClient extends StreamrRESTClient {
         keyExchangeUtil = new KeyExchangeUtil(keyStorage, msgCreationUtil, encryptionUtil, addressValidityUtil,
                 this::publish, this::setGroupKeys);
 
+        initWebsocket();
+    }
+
+    public StreamrClient(AuthenticationMethod authenticationMethod) {
+        this(new StreamrClientOptions(authenticationMethod));
+    }
+
+    private void initWebsocket() {
         try {
             this.websocket = new WebSocketClient(new URI(options.getWebsocketApiUrl())) {
                 @Override
@@ -140,18 +150,25 @@ public class StreamrClient extends StreamrRESTClient {
                 public void onClose(int code, String reason, boolean remote) {
                     log.info("Connection closed! Code: " + code + ", Reason: " + reason);
                     state = State.Disconnected;
-                    StreamrClient.this.onClose();
+                    if (remote) {
+                        sleepThenReconnect();
+                    } else {
+                        StreamrClient.this.onClose();
+                    }
                 }
 
                 @Override
                 public void onError(Exception ex) {
                     log.error(ex);
+                    if (ex instanceof IOException) {
+                        sleepThenReconnect();
+                    } else {
+                        if (state == State.Connecting) {
+                            errorWhileConnecting = ex;
+                        }
 
-                    if (state == State.Connecting) {
-                        errorWhileConnecting = ex;
+                        StreamrClient.this.onError(ex);
                     }
-
-                    StreamrClient.this.onError(ex);
                 }
 
                 @Override
@@ -163,10 +180,6 @@ public class StreamrClient extends StreamrRESTClient {
         } catch (URISyntaxException e) {
             throw new RuntimeException(e);
         }
-    }
-
-    public StreamrClient(AuthenticationMethod authenticationMethod) {
-        this(new StreamrClientOptions(authenticationMethod));
     }
 
     /*
@@ -183,26 +196,67 @@ public class StreamrClient extends StreamrRESTClient {
         return websocket;
     }
 
+    private void sleepThenReconnect() {
+        log.warn("Disconnected. Attempting to reconnect in " + options.getReconnectRetryInterval() / 1000 + " seconds.");
+        try {
+            Thread.sleep(options.getReconnectRetryInterval());
+        } catch (InterruptedException e) {
+            e.printStackTrace();
+            Thread.currentThread().interrupt();
+        }
+        this.reconnect();
+    }
+
+    private void reconnect() {
+        initWebsocket();
+        websocket.connect();
+        waitForState(State.Connected);
+        if (getState() == State.Connected) {
+            StreamrClient.this.subs.forEach(StreamrClient.this::resubscribe);
+        } else {
+            sleepThenReconnect();
+        }
+    }
+
     /**
      * Connects the websocket. Blocks until connected, or throws if the connection times out.
      */
     public void connect() throws ConnectionTimeoutException {
+        connect(true);
+    }
+
+    private void connect(boolean firstTrial) throws ConnectionTimeoutException {
         if (state == State.Connected) {
-            log.warn("Tried to connect when already connected.");
+            log.warn("Trying to connect when already connected to " + options.getWebsocketApiUrl());
+            return;
+        } else if (state == State.Connecting) {
+            log.warn("Trying to connect when already connecting to " + options.getWebsocketApiUrl());
+            waitForState(State.Connected);
             return;
         }
-        log.info("Connecting to " + options.getWebsocketApiUrl() + "...");
         state = State.Connecting;
 
-        websocket.connect();
-        waitForState(State.Connected);
+        if (firstTrial) {
+            log.info("Connecting to " + options.getWebsocketApiUrl() + "...");
+            websocket.connect();
+            waitForState(State.Connected);
+        } else {
+            log.info("Reconnecting to " + options.getWebsocketApiUrl() + "...");
+            reconnect();
+        }
 
         if (errorWhileConnecting != null) {
             Exception ex = errorWhileConnecting;
             errorWhileConnecting = null;
             throw new RuntimeException(ex);
         } else if (state != State.Connected) {
-            throw new ConnectionTimeoutException(options.getWebsocketApiUrl());
+            log.warn("Failed to connect to " + options.getWebsocketApiUrl() + ". Going to retry in " + options.getReconnectRetryInterval() / 1000 + " seconds.");
+            try {
+                Thread.sleep(options.getReconnectRetryInterval());
+            } catch (InterruptedException e) {
+                e.printStackTrace();
+            }
+            connect(false);
         }
 
         if (inbox != null && inboxSub == null) {
@@ -219,6 +273,7 @@ public class StreamrClient extends StreamrRESTClient {
                 }
             });
         }
+        log.info("Connected to " + options.getWebsocketApiUrl());
     }
 
     /**
@@ -238,6 +293,10 @@ public class StreamrClient extends StreamrRESTClient {
         }
     }
 
+    public void setErrorMessageHandler(ErrorMessageHandler errorMessageHandler) {
+        this.errorMessageHandler = errorMessageHandler;
+    }
+
     private void waitForState(State target) {
         long iterations = options.getConnectionTimeoutMillis() / 100;
         while (errorWhileConnecting == null && state != target && iterations > 0) {
@@ -248,6 +307,13 @@ public class StreamrClient extends StreamrRESTClient {
                 // ignore
             }
         }
+    }
+
+    private void send(ControlMessage message) {
+        if (getState() != State.Connected) {
+            connect();
+        }
+        this.websocket.send(message.toJson());
     }
 
     public State getState() {
@@ -286,6 +352,13 @@ public class StreamrClient extends StreamrRESTClient {
                         handleResendResponseNoResend((ResendResponseNoResend)message);
                     } else if (message.getType() == ResendResponseResent.TYPE) {
                         handleResendResponseResent((ResendResponseResent)message);
+                    } else if (message.getType() == ErrorResponse.TYPE) {
+                        ErrorResponse error = (ErrorResponse) message;
+                        if (this.errorMessageHandler != null) {
+                            this.errorMessageHandler.onErrorMessage(error);
+                        } else {
+                            log.error("Protocol error message: '{}'", error.getErrorMessage());
+                        }
                     }
                 } catch (Exception e) {
                     log.error("Error handling message: " + message, e);
@@ -334,14 +407,18 @@ public class StreamrClient extends StreamrRESTClient {
         publish(stream, payload, timestamp, null);
     }
 
-    public void publish(Stream stream, Map<String, Object> payload, Date timestamp, GroupKey groupKey) {
+    public void publish(Stream stream, Map<String, Object> payload, Date timestamp, String partitionKey) {
+        publish(stream, payload, timestamp, partitionKey, null);
+    }
+
+    public void publish(Stream stream, Map<String, Object> payload, Date timestamp, String partitionKey, GroupKey groupKey) {
         if (!getState().equals(StreamrClient.State.Connected)) {
             connect();
         }
         if (groupKey != null) {
             options.getEncryptionOptions().getPublisherGroupKeys().put(stream.getId(), groupKey);
         }
-        StreamMessage streamMessage = msgCreationUtil.createStreamMessage(stream, payload, timestamp, null, groupKey);
+        StreamMessage streamMessage = msgCreationUtil.createStreamMessage(stream, payload, timestamp, partitionKey, groupKey);
         publish(streamMessage);
     }
 
@@ -382,7 +459,7 @@ public class StreamrClient extends StreamrRESTClient {
             keysPerPublisher.putAll(groupKeys);
         }
 
-        SubscribeRequest subscribeRequest = new SubscribeRequest(stream.getId(), partition, session.getSessionToken());
+        SubscribeRequest subscribeRequest = new SubscribeRequest(stream.getId(), partition, getSessionToken());
 
         Subscription sub;
         Subscription.GroupKeyRequestFunction requestFunction = (publisherId, start, end) -> sendGroupKeyRequest(stream.getId(), publisherId, start, end);
@@ -400,12 +477,18 @@ public class StreamrClient extends StreamrRESTClient {
             ResendRangeRequest req = new ResendRangeRequest(stream.getId(), partition,
                     sub.getId(), from, to, publisherId, msgChainId, getSessionToken());
             sub.setResending(true);
-            this.websocket.send(req.toJson());
+            send(req);
         });
         subs.add(sub);
         sub.setState(Subscription.State.SUBSCRIBING);
-        this.websocket.send(subscribeRequest.toJson());
+        send(subscribeRequest);
         return sub;
+    }
+
+    private void resubscribe(Subscription sub) {
+        SubscribeRequest subscribeRequest = new SubscribeRequest(sub.getStreamId(), sub.getPartition(), getSessionToken());
+        sub.setState(Subscription.State.SUBSCRIBING);
+        send(subscribeRequest);
     }
 
     /*
@@ -442,7 +525,7 @@ public class StreamrClient extends StreamrRESTClient {
         UnsubscribeRequest unsubscribeRequest = new UnsubscribeRequest(sub.getStreamId(), sub.getPartition());
         sub.setState(Subscription.State.UNSUBSCRIBING);
         sub.setResending(false);
-        this.websocket.send(unsubscribeRequest.toJson());
+        send(unsubscribeRequest);
     }
 
     private void handleSubcribeResponse(SubscribeResponse res) throws SubscriptionNotFoundException {
@@ -451,7 +534,7 @@ public class StreamrClient extends StreamrRESTClient {
         if (sub.hasResendOptions()) {
             ResendOption resendOption = sub.getResendOption();
             ControlMessage req = resendOption.toRequest(res.getStreamId(), res.getStreamPartition(), sub.getId(), this.getSessionToken());
-            this.websocket.send(req.toJson());
+            send(req);
             OneTimeResend resend = new OneTimeResend(websocket, req, options.getResendTimeout(), sub);
             secondResends.put(sub.getId(), resend);
             resend.start();

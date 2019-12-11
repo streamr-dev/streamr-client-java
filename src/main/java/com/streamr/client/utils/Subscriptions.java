@@ -4,7 +4,11 @@ import com.streamr.client.exceptions.AlreadySubscribedException;
 import com.streamr.client.exceptions.SubscriptionNotFoundException;
 import com.streamr.client.subs.Subscription;
 
-import java.util.*;
+import java.util.Collection;
+import java.util.HashMap;
+import java.util.HashSet;
+import java.util.Map;
+import java.util.function.Consumer;
 
 public class Subscriptions {
 
@@ -50,5 +54,9 @@ public class Subscriptions {
         } else {
             throw new SubscriptionNotFoundException(sub.getStreamId(), sub.getPartition());
         }
+    }
+
+    public void forEach(Consumer<Subscription> f) {
+        subsByStreamIdAndPartition.values().forEach(map -> map.values().forEach(f));
     }
 }

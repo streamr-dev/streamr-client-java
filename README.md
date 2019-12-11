@@ -8,6 +8,7 @@ This library is work-in-progress. It is currently in a MVP stage covering a very
 
 - [Authentication](#authentication)
 - [Data signing](#signing)
+- [Handling Errors](#handling-errors)
 - [Creating Streams](#creating-streams)
 - [Looking up Streams](#looking-up-streams)
 - [Publishing events to Streams](#publishing)
@@ -102,7 +103,7 @@ Nevertheless, the next subsections will cover every parameter of the `StreamrCli
 - [Authentication options](#authentication)
 - [Signing options](#signing)
 - [Encryption options](#encryption)
-- [Other options](#)
+- [Other options](#other-options)
 
 <a name="authentication"></a>
 ### Authentication
@@ -225,7 +226,26 @@ You can also use the default `EncryptionOptions`:
 EncryptionOptions options = EncryptionOptions.getDefault();
 ```
 
-<a name="other"></a>
+Events published can be encrypted with AES-256 symmetric group keys. For now, they must be set at construction time for the publisher and the subscribers. Later, a secure key exchange protocol will allow the publisher to share the key with their subscribers.
+
+The `EncryptionOptions` instance can be constructed as follows:
+
+```java
+// stream --> group key
+HashMap<String, String> publisherGroupKeys = new HashMap<>();
+// every AES-256 group key must be represented as a hex string ("0x" prefix is optional)
+publisherGroupKeys.put("streamId", "0x...");
+
+// streamId --> (publisherId --> groupKeyHex)
+HashMap<String, HashMap<String, String>> subscriberGroupKeys = ...;
+
+EncryptionOptions encryptionOptions = new EncryptionOptions(publisherGroupKeys, subscriberGroupKeys);
+
+// can also be constructed using default values which are empty HashMaps
+EncryptionOptions defaultOptions = EncryptionOptions.getDefault();
+```
+
+<a name="other-options"></a>
 ### Other options
 
 The following table describes the other options of the `StreamrClientOptions` constructor and their default values.
@@ -236,6 +256,17 @@ websocketApiUrl | wss://www.streamr.com/api/v1/ws | Address of the Streamr webso
 restApiUrl | https://www.streamr.com/api/v1 | Base URL of the Streamr REST API.
 gapFillTimeout | 5 seconds | When a gap between two received events is detected, a resend request is sent periodically until the gap is resolved. This option determines that period. 
 retryResendAfter | 5 seconds | When subscribing with a resend option (See [this](#subscribing-unsubscribing) section), the messages requested by a first resend request might not be available yet. This option determines after how much time, the resend must be requested a second time.
+
+<a name="handling-errors"></a>
+## Handling Errors
+
+You can customize error handling by registering an error handler.
+```java
+client.setErrorMessageHandler({ ErrorResponse error ->
+    // handle error
+})
+```
+If no error message handler is register then the error is logged.
 
 <a name="creating-streams"></a>
 ## Creating Streams
@@ -281,6 +312,21 @@ All events are timestamped. The above example assigns the current timestamp to t
 
 ```java
 client.publish(stream, msg, new Date());
+```
+
+By default the stream partition is 0, but you can publish using a specific partition key:
+```java
+client.publish(stream, msg, new Date(), "myPartitionKey");
+```
+
+The events can be encrypted using AES-256 in CTR mode. The group keys can be set at construction (See [encryption options](#encryption)). But in order to prevent new subscribers to eavesdrop and then decrypt past messages, the key can be updated at will when publishing:
+
+```java
+String newGroupKey = "0x..."
+// The key is updated to be 'newGroupKey' and sent along with 'msg'
+client.publish(stream, msg, new Date(), null, newGroupKey)
+// next messages are encrypted with 'newGroupKey'
+client.publish(stream, msg2)
 ```
 
 <a name="subscribing-unsubscribing"></a>

@@ -35,7 +35,7 @@ class SigningUtilSpec extends Specification {
 
     void "should correctly sign a StreamMessage with null previous ref"() {
         StreamMessage msg = new StreamMessageV31(msgId, null, StreamMessage.ContentType.CONTENT_TYPE_JSON, StreamMessage.EncryptionType.NONE, [foo: 'bar'], StreamMessage.SignatureType.SIGNATURE_TYPE_NONE, null)
-        String expectedPayload = "streamId04252353150publisherIdmsgChainId"+'{"foo":"bar"}'
+        String expectedPayload = "streamId04252353150publisheridmsgChainId"+'{"foo":"bar"}'
         when:
         signingUtil.signStreamMessage(msg)
         then:
@@ -45,7 +45,7 @@ class SigningUtilSpec extends Specification {
 
     void "should correctly sign a StreamMessage with non-null previous ref"() {
         StreamMessage msg = new StreamMessageV31(msgId, new MessageRef(100, 1), StreamMessage.ContentType.CONTENT_TYPE_JSON, StreamMessage.EncryptionType.NONE, [foo: 'bar'], StreamMessage.SignatureType.SIGNATURE_TYPE_NONE, null)
-        String expectedPayload = "streamId04252353150publisherIdmsgChainId1001"+'{"foo":"bar"}'
+        String expectedPayload = "streamId04252353150publisheridmsgChainId1001"+'{"foo":"bar"}'
         when:
         signingUtil.signStreamMessage(msg)
         then:
@@ -74,6 +74,16 @@ class SigningUtilSpec extends Specification {
                 StreamMessage.SignatureType.SIGNATURE_TYPE_NONE, null)
         when:
         signingUtil.signStreamMessage(msg)
+        then:
+        SigningUtil.hasValidSignature(msg)
+    }
+
+    void "returns true for correct signature of publisher address has upper and lower case letters"() {
+        String address1 = "0x752C8dCAC0788759aCB1B4BB7A9103596BEe3e6c"
+        MessageID msgId = new MessageID("ogzCJrTdQGuKQO7nkLd3Rw", 0, 1567003338767L, 2L, address1, "kxYyLiSUQO0SRvMx6gA1")
+        when:
+        StreamMessage msg = new StreamMessageV31(msgId, new MessageRef(1567003338767L,1L), StreamMessage.ContentType.CONTENT_TYPE_JSON, StreamMessage.EncryptionType.NONE, [numero: 86],
+                StreamMessage.SignatureType.SIGNATURE_TYPE_ETH, "0xc97f1fbb4f506a53ecb838db59017f687892494a9073315f8a187846865bf8325333315b116f1142921a97e49e3881eced2b176c69f9d60666b98b7641ad11e01b")
         then:
         SigningUtil.hasValidSignature(msg)
     }
