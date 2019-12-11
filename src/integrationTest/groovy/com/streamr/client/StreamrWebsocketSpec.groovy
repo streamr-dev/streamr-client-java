@@ -201,7 +201,7 @@ class StreamrWebsocketSpec extends StreamrIntegrationSpecification {
 
 		Thread.sleep(2000)
 
-		client.publish(stream, [test: 'clear text'], new Date(), key)
+		client.publish(stream, [test: 'clear text'], new Date(), null, key)
 		// waiting for the key exchange mechanism to happen under the hood
 		Thread.sleep(3000)
 
@@ -211,7 +211,7 @@ class StreamrWebsocketSpec extends StreamrIntegrationSpecification {
 
 		when:
 		// publishing a second message with a new group key
-		client.publish(stream, [test: 'another clear text'], new Date(), genKey())
+		client.publish(stream, [test: 'another clear text'], new Date(), null, genKey())
 
 		Thread.sleep(2000)
 
@@ -223,8 +223,8 @@ class StreamrWebsocketSpec extends StreamrIntegrationSpecification {
 	void "subscriber can get the historical keys and decrypt old encrypted messages using an RSA key pair"() {
 		Stream stream = client.createStream(new Stream(generateResourceName(), ""))
 		// publishing historical messages with different group keys before subscribing
-		client.publish(stream, [test: 'clear text'], new Date(), genKey())
-		client.publish(stream, [test: 'another clear text'], new Date(), genKey())
+		client.publish(stream, [test: 'clear text'], new Date(), null, genKey())
+		client.publish(stream, [test: 'another clear text'], new Date(), null, genKey())
 		Thread.sleep(3000)
 
 		when:
