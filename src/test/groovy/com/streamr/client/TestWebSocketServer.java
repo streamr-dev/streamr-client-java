@@ -5,6 +5,7 @@ import com.streamr.client.protocol.control_layer.ControlMessage;
 import com.streamr.client.protocol.control_layer.SubscribeResponse;
 import com.streamr.client.protocol.message_layer.StreamMessage;
 import com.streamr.client.rest.Stream;
+import com.streamr.client.utils.KeyHistoryStorage;
 import com.streamr.client.utils.MessageCreationUtil;
 import org.java_websocket.WebSocket;
 import org.java_websocket.handshake.ClientHandshake;
@@ -16,7 +17,7 @@ import java.util.LinkedList;
 import java.util.Map;
 
 public class TestWebSocketServer extends WebSocketServer {
-    private final MessageCreationUtil msgCreationUtil = new MessageCreationUtil("publisherId", null);
+    private final MessageCreationUtil msgCreationUtil = new MessageCreationUtil("publisherId", null, new KeyHistoryStorage());
     private LinkedList<String> msgs = new LinkedList<>();
     private String wsUrl;
 

@@ -19,7 +19,7 @@ public class KeyHistoryStorage extends KeyStorage {
     }
 
     public KeyHistoryStorage() {
-        this(null);
+        this(new HashMap<>());
     }
 
     @Override

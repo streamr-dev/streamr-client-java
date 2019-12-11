@@ -64,14 +64,22 @@ public class AddressValidityUtil {
 
     private HashMap<String, Boolean> getAddresses(String streamId, Cache<String, HashMap<String, Boolean>> cache,
                                                   Function<String, List<String>> getFunction) {
-        HashMap<String, Boolean> addresses = cache.get(streamId);
+        HashMap<String, Boolean> addresses = safeGetCache(cache).get(streamId);
         if (addresses == null) {
             addresses = new HashMap<>();
             for (String publisher: getFunction.apply(streamId)) {
                 addresses.put(publisher, true);
             }
-            cache.put(streamId, addresses);
+            safeGetCache(cache).put(streamId, addresses);
         }
         return addresses;
+    }
+
+    private Cache<String, HashMap<String, Boolean>> safeGetCache(Cache<String, HashMap<String, Boolean>> cache) {
+        if (cache.isClosed()) {
+            cache = new Cache2kBuilder<String, HashMap<String, Boolean>>() {}
+                    .expireAfterWrite(30, TimeUnit.MINUTES).build();
+        }
+        return cache;
     }
 }
