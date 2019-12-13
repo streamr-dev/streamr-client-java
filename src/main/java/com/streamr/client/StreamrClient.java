@@ -238,6 +238,9 @@ public class StreamrClient extends StreamrRESTClient {
 
         if (firstTrial) {
             log.info("Connecting to " + options.getWebsocketApiUrl() + "...");
+            if (websocket == null) {
+                initWebsocket();
+            }
             websocket.connect();
             waitForState(State.Connected);
         } else {
@@ -280,10 +283,18 @@ public class StreamrClient extends StreamrRESTClient {
      * Disconnects the websocket. Blocks until disconnected, or throws if the operation times out.
      */
     public void disconnect() throws ConnectionTimeoutException {
+        if (state == State.Disconnected) {
+            if (!websocket.isClosed()) {
+                websocket.closeConnection(0, "");
+                websocket = null;
+            }
+            return;
+        }
         log.info("Disconnecting...");
         state = State.Disconnecting;
 
-        websocket.close();
+        websocket.closeConnection(0, "");
+        websocket = null;
         waitForState(State.Disconnected);
 
         if (errorWhileConnecting != null) {

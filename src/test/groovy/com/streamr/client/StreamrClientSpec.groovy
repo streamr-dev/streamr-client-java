@@ -19,7 +19,7 @@ class StreamrClientSpec extends Specification {
 
     private static TestWebSocketServer server = new TestWebSocketServer("localhost", 6000)
 
-    TestingStreamrClient client
+    private static TestingStreamrClient client
     int gapFillTimeout = 500
     int retryResendAfter = 500
 
@@ -37,6 +37,11 @@ class StreamrClientSpec extends Specification {
 
         StreamrClientOptions options = new StreamrClientOptions(new ApiKeyAuthenticationMethod("apikey"), signingOptions, EncryptionOptions.getDefault(), server.getWsUrl(), "", gapFillTimeout, retryResendAfter)
         client = new TestingStreamrClient(options)
+        client.connect()
+    }
+
+    void cleanup() {
+        client.disconnect()
     }
 
     StreamMessageV31 createMsg(String streamId, long timestamp, long sequenceNumber, Long prevTimestamp, Long prevSequenceNumber) {
