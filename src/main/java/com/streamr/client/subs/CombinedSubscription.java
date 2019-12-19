@@ -6,7 +6,6 @@ import com.streamr.client.exceptions.UnableToDecryptException;
 import com.streamr.client.exceptions.UnsupportedMessageException;
 import com.streamr.client.options.ResendOption;
 import com.streamr.client.protocol.message_layer.StreamMessage;
-import com.streamr.client.utils.GroupKey;
 import com.streamr.client.utils.OrderedMsgChain;
 import com.streamr.client.utils.UnencryptedGroupKey;
 
@@ -18,7 +17,7 @@ public class CombinedSubscription extends Subscription {
     private BasicSubscription sub;
     private final ArrayDeque<StreamMessage> queue = new ArrayDeque<>();
     public CombinedSubscription(String streamId, int partition, MessageHandler handler, ResendOption resendOption,
-                                Map<String, UnencryptedGroupKey> groupKeys, GroupKeyRequestFunction groupKeyRequestFunction,
+                                Map<String, UnencryptedGroupKey> groupKeys, BasicSubscription.GroupKeyRequestFunction groupKeyRequestFunction,
                                 long propagationTimeout, long resendTimeout) {
         super(streamId, partition, handler, propagationTimeout, resendTimeout);
         MessageHandler wrapperHandler = new MessageHandler() {

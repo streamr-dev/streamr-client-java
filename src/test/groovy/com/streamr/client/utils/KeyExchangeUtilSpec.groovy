@@ -28,8 +28,6 @@ class KeyExchangeUtilSpec extends Specification {
     KeyExchangeUtil util
     KeyStorage storage
     MessageCreationUtil messageCreationUtil
-    Function<String, List<String>> getSubscribers
-    BiFunction<String, String, Boolean> isSubscriber
     Consumer<StreamMessage> publish
     KeyExchangeUtil.SetGroupKeysFunction setGroupKeysFunction
     StreamMessage published
@@ -42,18 +40,6 @@ class KeyExchangeUtilSpec extends Specification {
     void setup() {
         storage = Mock(KeyStorage)
         messageCreationUtil = Mock(MessageCreationUtil)
-        getSubscribers = new Function<String, List<String>>() {
-            @Override
-            List<String> apply(String s) {
-                return new ArrayList<String>()
-            }
-        }
-        isSubscriber = new BiFunction<String, String, Boolean>() {
-            @Override
-            Boolean apply(String streamId, String subscriberId) {
-                return streamId == "streamId" && subscriberId == "subscriberId"
-            }
-        }
         publish = new Consumer<StreamMessage>() {
             @Override
             void accept(StreamMessage streamMessage) {
@@ -164,18 +150,6 @@ class KeyExchangeUtilSpec extends Specification {
         then:
         InvalidGroupKeyResponseException e = thrown(InvalidGroupKeyResponseException)
         e.message == "Received unsigned group key response (it must be signed to avoid MitM attacks)."
-    }
-    void "should throw if no private key to decrypt"() {
-        MessageID id = new MessageID("subscriberInbox", 0, 414, 0, "publisherId", "msgChainId")
-        Map<String, Object> content = ["keys": [], "streamId": "streamId"]
-        StreamMessage response = new StreamMessageV31(id, null, StreamMessage.ContentType.GROUP_KEY_RESPONSE_SIMPLE,
-                StreamMessage.EncryptionType.NONE, content, StreamMessage.SignatureType.SIGNATURE_TYPE_ETH, "signature")
-        KeyExchangeUtil util2 = new KeyExchangeUtil(storage, messageCreationUtil, null, addressValidityUtil, publish, setGroupKeysFunction)
-        when:
-        util2.handleGroupKeyResponse(response)
-        then:
-        InvalidGroupKeyResponseException e = thrown(InvalidGroupKeyResponseException)
-        e.message == "Cannot decrypt group key response without the private key."
     }
     void "should reject response with invalid group key"() {
         SecureRandom secureRandom = new SecureRandom()

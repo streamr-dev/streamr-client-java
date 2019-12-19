@@ -6,6 +6,7 @@ import com.streamr.client.options.ResendLastOption
 import com.streamr.client.protocol.message_layer.MessageRef
 import com.streamr.client.protocol.message_layer.StreamMessage
 import com.streamr.client.protocol.message_layer.StreamMessageV31
+import com.streamr.client.subs.BasicSubscription
 import com.streamr.client.subs.HistoricalSubscription
 import com.streamr.client.subs.Subscription
 import com.streamr.client.utils.EncryptionUtil
@@ -241,7 +242,7 @@ class HistoricalSubscriptionSpec extends Specification {
             void onMessage(Subscription sub, StreamMessage message) {
                 received = message.getContent()
             }
-        }, new ResendLastOption(1), null, new Subscription.GroupKeyRequestFunction() {
+        }, new ResendLastOption(1), null, new BasicSubscription.GroupKeyRequestFunction() {
             @Override
             void apply(String publisherId, Date start, Date end) {
                 receivedPublisherId = publisherId
@@ -282,7 +283,7 @@ class HistoricalSubscriptionSpec extends Specification {
                     received2 = message
                 }
             }
-        }, new ResendLastOption(1), null, new Subscription.GroupKeyRequestFunction() {
+        }, new ResendLastOption(1), null, new BasicSubscription.GroupKeyRequestFunction() {
             @Override
             void apply(String publisherId, Date start, Date end) {
                 callCount++

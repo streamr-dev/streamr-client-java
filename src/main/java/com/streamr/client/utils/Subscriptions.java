@@ -14,7 +14,11 @@ public class Subscriptions {
 
     private final Map<String, Map<Integer, Subscription>> subsByStreamIdAndPartition = new HashMap<>();
 
-    public void add(Subscription sub) {
+    /**
+     *
+     * @throws AlreadySubscribedException if there is already a subscription for the stream-partition
+     */
+    public void add(Subscription sub) throws AlreadySubscribedException {
         Map<Integer, Subscription> subsByStreamId = subsByStreamIdAndPartition.get(sub.getStreamId());
         if (subsByStreamId == null) {
             subsByStreamId = new HashMap<>();

@@ -473,7 +473,7 @@ public class StreamrClient extends StreamrRESTClient {
         SubscribeRequest subscribeRequest = new SubscribeRequest(stream.getId(), partition, getSessionToken());
 
         Subscription sub;
-        Subscription.GroupKeyRequestFunction requestFunction = (publisherId, start, end) -> sendGroupKeyRequest(stream.getId(), publisherId, start, end);
+        BasicSubscription.GroupKeyRequestFunction requestFunction = (publisherId, start, end) -> sendGroupKeyRequest(stream.getId(), publisherId, start, end);
         if (resendOption == null) {
             sub = new RealTimeSubscription(stream.getId(), partition, handler, groupKeys,
                     requestFunction, options.getPropagationTimeout(), options.getResendTimeout());

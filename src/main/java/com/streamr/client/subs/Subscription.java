@@ -39,10 +39,6 @@ public abstract class Subscription {
         this.resendTimeout = resendTimeout;
     }
 
-    public Subscription(String streamId, int partition, MessageHandler handler) {
-        this(streamId, partition, handler, DEFAULT_PROPAGATION_TIMEOUT, DEFAULT_RESEND_TIMEOUT);
-    }
-
     public String getId() {
         return id;
     }
@@ -88,9 +84,4 @@ public abstract class Subscription {
     public abstract void setGroupKeys(String publisherId, ArrayList<UnencryptedGroupKey> groupKeys);
 
     public abstract void clear();
-
-    @FunctionalInterface
-    public interface GroupKeyRequestFunction {
-        void apply(String publisherId, Date start, Date end);
-    }
 }

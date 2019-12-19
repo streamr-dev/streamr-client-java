@@ -101,9 +101,6 @@ public class KeyExchangeUtil {
             throw new InvalidGroupKeyResponseException("Received group key from an invalid publisher "
                     + groupKeyResponse.getPublisherId() + " for stream " + streamId);
         }
-        if (encryptionUtil == null) {
-            throw new InvalidGroupKeyResponseException("Cannot decrypt group key response without the private key.");
-        }
         ArrayList<UnencryptedGroupKey> decryptedKeys = new ArrayList<>();
         for (Map<String, Object> map: (ArrayList<Map<String, Object>>) content.get("keys")) {
             UnencryptedGroupKey decryptedKey = EncryptedGroupKey.fromMap(map).getDecrypted(encryptionUtil);

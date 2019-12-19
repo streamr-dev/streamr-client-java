@@ -9,6 +9,7 @@ import com.streamr.client.options.ResendOption;
 import com.streamr.client.protocol.message_layer.StreamMessage;
 import com.streamr.client.utils.EncryptionUtil;
 import com.streamr.client.utils.GroupKey;
+import com.streamr.client.utils.OrderedMsgChain;
 import com.streamr.client.utils.UnencryptedGroupKey;
 
 import javax.crypto.SecretKey;
@@ -119,5 +120,9 @@ public class RealTimeSubscription extends BasicSubscription {
     @Override
     public void handleRealTimeMessage(StreamMessage msg) throws GapDetectedException, UnsupportedMessageException, UnableToDecryptException {
         orderingUtil.add(msg);
+    }
+
+    public void setLastMessageRefs(ArrayList<OrderedMsgChain> chains) {
+        orderingUtil.addChains(chains);
     }
 }

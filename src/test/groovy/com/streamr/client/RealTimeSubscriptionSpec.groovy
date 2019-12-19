@@ -5,6 +5,7 @@ import com.streamr.client.exceptions.UnableToDecryptException
 import com.streamr.client.protocol.message_layer.MessageRef
 import com.streamr.client.protocol.message_layer.StreamMessage
 import com.streamr.client.protocol.message_layer.StreamMessageV31
+import com.streamr.client.subs.BasicSubscription
 import com.streamr.client.subs.RealTimeSubscription
 import com.streamr.client.subs.Subscription
 import com.streamr.client.utils.EncryptionUtil
@@ -238,7 +239,7 @@ class RealTimeSubscriptionSpec extends Specification {
             @Override
             void onMessage(Subscription sub, StreamMessage message) {
             }
-        }, ['publisherId': wrongGroupKey], new Subscription.GroupKeyRequestFunction() {
+        }, ['publisherId': wrongGroupKey], new BasicSubscription.GroupKeyRequestFunction() {
             @Override
             void apply(String publisherId, Date start, Date end) {
                 receivedPublisherId = publisherId
@@ -274,7 +275,7 @@ class RealTimeSubscriptionSpec extends Specification {
                     received2 = message
                 }
             }
-        }, ['publisherId': wrongGroupKey], new Subscription.GroupKeyRequestFunction() {
+        }, ['publisherId': wrongGroupKey], new BasicSubscription.GroupKeyRequestFunction() {
             @Override
             void apply(String publisherId, Date start, Date end) {
                 callCount++
@@ -307,7 +308,7 @@ class RealTimeSubscriptionSpec extends Specification {
             @Override
             void onMessage(Subscription sub, StreamMessage message) {
             }
-        }, ['publisherId': wrongGroupKey], new Subscription.GroupKeyRequestFunction() {
+        }, ['publisherId': wrongGroupKey], new BasicSubscription.GroupKeyRequestFunction() {
             @Override
             void apply(String publisherId, Date start, Date end) {
                 receivedPublisherId = publisherId

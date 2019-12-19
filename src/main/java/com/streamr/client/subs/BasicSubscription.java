@@ -31,15 +31,6 @@ public abstract class BasicSubscription extends Subscription {
                 : ((publisherId, start, end) -> log.warn("Group key missing for stream " + streamId + " and publisher " + publisherId + " but no handler is set."));
     }
 
-    public BasicSubscription(String streamId, int partition, MessageHandler handler,
-                             GroupKeyRequestFunction groupKeyRequestFunction) {
-        this(streamId, partition, handler, groupKeyRequestFunction, Subscription.DEFAULT_PROPAGATION_TIMEOUT, Subscription.DEFAULT_RESEND_TIMEOUT);
-    }
-
-    public BasicSubscription(String streamId, int partition, MessageHandler handler) {
-        this(streamId, partition, handler, null, Subscription.DEFAULT_PROPAGATION_TIMEOUT, Subscription.DEFAULT_RESEND_TIMEOUT);
-    }
-
     @Override
     public void handleResentMessage(StreamMessage msg) throws GapDetectedException, UnsupportedMessageException, UnableToDecryptException {
         orderingUtil.add(msg);
@@ -70,13 +61,14 @@ public abstract class BasicSubscription extends Subscription {
         }
     }
 
-    public void setLastMessageRefs(ArrayList<OrderedMsgChain> chains) {
-        orderingUtil.addChains(chains);
-    }
-
     public ArrayList<OrderedMsgChain> getChains() {
         return orderingUtil.getChains();
     }
 
     public abstract boolean decryptOrRequestGroupKey(StreamMessage msg);
+
+    @FunctionalInterface
+    public interface GroupKeyRequestFunction {
+        void apply(String publisherId, Date start, Date end);
+    }
 }
