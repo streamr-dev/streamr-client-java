@@ -5,19 +5,19 @@ import spock.lang.Specification
 
 import java.security.SecureRandom
 
-class KeyStorageSpec extends Specification {
+class KeyHistoryStorageSpec extends Specification {
     SecureRandom secureRandom = new SecureRandom()
-    GroupKey genKey(int keyLength) {
+    UnencryptedGroupKey genKey(int keyLength) {
         return genKey(keyLength, new Date())
     }
 
-    GroupKey genKey(int keyLength, Date start) {
+    UnencryptedGroupKey genKey(int keyLength, Date start) {
         byte[] keyBytes = new byte[keyLength]
         secureRandom.nextBytes(keyBytes)
-        return new GroupKey(Hex.encodeHexString(keyBytes), start)
+        return new UnencryptedGroupKey(Hex.encodeHexString(keyBytes), start)
     }
     void "hasKey() returns true iff there is a GroupKeyHistory for the stream"() {
-        GroupKey key = genKey(32)
+        UnencryptedGroupKey key = genKey(32)
         when:
         KeyStorage util = new KeyHistoryStorage(["streamId": key])
         then:
@@ -31,17 +31,17 @@ class KeyStorageSpec extends Specification {
         util.getLatestKey("streamId") == null
     }
     void "getLatestKey() returns key passed in constructor"() {
-        GroupKey key = genKey(32)
+        UnencryptedGroupKey key = genKey(32)
         when:
         KeyStorage util = new KeyHistoryStorage(["streamId": key])
         then:
         util.getLatestKey("streamId") == key
     }
     void "getLatestKey() returns last key added"() {
-        GroupKey key1 = genKey(32)
-        GroupKey key2 = genKey(32)
+        UnencryptedGroupKey key1 = genKey(32)
+        UnencryptedGroupKey key2 = genKey(32)
         when:
-        KeyStorage util = new KeyHistoryStorage(new HashMap<String, GroupKey>())
+        KeyStorage util = new KeyHistoryStorage(new HashMap<String, UnencryptedGroupKey>())
         util.addKey("streamId", key1)
         util.addKey("streamId", key2)
         then:
@@ -49,33 +49,33 @@ class KeyStorageSpec extends Specification {
     }
     void "getKeysBetween() returns empty array for wrong streamId"() {
         when:
-        KeyStorage util = new KeyHistoryStorage(new HashMap<String, GroupKey>())
+        KeyStorage util = new KeyHistoryStorage(new HashMap<String, UnencryptedGroupKey>())
         then:
         util.getKeysBetween("wrong-streamId", new Date(), new Date()) == []
     }
     void "getKeysBetween() returns empty array when end time is before start of first key"() {
         when:
-        KeyStorage util = new KeyHistoryStorage(new HashMap<String, GroupKey>())
+        KeyStorage util = new KeyHistoryStorage(new HashMap<String, UnencryptedGroupKey>())
         util.addKey("streamId", genKey(32, new Date(10)))
         then:
         util.getKeysBetween("streamId", new Date(1), new Date(9)) == []
     }
     void "returns only the latest key when start time is after last key"() {
         when:
-        KeyStorage util = new KeyHistoryStorage(new HashMap<String, GroupKey>())
+        KeyStorage util = new KeyHistoryStorage(new HashMap<String, UnencryptedGroupKey>())
         util.addKey("streamId", genKey(32, new Date(5)))
-        GroupKey latest = genKey(32, new Date(10))
+        UnencryptedGroupKey latest = genKey(32, new Date(10))
         util.addKey("streamId", latest)
         then:
         util.getKeysBetween("streamId", new Date(15), new Date(200)) == [latest]
     }
     void "returns keys in interval start-end"() {
-        KeyStorage util = new KeyHistoryStorage(new HashMap<String, GroupKey>())
-        GroupKey key1 = genKey(32, new Date(10))
-        GroupKey key2 = genKey(32, new Date(20))
-        GroupKey key3 = genKey(32, new Date(30))
-        GroupKey key4 = genKey(32, new Date(40))
-        GroupKey key5 = genKey(32, new Date(50))
+        KeyStorage util = new KeyHistoryStorage(new HashMap<String, UnencryptedGroupKey>())
+        UnencryptedGroupKey key1 = genKey(32, new Date(10))
+        UnencryptedGroupKey key2 = genKey(32, new Date(20))
+        UnencryptedGroupKey key3 = genKey(32, new Date(30))
+        UnencryptedGroupKey key4 = genKey(32, new Date(40))
+        UnencryptedGroupKey key5 = genKey(32, new Date(50))
         when:
         util.addKey("streamId", key1)
         util.addKey("streamId", key2)

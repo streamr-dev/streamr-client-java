@@ -8,6 +8,7 @@ import com.streamr.client.rest.Stream
 import com.streamr.client.protocol.message_layer.StreamMessage
 import com.streamr.client.subs.Subscription
 import com.streamr.client.utils.GroupKey
+import com.streamr.client.utils.UnencryptedGroupKey
 import org.apache.commons.codec.binary.Hex
 import spock.util.concurrent.PollingConditions
 
@@ -18,10 +19,10 @@ class StreamrWebsocketSpec extends StreamrIntegrationSpecification {
 	private StreamrClient client
 	private SecureRandom secureRandom = new SecureRandom()
 
-	GroupKey genKey() {
+	UnencryptedGroupKey genKey() {
 		byte[] keyBytes = new byte[32]
 		secureRandom.nextBytes(keyBytes)
-		return new GroupKey(Hex.encodeHexString(keyBytes))
+		return new UnencryptedGroupKey(Hex.encodeHexString(keyBytes), new Date())
 	}
 
 	void setup() {
@@ -149,8 +150,8 @@ class StreamrWebsocketSpec extends StreamrIntegrationSpecification {
 
 	void "subscriber can decrypt messages when he knows the keys used to encrypt"() {
 		Stream stream = client.createStream(new Stream(generateResourceName(), ""))
-		GroupKey key = genKey()
-		HashMap<String, GroupKey> keys = new HashMap<>()
+		UnencryptedGroupKey key = genKey()
+		HashMap<String, UnencryptedGroupKey> keys = new HashMap<>()
 		keys.put(client.getPublisherId(), key)
 
 		when:
@@ -186,7 +187,7 @@ class StreamrWebsocketSpec extends StreamrIntegrationSpecification {
 
 	void "subscriber can get the group key and decrypt encrypted messages using an RSA key pair"() {
 		Stream stream = client.createStream(new Stream(generateResourceName(), ""))
-		GroupKey key = genKey()
+		UnencryptedGroupKey key = genKey()
 
 		when:
 		// Subscribe to the stream without knowing the group key

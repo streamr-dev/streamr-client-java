@@ -170,29 +170,29 @@ NEVER | All signed events are verified. Unsigned events are always accepted.
 <a name="encryption"></a>
 ### Encryption
 
-We first introduce the `GroupKey` class: it defines a symmetric group key used by the publisher to encrypt data and by the subscriber to decrypt data. It can be constructed as follows:
+We first introduce the `UnencryptedGroupKey` class: it defines a symmetric group key used by the publisher to encrypt data and by the subscriber to decrypt data. It can be constructed as follows:
 ```java
 // hexadecimal representation of a 256 bit key
 String groupKey1Hex = "b9e447d458ed8e5cb24cbd7dd0e957b44ef3109917cd2b7517857429b2659b5b";
 // specify when the key was first used to encrypt
 Date start = new Date(4134515);
-GroupKey key1 = new GroupKey(groupKey1Hex, start);
+UnencryptedGroupKey key1 = new GroupKey(groupKey1Hex, start);
 // can also specify only the hex string (default start time is now)
-GroupKey key2 = new GroupKey("a75113d458ed8e5cb24cbd7dd0e957b44ef3109917cd2b7517857429b26599f2");
+UnencryptedGroupKey key2 = new GroupKey("a75113d458ed8e5cb24cbd7dd0e957b44ef3109917cd2b7517857429b26599f2");
 ```
 
-These `GroupKey`s can then be passed as maps to the `EncryptionOptions`:
+These `UnencryptedGroupKey`s can then be passed as maps to the `EncryptionOptions`:
 
 ```java
-// streamId -> GroupKey
-HashMap<String, GroupKey> publisherGroupKeys = ...;
-// streamId -> (publisherId -> GroupKey)
-HashMap<String, HashMap<String, GroupKey>> subscriberGroupKeys = ...;
+// streamId -> UnencryptedGroupKey
+HashMap<String, UnencryptedGroupKey> publisherGroupKeys = ...;
+// streamId -> (publisherId -> UnencryptedGroupKey)
+HashMap<String, HashMap<String, UnencryptedGroupKey>> subscriberGroupKeys = ...;
 
 EncryptionOptions options = new EncryptionOptions(publisherGroupKeys, subscriberGroupKeys);
 ```
 
-In most cases, these `GroupKey`s are not known in advance by the subscribers who will obtain them using the key exchange mechanism. This mechanism requires the subscriber to have an RSA key pair, which will be automatically generated if none is provided. The publisher can choose whether to store all `GroupKey`s used or only the latest `GroupKey` used. If historical keys are stored (they are by default), subscribers will be able to decrypt resent historical messages. These options can be passed to the `EncryptionOptions`:
+In most cases, these `UnencryptedGroupKey`s are not known in advance by the subscribers who will obtain them using the key exchange mechanism. This mechanism requires the subscriber to have an RSA key pair, which will be automatically generated if none is provided. The publisher can choose whether to store all `UnencryptedGroupKey`s used or only the latest `UnencryptedGroupKey` used. If historical keys are stored (they are by default), subscribers will be able to decrypt resent historical messages. These options can be passed to the `EncryptionOptions`:
 
 ```java
 // default is true
@@ -222,7 +222,7 @@ EncryptionOptions options = new EncryptionOptions(publisherGroupKeys, subscriber
 You can also use the default `EncryptionOptions`:
 
 ```java
-// empty GroupKey maps, publisher stores historical keys, automatically generated RSA key pair
+// empty UnencryptedGroupKey maps, publisher stores historical keys, automatically generated RSA key pair
 EncryptionOptions options = EncryptionOptions.getDefault();
 ```
 

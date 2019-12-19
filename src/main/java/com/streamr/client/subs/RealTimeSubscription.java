@@ -9,6 +9,7 @@ import com.streamr.client.options.ResendOption;
 import com.streamr.client.protocol.message_layer.StreamMessage;
 import com.streamr.client.utils.EncryptionUtil;
 import com.streamr.client.utils.GroupKey;
+import com.streamr.client.utils.UnencryptedGroupKey;
 
 import javax.crypto.SecretKey;
 import javax.crypto.spec.SecretKeySpec;
@@ -22,7 +23,7 @@ public class RealTimeSubscription extends BasicSubscription {
     private boolean resending = false;
     private final Map<String, SecretKey> groupKeys = new HashMap<>(); // publisherId --> groupKey
     private final HashSet<String> alreadyFailedToDecrypt = new HashSet<>();
-    public RealTimeSubscription(String streamId, int partition, MessageHandler handler, Map<String, GroupKey> groupKeys,
+    public RealTimeSubscription(String streamId, int partition, MessageHandler handler, Map<String, UnencryptedGroupKey> groupKeys,
                                 GroupKeyRequestFunction groupKeyRequestFunction, long propagationTimeout, long resendTimeout) {
         super(streamId, partition, handler, groupKeyRequestFunction, propagationTimeout, resendTimeout);
         if (groupKeys != null) {
@@ -33,12 +34,12 @@ public class RealTimeSubscription extends BasicSubscription {
         }
     }
 
-    public RealTimeSubscription(String streamId, int partition, MessageHandler handler, Map<String, GroupKey> groupKeys,
+    public RealTimeSubscription(String streamId, int partition, MessageHandler handler, Map<String, UnencryptedGroupKey> groupKeys,
                                 GroupKeyRequestFunction groupKeyRequestFunction) {
         this(streamId, partition, handler, groupKeys, groupKeyRequestFunction, Subscription.DEFAULT_PROPAGATION_TIMEOUT, Subscription.DEFAULT_RESEND_TIMEOUT);
     }
 
-    public RealTimeSubscription(String streamId, int partition, MessageHandler handler, Map<String, GroupKey> groupKeys) {
+    public RealTimeSubscription(String streamId, int partition, MessageHandler handler, Map<String, UnencryptedGroupKey> groupKeys) {
         this(streamId, partition, handler, groupKeys, null);
     }
 
@@ -47,7 +48,7 @@ public class RealTimeSubscription extends BasicSubscription {
     }
 
     @Override
-    public void setGroupKeys(String publisherId, ArrayList<GroupKey> groupKeys) {
+    public void setGroupKeys(String publisherId, ArrayList<UnencryptedGroupKey> groupKeys) {
         if (groupKeys.size() != 1) {
             throw new InvalidGroupKeyResponseException("Received "+groupKeys.size()+ " group keys for a real time subscription. Expected one.");
         }

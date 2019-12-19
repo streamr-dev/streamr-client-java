@@ -15,7 +15,7 @@ public class DecryptionKeySequence {
     private final ArrayList<SecretKey> keys = new ArrayList<>();
     private int currentIndex = 0;
 
-    public DecryptionKeySequence(ArrayList<GroupKey> keys) {
+    public DecryptionKeySequence(ArrayList<UnencryptedGroupKey> keys) {
         for (GroupKey k: keys) {
             this.keys.add(new SecretKeySpec(DatatypeConverter.parseHexBinary(k.getGroupKeyHex()), "AES"));
         }

@@ -8,22 +8,22 @@ This class contains the history of keys used to publish encrypted messages. The 
 used to create encrypted messages and to answer group key requests from subscribers.
  */
 public class GroupKeyHistory {
-    private final ArrayList<GroupKey> keys = new ArrayList<>();
+    private final ArrayList<UnencryptedGroupKey> keys = new ArrayList<>();
     public GroupKeyHistory() {
 
     }
-    public GroupKeyHistory(GroupKey initialGroupKey) {
+    public GroupKeyHistory(UnencryptedGroupKey initialGroupKey) {
         keys.add(initialGroupKey);
     }
 
-    public GroupKey getLatestKey() {
+    public UnencryptedGroupKey getLatestKey() {
         if (keys.isEmpty()) {
             return null;
         }
         return keys.get(keys.size() - 1);
     }
 
-    public ArrayList<GroupKey> getKeysBetween(long start, long end) {
+    public ArrayList<UnencryptedGroupKey> getKeysBetween(long start, long end) {
         if (start > end) {
             throw new IllegalArgumentException("'start' must be less or equal to 'end'");
         }
@@ -32,7 +32,7 @@ public class GroupKeyHistory {
         while (i < keys.size() - 1 && this.getKeyEnd(i) < start) {
             i++;
         }
-        ArrayList<GroupKey> selected = new ArrayList<>();
+        ArrayList<UnencryptedGroupKey> selected = new ArrayList<>();
         // add keys as long as they started before 'end'
         while (i < keys.size() && keys.get(i).getStartTime() <= end) {
             selected.add(keys.get(i));
@@ -41,11 +41,11 @@ public class GroupKeyHistory {
         return selected;
     }
 
-    public ArrayList<GroupKey> getKeysBetween(Date start, Date end) {
+    public ArrayList<UnencryptedGroupKey> getKeysBetween(Date start, Date end) {
         return getKeysBetween(start.getTime(), end.getTime());
     }
 
-    public void addKey(GroupKey key) {
+    public void addKey(UnencryptedGroupKey key) {
         keys.add(key);
     }
 

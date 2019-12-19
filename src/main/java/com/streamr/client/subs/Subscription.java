@@ -8,6 +8,8 @@ import com.streamr.client.options.ResendOption;
 import com.streamr.client.protocol.message_layer.StreamMessage;
 import com.streamr.client.utils.GroupKey;
 import com.streamr.client.utils.OrderedMsgChain;
+import com.streamr.client.utils.UnencryptedGroupKey;
+
 import java.util.*;
 
 public abstract class Subscription {
@@ -83,7 +85,7 @@ public abstract class Subscription {
 
     public abstract void setGapHandler(OrderedMsgChain.GapHandlerFunction gapHandler);
 
-    public abstract void setGroupKeys(String publisherId, ArrayList<GroupKey> groupKeys);
+    public abstract void setGroupKeys(String publisherId, ArrayList<UnencryptedGroupKey> groupKeys);
 
     public abstract void clear();
 

@@ -12,6 +12,7 @@ import com.streamr.client.utils.EncryptionUtil
 import com.streamr.client.utils.GroupKey
 import com.streamr.client.utils.HttpUtils
 import com.streamr.client.utils.OrderedMsgChain
+import com.streamr.client.utils.UnencryptedGroupKey
 import org.apache.commons.codec.binary.Hex
 import spock.lang.Specification
 
@@ -41,10 +42,10 @@ class HistoricalSubscriptionSpec extends Specification {
         }
     }
 
-    GroupKey genKey() {
+    UnencryptedGroupKey genKey() {
         byte[] keyBytes = new byte[32]
         secureRandom.nextBytes(keyBytes)
-        return new GroupKey(Hex.encodeHexString(keyBytes))
+        return new UnencryptedGroupKey(Hex.encodeHexString(keyBytes))
     }
 
     SecureRandom secureRandom = new SecureRandom()
@@ -205,7 +206,7 @@ class HistoricalSubscriptionSpec extends Specification {
     }
 
     void "decrypts encrypted messages with the correct key"() {
-        GroupKey key = genKey()
+        UnencryptedGroupKey key = genKey()
         SecretKey groupKey = new SecretKeySpec(DatatypeConverter.parseHexBinary(key.groupKeyHex), "AES")
         Map plaintext = [foo: 'bar']
         String ciphertext = EncryptionUtil.encrypt(HttpUtils.mapAdapter.toJson(plaintext).getBytes(StandardCharsets.UTF_8), groupKey)
@@ -225,7 +226,7 @@ class HistoricalSubscriptionSpec extends Specification {
     }
 
     void "calls the key handler function when no historical group keys are set"() {
-        GroupKey key = genKey()
+        UnencryptedGroupKey key = genKey()
         SecretKey groupKey = new SecretKeySpec(DatatypeConverter.parseHexBinary(key.groupKeyHex), "AES")
         Map plaintext = [foo: 'bar']
         String ciphertext = EncryptionUtil.encrypt(HttpUtils.mapAdapter.toJson(plaintext).getBytes(StandardCharsets.UTF_8), groupKey)
@@ -257,8 +258,8 @@ class HistoricalSubscriptionSpec extends Specification {
     }
 
     void "queues messages when not able to decrypt and handles them once the keys are set"() {
-        GroupKey groupKey1 = genKey()
-        GroupKey groupKey2 = genKey()
+        UnencryptedGroupKey groupKey1 = genKey()
+        UnencryptedGroupKey groupKey2 = genKey()
         SecretKey secretKey1 = new SecretKeySpec(DatatypeConverter.parseHexBinary(groupKey1.groupKeyHex), "AES")
         SecretKey secretKey2 = new SecretKeySpec(DatatypeConverter.parseHexBinary(groupKey2.groupKeyHex), "AES")
         Map plaintext1 = [foo: 'bar1']
@@ -301,8 +302,8 @@ class HistoricalSubscriptionSpec extends Specification {
     }
 
     void "throws when not able to decrypt with historical keys set"() {
-        GroupKey key = genKey()
-        GroupKey wrongKey = genKey()
+        UnencryptedGroupKey key = genKey()
+        UnencryptedGroupKey wrongKey = genKey()
         SecretKey groupKey = new SecretKeySpec(DatatypeConverter.parseHexBinary(key.groupKeyHex), "AES")
         Map plaintext = [foo: 'bar']
         String ciphertext = EncryptionUtil.encrypt(HttpUtils.mapAdapter.toJson(plaintext).getBytes(StandardCharsets.UTF_8), groupKey)

@@ -4,13 +4,16 @@ import java.util.ArrayList;
 import java.util.Date;
 import java.util.HashMap;
 
-public abstract class KeyStorage {
+public interface KeyStorage {
 
-    public abstract boolean hasKey(String streamId);
+    boolean hasKey(String streamId);
 
-    public abstract GroupKey getLatestKey(String streamId);
+    /**
+    Returns null when no key is stored.
+     */
+    UnencryptedGroupKey getLatestKey(String streamId);
 
-    public abstract ArrayList<GroupKey> getKeysBetween(String streamId, Date start, Date end);
+    ArrayList<UnencryptedGroupKey> getKeysBetween(String streamId, Date start, Date end);
 
-    public abstract void addKey(String streamId, GroupKey key);
+    void addKey(String streamId, UnencryptedGroupKey key);
 }

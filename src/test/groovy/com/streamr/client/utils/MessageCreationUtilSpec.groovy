@@ -27,14 +27,16 @@ class MessageCreationUtilSpec extends Specification {
         message = [foo: "bar"]
     }
 
-    GroupKey genKey(int keyLength) {
-        return genKey(keyLength, new Date())
-    }
-
-    GroupKey genKey(int keyLength, Date start) {
+    UnencryptedGroupKey genUnencryptedKey(int keyLength) {
         byte[] keyBytes = new byte[keyLength]
         secureRandom.nextBytes(keyBytes)
-        return new GroupKey(Hex.encodeHexString(keyBytes), start)
+        return new UnencryptedGroupKey(Hex.encodeHexString(keyBytes), new Date())
+    }
+
+    EncryptedGroupKey genEncryptedKey(int keyLength, Date start) {
+        byte[] keyBytes = new byte[keyLength]
+        secureRandom.nextBytes(keyBytes)
+        return new EncryptedGroupKey(Hex.encodeHexString(keyBytes), start)
     }
 
     void "fields are set. No encryption if no key is defined."() {
@@ -145,7 +147,7 @@ class MessageCreationUtilSpec extends Specification {
     }
 
     void "creates encrypted messages when key defined in constructor"() {
-        GroupKey key = genKey(32)
+        UnencryptedGroupKey key = genUnencryptedKey(32)
         keyStorage.addKey(stream.id, key)
         MessageCreationUtil util = new MessageCreationUtil("publisherId", null, keyStorage)
         when:
@@ -156,7 +158,7 @@ class MessageCreationUtilSpec extends Specification {
     }
 
     void "creates encrypted messages when key defined in createStreamMessage() and use the same key later"() {
-        GroupKey key = genKey(32)
+        UnencryptedGroupKey key = genUnencryptedKey(32)
         when:
         StreamMessageV31 msg1 = (StreamMessageV31) msgCreationUtil.createStreamMessage(stream, message, new Date(), null, key)
         then:
@@ -175,8 +177,8 @@ class MessageCreationUtilSpec extends Specification {
     }
 
     void "should update the key when redefined"() {
-        GroupKey key1 = genKey(32)
-        GroupKey key2 = genKey(32)
+        UnencryptedGroupKey key1 = genUnencryptedKey(32)
+        UnencryptedGroupKey key2 = genUnencryptedKey(32)
         when:
         StreamMessageV31 msg1 = (StreamMessageV31) msgCreationUtil.createStreamMessage(stream, message, new Date(), null, key1)
         then:
@@ -233,8 +235,8 @@ class MessageCreationUtilSpec extends Specification {
         ECKey account = ECKey.fromPrivate(new BigInteger(withoutPrefix, 16))
         SigningUtil signingUtil = new SigningUtil(account)
         MessageCreationUtil util = new MessageCreationUtil("publisherId", signingUtil, keyStorage)
-        GroupKey k1 = genKey(32, new Date(123))
-        GroupKey k2 = genKey(32, new Date(4556))
+        EncryptedGroupKey k1 = genEncryptedKey(32, new Date(123))
+        EncryptedGroupKey k2 = genEncryptedKey(32, new Date(4556))
         when:
         StreamMessage msg = util.createGroupKeyResponse("subscriberInboxAddress", "streamId", [k1, k2])
         then:

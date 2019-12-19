@@ -10,10 +10,10 @@ import java.util.HashMap;
 This key storage is used when the publisher only wants to store the latest key used to encrypt messages,
 not the previous ones. This will prevent the publisher to answer historical group key requests.
  */
-public class LatestKeyStorage extends KeyStorage {
-    private final HashMap<String, GroupKey> latestGroupKeys;
+public class LatestKeyStorage implements KeyStorage {
+    private final HashMap<String, UnencryptedGroupKey> latestGroupKeys;
 
-    public LatestKeyStorage(HashMap<String, GroupKey> publisherGroupKeys) {
+    public LatestKeyStorage(HashMap<String, UnencryptedGroupKey> publisherGroupKeys) {
         super();
         latestGroupKeys = publisherGroupKeys == null ? new HashMap<>() : publisherGroupKeys;
     }
@@ -28,18 +28,21 @@ public class LatestKeyStorage extends KeyStorage {
     }
 
     @Override
-    public GroupKey getLatestKey(String streamId) {
+    public UnencryptedGroupKey getLatestKey(String streamId) {
         return latestGroupKeys.get(streamId);
     }
 
+    /**
+    @throws InvalidGroupKeyRequestException since only the latest key is stored. Use KeyHistoryStorage.getKeysBetween() instead.
+     */
     @Override
-    public ArrayList<GroupKey> getKeysBetween(String streamId, Date start, Date end) {
+    public ArrayList<UnencryptedGroupKey> getKeysBetween(String streamId, Date start, Date end) throws InvalidGroupKeyRequestException {
         throw new InvalidGroupKeyRequestException("Cannot retrieve historical keys for stream " + streamId
                 + " between " + start + " and " + end + " because only the latest key is stored.");
     }
 
     @Override
-    public void addKey(String streamId, GroupKey key) {
+    public void addKey(String streamId, UnencryptedGroupKey key) {
         latestGroupKeys.put(streamId, key);
     }
 }

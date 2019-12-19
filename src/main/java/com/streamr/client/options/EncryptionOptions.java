@@ -2,19 +2,20 @@ package com.streamr.client.options;
 
 import com.streamr.client.utils.EncryptionUtil;
 import com.streamr.client.utils.GroupKey;
+import com.streamr.client.utils.UnencryptedGroupKey;
 
 import java.security.interfaces.RSAPrivateKey;
 import java.security.interfaces.RSAPublicKey;
 import java.util.HashMap;
 
 public class EncryptionOptions {
-    private final HashMap<String, GroupKey> publisherGroupKeys; // streamId --> groupKeyHex
-    private final HashMap<String, HashMap<String, GroupKey>> subscriberGroupKeys; // streamId --> (publisherId --> groupKeyHex)
+    private final HashMap<String, UnencryptedGroupKey> publisherGroupKeys; // streamId --> groupKeyHex
+    private final HashMap<String, HashMap<String, UnencryptedGroupKey>> subscriberGroupKeys; // streamId --> (publisherId --> groupKeyHex)
     private boolean publisherStoreKeyHistory = true;
     private RSAPublicKey rsaPublicKey;
     private RSAPrivateKey rsaPrivateKey;
 
-    public EncryptionOptions(HashMap<String, GroupKey> publisherGroupKeys, HashMap<String, HashMap<String, GroupKey>> subscriberGroupKeys,
+    public EncryptionOptions(HashMap<String, UnencryptedGroupKey> publisherGroupKeys, HashMap<String, HashMap<String, UnencryptedGroupKey>> subscriberGroupKeys,
                              boolean publisherStoreKeyHistory, String rsaPublicKey, String rsaPrivateKey) {
         this.publisherGroupKeys = publisherGroupKeys;
         this.subscriberGroupKeys = subscriberGroupKeys;
@@ -29,7 +30,7 @@ public class EncryptionOptions {
         }
     }
 
-    public EncryptionOptions(HashMap<String, GroupKey> publisherGroupKeys, HashMap<String, HashMap<String, GroupKey>> subscriberGroupKeys) {
+    public EncryptionOptions(HashMap<String, UnencryptedGroupKey> publisherGroupKeys, HashMap<String, HashMap<String, UnencryptedGroupKey>> subscriberGroupKeys) {
         this(publisherGroupKeys, subscriberGroupKeys, true, null, null);
     }
 
@@ -37,11 +38,11 @@ public class EncryptionOptions {
         this(new HashMap<>(), new HashMap<>(), true, null, null);
     }
 
-    public HashMap<String, GroupKey> getPublisherGroupKeys() {
+    public HashMap<String, UnencryptedGroupKey> getPublisherGroupKeys() {
         return publisherGroupKeys;
     }
 
-    public HashMap<String, HashMap<String, GroupKey>> getSubscriberGroupKeys() {
+    public HashMap<String, HashMap<String, UnencryptedGroupKey>> getSubscriberGroupKeys() {
         return subscriberGroupKeys;
     }
 

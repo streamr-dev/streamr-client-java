@@ -41,10 +41,7 @@ public class MessageCreationUtil {
         return createStreamMessage(stream, payload, timestamp, partitionKey, null);
     }
 
-    public StreamMessage createStreamMessage(Stream stream, Map<String, Object> payload, Date timestamp, String partitionKey, GroupKey newGroupKey) {
-        if (newGroupKey != null) {
-            EncryptionUtil.validateGroupKey(newGroupKey.getGroupKeyHex());
-        }
+    public StreamMessage createStreamMessage(Stream stream, Map<String, Object> payload, Date timestamp, String partitionKey, UnencryptedGroupKey newGroupKey) {
         String groupKeyHex = newGroupKey == null ? null : newGroupKey.getGroupKeyHex();
 
         int streamPartition = getStreamPartition(stream.getPartitions(), partitionKey);
@@ -101,7 +98,7 @@ public class MessageCreationUtil {
         return streamMessage;
     }
 
-    public StreamMessage createGroupKeyResponse(String subscriberAddress, String streamId, List<GroupKey> encryptedGroupKeys) {
+    public StreamMessage createGroupKeyResponse(String subscriberAddress, String streamId, List<EncryptedGroupKey> encryptedGroupKeys) {
         if (signingUtil == null) {
             throw new SigningRequiredException("Cannot create unsigned group key response. Must authenticate with an Ethereum account");
         }

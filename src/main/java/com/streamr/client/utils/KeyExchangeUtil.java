@@ -54,7 +54,7 @@ public class KeyExchangeUtil {
             throw new InvalidGroupKeyRequestException("Received group key request for stream '" + streamId + "' from invalid address '" + subscriberId + "'");
         }
 
-        ArrayList<GroupKey> keys;
+        ArrayList<UnencryptedGroupKey> keys;
         if (content.containsKey("range")) {
             Map<String, Object> range = (Map<String, Object>) content.get("range");
             // Need to use Double because Moshi parser converts all JSON numbers to double
@@ -63,7 +63,7 @@ public class KeyExchangeUtil {
             keys = keyStorage.getKeysBetween(streamId, new Date(start), new Date(end));
         } else {
             keys = new ArrayList<>();
-            GroupKey latest = keyStorage.getLatestKey(streamId);
+            UnencryptedGroupKey latest = keyStorage.getLatestKey(streamId);
             if (latest != null) {
                 keys.add(latest);
             }
@@ -71,9 +71,10 @@ public class KeyExchangeUtil {
         if (keys.isEmpty()) {
             throw new InvalidGroupKeyRequestException("Received group key request for stream '" + streamId + "' but no group key is set");
         }
-        ArrayList<GroupKey> encryptedGroupKeys = new ArrayList<>();
-        for (GroupKey key: keys) {
-            encryptedGroupKeys.add(key.getEncrypted((String) content.get("publicKey")));
+        ArrayList<EncryptedGroupKey> encryptedGroupKeys = new ArrayList<>();
+        String publicKey = (String) content.get("publicKey");
+        for (UnencryptedGroupKey key: keys) {
+            encryptedGroupKeys.add(key.getEncrypted(publicKey));
         }
         StreamMessage response = messageCreationUtil.createGroupKeyResponse(subscriberId, streamId, encryptedGroupKeys);
         publishFunction.accept(response);
@@ -103,9 +104,9 @@ public class KeyExchangeUtil {
         if (encryptionUtil == null) {
             throw new InvalidGroupKeyResponseException("Cannot decrypt group key response without the private key.");
         }
-        ArrayList<GroupKey> decryptedKeys = new ArrayList<>();
+        ArrayList<UnencryptedGroupKey> decryptedKeys = new ArrayList<>();
         for (Map<String, Object> map: (ArrayList<Map<String, Object>>) content.get("keys")) {
-            GroupKey decryptedKey = GroupKey.fromMap(map, true).getDecrypted(encryptionUtil);
+            UnencryptedGroupKey decryptedKey = EncryptedGroupKey.fromMap(map).getDecrypted(encryptionUtil);
             decryptedKeys.add(decryptedKey);
         }
         setGroupKeysFunction.apply(streamId, groupKeyResponse.getPublisherId(), decryptedKeys);
@@ -113,6 +114,6 @@ public class KeyExchangeUtil {
 
     @FunctionalInterface
     public interface SetGroupKeysFunction {
-        void apply(String streamId, String publisherId, ArrayList<GroupKey> keys);
+        void apply(String streamId, String publisherId, ArrayList<UnencryptedGroupKey> keys);
     }
 }

@@ -8,10 +8,10 @@ import java.util.HashMap;
 This key storage is used when the publisher wants to store all keys used to encrypt messages in order to
 answer group key requests for historical keys.
  */
-public class KeyHistoryStorage extends KeyStorage {
+public class KeyHistoryStorage implements KeyStorage {
     private final HashMap<String, GroupKeyHistory> histories = new HashMap<>();
 
-    public KeyHistoryStorage(HashMap<String, GroupKey> publisherGroupKeys) {
+    public KeyHistoryStorage(HashMap<String, UnencryptedGroupKey> publisherGroupKeys) {
         super();
         for (String streamId: publisherGroupKeys.keySet()) {
             histories.put(streamId, new GroupKeyHistory(publisherGroupKeys.get(streamId)));
@@ -28,19 +28,19 @@ public class KeyHistoryStorage extends KeyStorage {
     }
 
     @Override
-    public GroupKey getLatestKey(String streamId) {
+    public UnencryptedGroupKey getLatestKey(String streamId) {
         GroupKeyHistory history = histories.get(streamId);
         return history == null ? null : history.getLatestKey();
     }
 
     @Override
-    public ArrayList<GroupKey> getKeysBetween(String streamId, Date start, Date end) {
+    public ArrayList<UnencryptedGroupKey> getKeysBetween(String streamId, Date start, Date end) {
         GroupKeyHistory history = histories.get(streamId);
         return history == null ? new ArrayList<>() : history.getKeysBetween(start, end);
     }
 
     @Override
-    public void addKey(String streamId, GroupKey key) {
+    public void addKey(String streamId, UnencryptedGroupKey key) {
         if (!histories.containsKey(streamId)) {
             histories.put(streamId, new GroupKeyHistory());
         }

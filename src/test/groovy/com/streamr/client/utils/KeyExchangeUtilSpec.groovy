@@ -16,14 +16,14 @@ import java.util.function.Function
 
 class KeyExchangeUtilSpec extends Specification {
     SecureRandom secureRandom = new SecureRandom()
-    GroupKey genKey(int keyLength) {
+    UnencryptedGroupKey genKey(int keyLength) {
         return genKey(keyLength, new Date())
     }
 
-    GroupKey genKey(int keyLength, Date start) {
+    UnencryptedGroupKey genKey(int keyLength, Date start) {
         byte[] keyBytes = new byte[keyLength]
         secureRandom.nextBytes(keyBytes)
-        return new GroupKey(Hex.encodeHexString(keyBytes), start)
+        return new UnencryptedGroupKey(Hex.encodeHexString(keyBytes), start)
     }
     KeyExchangeUtil util
     KeyStorage storage
@@ -38,7 +38,7 @@ class KeyExchangeUtilSpec extends Specification {
     EncryptionUtil encryptionUtil = new EncryptionUtil()
     AddressValidityUtil addressValidityUtil = new AddressValidityUtil({ String id -> new ArrayList<>()}, { String s1, String s2 -> s1 == "streamId" && s2 == "subscriberId"},
             { String id -> new ArrayList<>()}, { String s, String p -> true})
-    GroupKey received
+    UnencryptedGroupKey received
     void setup() {
         storage = Mock(KeyStorage)
         messageCreationUtil = Mock(MessageCreationUtil)
@@ -62,7 +62,7 @@ class KeyExchangeUtilSpec extends Specification {
         }
         setGroupKeysFunction = new KeyExchangeUtil.SetGroupKeysFunction() {
             @Override
-            void apply(String streamId, String publisherId, ArrayList<GroupKey> keys) {
+            void apply(String streamId, String publisherId, ArrayList<UnencryptedGroupKey> keys) {
                 assert streamId == "streamId"
                 assert publisherId == "publisherId"
                 assert keys.size() == 1
@@ -110,7 +110,7 @@ class KeyExchangeUtilSpec extends Specification {
         Map<String, Object> content = ["publicKey": encryptionUtil.publicKeyAsPemString, "streamId": "streamId"]
         StreamMessage request = new StreamMessageV31(id, null, StreamMessage.ContentType.GROUP_KEY_REQUEST,
                 StreamMessage.EncryptionType.NONE, content, StreamMessage.SignatureType.SIGNATURE_TYPE_ETH, "signature")
-        GroupKey key = genKey(32, new Date(123))
+        UnencryptedGroupKey key = genKey(32, new Date(123))
         when:
         util.handleGroupKeyRequest(request)
         then:
@@ -118,9 +118,9 @@ class KeyExchangeUtilSpec extends Specification {
         1 * messageCreationUtil.createGroupKeyResponse(*_) >> { arguments ->
             assert arguments[0] == "subscriberId"
             assert arguments[1] == "streamId"
-            ArrayList<GroupKey> keys = arguments[2]
+            ArrayList<EncryptedGroupKey> keys = arguments[2]
             assert keys.size() == 1
-            GroupKey received = keys[0]
+            EncryptedGroupKey received = keys[0]
             assert Hex.encodeHexString(encryptionUtil.decryptWithPrivateKey(received.groupKeyHex)) == key.groupKeyHex
             assert received.startTime == key.startTime
             return response
@@ -133,8 +133,8 @@ class KeyExchangeUtilSpec extends Specification {
         Map<String, Object> content = ["publicKey": encryptionUtil.publicKeyAsPemString, "streamId": "streamId", "range": ["start": new Double(123), "end": new Double(456)]]
         StreamMessage request = new StreamMessageV31(id, null, StreamMessage.ContentType.GROUP_KEY_REQUEST,
                 StreamMessage.EncryptionType.NONE, content, StreamMessage.SignatureType.SIGNATURE_TYPE_ETH, "signature")
-        GroupKey key1 = genKey(32, new Date(123))
-        GroupKey key2 = genKey(32, new Date(300))
+        UnencryptedGroupKey key1 = genKey(32, new Date(123))
+        UnencryptedGroupKey key2 = genKey(32, new Date(300))
         when:
         util.handleGroupKeyRequest(request)
         then:
@@ -142,12 +142,12 @@ class KeyExchangeUtilSpec extends Specification {
         1 * messageCreationUtil.createGroupKeyResponse(*_) >> { arguments ->
             assert arguments[0] == "subscriberId"
             assert arguments[1] == "streamId"
-            ArrayList<GroupKey> keys = arguments[2]
+            ArrayList<EncryptedGroupKey> keys = arguments[2]
             assert keys.size() ==2
-            GroupKey received1 = keys[0]
+            EncryptedGroupKey received1 = keys[0]
             assert Hex.encodeHexString(encryptionUtil.decryptWithPrivateKey(received1.groupKeyHex)) == key1.groupKeyHex
             assert received1.startTime == key1.startTime
-            GroupKey received2 = keys[1]
+            EncryptedGroupKey received2 = keys[1]
             assert Hex.encodeHexString(encryptionUtil.decryptWithPrivateKey(received2.groupKeyHex)) == key2.groupKeyHex
             assert received2.startTime == key2.startTime
             return response

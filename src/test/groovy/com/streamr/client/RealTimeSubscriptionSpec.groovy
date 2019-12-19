@@ -11,6 +11,7 @@ import com.streamr.client.utils.EncryptionUtil
 import com.streamr.client.utils.GroupKey
 import com.streamr.client.utils.HttpUtils
 import com.streamr.client.utils.OrderedMsgChain
+import com.streamr.client.utils.UnencryptedGroupKey
 import org.apache.commons.codec.binary.Hex
 import spock.lang.Specification
 
@@ -40,10 +41,10 @@ class RealTimeSubscriptionSpec extends Specification {
         }
     }
 
-    GroupKey genKey() {
+    UnencryptedGroupKey genKey() {
         byte[] keyBytes = new byte[32]
         secureRandom.nextBytes(keyBytes)
-        return new GroupKey(Hex.encodeHexString(keyBytes))
+        return new UnencryptedGroupKey(Hex.encodeHexString(keyBytes))
     }
 
     SecureRandom secureRandom = new SecureRandom()
@@ -205,7 +206,7 @@ class RealTimeSubscriptionSpec extends Specification {
     }
 
     void "decrypts encrypted messages with the correct key"() {
-        GroupKey groupKey = genKey()
+        UnencryptedGroupKey groupKey = genKey()
         SecretKey secretKey = new SecretKeySpec(DatatypeConverter.parseHexBinary(groupKey.groupKeyHex), "AES")
         Map plaintext = [foo: 'bar']
         String ciphertext = EncryptionUtil.encrypt(HttpUtils.mapAdapter.toJson(plaintext).getBytes(StandardCharsets.UTF_8), secretKey)
@@ -225,8 +226,8 @@ class RealTimeSubscriptionSpec extends Specification {
     }
 
     void "calls the key handler function when not able to decrypt encrypted messages with the wrong key"() {
-        GroupKey groupKey = genKey()
-        GroupKey wrongGroupKey = genKey()
+        UnencryptedGroupKey groupKey = genKey()
+        UnencryptedGroupKey wrongGroupKey = genKey()
         SecretKey secretKey = new SecretKeySpec(DatatypeConverter.parseHexBinary(groupKey.groupKeyHex), "AES")
         Map plaintext = [foo: 'bar']
         String ciphertext = EncryptionUtil.encrypt(HttpUtils.mapAdapter.toJson(plaintext).getBytes(StandardCharsets.UTF_8), secretKey)
@@ -250,8 +251,8 @@ class RealTimeSubscriptionSpec extends Specification {
     }
 
     void "queues messages when not able to decrypt and handles them once the key is updated"() {
-        GroupKey groupKey = genKey()
-        GroupKey wrongGroupKey = genKey()
+        UnencryptedGroupKey groupKey = genKey()
+        UnencryptedGroupKey wrongGroupKey = genKey()
         SecretKey secretKey = new SecretKeySpec(DatatypeConverter.parseHexBinary(groupKey.groupKeyHex), "AES")
         Map plaintext1 = [foo: 'bar1']
         String ciphertext1 = EncryptionUtil.encrypt(HttpUtils.mapAdapter.toJson(plaintext1).getBytes(StandardCharsets.UTF_8), secretKey)
@@ -293,9 +294,9 @@ class RealTimeSubscriptionSpec extends Specification {
     }
 
     void "throws when not able to decrypt for the second time"() {
-        GroupKey groupKey = genKey()
-        GroupKey wrongGroupKey = genKey()
-        GroupKey otherWrongGroupKey = genKey()
+        UnencryptedGroupKey groupKey = genKey()
+        UnencryptedGroupKey wrongGroupKey = genKey()
+        UnencryptedGroupKey otherWrongGroupKey = genKey()
         SecretKey secretKey = new SecretKeySpec(DatatypeConverter.parseHexBinary(groupKey.groupKeyHex), "AES")
         Map plaintext = [foo: 'bar']
         String ciphertext = EncryptionUtil.encrypt(HttpUtils.mapAdapter.toJson(plaintext).getBytes(StandardCharsets.UTF_8), secretKey)
@@ -314,17 +315,17 @@ class RealTimeSubscriptionSpec extends Specification {
         })
         when:
         sub.handleRealTimeMessage(msg1)
-        sub.setGroupKeys(msg1.getPublisherId(), (ArrayList<GroupKey>)[otherWrongGroupKey])
+        sub.setGroupKeys(msg1.getPublisherId(), (ArrayList<UnencryptedGroupKey>)[otherWrongGroupKey])
         then:
         thrown(UnableToDecryptException)
     }
 
     void "decrypts first message, updates key, decrypts second message"() {
-        GroupKey groupKey1 = genKey()
+        UnencryptedGroupKey groupKey1 = genKey()
         SecretKey secretKey1 = new SecretKeySpec(DatatypeConverter.parseHexBinary(groupKey1.groupKeyHex), "AES")
         byte[] key2Bytes = new byte[32]
         secureRandom.nextBytes(key2Bytes)
-        GroupKey groupKey2 = new GroupKey(Hex.encodeHexString(key2Bytes))
+        UnencryptedGroupKey groupKey2 = new UnencryptedGroupKey(Hex.encodeHexString(key2Bytes), new Date())
         SecretKey secretKey2 = new SecretKeySpec(DatatypeConverter.parseHexBinary(groupKey2.groupKeyHex), "AES")
 
         Map content1 = [foo: 'bar']

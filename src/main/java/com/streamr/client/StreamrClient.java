@@ -115,7 +115,7 @@ public class StreamrClient extends StreamrRESTClient {
         if (options.getPublishSignedMsgs()) {
             signingUtil = new SigningUtil(((EthereumAuthenticationMethod) options.getAuthenticationMethod()).getAccount());
         }
-        HashMap<String, GroupKey> publisherKeys = options.getEncryptionOptions().getPublisherGroupKeys();
+        HashMap<String, UnencryptedGroupKey> publisherKeys = options.getEncryptionOptions().getPublisherGroupKeys();
         keyStorage = options.getEncryptionOptions().getPublisherStoreKeyHistory() ? new KeyHistoryStorage(publisherKeys)
                 : new LatestKeyStorage(publisherKeys);
         msgCreationUtil = new MessageCreationUtil(publisherId, signingUtil, keyStorage);
@@ -422,7 +422,7 @@ public class StreamrClient extends StreamrRESTClient {
         publish(stream, payload, timestamp, partitionKey, null);
     }
 
-    public void publish(Stream stream, Map<String, Object> payload, Date timestamp, String partitionKey, GroupKey newGroupKey) {
+    public void publish(Stream stream, Map<String, Object> payload, Date timestamp, String partitionKey, UnencryptedGroupKey newGroupKey) {
         if (!getState().equals(StreamrClient.State.Connected)) {
             connect();
         }
@@ -455,18 +455,18 @@ public class StreamrClient extends StreamrRESTClient {
     }
 
     public Subscription subscribe(Stream stream, int partition, MessageHandler handler, ResendOption resendOption,
-                                  Map<String, GroupKey> groupKeys) {
+                                  Map<String, UnencryptedGroupKey> groupKeys) {
         return subscribe(stream, partition, handler, resendOption, groupKeys, false);
     }
 
     public Subscription subscribe(Stream stream, int partition, MessageHandler handler, ResendOption resendOption,
-                                  Map<String, GroupKey> groupKeys, boolean isExplicitResend) {
+                                  Map<String, UnencryptedGroupKey> groupKeys, boolean isExplicitResend) {
         if (!getState().equals(State.Connected)) {
             connect();
         }
 
         if (groupKeys != null) {
-            Map<String, GroupKey> keysPerPublisher = getKeysPerPublisher(stream.getId());
+            Map<String, UnencryptedGroupKey> keysPerPublisher = getKeysPerPublisher(stream.getId());
             keysPerPublisher.putAll(groupKeys);
         }
 
@@ -573,16 +573,16 @@ public class StreamrClient extends StreamrRESTClient {
         sub.endResend();
     }
 
-    private HashMap<String, GroupKey> getKeysPerPublisher(String streamId) {
+    private HashMap<String, UnencryptedGroupKey> getKeysPerPublisher(String streamId) {
         if (!options.getEncryptionOptions().getSubscriberGroupKeys().containsKey(streamId)) {
             options.getEncryptionOptions().getSubscriberGroupKeys().put(streamId, new HashMap<>());
         }
         return options.getEncryptionOptions().getSubscriberGroupKeys().get(streamId);
     }
 
-    private void setGroupKeys(String streamId, String publisherId, ArrayList<GroupKey> keys) {
-        GroupKey current = getKeysPerPublisher(streamId).get(publisherId);
-        GroupKey last = keys.get(keys.size() - 1);
+    private void setGroupKeys(String streamId, String publisherId, ArrayList<UnencryptedGroupKey> keys) {
+        UnencryptedGroupKey current = getKeysPerPublisher(streamId).get(publisherId);
+        UnencryptedGroupKey last = keys.get(keys.size() - 1);
         if (current == null || current.getStartTime() < last.getStartTime()) {
             getKeysPerPublisher(streamId).put(publisherId, last);
         }
