@@ -42,7 +42,7 @@ public class AddressValidityUtil {
         publishersPerStreamId.clearAndClose();
     }
 
-    private boolean isValid(String streamId, String address, Function<String, HashMap<String, Boolean>> getAddresses,
+    private static boolean isValid(String streamId, String address, Function<String, HashMap<String, Boolean>> getAddresses,
                             BiFunction<String, String, Boolean> isFunction) {
         // check the local cache
         Boolean valid = getAddresses.apply(streamId).get(address);
@@ -75,7 +75,7 @@ public class AddressValidityUtil {
         return addresses;
     }
 
-    private Cache<String, HashMap<String, Boolean>> safeGetCache(Cache<String, HashMap<String, Boolean>> cache) {
+    private static Cache<String, HashMap<String, Boolean>> safeGetCache(Cache<String, HashMap<String, Boolean>> cache) {
         if (cache.isClosed()) {
             cache = new Cache2kBuilder<String, HashMap<String, Boolean>>() {}
                     .expireAfterWrite(30, TimeUnit.MINUTES).build();

@@ -41,11 +41,11 @@ public class MessageCreationUtil {
         return createStreamMessage(stream, payload, timestamp, partitionKey, null);
     }
 
-    public StreamMessage createStreamMessage(Stream stream, Map<String, Object> payload, Date timestamp, String partitionKey, GroupKey groupKey) {
-        if (groupKey != null) {
-            EncryptionUtil.validateGroupKey(groupKey.getGroupKeyHex());
+    public StreamMessage createStreamMessage(Stream stream, Map<String, Object> payload, Date timestamp, String partitionKey, GroupKey newGroupKey) {
+        if (newGroupKey != null) {
+            EncryptionUtil.validateGroupKey(newGroupKey.getGroupKeyHex());
         }
-        String groupKeyHex = groupKey == null ? null : groupKey.getGroupKeyHex();
+        String groupKeyHex = newGroupKey == null ? null : newGroupKey.getGroupKeyHex();
 
         int streamPartition = getStreamPartition(stream.getPartitions(), partitionKey);
         String key = stream.getId() + streamPartition;
@@ -61,10 +61,10 @@ public class MessageCreationUtil {
 
         if (keyStorage.hasKey(stream.getId()) && groupKeyHex != null) {
             EncryptionUtil.encryptStreamMessageAndNewKey(groupKeyHex, streamMessage, keyStorage.getLatestKey(stream.getId()).getSecretKey());
-            keyStorage.addKey(stream.getId(), groupKey);
+            keyStorage.addKey(stream.getId(), newGroupKey);
         } else if (keyStorage.hasKey(stream.getId()) || groupKeyHex != null) {
             if (groupKeyHex != null) {
-                keyStorage.addKey(stream.getId(), groupKey);
+                keyStorage.addKey(stream.getId(), newGroupKey);
             }
             EncryptionUtil.encryptStreamMessage(streamMessage, keyStorage.getLatestKey(stream.getId()).getSecretKey());
         }
@@ -89,7 +89,7 @@ public class MessageCreationUtil {
             data.put("range", range);
         }
 
-        String key = publisherAddress + "0"; // streamId + streamPartition
+        String key = publisherAddress + "0"; // streamId (using publisher address for inbox stream) + streamPartition
         long timestamp = (new Date()).getTime();
         long sequenceNumber = getNextSequenceNumber(key, timestamp);
         MessageID msgId = new MessageID(publisherAddress, 0, timestamp, sequenceNumber, publisherId, msgChainId);
@@ -109,7 +109,7 @@ public class MessageCreationUtil {
         data.put("streamId", streamId);
         data.put("keys", encryptedGroupKeys.stream().map(GroupKey::toMap).collect(Collectors.toList()));
 
-        String key = subscriberAddress + "0"; // streamId + streamPartition
+        String key = subscriberAddress + "0"; // streamId (using subscriber address for inbox stream) + streamPartition
         long timestamp = (new Date()).getTime();
         long sequenceNumber = getNextSequenceNumber(key, timestamp);
         MessageID msgId = new MessageID(subscriberAddress, 0, timestamp, sequenceNumber, publisherId, msgChainId);

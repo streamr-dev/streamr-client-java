@@ -11,7 +11,7 @@ This key storage is used when the publisher only wants to store the latest key u
 not the previous ones. This will prevent the publisher to answer historical group key requests.
  */
 public class LatestKeyStorage extends KeyStorage {
-    private HashMap<String, GroupKey> latestGroupKeys;
+    private final HashMap<String, GroupKey> latestGroupKeys;
 
     public LatestKeyStorage(HashMap<String, GroupKey> publisherGroupKeys) {
         super();

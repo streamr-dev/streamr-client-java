@@ -63,27 +63,27 @@ public class StreamrClient extends StreamrRESTClient {
 
     public StreamrClient(StreamrClientOptions options) {
         super(options);
-        AddressValidityUtil addressValidityUtil = new AddressValidityUtil(id -> {
+        AddressValidityUtil addressValidityUtil = new AddressValidityUtil(streamId -> {
             try {
-                return getSubscribers(id);
+                return getSubscribers(streamId);
             } catch (IOException e) {
                 throw new RuntimeException(e);
             }
-        }, (s, p) -> {
+        }, (streamId, subscriberAddress) -> {
             try {
-                return isSubscriber(s, p);
+                return isSubscriber(streamId, subscriberAddress);
             } catch (IOException e) {
                 throw new RuntimeException(e);
             }
-        }, id -> {
+        }, streamId -> {
             try {
-                return getPublishers(id);
+                return getPublishers(streamId);
             } catch (IOException e) {
                 throw new RuntimeException(e);
             }
-        }, (s, p) -> {
+        }, (streamId, publisherAddress) -> {
             try {
-                return isPublisher(s, p);
+                return isPublisher(streamId, publisherAddress);
             } catch (IOException e) {
                 throw new RuntimeException(e);
             }
@@ -422,14 +422,14 @@ public class StreamrClient extends StreamrRESTClient {
         publish(stream, payload, timestamp, partitionKey, null);
     }
 
-    public void publish(Stream stream, Map<String, Object> payload, Date timestamp, String partitionKey, GroupKey groupKey) {
+    public void publish(Stream stream, Map<String, Object> payload, Date timestamp, String partitionKey, GroupKey newGroupKey) {
         if (!getState().equals(StreamrClient.State.Connected)) {
             connect();
         }
-        if (groupKey != null) {
-            options.getEncryptionOptions().getPublisherGroupKeys().put(stream.getId(), groupKey);
+        if (newGroupKey != null) {
+            options.getEncryptionOptions().getPublisherGroupKeys().put(stream.getId(), newGroupKey);
         }
-        StreamMessage streamMessage = msgCreationUtil.createStreamMessage(stream, payload, timestamp, partitionKey, groupKey);
+        StreamMessage streamMessage = msgCreationUtil.createStreamMessage(stream, payload, timestamp, partitionKey, newGroupKey);
         publish(streamMessage);
     }
 

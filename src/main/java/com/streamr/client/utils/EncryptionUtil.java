@@ -184,10 +184,15 @@ public class EncryptionUtil {
         try {
             pemWriter.writeObject(new PemObject("RSA " + (isPublic ? "PUBLIC" : "PRIVATE")  + " KEY", key.getEncoded()));
             pemWriter.flush();
-            pemWriter.close();
         } catch (IOException e) {
             log.error(e);
             throw new RuntimeException(e);
+        } finally {
+            try {
+                pemWriter.close();
+            } catch (IOException e) {
+                log.error(e);
+            }
         }
         return writer.toString();
     }

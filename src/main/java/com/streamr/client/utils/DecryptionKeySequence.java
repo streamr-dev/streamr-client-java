@@ -12,7 +12,7 @@ import java.util.ArrayList;
 This class is used when trying to decrypt historical messages that were encrypted with different keys.
  */
 public class DecryptionKeySequence {
-    private ArrayList<SecretKey> keys = new ArrayList<>();
+    private final ArrayList<SecretKey> keys = new ArrayList<>();
     private int currentIndex = 0;
 
     public DecryptionKeySequence(ArrayList<GroupKey> keys) {

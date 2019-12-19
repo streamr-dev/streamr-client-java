@@ -21,7 +21,7 @@ import java.util.Map;
 public class RealTimeSubscription extends BasicSubscription {
     private boolean resending = false;
     private final Map<String, SecretKey> groupKeys = new HashMap<>(); // publisherId --> groupKey
-    private HashSet<String> alreadyFailedToDecrypt = new HashSet<>();
+    private final HashSet<String> alreadyFailedToDecrypt = new HashSet<>();
     public RealTimeSubscription(String streamId, int partition, MessageHandler handler, Map<String, GroupKey> groupKeys,
                                 GroupKeyRequestFunction groupKeyRequestFunction, long propagationTimeout, long resendTimeout) {
         super(streamId, partition, handler, groupKeyRequestFunction, propagationTimeout, resendTimeout);

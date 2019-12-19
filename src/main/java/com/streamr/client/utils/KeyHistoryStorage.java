@@ -9,7 +9,7 @@ This key storage is used when the publisher wants to store all keys used to encr
 answer group key requests for historical keys.
  */
 public class KeyHistoryStorage extends KeyStorage {
-    private HashMap<String, GroupKeyHistory> histories = new HashMap<>();
+    private final HashMap<String, GroupKeyHistory> histories = new HashMap<>();
 
     public KeyHistoryStorage(HashMap<String, GroupKey> publisherGroupKeys) {
         super();

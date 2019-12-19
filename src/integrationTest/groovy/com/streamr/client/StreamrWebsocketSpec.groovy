@@ -190,12 +190,12 @@ class StreamrWebsocketSpec extends StreamrIntegrationSpecification {
 
 		when:
 		// Subscribe to the stream without knowing the group key
-		StreamMessageV31 msg
+		StreamMessage msg
 		client.subscribe(stream, new MessageHandler() {
 			@Override
 			void onMessage(Subscription s, StreamMessage message) {
 				//reaching this point ensures that the signature verification and decryption didn't throw
-				msg = (StreamMessageV31) message
+				msg = message
 			}
 		})
 
@@ -229,16 +229,16 @@ class StreamrWebsocketSpec extends StreamrIntegrationSpecification {
 
 		when:
 		// Subscribe to the stream with resend last without knowing the group keys
-		StreamMessageV31 msg1 = null
-		StreamMessageV31 msg2 = null
+		StreamMessage msg1 = null
+		StreamMessage msg2 = null
 		client.subscribe(stream, 0, new MessageHandler() {
 			@Override
 			void onMessage(Subscription s, StreamMessage message) {
 				//reaching this point ensures that the signature verification and decryption didn't throw
 				if (msg1 == null) {
-					msg1 = (StreamMessageV31) message
+					msg1 = message
 				} else if (msg2 == null) {
-					msg2 = (StreamMessageV31) message
+					msg2 = message
 				} else {
 					throw new RuntimeException("Received unexpected message: " + message.toJson())
 				}

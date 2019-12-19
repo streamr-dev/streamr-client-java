@@ -42,10 +42,7 @@ public class CombinedSubscription extends Subscription {
             }
         };
         // starts to request the initial resend
-        sub = new HistoricalSubscription(streamId, partition, wrapperHandler, resendOption, groupKeys, groupKeyRequestFunction, propagationTimeout, resendTimeout, msg -> {
-            queue.push(msg);
-            return null;
-        });
+        sub = new HistoricalSubscription(streamId, partition, wrapperHandler, resendOption, groupKeys, groupKeyRequestFunction, propagationTimeout, resendTimeout, queue::push);
     }
 
     @Override

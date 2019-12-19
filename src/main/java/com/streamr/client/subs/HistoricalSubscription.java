@@ -15,16 +15,17 @@ import java.util.ArrayList;
 import java.util.Date;
 import java.util.HashMap;
 import java.util.Map;
+import java.util.function.Consumer;
 import java.util.function.Function;
 
 public class HistoricalSubscription extends BasicSubscription {
-    private ResendOption resendOption;
+    private final ResendOption resendOption;
     private boolean resendDone = false;
-    private Function<StreamMessage, Void> onRealTimeMsg;
-    private HashMap<String, DecryptionKeySequence> keySequences = new HashMap<>();
+    private final Consumer<StreamMessage> onRealTimeMsg;
+    private final HashMap<String, DecryptionKeySequence> keySequences = new HashMap<>();
     public HistoricalSubscription(String streamId, int partition, MessageHandler handler, ResendOption resendOption,
                                   Map<String, GroupKey> groupKeys, GroupKeyRequestFunction groupKeyRequestFunction,
-                                  long propagationTimeout, long resendTimeout, Function<StreamMessage, Void> onRealTimeMsg) {
+                                  long propagationTimeout, long resendTimeout, Consumer<StreamMessage> onRealTimeMsg) {
         super(streamId, partition, handler, groupKeyRequestFunction, propagationTimeout, resendTimeout);
         this.resendOption = resendOption;
         this.onRealTimeMsg = onRealTimeMsg;
@@ -130,7 +131,7 @@ public class HistoricalSubscription extends BasicSubscription {
     @Override
     public void handleRealTimeMessage(StreamMessage msg) throws GapDetectedException, UnsupportedMessageException, UnableToDecryptException {
         if (onRealTimeMsg != null) {
-            onRealTimeMsg.apply(msg);
+            onRealTimeMsg.accept(msg);
         }
     }
 }

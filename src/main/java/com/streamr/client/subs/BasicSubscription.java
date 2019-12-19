@@ -17,8 +17,8 @@ public abstract class BasicSubscription extends Subscription {
     private static final Logger log = LogManager.getLogger();
 
     protected OrderingUtil orderingUtil;
-    protected HashSet<String> waitingForGroupKey = new HashSet<>();
-    protected ArrayDeque<StreamMessage> encryptedMsgsQueue = new ArrayDeque<>();
+    protected final HashSet<String> waitingForGroupKey = new HashSet<>();
+    protected final ArrayDeque<StreamMessage> encryptedMsgsQueue = new ArrayDeque<>();
     protected final GroupKeyRequestFunction groupKeyRequestFunction;
     public BasicSubscription(String streamId, int partition, MessageHandler handler,
                              GroupKeyRequestFunction groupKeyRequestFunction, long propagationTimeout, long resendTimeout) {

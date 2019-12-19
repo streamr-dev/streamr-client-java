@@ -8,7 +8,7 @@ This class contains the history of keys used to publish encrypted messages. The 
 used to create encrypted messages and to answer group key requests from subscribers.
  */
 public class GroupKeyHistory {
-    ArrayList<GroupKey> keys = new ArrayList<>();
+    private final ArrayList<GroupKey> keys = new ArrayList<>();
     public GroupKeyHistory() {
 
     }

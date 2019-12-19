@@ -8,8 +8,8 @@ import java.security.interfaces.RSAPublicKey;
 import java.util.HashMap;
 
 public class EncryptionOptions {
-    private HashMap<String, GroupKey> publisherGroupKeys; // streamId --> groupKeyHex
-    private HashMap<String, HashMap<String, GroupKey>> subscriberGroupKeys; // streamId --> (publisherId --> groupKeyHex)
+    private final HashMap<String, GroupKey> publisherGroupKeys; // streamId --> groupKeyHex
+    private final HashMap<String, HashMap<String, GroupKey>> subscriberGroupKeys; // streamId --> (publisherId --> groupKeyHex)
     private boolean publisherStoreKeyHistory = true;
     private RSAPublicKey rsaPublicKey;
     private RSAPrivateKey rsaPrivateKey;
