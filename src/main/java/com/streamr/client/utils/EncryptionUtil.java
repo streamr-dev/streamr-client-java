@@ -18,6 +18,8 @@ import javax.crypto.spec.SecretKeySpec;
 import javax.xml.bind.DatatypeConverter;
 import java.io.IOException;
 import java.io.StringWriter;
+import java.lang.reflect.Field;
+import java.lang.reflect.Modifier;
 import java.security.*;
 import java.security.interfaces.RSAPrivateKey;
 import java.security.interfaces.RSAPublicKey;
@@ -240,6 +242,27 @@ public class EncryptionUtil {
             log.error(e);
             throw new RuntimeException(e);
         }
+    }
+
+    public static SecretKey getSecretKeyFromHexString(String groupKeyHex) {
+        EncryptionUtil.validateGroupKey(groupKeyHex);
+        try {
+            // need to modify "isRestricted" field to be able to use keys longer than 128 bits.
+            Field field = Class.forName("javax.crypto.JceSecurity").getDeclaredField("isRestricted");
+            field.setAccessible(true);
+
+            // "isRestricted" is final so we must remove the 'final' modifier in order to change the field value
+            Field modifiersField = Field.class.getDeclaredField("modifiers");
+            modifiersField.setAccessible(true);
+            modifiersField.setInt(field, field.getModifiers() & ~Modifier.FINAL);
+
+            // removes the restriction for key size by setting "isRestricted" to false
+            field.set(null, false);
+        } catch (ClassNotFoundException | NoSuchFieldException | SecurityException | IllegalArgumentException | IllegalAccessException ex) {
+            ex.printStackTrace();
+            throw new RuntimeException(ex);
+        }
+        return new SecretKeySpec(DatatypeConverter.parseHexBinary(groupKeyHex), "AES");
     }
 
     private static KeyPair generateKeyPair() {

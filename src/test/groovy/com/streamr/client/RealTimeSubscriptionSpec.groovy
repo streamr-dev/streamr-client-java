@@ -210,10 +210,12 @@ class RealTimeSubscriptionSpec extends Specification {
         UnencryptedGroupKey groupKey = genKey()
         SecretKey secretKey = new SecretKeySpec(DatatypeConverter.parseHexBinary(groupKey.groupKeyHex), "AES")
         Map plaintext = [foo: 'bar']
-        String ciphertext = EncryptionUtil.encrypt(HttpUtils.mapAdapter.toJson(plaintext).getBytes(StandardCharsets.UTF_8), secretKey)
         Map received = null
         StreamMessageV31 msg1 = new StreamMessageV31("streamId", 0, 0, 0, "publisherId", "",
-                null, null, StreamMessage.ContentType.CONTENT_TYPE_JSON, StreamMessage.EncryptionType.AES, ciphertext, StreamMessage.SignatureType.SIGNATURE_TYPE_NONE, null)
+                null, null, StreamMessage.ContentType.CONTENT_TYPE_JSON, StreamMessage.EncryptionType.NONE, plaintext, StreamMessage.SignatureType.SIGNATURE_TYPE_NONE, null)
+
+        EncryptionUtil.encryptStreamMessage(msg1, secretKey)
+
         RealTimeSubscription sub = new RealTimeSubscription("streamId", 0, new MessageHandler() {
             @Override
             void onMessage(Subscription sub, StreamMessage message) {
@@ -227,13 +229,14 @@ class RealTimeSubscriptionSpec extends Specification {
     }
 
     void "calls the key handler function when not able to decrypt encrypted messages with the wrong key"() {
+        StreamMessageV31 msg1 = new StreamMessageV31("streamId", 0, 0, 0, "publisherId", "",
+                null, null, StreamMessage.ContentType.CONTENT_TYPE_JSON, StreamMessage.EncryptionType.NONE, [foo: 'bar'], StreamMessage.SignatureType.SIGNATURE_TYPE_NONE, null)
+
         UnencryptedGroupKey groupKey = genKey()
         UnencryptedGroupKey wrongGroupKey = genKey()
         SecretKey secretKey = new SecretKeySpec(DatatypeConverter.parseHexBinary(groupKey.groupKeyHex), "AES")
-        Map plaintext = [foo: 'bar']
-        String ciphertext = EncryptionUtil.encrypt(HttpUtils.mapAdapter.toJson(plaintext).getBytes(StandardCharsets.UTF_8), secretKey)
-        StreamMessageV31 msg1 = new StreamMessageV31("streamId", 0, 0, 0, "publisherId", "",
-                null, null, StreamMessage.ContentType.CONTENT_TYPE_JSON, StreamMessage.EncryptionType.AES, ciphertext, StreamMessage.SignatureType.SIGNATURE_TYPE_NONE, null)
+        EncryptionUtil.encryptStreamMessage(msg1, secretKey)
+
         String receivedPublisherId
         RealTimeSubscription sub = new RealTimeSubscription("streamId", 0, new MessageHandler() {
             @Override
@@ -252,17 +255,17 @@ class RealTimeSubscriptionSpec extends Specification {
     }
 
     void "queues messages when not able to decrypt and handles them once the key is updated"() {
+        StreamMessageV31 msg1 = new StreamMessageV31("streamId", 0, 1, 0, "publisherId", "",
+                null, null, StreamMessage.ContentType.CONTENT_TYPE_JSON, StreamMessage.EncryptionType.NONE, [foo: 'bar1'], StreamMessage.SignatureType.SIGNATURE_TYPE_NONE, null)
+        StreamMessageV31 msg2 = new StreamMessageV31("streamId", 0, 2, 0, "publisherId", "",
+                1, 0, StreamMessage.ContentType.CONTENT_TYPE_JSON, StreamMessage.EncryptionType.NONE, [foo: 'bar2'], StreamMessage.SignatureType.SIGNATURE_TYPE_NONE, null)
+
         UnencryptedGroupKey groupKey = genKey()
         UnencryptedGroupKey wrongGroupKey = genKey()
         SecretKey secretKey = new SecretKeySpec(DatatypeConverter.parseHexBinary(groupKey.groupKeyHex), "AES")
-        Map plaintext1 = [foo: 'bar1']
-        String ciphertext1 = EncryptionUtil.encrypt(HttpUtils.mapAdapter.toJson(plaintext1).getBytes(StandardCharsets.UTF_8), secretKey)
-        Map plaintext2 = [foo: 'bar2']
-        String ciphertext2 = EncryptionUtil.encrypt(HttpUtils.mapAdapter.toJson(plaintext2).getBytes(StandardCharsets.UTF_8), secretKey)
-        StreamMessageV31 msg1 = new StreamMessageV31("streamId", 0, 1, 0, "publisherId", "",
-                null, null, StreamMessage.ContentType.CONTENT_TYPE_JSON, StreamMessage.EncryptionType.AES, ciphertext1, StreamMessage.SignatureType.SIGNATURE_TYPE_NONE, null)
-        StreamMessageV31 msg2 = new StreamMessageV31("streamId", 0, 2, 0, "publisherId", "",
-                1, 0, StreamMessage.ContentType.CONTENT_TYPE_JSON, StreamMessage.EncryptionType.AES, ciphertext2, StreamMessage.SignatureType.SIGNATURE_TYPE_NONE, null)
+        EncryptionUtil.encryptStreamMessage(msg1, secretKey)
+        EncryptionUtil.encryptStreamMessage(msg2, secretKey)
+
         int callCount = 0
         StreamMessage received1 = null
         StreamMessage received2 = null
@@ -287,7 +290,7 @@ class RealTimeSubscriptionSpec extends Specification {
         // Cannot decrypt msg2, queues it.
         sub.handleRealTimeMessage(msg2)
         // faking the reception of the group key response
-        sub.setGroupKeys(msg1.getPublisherId(), (ArrayList<GroupKey>)[groupKey])
+        sub.setGroupKeys(msg1.getPublisherId(), (ArrayList<UnencryptedGroupKey>)[groupKey])
         then:
         callCount == 1
         received1.toJson() == msg1.toJson()
@@ -299,10 +302,11 @@ class RealTimeSubscriptionSpec extends Specification {
         UnencryptedGroupKey wrongGroupKey = genKey()
         UnencryptedGroupKey otherWrongGroupKey = genKey()
         SecretKey secretKey = new SecretKeySpec(DatatypeConverter.parseHexBinary(groupKey.groupKeyHex), "AES")
-        Map plaintext = [foo: 'bar']
-        String ciphertext = EncryptionUtil.encrypt(HttpUtils.mapAdapter.toJson(plaintext).getBytes(StandardCharsets.UTF_8), secretKey)
         StreamMessageV31 msg1 = new StreamMessageV31("streamId", 0, 0, 0, "publisherId", "",
-                null, null, StreamMessage.ContentType.CONTENT_TYPE_JSON, StreamMessage.EncryptionType.AES, ciphertext, StreamMessage.SignatureType.SIGNATURE_TYPE_NONE, null)
+                null, null, StreamMessage.ContentType.CONTENT_TYPE_JSON, StreamMessage.EncryptionType.NONE, [foo: 'bar'], StreamMessage.SignatureType.SIGNATURE_TYPE_NONE, null)
+
+        EncryptionUtil.encryptStreamMessage(msg1, secretKey)
+
         String receivedPublisherId
         RealTimeSubscription sub = new RealTimeSubscription("streamId", 0, new MessageHandler() {
             @Override
@@ -326,22 +330,20 @@ class RealTimeSubscriptionSpec extends Specification {
         SecretKey secretKey1 = new SecretKeySpec(DatatypeConverter.parseHexBinary(groupKey1.groupKeyHex), "AES")
         byte[] key2Bytes = new byte[32]
         secureRandom.nextBytes(key2Bytes)
-        UnencryptedGroupKey groupKey2 = new UnencryptedGroupKey(Hex.encodeHexString(key2Bytes), new Date())
-        SecretKey secretKey2 = new SecretKeySpec(DatatypeConverter.parseHexBinary(groupKey2.groupKeyHex), "AES")
+        String key2HexString = Hex.encodeHexString(key2Bytes)
+        SecretKey secretKey2 = new SecretKeySpec(DatatypeConverter.parseHexBinary(key2HexString), "AES")
 
         Map content1 = [foo: 'bar']
-        byte[] content1Bytes = HttpUtils.mapAdapter.toJson(content1).getBytes(StandardCharsets.UTF_8)
-        byte[] plaintext1 = new byte[key2Bytes.length + content1Bytes.length]
-        System.arraycopy(key2Bytes, 0, plaintext1, 0, key2Bytes.length)
-        System.arraycopy(content1Bytes, 0, plaintext1, key2Bytes.length, content1Bytes.length)
-        String ciphertext1 = EncryptionUtil.encrypt(plaintext1, secretKey1)
         StreamMessageV31 msg1 = new StreamMessageV31("streamId", 0, 0, 0, "publisherId", "",
-                null, null, StreamMessage.ContentType.CONTENT_TYPE_JSON, StreamMessage.EncryptionType.NEW_KEY_AND_AES, ciphertext1, StreamMessage.SignatureType.SIGNATURE_TYPE_NONE, null)
+                null, null, StreamMessage.ContentType.CONTENT_TYPE_JSON, StreamMessage.EncryptionType.NONE, [foo: 'bar'], StreamMessage.SignatureType.SIGNATURE_TYPE_NONE, null)
+
+        EncryptionUtil.encryptStreamMessageAndNewKey(key2HexString, msg1, secretKey1)
 
         Map content2 = [hello: 'world']
-        String ciphertext2 = EncryptionUtil.encrypt(HttpUtils.mapAdapter.toJson(content2).getBytes(StandardCharsets.UTF_8), secretKey2)
         StreamMessageV31 msg2 = new StreamMessageV31("streamId", 0, 1, 0, "publisherId", "",
-                0, 0, StreamMessage.ContentType.CONTENT_TYPE_JSON, StreamMessage.EncryptionType.AES, ciphertext2, StreamMessage.SignatureType.SIGNATURE_TYPE_NONE, null)
+                0, 0, StreamMessage.ContentType.CONTENT_TYPE_JSON, StreamMessage.EncryptionType.NONE, [hello: 'world'], StreamMessage.SignatureType.SIGNATURE_TYPE_NONE, null)
+
+        EncryptionUtil.encryptStreamMessage(msg2, secretKey2)
 
         Map received1 = null
         Map received2 = null

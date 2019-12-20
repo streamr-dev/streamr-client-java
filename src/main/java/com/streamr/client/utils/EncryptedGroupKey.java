@@ -10,16 +10,12 @@ public class EncryptedGroupKey extends GroupKey {
         super(groupKeyHex, start);
     }
 
-    public EncryptedGroupKey(String groupKeyHex, long start) {
-        super(groupKeyHex, start);
-    }
-
     public UnencryptedGroupKey getDecrypted(EncryptionUtil encryptionUtil) {
         String plaintext = Hex.encodeHexString(encryptionUtil.decryptWithPrivateKey(groupKeyHex));
         return new UnencryptedGroupKey(plaintext, start);
     }
 
     public static EncryptedGroupKey fromMap(Map<String, Object> map) {
-        return new EncryptedGroupKey((String) map.get("groupKey"), ((Double) map.get("start")).longValue());
+        return new EncryptedGroupKey((String) map.get("groupKey"), new Date(((Double) map.get("start")).longValue()));
     }
 }
