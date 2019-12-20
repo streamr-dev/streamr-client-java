@@ -13,14 +13,6 @@ public abstract class GroupKey {
         this.start = start;
     }
 
-    public GroupKey(String groupKeyHex, long start) {
-        this(groupKeyHex, new Date(start));
-    }
-
-    public GroupKey(String groupKeyHex) {
-        this(groupKeyHex, new Date());
-    }
-
     public String getGroupKeyHex() {
         return groupKeyHex;
     }
