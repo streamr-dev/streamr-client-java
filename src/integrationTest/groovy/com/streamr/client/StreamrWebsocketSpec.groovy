@@ -186,42 +186,55 @@ class StreamrWebsocketSpec extends StreamrIntegrationSpecification {
 	}
 
 	void "subscriber can get the group key and decrypt encrypted messages using an RSA key pair"() {
+		given:
+		PollingConditions conditions1 = new PollingConditions(timeout: 10)
+		PollingConditions conditions2 = new PollingConditions(timeout: 10)
+
 		Stream stream = client.createStream(new Stream(generateResourceName(), ""))
 		UnencryptedGroupKey key = genKey()
 
 		when:
 		// Subscribe to the stream without knowing the group key
-		StreamMessage msg
+		StreamMessage msg1 = null
+		StreamMessage msg2 = null
 		client.subscribe(stream, new MessageHandler() {
 			@Override
 			void onMessage(Subscription s, StreamMessage message) {
 				//reaching this point ensures that the signature verification and decryption didn't throw
-				msg = message
+				if (msg1 == null) {
+					msg1 = message
+				} else {
+					msg2 = message
+				}
 			}
 		})
 
 		Thread.sleep(2000)
 
 		client.publish(stream, [test: 'clear text'], new Date(), null, key)
-		// waiting for the key exchange mechanism to happen under the hood
-		Thread.sleep(3000)
 
 		then:
-		// the subscriber got the group key and can decrypt
-		msg.getContent() == [test: 'clear text']
+		conditions1.eventually {
+			assert msg1 != null
+			// the subscriber got the group key and can decrypt
+			assert msg1.getContent() == [test: 'clear text']
+		}
 
 		when:
 		// publishing a second message with a new group key
 		client.publish(stream, [test: 'another clear text'], new Date(), null, genKey())
 
-		Thread.sleep(2000)
-
 		then:
-		// no need to explicitly give the new group key to the subscriber
-		msg.getContent() == [test: 'another clear text']
+		conditions2.eventually {
+			assert msg2 != null
+			// no need to explicitly give the new group key to the subscriber
+			msg2.getContent() == [test: 'another clear text']
+		}
 	}
 
 	void "subscriber can get the historical keys and decrypt old encrypted messages using an RSA key pair"() {
+		given:
+		PollingConditions conditions = new PollingConditions(timeout: 10)
 		Stream stream = client.createStream(new Stream(generateResourceName(), ""))
 		// publishing historical messages with different group keys before subscribing
 		client.publish(stream, [test: 'clear text'], new Date(), null, genKey())
@@ -247,13 +260,13 @@ class StreamrWebsocketSpec extends StreamrIntegrationSpecification {
 			}
 		}, new ResendLastOption(2))
 
-		// waiting for the resend and the key exchange mechanism to happen under the hood
-		Thread.sleep(3000)
-
 		then:
-		// the subscriber got the group keys and can decrypt the old messages
-		msg1.getContent() == [test: 'clear text']
-		msg2.getContent() == [test: 'another clear text']
+		conditions.eventually {
+			assert msg1 != null && msg2 != null
+			// the subscriber got the group keys and can decrypt the old messages
+			assert msg1.getContent() == [test: 'clear text']
+			assert msg2.getContent() == [test: 'another clear text']
+		}
 	}
 
 	void "subscribe with resend last"() {
