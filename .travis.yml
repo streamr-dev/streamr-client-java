@@ -16,7 +16,7 @@ jobs:
     script:
     - sudo /etc/init.d/mysql stop
     - sudo sysctl fs.inotify.max_user_watches=524288; sudo sysctl -p
-    - git clone -branch nightly-broker https://github.com/streamr-dev/streamr-docker-dev.git
+    - git clone --branch nightly-broker https://github.com/streamr-dev/streamr-docker-dev.git
     - sudo ifconfig docker0 10.200.10.1/24
     - "$TRAVIS_BUILD_DIR/streamr-docker-dev/streamr-docker-dev/bin.sh start 5"
     - "$TRAVIS_BUILD_DIR/streamr-docker-dev/streamr-docker-dev/bin.sh log -f engine-and-editor broker-node-storage-1 broker-node-no-storage-1 broker-node-no-storage-2 &"
