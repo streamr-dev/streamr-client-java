@@ -274,6 +274,7 @@ class HistoricalSubscriptionSpec extends Specification {
         int callCount = 0
         StreamMessage received1 = null
         StreamMessage received2 = null
+        boolean subDone = false
         HistoricalSubscription sub = new HistoricalSubscription("streamId", 0, new MessageHandler() {
             @Override
             void onMessage(Subscription sub, StreamMessage message) {
@@ -282,6 +283,10 @@ class HistoricalSubscriptionSpec extends Specification {
                 } else if (received2 == null) {
                     received2 = message
                 }
+            }
+            @Override
+            void done(Subscription sub) {
+                subDone = true
             }
         }, new ResendLastOption(1), null, new BasicSubscription.GroupKeyRequestFunction() {
             @Override
@@ -296,10 +301,12 @@ class HistoricalSubscriptionSpec extends Specification {
         sub.handleResentMessage(msg2)
         // faking the reception of the group key response
         sub.setGroupKeys(msg1.getPublisherId(), (ArrayList<GroupKey>)[groupKey1, groupKey2])
+        sub.endResend()
         then:
         callCount == 1
         received1.toJson() == msg1.toJson()
         received2.toJson() == msg2.toJson()
+        subDone
     }
 
     void "throws when not able to decrypt with historical keys set"() {
@@ -309,6 +316,7 @@ class HistoricalSubscriptionSpec extends Specification {
         Map plaintext = [foo: 'bar']
         String ciphertext = EncryptionUtil.encrypt(HttpUtils.mapAdapter.toJson(plaintext).getBytes(StandardCharsets.UTF_8), groupKey)
         Map received = null
+        boolean subDone = false
         StreamMessageV31 msg1 = new StreamMessageV31("streamId", 0, 0, 0, "publisherId", "",
                 null, null, StreamMessage.ContentType.CONTENT_TYPE_JSON, StreamMessage.EncryptionType.AES, ciphertext, StreamMessage.SignatureType.SIGNATURE_TYPE_NONE, null)
         HistoricalSubscription sub = new HistoricalSubscription("streamId", 0, new MessageHandler() {
@@ -316,10 +324,15 @@ class HistoricalSubscriptionSpec extends Specification {
             void onMessage(Subscription sub, StreamMessage message) {
                 received = message.getContent()
             }
+            @Override
+            void done(Subscription sub) {
+                subDone = true
+            }
         }, new ResendLastOption(1), ["publisherId": wrongKey], null)
         when:
         sub.handleResentMessage(msg1)
         then:
         thrown(UnableToDecryptException)
+        !subDone
     }
 }

@@ -66,10 +66,7 @@ public class HistoricalSubscription extends BasicSubscription {
         }
         keySequences.put(publisherId, new DecryptionKeySequence(groupKeys));
         // handle the historical messages received while we were waiting for the historical group keys
-        waitingForGroupKey.remove(publisherId);
-        while (!encryptedMsgsQueue.isEmpty()) {
-            handleInOrder(encryptedMsgsQueue.poll());
-        }
+        handleInOrderQueue(publisherId);
         if (resendDone) { // the messages in the queue were the last ones to handle
             this.handler.done(this);
         }
@@ -84,9 +81,7 @@ public class HistoricalSubscription extends BasicSubscription {
         if (!keySequences.containsKey(msg.getPublisherId())) {
             Date start = msg.getTimestampAsDate();
             Date end = resendOption instanceof ResendRangeOption ? ((ResendRangeOption) resendOption).getTo().getTimestampAsDate() : new Date();
-            groupKeyRequestFunction.apply(msg.getPublisherId(), start, end);
-            waitingForGroupKey.add(msg.getPublisherId());
-            encryptedMsgsQueue.offer(msg);
+            requestGroupKeyAndQueueMessage(msg, start, end);
             return false;
         }
         // Could fail to decrypt if the received historical keys are wrong. We don't request them a second time.

@@ -17,9 +17,9 @@ public abstract class BasicSubscription extends Subscription {
     private static final Logger log = LogManager.getLogger();
 
     protected OrderingUtil orderingUtil;
-    protected final HashSet<String> waitingForGroupKey = new HashSet<>();
+    private final HashSet<String> waitingForGroupKey = new HashSet<>();
     protected final ArrayDeque<StreamMessage> encryptedMsgsQueue = new ArrayDeque<>();
-    protected final GroupKeyRequestFunction groupKeyRequestFunction;
+    private final GroupKeyRequestFunction groupKeyRequestFunction;
     public BasicSubscription(String streamId, int partition, MessageHandler handler,
                              GroupKeyRequestFunction groupKeyRequestFunction, long propagationTimeout, long resendTimeout) {
         super(streamId, partition, handler, propagationTimeout, resendTimeout);
@@ -50,7 +50,26 @@ public abstract class BasicSubscription extends Subscription {
         return orderingUtil.getGapHandler();
     }
 
-    protected void handleInOrder(StreamMessage msg) {
+    protected void requestGroupKeyAndQueueMessage(StreamMessage msgToQueue, Date start, Date end) {
+        groupKeyRequestFunction.apply(msgToQueue.getPublisherId(), start, end);
+        waitingForGroupKey.add(msgToQueue.getPublisherId());
+        encryptedMsgsQueue.offer(msgToQueue);
+    }
+
+    protected void handleInOrderQueue(String publisherId) {
+        waitingForGroupKey.remove(publisherId);
+        while (!encryptedMsgsQueue.isEmpty()) {
+            handleInOrder(encryptedMsgsQueue.poll());
+        }
+    }
+
+    public ArrayList<OrderedMsgChain> getChains() {
+        return orderingUtil.getChains();
+    }
+
+    public abstract boolean decryptOrRequestGroupKey(StreamMessage msg);
+
+    private void handleInOrder(StreamMessage msg) {
         if (!waitingForGroupKey.contains(msg.getPublisherId())) {
             boolean success = decryptOrRequestGroupKey(msg);
             if (success) { // the message was successfully decrypted
@@ -60,12 +79,6 @@ public abstract class BasicSubscription extends Subscription {
             encryptedMsgsQueue.offer(msg);
         }
     }
-
-    public ArrayList<OrderedMsgChain> getChains() {
-        return orderingUtil.getChains();
-    }
-
-    public abstract boolean decryptOrRequestGroupKey(StreamMessage msg);
 
     @FunctionalInterface
     public interface GroupKeyRequestFunction {

@@ -55,10 +55,7 @@ public class RealTimeSubscription extends BasicSubscription {
         }
         this.groupKeys.put(publisherId, new SecretKeySpec(DatatypeConverter.parseHexBinary(groupKeys.get(0).getGroupKeyHex()), "AES"));
         // handle real time messages received while waiting for the group key
-        waitingForGroupKey.remove(publisherId);
-        while (!encryptedMsgsQueue.isEmpty()) {
-            handleInOrder(encryptedMsgsQueue.poll());
-        }
+        handleInOrderQueue(publisherId);
     }
 
     @Override
@@ -75,11 +72,9 @@ public class RealTimeSubscription extends BasicSubscription {
                 // even after receiving the latest group key, we still cannot decrypt
                 throw e;
             }
-            groupKeyRequestFunction.apply(msg.getPublisherId(), null, null);
             // we will queue real time messages while waiting for the group key (including this one
             // since it could not be decrypted)
-            waitingForGroupKey.add(msg.getPublisherId());
-            encryptedMsgsQueue.offer(msg);
+            requestGroupKeyAndQueueMessage(msg, null, null);
             alreadyFailedToDecrypt.add(msg.getPublisherId());
             return false;
         }
