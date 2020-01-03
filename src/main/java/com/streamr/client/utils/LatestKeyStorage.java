@@ -36,7 +36,7 @@ public class LatestKeyStorage implements KeyStorage {
     @throws InvalidGroupKeyRequestException since only the latest key is stored. Use KeyHistoryStorage.getKeysBetween() instead.
      */
     @Override
-    public ArrayList<UnencryptedGroupKey> getKeysBetween(String streamId, Date start, Date end) throws InvalidGroupKeyRequestException {
+    public ArrayList<UnencryptedGroupKey> getKeysBetween(String streamId, long start, long end) throws InvalidGroupKeyRequestException {
         throw new InvalidGroupKeyRequestException("Cannot retrieve historical keys for stream " + streamId
                 + " between " + start + " and " + end + " because only the latest key is stored.");
     }

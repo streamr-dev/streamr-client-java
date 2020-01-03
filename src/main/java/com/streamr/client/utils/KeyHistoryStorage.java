@@ -34,7 +34,7 @@ public class KeyHistoryStorage implements KeyStorage {
     }
 
     @Override
-    public ArrayList<UnencryptedGroupKey> getKeysBetween(String streamId, Date start, Date end) {
+    public ArrayList<UnencryptedGroupKey> getKeysBetween(String streamId, long start, long end) {
         GroupKeyHistory history = histories.get(streamId);
         return history == null ? new ArrayList<>() : history.getKeysBetween(start, end);
     }

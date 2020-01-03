@@ -1,7 +1,10 @@
 package com.streamr.client.utils
 
+import org.cache2k.Cache
+import org.cache2k.Cache2kBuilder
 import spock.lang.Specification
 
+import java.util.concurrent.TimeUnit
 import java.util.function.BiFunction
 import java.util.function.Function
 

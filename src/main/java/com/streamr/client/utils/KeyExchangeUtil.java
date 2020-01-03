@@ -60,7 +60,7 @@ public class KeyExchangeUtil {
             // Need to use Double because Moshi parser converts all JSON numbers to double
             long start = ((Double) range.get("start")).longValue();
             long end = ((Double) range.get("end")).longValue();
-            keys = keyStorage.getKeysBetween(streamId, new Date(start), new Date(end));
+            keys = keyStorage.getKeysBetween(streamId, start, end);
         } else {
             keys = new ArrayList<>();
             UnencryptedGroupKey latest = keyStorage.getLatestKey(streamId);

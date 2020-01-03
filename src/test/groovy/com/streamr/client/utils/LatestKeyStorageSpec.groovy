@@ -51,7 +51,7 @@ class LatestKeyStorageSpec extends Specification {
     void "getKeysBetween() throws an exception"() {
         when:
         KeyStorage util = new LatestKeyStorage(new HashMap<String, UnencryptedGroupKey>())
-        util.getKeysBetween("wrong-streamId", new Date(), new Date())
+        util.getKeysBetween("wrong-streamId", 0, 1)
         then:
         thrown(InvalidGroupKeyRequestException)
     }

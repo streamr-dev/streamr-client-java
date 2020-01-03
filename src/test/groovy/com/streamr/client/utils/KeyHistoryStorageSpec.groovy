@@ -60,14 +60,14 @@ class KeyHistoryStorageSpec extends Specification {
         when:
         KeyStorage util = new KeyHistoryStorage(new HashMap<String, UnencryptedGroupKey>())
         then:
-        util.getKeysBetween("wrong-streamId", new Date(), new Date()) == []
+        util.getKeysBetween("wrong-streamId", 0, 1) == []
     }
     void "getKeysBetween() returns empty array when end time is before start of first key"() {
         when:
         KeyStorage util = new KeyHistoryStorage(new HashMap<String, UnencryptedGroupKey>())
         util.addKey("streamId", genKey(32, new Date(10)))
         then:
-        util.getKeysBetween("streamId", new Date(1), new Date(9)) == []
+        util.getKeysBetween("streamId", 1, 9) == []
     }
     void "returns only the latest key when start time is after last key"() {
         when:
@@ -76,7 +76,7 @@ class KeyHistoryStorageSpec extends Specification {
         UnencryptedGroupKey latest = genKey(32, new Date(10))
         util.addKey("streamId", latest)
         then:
-        util.getKeysBetween("streamId", new Date(15), new Date(200)) == [latest]
+        util.getKeysBetween("streamId", 15, 200) == [latest]
     }
     void "returns keys in interval start-end"() {
         KeyStorage util = new KeyHistoryStorage(new HashMap<String, UnencryptedGroupKey>())
@@ -92,7 +92,7 @@ class KeyHistoryStorageSpec extends Specification {
         util.addKey("streamId", key4)
         util.addKey("streamId", key5)
         then:
-        util.getKeysBetween("streamId", new Date(23), new Date(47)) == [key2, key3, key4]
-        util.getKeysBetween("streamId", new Date(20), new Date(40)) == [key2, key3, key4]
+        util.getKeysBetween("streamId", 23, 47) == [key2, key3, key4]
+        util.getKeysBetween("streamId", 20, 40) == [key2, key3, key4]
     }
 }

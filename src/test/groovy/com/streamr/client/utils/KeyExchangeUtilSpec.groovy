@@ -124,7 +124,7 @@ class KeyExchangeUtilSpec extends Specification {
         when:
         util.handleGroupKeyRequest(request)
         then:
-        1 * storage.getKeysBetween("streamId", new Date(123L), new Date(456L)) >> [key1, key2]
+        1 * storage.getKeysBetween("streamId", 123L, 456L) >> [key1, key2]
         1 * messageCreationUtil.createGroupKeyResponse(*_) >> { arguments ->
             assert arguments[0] == "subscriberId"
             assert arguments[1] == "streamId"

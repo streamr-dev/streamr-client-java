@@ -13,7 +13,7 @@ public interface KeyStorage {
      */
     UnencryptedGroupKey getLatestKey(String streamId);
 
-    ArrayList<UnencryptedGroupKey> getKeysBetween(String streamId, Date start, Date end);
+    ArrayList<UnencryptedGroupKey> getKeysBetween(String streamId, long start, long end);
 
     void addKey(String streamId, UnencryptedGroupKey key);
 }
