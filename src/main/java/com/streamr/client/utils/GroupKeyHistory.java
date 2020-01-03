@@ -46,6 +46,10 @@ public class GroupKeyHistory {
     }
 
     public void addKey(UnencryptedGroupKey key) {
+        UnencryptedGroupKey latestKey = keys.size() == 0 ? null : keys.get(keys.size() - 1);
+        if (latestKey != null && latestKey.start.getTime() >= key.start.getTime()) {
+            throw new IllegalArgumentException("Trying to add a key older than the latest key (" + key.start + " < " + latestKey.start);
+        }
         keys.add(key);
     }
 

@@ -24,6 +24,15 @@ class KeyHistoryStorageSpec extends Specification {
         util.hasKey("streamId")
         !util.hasKey("wrong-streamId")
     }
+    void "addKey() throws if key added is older than latest key"() {
+        UnencryptedGroupKey key10 = genKey(32, new Date(10))
+        UnencryptedGroupKey key5 = genKey(32, new Date(5))
+        KeyStorage util = new KeyHistoryStorage(["streamId": key10])
+        when:
+        util.addKey("streamId", key5)
+        then:
+        thrown(IllegalArgumentException)
+    }
     void "getLatestKey() returns null when there is no GroupKeyHistory for the stream"() {
         when:
         KeyStorage util = new KeyHistoryStorage(new HashMap<String, GroupKey>())
