@@ -60,6 +60,16 @@ class EncryptionUtilSpec extends Specification {
         then:
         ciphertext.length == plaintext.length + 16
     }
+    void "multiple same encrypt() calls use differents ivs and produce different ciphertexts"() {
+        SecretKey key = genSecretKey()
+        byte[] plaintext = "some random text".getBytes(StandardCharsets.UTF_8)
+        when:
+        String ciphertext1 = EncryptionUtil.encrypt(plaintext, key)
+        String ciphertext2 = EncryptionUtil.encrypt(plaintext, key)
+        then:
+        ciphertext1.substring(0, 32) != ciphertext2.substring(0, 32)
+        ciphertext1.substring(32) != ciphertext2.substring(32)
+    }
     void "aes decryption after encryption equals the initial plaintext"() {
         SecretKey key = genSecretKey()
         byte[] plaintext = "some random text".getBytes(StandardCharsets.UTF_8)
