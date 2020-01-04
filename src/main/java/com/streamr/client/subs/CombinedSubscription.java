@@ -2,6 +2,7 @@ package com.streamr.client.subs;
 
 import com.streamr.client.MessageHandler;
 import com.streamr.client.exceptions.GapDetectedException;
+import com.streamr.client.exceptions.InvalidGroupKeyResponseException;
 import com.streamr.client.exceptions.UnableToDecryptException;
 import com.streamr.client.exceptions.UnsupportedMessageException;
 import com.streamr.client.options.ResendOption;
@@ -36,7 +37,11 @@ public class CombinedSubscription extends Subscription {
                 // handle the real time messages received during the initial resend
                 while(!queue.isEmpty()) {
                     StreamMessage msg = queue.poll();
-                    realTime.handleRealTimeMessage(msg);
+                    try {
+                        realTime.handleRealTimeMessage(msg);
+                    } catch (UnableToDecryptException e) {
+                        handler.onUnableToDecrypt(e);
+                    }
                 }
                 sub = realTime;
             }
@@ -51,7 +56,7 @@ public class CombinedSubscription extends Subscription {
     }
 
     @Override
-    public void setGroupKeys(String publisherId, ArrayList<UnencryptedGroupKey> groupKeys) {
+    public void setGroupKeys(String publisherId, ArrayList<UnencryptedGroupKey> groupKeys) throws InvalidGroupKeyResponseException {
         sub.setGroupKeys(publisherId, groupKeys);
     }
 

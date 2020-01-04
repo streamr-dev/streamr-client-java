@@ -21,7 +21,7 @@ public class DecryptionKeySequence {
         }
     }
 
-    public void tryToDecryptResent(StreamMessage msg) {
+    public void tryToDecryptResent(StreamMessage msg) throws UnableToDecryptException {
         try {
             EncryptionUtil.decryptStreamMessage(msg, keys.get(currentIndex));
         } catch (UnableToDecryptException e) {

@@ -49,7 +49,7 @@ public class RealTimeSubscription extends BasicSubscription {
     }
 
     @Override
-    public void setGroupKeys(String publisherId, ArrayList<UnencryptedGroupKey> groupKeys) {
+    public void setGroupKeys(String publisherId, ArrayList<UnencryptedGroupKey> groupKeys) throws InvalidGroupKeyResponseException {
         if (groupKeys.size() != 1) {
             throw new InvalidGroupKeyResponseException("Received "+groupKeys.size()+ " group keys for a real time subscription. Expected one.");
         }
@@ -59,7 +59,7 @@ public class RealTimeSubscription extends BasicSubscription {
     }
 
     @Override
-    public boolean decryptOrRequestGroupKey(StreamMessage msg) {
+    public boolean decryptOrRequestGroupKey(StreamMessage msg) throws UnableToDecryptException {
         try {
             SecretKey newGroupKey = EncryptionUtil.decryptStreamMessage(msg, groupKeys.get(msg.getPublisherId()));
             alreadyFailedToDecrypt.remove(msg.getPublisherId());

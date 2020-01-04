@@ -2,6 +2,7 @@ package com.streamr.client.subs;
 
 import com.streamr.client.MessageHandler;
 import com.streamr.client.exceptions.GapDetectedException;
+import com.streamr.client.exceptions.InvalidGroupKeyResponseException;
 import com.streamr.client.exceptions.UnableToDecryptException;
 import com.streamr.client.exceptions.UnsupportedMessageException;
 import com.streamr.client.options.ResendOption;
@@ -81,7 +82,7 @@ public abstract class Subscription {
 
     public abstract void setGapHandler(OrderedMsgChain.GapHandlerFunction gapHandler);
 
-    public abstract void setGroupKeys(String publisherId, ArrayList<UnencryptedGroupKey> groupKeys);
+    public abstract void setGroupKeys(String publisherId, ArrayList<UnencryptedGroupKey> groupKeys) throws InvalidGroupKeyResponseException;
 
     public abstract void clear();
 }

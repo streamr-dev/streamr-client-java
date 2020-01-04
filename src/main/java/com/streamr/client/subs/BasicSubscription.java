@@ -67,13 +67,19 @@ public abstract class BasicSubscription extends Subscription {
         return orderingUtil.getChains();
     }
 
-    public abstract boolean decryptOrRequestGroupKey(StreamMessage msg);
+    public abstract boolean decryptOrRequestGroupKey(StreamMessage msg) throws UnableToDecryptException;
 
     private void handleInOrder(StreamMessage msg) {
         if (!waitingForGroupKey.contains(msg.getPublisherId())) {
-            boolean success = decryptOrRequestGroupKey(msg);
-            if (success) { // the message was successfully decrypted
-                handler.onMessage(this, msg);
+            try {
+                boolean success = decryptOrRequestGroupKey(msg);
+                if (success) { // the message was successfully decrypted
+                    handler.onMessage(this, msg);
+                } else {
+                    log.warn("Failed to decrypt. Requested the correct decryption key(s) and going to try again.");
+                }
+            } catch (UnableToDecryptException e) { // failed to decrypt for the second time (after receiving the decryption key(s))
+                handler.onUnableToDecrypt(e);
             }
         } else {
             encryptedMsgsQueue.offer(msg);

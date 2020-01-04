@@ -1,5 +1,7 @@
 package com.streamr.client.utils;
 
+import com.streamr.client.exceptions.InvalidGroupKeyRequestException;
+
 import java.util.ArrayList;
 import java.util.Date;
 
@@ -23,9 +25,9 @@ public class GroupKeyHistory {
         return keys.get(keys.size() - 1);
     }
 
-    public ArrayList<UnencryptedGroupKey> getKeysBetween(long start, long end) {
+    public ArrayList<UnencryptedGroupKey> getKeysBetween(long start, long end) throws InvalidGroupKeyRequestException {
         if (start > end) {
-            throw new IllegalArgumentException("'start' must be less or equal to 'end'");
+            throw new InvalidGroupKeyRequestException("'start' must be less or equal to 'end'");
         }
         int i = 0;
         // discard keys that ended before 'start'

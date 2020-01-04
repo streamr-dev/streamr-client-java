@@ -1,17 +1,19 @@
 package com.streamr.client.utils;
 
+import com.streamr.client.exceptions.InvalidGroupKeyException;
+
 import javax.crypto.SecretKey;
 import java.util.Date;
 
 public class UnencryptedGroupKey extends GroupKey {
     private final SecretKey secretKey;
 
-    public UnencryptedGroupKey(String groupKeyHex, Date start) {
+    public UnencryptedGroupKey(String groupKeyHex, Date start) throws InvalidGroupKeyException {
         super (groupKeyHex, start);
         secretKey = EncryptionUtil.getSecretKeyFromHexString(groupKeyHex);
     }
 
-    public UnencryptedGroupKey(String groupKeyHex) {
+    public UnencryptedGroupKey(String groupKeyHex) throws InvalidGroupKeyException {
         this(groupKeyHex, new Date());
     }
 

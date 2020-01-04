@@ -159,7 +159,7 @@ public class EncryptionUtil {
         return null;
     }
 
-    public static void validateGroupKey(String groupKeyHex) {
+    public static void validateGroupKey(String groupKeyHex) throws InvalidGroupKeyException {
         String without0x = groupKeyHex.startsWith("0x") ? groupKeyHex.substring(2) : groupKeyHex;
         if (without0x.length() != 64) { // the key must be 256 bits long
             throw new InvalidGroupKeyException(without0x.length() * 4);
@@ -244,7 +244,7 @@ public class EncryptionUtil {
         }
     }
 
-    public static SecretKey getSecretKeyFromHexString(String groupKeyHex) {
+    public static SecretKey getSecretKeyFromHexString(String groupKeyHex) throws InvalidGroupKeyException {
         EncryptionUtil.validateGroupKey(groupKeyHex);
         try {
             // need to modify "isRestricted" field to be able to use keys longer than 128 bits.

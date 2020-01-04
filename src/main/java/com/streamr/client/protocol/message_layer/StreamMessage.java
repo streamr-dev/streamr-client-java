@@ -28,7 +28,8 @@ public abstract class StreamMessage implements ITimestamped {
         CONTENT_TYPE_JSON ((byte) 27),
         GROUP_KEY_REQUEST ((byte) 28),
         GROUP_KEY_RESPONSE_SIMPLE ((byte) 29),
-        GROUP_KEY_RESET_SIMPLE ((byte) 30);
+        GROUP_KEY_RESET_SIMPLE ((byte) 30),
+        ERROR_MSG ((byte) 31);
 
         private final byte id;
 
@@ -49,6 +50,8 @@ public abstract class StreamMessage implements ITimestamped {
                 return GROUP_KEY_RESPONSE_SIMPLE;
             } else if (id == GROUP_KEY_RESET_SIMPLE.id) {
                 return GROUP_KEY_RESET_SIMPLE;
+            } else if (id == ERROR_MSG.id) {
+                return ERROR_MSG;
             }
             throw new UnsupportedMessageException("Unrecognized content type: "+id);
         }
@@ -300,6 +303,10 @@ public abstract class StreamMessage implements ITimestamped {
             }
             if (!content.containsKey("start")) {
                 throw new MalformedMessageException("Content of type " + ContentType.GROUP_KEY_RESET_SIMPLE + " must contain a 'start' field.");
+            }
+        } else if (contentType == ContentType.ERROR_MSG) {
+            if (!content.containsKey("message")) {
+                throw new MalformedMessageException("Content of type " + ContentType.ERROR_MSG + " must contain a 'message' field.");
             }
         }
     }

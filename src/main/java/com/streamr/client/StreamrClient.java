@@ -3,6 +3,7 @@ package com.streamr.client;
 import com.streamr.client.authentication.ApiKeyAuthenticationMethod;
 import com.streamr.client.authentication.AuthenticationMethod;
 import com.streamr.client.authentication.EthereumAuthenticationMethod;
+import com.streamr.client.exceptions.*;
 import com.streamr.client.options.ResendOption;
 import com.streamr.client.options.StreamrClientOptions;
 import com.streamr.client.protocol.control_layer.*;
@@ -15,9 +16,6 @@ import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.java_websocket.client.WebSocketClient;
 import org.java_websocket.handshake.ServerHandshake;
-import com.streamr.client.exceptions.ConnectionTimeoutException;
-import com.streamr.client.exceptions.PartitionNotSpecifiedException;
-import com.streamr.client.exceptions.SubscriptionNotFoundException;
 import com.streamr.client.protocol.message_layer.StreamMessage;
 import com.streamr.client.rest.Stream;
 
@@ -266,12 +264,21 @@ public class StreamrClient extends StreamrRESTClient {
             inboxSub = subscribe(inbox, new MessageHandler() {
                 @Override
                 public void onMessage(Subscription sub, StreamMessage message) {
-                    if (message.getContentType().equals(StreamMessage.ContentType.GROUP_KEY_REQUEST)) {
-                        keyExchangeUtil.handleGroupKeyRequest(message);
-                    } else if (message.getContentType().equals(StreamMessage.ContentType.GROUP_KEY_RESPONSE_SIMPLE)) {
-                        keyExchangeUtil.handleGroupKeyResponse(message);
-                    } else {
-                        log.warn("Cannot handle message with content type: " + message.getContentType());
+                    try {
+                        if (message.getContentType().equals(StreamMessage.ContentType.GROUP_KEY_REQUEST)) {
+                            keyExchangeUtil.handleGroupKeyRequest(message);
+                        } else if (message.getContentType().equals(StreamMessage.ContentType.GROUP_KEY_RESPONSE_SIMPLE)) {
+                            keyExchangeUtil.handleGroupKeyResponse(message);
+                        } else {
+                            throw new MalformedMessageException("Cannot handle message with content type: " + message.getContentType());
+                        }
+                    } catch (Exception e) {
+                        log.warn(e.getMessage());
+                        // we don't notify the error to the originator if the message is unauthenticated.
+                        if (message.getSignature() != null) {
+                            StreamMessage errorMessage = msgCreationUtil.createErrorMessage(message.getPublisherId(), e.getMessage());
+                            publish(errorMessage); //sending the error to the sender of 'message'
+                        }
                     }
                 }
             });
@@ -383,7 +390,7 @@ public class StreamrClient extends StreamrRESTClient {
     }
 
     private void handleMessage(StreamMessage message,
-                               BiConsumer<Subscription, StreamMessage> subMsgHandler) throws SubscriptionNotFoundException {
+                               HandleMessage subMsgHandler) throws SubscriptionNotFoundException {
         log.debug(message.getStreamId() + ": " + message.getSerializedContent());
 
         subscribedStreamsUtil.verifyStreamMessage(message);
@@ -399,7 +406,7 @@ public class StreamrClient extends StreamrRESTClient {
                 secondResends.remove(sub.getId());
             }
             try {
-                subMsgHandler.accept(sub, message);
+                subMsgHandler.apply(sub, message);
             } catch (Exception e) {
                 log.error(e);
             }
@@ -580,7 +587,7 @@ public class StreamrClient extends StreamrRESTClient {
         return options.getEncryptionOptions().getSubscriberGroupKeys().get(streamId);
     }
 
-    private void setGroupKeys(String streamId, String publisherId, ArrayList<UnencryptedGroupKey> keys) {
+    private void setGroupKeys(String streamId, String publisherId, ArrayList<UnencryptedGroupKey> keys) throws InvalidGroupKeyResponseException {
         UnencryptedGroupKey current = getKeysPerPublisher(streamId).get(publisherId);
         UnencryptedGroupKey last = keys.get(keys.size() - 1);
         if (current == null || current.getStartTime() < last.getStartTime()) {
@@ -597,5 +604,10 @@ public class StreamrClient extends StreamrRESTClient {
         }
         StreamMessage request = msgCreationUtil.createGroupKeyRequest(publisherId, streamId, encryptionUtil.getPublicKeyAsPemString(), start, end);
         publish(request);
+    }
+
+    @FunctionalInterface
+    public interface HandleMessage {
+        void apply(Subscription s, StreamMessage m) throws UnableToDecryptException;
     }
 }

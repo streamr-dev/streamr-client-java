@@ -328,6 +328,10 @@ class HistoricalSubscriptionSpec extends Specification {
             void done(Subscription sub) {
                 subDone = true
             }
+            @Override
+            void onUnableToDecrypt(UnableToDecryptException e) {
+                throw e
+            }
         }, new ResendLastOption(1), ["publisherId": wrongKey], null)
         when:
         sub.handleResentMessage(msg1)

@@ -1,7 +1,9 @@
 package com.streamr.client.utils;
 
+import com.streamr.client.exceptions.InvalidGroupKeyException;
 import com.streamr.client.exceptions.InvalidGroupKeyRequestException;
 import com.streamr.client.exceptions.InvalidGroupKeyResponseException;
+import com.streamr.client.exceptions.UnableToDecryptException;
 import com.streamr.client.protocol.message_layer.StreamMessage;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
@@ -33,7 +35,7 @@ public class KeyExchangeUtil {
         this.setGroupKeysFunction = setGroupKeysFunction;
     }
 
-    public void handleGroupKeyRequest(StreamMessage groupKeyRequest) {
+    public void handleGroupKeyRequest(StreamMessage groupKeyRequest) throws InvalidGroupKeyRequestException {
         // if it was signed, the StreamrClient already checked the signature. If not, StreamrClient accepted it since the stream
         // does not require signed data for all types of messages.
         if (groupKeyRequest.getSignature() == null) {
@@ -80,7 +82,7 @@ public class KeyExchangeUtil {
         publishFunction.accept(response);
     }
 
-    public void handleGroupKeyResponse(StreamMessage groupKeyResponse) {
+    public void handleGroupKeyResponse(StreamMessage groupKeyResponse) throws InvalidGroupKeyResponseException {
         // if it was signed, the StreamrClient already checked the signature. If not, StreamrClient accepted it since the stream
         // does not require signed data for all types of messages.
         if (groupKeyResponse.getSignature() == null) {
@@ -103,14 +105,18 @@ public class KeyExchangeUtil {
         }
         ArrayList<UnencryptedGroupKey> decryptedKeys = new ArrayList<>();
         for (Map<String, Object> map: (ArrayList<Map<String, Object>>) content.get("keys")) {
-            UnencryptedGroupKey decryptedKey = EncryptedGroupKey.fromMap(map).getDecrypted(encryptionUtil);
-            decryptedKeys.add(decryptedKey);
+            try {
+                UnencryptedGroupKey decryptedKey = EncryptedGroupKey.fromMap(map).getDecrypted(encryptionUtil);
+                decryptedKeys.add(decryptedKey);
+            } catch (UnableToDecryptException | InvalidGroupKeyException e) {
+                throw new InvalidGroupKeyResponseException(e.getMessage());
+            }
         }
         setGroupKeysFunction.apply(streamId, groupKeyResponse.getPublisherId(), decryptedKeys);
     }
 
     @FunctionalInterface
     public interface SetGroupKeysFunction {
-        void apply(String streamId, String publisherId, ArrayList<UnencryptedGroupKey> keys);
+        void apply(String streamId, String publisherId, ArrayList<UnencryptedGroupKey> keys) throws InvalidGroupKeyResponseException;
     }
 }

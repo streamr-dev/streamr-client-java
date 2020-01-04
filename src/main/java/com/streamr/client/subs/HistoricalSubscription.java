@@ -60,7 +60,7 @@ public class HistoricalSubscription extends BasicSubscription {
     }
 
     @Override
-    public void setGroupKeys(String publisherId, ArrayList<UnencryptedGroupKey> groupKeys) {
+    public void setGroupKeys(String publisherId, ArrayList<UnencryptedGroupKey> groupKeys) throws InvalidGroupKeyResponseException {
         if (keySequences.containsKey(publisherId)) {
             throw new InvalidGroupKeyResponseException("Received historical keys for publisher " + publisherId + " for a second time.");
         }
@@ -73,7 +73,7 @@ public class HistoricalSubscription extends BasicSubscription {
     }
 
     @Override
-    public boolean decryptOrRequestGroupKey(StreamMessage msg) {
+    public boolean decryptOrRequestGroupKey(StreamMessage msg) throws UnableToDecryptException {
         if (msg.getEncryptionType() != StreamMessage.EncryptionType.AES && msg.getEncryptionType() != StreamMessage.EncryptionType.NEW_KEY_AND_AES) {
             return true;
         }

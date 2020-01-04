@@ -247,4 +247,27 @@ class MessageCreationUtilSpec extends Specification {
         msg.getContent().get("keys") == [k1.toMap(), k2.toMap()]
         msg.getSignature() != null
     }
+
+    void "should not be able to create unsigned error message"() {
+        when:
+        msgCreationUtil.createErrorMessage("", "")
+        then:
+        SigningRequiredException e = thrown SigningRequiredException
+        e.message == "Cannot create unsigned error message. Must authenticate with an Ethereum account"
+    }
+
+    void "creates correct error message"() {
+        String withoutPrefix = "23bead9b499af21c4c16e4511b3b6b08c3e22e76e0591f5ab5ba8d4c3a5b1820"
+        ECKey account = ECKey.fromPrivate(new BigInteger(withoutPrefix, 16))
+        SigningUtil signingUtil = new SigningUtil(account)
+        MessageCreationUtil util = new MessageCreationUtil("publisherId", signingUtil, keyStorage)
+        when:
+        StreamMessage msg = util.createErrorMessage("destinationAddress", "some error message")
+        then:
+        msg.getStreamId() == "destinationAddress"
+        msg.getContentType() == StreamMessage.ContentType.ERROR_MSG
+        msg.getEncryptionType() == StreamMessage.EncryptionType.NONE
+        msg.getContent().get("message") == "some error message"
+        msg.getSignature() != null
+    }
 }

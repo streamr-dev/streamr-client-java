@@ -166,7 +166,7 @@ class KeyExchangeUtilSpec extends Specification {
         when:
         util.handleGroupKeyResponse(response)
         then:
-        InvalidGroupKeyException e = thrown(InvalidGroupKeyException)
+        InvalidGroupKeyResponseException e = thrown(InvalidGroupKeyResponseException)
         e.message == "Group key must be 256 bits long, but got a key length of 128 bits."
     }
     void "should update client options and subscriptions with received group key"() {

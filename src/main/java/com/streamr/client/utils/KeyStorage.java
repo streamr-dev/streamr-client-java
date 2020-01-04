@@ -1,5 +1,7 @@
 package com.streamr.client.utils;
 
+import com.streamr.client.exceptions.InvalidGroupKeyRequestException;
+
 import java.util.ArrayList;
 import java.util.Date;
 import java.util.HashMap;
@@ -13,7 +15,7 @@ public interface KeyStorage {
      */
     UnencryptedGroupKey getLatestKey(String streamId);
 
-    ArrayList<UnencryptedGroupKey> getKeysBetween(String streamId, long start, long end);
+    ArrayList<UnencryptedGroupKey> getKeysBetween(String streamId, long start, long end) throws InvalidGroupKeyRequestException;
 
     void addKey(String streamId, UnencryptedGroupKey key);
 }

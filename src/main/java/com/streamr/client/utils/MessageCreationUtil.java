@@ -5,6 +5,7 @@ import com.streamr.client.protocol.message_layer.*;
 import com.streamr.client.protocol.message_layer.StreamMessage.EncryptionType;
 import com.streamr.client.rest.Stream;
 import org.apache.commons.lang3.RandomStringUtils;
+import org.apache.commons.lang3.tuple.Pair;
 
 import javax.crypto.SecretKey;
 import javax.crypto.spec.SecretKeySpec;
@@ -45,16 +46,12 @@ public class MessageCreationUtil {
         String groupKeyHex = newGroupKey == null ? null : newGroupKey.getGroupKeyHex();
 
         int streamPartition = getStreamPartition(stream.getPartitions(), partitionKey);
-        String key = stream.getId() + streamPartition;
 
-        long sequenceNumber = getNextSequenceNumber(key, timestamp.getTime());
-        MessageID msgId = new MessageID(stream.getId(), streamPartition, timestamp.getTime(), sequenceNumber, publisherId, msgChainId);
-        MessageRef prevRef = refsPerStreamAndPartition.get(key);
-        StreamMessage streamMessage = new StreamMessageV31(msgId, prevRef, StreamMessage.ContentType.CONTENT_TYPE_JSON,
+        Pair<MessageID, MessageRef> pair = createMsgIdAndRef(stream.getId(), streamPartition, timestamp.getTime());
+
+        StreamMessage streamMessage = new StreamMessageV31(pair.getLeft(), pair.getRight(), StreamMessage.ContentType.CONTENT_TYPE_JSON,
                 EncryptionType.NONE, payload, StreamMessage.SignatureType.SIGNATURE_TYPE_NONE, null
         );
-
-        refsPerStreamAndPartition.put(key, new MessageRef(timestamp.getTime(), sequenceNumber));
 
         if (keyStorage.hasKey(stream.getId()) && groupKeyHex != null) {
             EncryptionUtil.encryptStreamMessageAndNewKey(groupKeyHex, streamMessage, keyStorage.getLatestKey(stream.getId()).getSecretKey());
@@ -86,13 +83,9 @@ public class MessageCreationUtil {
             data.put("range", range);
         }
 
-        String key = publisherAddress + "0"; // streamId (using publisher address for inbox stream) + streamPartition
-        long timestamp = (new Date()).getTime();
-        long sequenceNumber = getNextSequenceNumber(key, timestamp);
-        MessageID msgId = new MessageID(publisherAddress, 0, timestamp, sequenceNumber, publisherId, msgChainId);
-        MessageRef prevMsgRef = refsPerStreamAndPartition.get(key);
+        Pair<MessageID, MessageRef> pair = createDefaultMsgIdAndRef(publisherAddress); // using address as streamId (inbox stream)
         StreamMessage streamMessage = new StreamMessageV31(
-                msgId, prevMsgRef, StreamMessage.ContentType.GROUP_KEY_REQUEST, EncryptionType.NONE, data,
+                pair.getLeft(), pair.getRight(), StreamMessage.ContentType.GROUP_KEY_REQUEST, EncryptionType.NONE, data,
                 StreamMessage.SignatureType.SIGNATURE_TYPE_NONE, null);
         signingUtil.signStreamMessage(streamMessage);
         return streamMessage;
@@ -106,13 +99,23 @@ public class MessageCreationUtil {
         data.put("streamId", streamId);
         data.put("keys", encryptedGroupKeys.stream().map(GroupKey::toMap).collect(Collectors.toList()));
 
-        String key = subscriberAddress + "0"; // streamId (using subscriber address for inbox stream) + streamPartition
-        long timestamp = (new Date()).getTime();
-        long sequenceNumber = getNextSequenceNumber(key, timestamp);
-        MessageID msgId = new MessageID(subscriberAddress, 0, timestamp, sequenceNumber, publisherId, msgChainId);
-        MessageRef prevMsgRef = refsPerStreamAndPartition.get(key);
+        Pair<MessageID, MessageRef> pair = createDefaultMsgIdAndRef(subscriberAddress); // using address as streamId (inbox stream)
         StreamMessage streamMessage = new StreamMessageV31(
-                msgId, prevMsgRef, StreamMessage.ContentType.GROUP_KEY_RESPONSE_SIMPLE, EncryptionType.RSA, data,
+                pair.getLeft(), pair.getRight(), StreamMessage.ContentType.GROUP_KEY_RESPONSE_SIMPLE, EncryptionType.RSA, data,
+                StreamMessage.SignatureType.SIGNATURE_TYPE_NONE, null);
+        signingUtil.signStreamMessage(streamMessage);
+        return streamMessage;
+    }
+
+    public StreamMessage createErrorMessage(String destinationAddress, String message) {
+        if (signingUtil == null) {
+            throw new SigningRequiredException("Cannot create unsigned error message. Must authenticate with an Ethereum account");
+        }
+        Map<String, Object> data = new HashMap<>();
+        data.put("message", message);
+        Pair<MessageID, MessageRef> pair = createDefaultMsgIdAndRef(destinationAddress); // using address as streamId (inbox stream)
+        StreamMessage streamMessage = new StreamMessageV31(
+                pair.getLeft(), pair.getRight(), StreamMessage.ContentType.ERROR_MSG, EncryptionType.NONE, data,
                 StreamMessage.SignatureType.SIGNATURE_TYPE_NONE, null);
         signingUtil.signStreamMessage(streamMessage);
         return streamMessage;
@@ -145,6 +148,20 @@ public class MessageCreationUtil {
         } else {
             return (int) Math.floor(Math.random() * nbPartitions);
         }
+    }
+
+    private Pair<MessageID, MessageRef> createMsgIdAndRef(String streamId, int streamPartition, long timestamp) {
+        String key = streamId + streamPartition;
+        long sequenceNumber = getNextSequenceNumber(key, timestamp);
+        MessageID msgId = new MessageID(streamId, streamPartition, timestamp, sequenceNumber, publisherId, msgChainId);
+        MessageRef prevMsgRef = refsPerStreamAndPartition.get(key);
+        Pair<MessageID, MessageRef> p = Pair.of(msgId, prevMsgRef);
+        refsPerStreamAndPartition.put(key, new MessageRef(timestamp, sequenceNumber));
+        return p;
+    }
+
+    private Pair<MessageID, MessageRef> createDefaultMsgIdAndRef(String streamId) {
+        return createMsgIdAndRef(streamId, 0, (new Date()).getTime());
     }
 
     private long getNextSequenceNumber(String key, long timestamp) {

@@ -312,6 +312,10 @@ class RealTimeSubscriptionSpec extends Specification {
             @Override
             void onMessage(Subscription sub, StreamMessage message) {
             }
+            @Override
+            void onUnableToDecrypt(UnableToDecryptException e) {
+                throw e
+            }
         }, ['publisherId': wrongGroupKey], new BasicSubscription.GroupKeyRequestFunction() {
             @Override
             void apply(String publisherId, Date start, Date end) {

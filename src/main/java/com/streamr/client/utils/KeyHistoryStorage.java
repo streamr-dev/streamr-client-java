@@ -1,5 +1,7 @@
 package com.streamr.client.utils;
 
+import com.streamr.client.exceptions.InvalidGroupKeyRequestException;
+
 import java.util.ArrayList;
 import java.util.Date;
 import java.util.HashMap;
@@ -34,7 +36,7 @@ public class KeyHistoryStorage implements KeyStorage {
     }
 
     @Override
-    public ArrayList<UnencryptedGroupKey> getKeysBetween(String streamId, long start, long end) {
+    public ArrayList<UnencryptedGroupKey> getKeysBetween(String streamId, long start, long end) throws InvalidGroupKeyRequestException {
         GroupKeyHistory history = histories.get(streamId);
         return history == null ? new ArrayList<>() : history.getKeysBetween(start, end);
     }
