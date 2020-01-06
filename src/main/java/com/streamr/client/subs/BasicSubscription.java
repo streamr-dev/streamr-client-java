@@ -58,8 +58,8 @@ public abstract class BasicSubscription extends Subscription {
 
     protected void handleInOrderQueue(String publisherId) {
         waitingForGroupKey.remove(publisherId);
-        while (!encryptedMsgsQueue.isEmpty()) {
-            handleInOrder(encryptedMsgsQueue.poll());
+        while (!encryptedMsgsQueue.isEmpty() && !waitingForGroupKey.contains(encryptedMsgsQueue.peek().getPublisherId())) {
+            decryptAndHandle(encryptedMsgsQueue.poll());
         }
     }
 
@@ -71,18 +71,22 @@ public abstract class BasicSubscription extends Subscription {
 
     private void handleInOrder(StreamMessage msg) {
         if (!waitingForGroupKey.contains(msg.getPublisherId())) {
-            try {
-                boolean success = decryptOrRequestGroupKey(msg);
-                if (success) { // the message was successfully decrypted
-                    handler.onMessage(this, msg);
-                } else {
-                    log.warn("Failed to decrypt. Requested the correct decryption key(s) and going to try again.");
-                }
-            } catch (UnableToDecryptException e) { // failed to decrypt for the second time (after receiving the decryption key(s))
-                handler.onUnableToDecrypt(e);
-            }
+            decryptAndHandle(msg);
         } else {
             encryptedMsgsQueue.offer(msg);
+        }
+    }
+
+    private void decryptAndHandle(StreamMessage msg) {
+        try {
+            boolean success = decryptOrRequestGroupKey(msg);
+            if (success) { // the message was successfully decrypted
+                handler.onMessage(this, msg);
+            } else {
+                log.warn("Failed to decrypt. Requested the correct decryption key(s) and going to try again.");
+            }
+        } catch (UnableToDecryptException e) { // failed to decrypt for the second time (after receiving the decryption key(s))
+            handler.onUnableToDecrypt(e);
         }
     }
 

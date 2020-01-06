@@ -309,6 +309,69 @@ class HistoricalSubscriptionSpec extends Specification {
         subDone
     }
 
+    void "queues messages when not able to decrypt and handles them once the keys are set (multiple publishers)"() {
+        UnencryptedGroupKey groupKey1 = genKey()
+        UnencryptedGroupKey groupKey2 = genKey()
+        UnencryptedGroupKey groupKey3 = genKey()
+        SecretKey secretKey1 = new SecretKeySpec(DatatypeConverter.parseHexBinary(groupKey1.groupKeyHex), "AES")
+        SecretKey secretKey2 = new SecretKeySpec(DatatypeConverter.parseHexBinary(groupKey2.groupKeyHex), "AES")
+        SecretKey secretKey3 = new SecretKeySpec(DatatypeConverter.parseHexBinary(groupKey3.groupKeyHex), "AES")
+        Map plaintext1 = [foo: 'bar1']
+        String ciphertext1 = EncryptionUtil.encrypt(HttpUtils.mapAdapter.toJson(plaintext1).getBytes(StandardCharsets.UTF_8), secretKey1)
+        Map plaintext2 = [foo: 'bar2']
+        String ciphertext2 = EncryptionUtil.encrypt(HttpUtils.mapAdapter.toJson(plaintext2).getBytes(StandardCharsets.UTF_8), secretKey2)
+        Map plaintext3 = [foo: 'bar3']
+        String ciphertext3 = EncryptionUtil.encrypt(HttpUtils.mapAdapter.toJson(plaintext3).getBytes(StandardCharsets.UTF_8), secretKey3)
+        Map plaintext4 = [foo: 'bar4']
+        String ciphertext4 = EncryptionUtil.encrypt(HttpUtils.mapAdapter.toJson(plaintext4).getBytes(StandardCharsets.UTF_8), secretKey3)
+        StreamMessageV31 msg1 = new StreamMessageV31("streamId", 0, 1, 0, "publisherId1", "",
+                null, null, StreamMessage.ContentType.CONTENT_TYPE_JSON, StreamMessage.EncryptionType.AES, ciphertext1, StreamMessage.SignatureType.SIGNATURE_TYPE_NONE, null)
+        StreamMessageV31 msg2 = new StreamMessageV31("streamId", 0, 2, 0, "publisherId1", "",
+                1, 0, StreamMessage.ContentType.CONTENT_TYPE_JSON, StreamMessage.EncryptionType.AES, ciphertext2, StreamMessage.SignatureType.SIGNATURE_TYPE_NONE, null)
+        StreamMessageV31 msg3 = new StreamMessageV31("streamId", 0, 1, 0, "publisherId2", "",
+                null, null, StreamMessage.ContentType.CONTENT_TYPE_JSON, StreamMessage.EncryptionType.AES, ciphertext3, StreamMessage.SignatureType.SIGNATURE_TYPE_NONE, null)
+        StreamMessageV31 msg4 = new StreamMessageV31("streamId", 0, 2, 0, "publisherId2", "",
+                1, 0, StreamMessage.ContentType.CONTENT_TYPE_JSON, StreamMessage.EncryptionType.AES, ciphertext4, StreamMessage.SignatureType.SIGNATURE_TYPE_NONE, null)
+        int callCount = 0
+        ArrayList<StreamMessage> received = []
+        boolean subDone = false
+        HistoricalSubscription sub = new HistoricalSubscription("streamId", 0, new MessageHandler() {
+            @Override
+            void onMessage(Subscription sub, StreamMessage message) {
+                received.add(message)
+            }
+            @Override
+            void done(Subscription sub) {
+                subDone = true
+            }
+        }, new ResendLastOption(1), null, new BasicSubscription.GroupKeyRequestFunction() {
+            @Override
+            void apply(String publisherId, Date start, Date end) {
+                callCount++
+            }
+        })
+        when:
+        // Cannot decrypt msg1, queues it and calls the handler
+        sub.handleResentMessage(msg1)
+        // Cannot decrypt msg2, queues it.
+        sub.handleResentMessage(msg2)
+        // Cannot decrypt msg3, queues it and calls the handler
+        sub.handleResentMessage(msg3)
+        // Cannot decrypt msg4, queues it.
+        sub.handleResentMessage(msg4)
+        // faking the reception of the group key response
+        sub.setGroupKeys(msg3.getPublisherId(), (ArrayList<GroupKey>)[groupKey3])
+        sub.setGroupKeys(msg1.getPublisherId(), (ArrayList<GroupKey>)[groupKey1, groupKey2])
+        sub.endResend()
+        then:
+        callCount == 2
+        received.get(0).toJson() == msg1.toJson()
+        received.get(1).toJson() == msg2.toJson()
+        received.get(2).toJson() == msg3.toJson()
+        received.get(3).toJson() == msg4.toJson()
+        subDone
+    }
+
     void "throws when not able to decrypt with historical keys set"() {
         UnencryptedGroupKey key = genKey()
         UnencryptedGroupKey wrongKey = genKey()
