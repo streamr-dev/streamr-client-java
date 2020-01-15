@@ -293,8 +293,8 @@ class RealTimeSubscriptionSpec extends Specification {
         sub.setGroupKeys(msg1.getPublisherId(), (ArrayList<UnencryptedGroupKey>)[groupKey])
         then:
         callCount == 1
-        received1.toJson() == msg1.toJson()
-        received2.toJson() == msg2.toJson()
+        received1.getContent() == [foo: 'bar1']
+        received2.getContent() == [foo: 'bar2']
     }
 
     void "queues messages when not able to decrypt and handles them once the key is updated (multiple publishers)"() {
@@ -345,10 +345,10 @@ class RealTimeSubscriptionSpec extends Specification {
         sub.setGroupKeys(msg3.getPublisherId(), (ArrayList<UnencryptedGroupKey>)[groupKey2])
         then:
         callCount == 2
-        received.get(0).toJson() == msg1.toJson()
-        received.get(1).toJson() == msg2.toJson()
-        received.get(2).toJson() == msg3.toJson()
-        received.get(3).toJson() == msg4.toJson()
+        received.get(0).getContent() == [foo: 'bar1']
+        received.get(1).getContent() == [foo: 'bar2']
+        received.get(2).getContent() == [foo: 'bar3']
+        received.get(3).getContent() == [foo: 'bar4']
     }
 
     void "throws when not able to decrypt for the second time"() {
