@@ -1,5 +1,6 @@
 package com.streamr.client.utils
 
+import com.streamr.client.exceptions.InvalidGroupKeyRequestException
 import com.streamr.client.exceptions.SigningRequiredException
 import com.streamr.client.protocol.message_layer.StreamMessage
 import com.streamr.client.protocol.message_layer.StreamMessageV31
@@ -250,7 +251,7 @@ class MessageCreationUtilSpec extends Specification {
 
     void "should not be able to create unsigned error message"() {
         when:
-        msgCreationUtil.createErrorMessage("", "")
+        msgCreationUtil.createErrorMessage("", new Exception())
         then:
         SigningRequiredException e = thrown SigningRequiredException
         e.message == "Cannot create unsigned error message. Must authenticate with an Ethereum account"
@@ -262,11 +263,12 @@ class MessageCreationUtilSpec extends Specification {
         SigningUtil signingUtil = new SigningUtil(account)
         MessageCreationUtil util = new MessageCreationUtil("publisherId", signingUtil, keyStorage)
         when:
-        StreamMessage msg = util.createErrorMessage("destinationAddress", "some error message")
+        StreamMessage msg = util.createErrorMessage("destinationAddress", new InvalidGroupKeyRequestException("some error message"))
         then:
         msg.getStreamId() == "destinationAddress"
         msg.getContentType() == StreamMessage.ContentType.ERROR_MSG
         msg.getEncryptionType() == StreamMessage.EncryptionType.NONE
+        msg.getContent().get("code") == "INVALID_GROUP_KEY_REQUEST"
         msg.getContent().get("message") == "some error message"
         msg.getSignature() != null
     }

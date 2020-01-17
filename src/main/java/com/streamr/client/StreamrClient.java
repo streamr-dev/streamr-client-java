@@ -269,6 +269,8 @@ public class StreamrClient extends StreamrRESTClient {
                             keyExchangeUtil.handleGroupKeyRequest(message);
                         } else if (message.getContentType().equals(StreamMessage.ContentType.GROUP_KEY_RESPONSE_SIMPLE)) {
                             keyExchangeUtil.handleGroupKeyResponse(message);
+                        } else if (message.getContentType().equals(StreamMessage.ContentType.ERROR_MSG)) {
+                            handleInboxStreamErrorMessage(message);
                         } else {
                             throw new MalformedMessageException("Cannot handle message with content type: " + message.getContentType());
                         }
@@ -276,7 +278,7 @@ public class StreamrClient extends StreamrRESTClient {
                         log.warn(e.getMessage());
                         // we don't notify the error to the originator if the message is unauthenticated.
                         if (message.getSignature() != null) {
-                            StreamMessage errorMessage = msgCreationUtil.createErrorMessage(message.getPublisherId(), e.getMessage());
+                            StreamMessage errorMessage = msgCreationUtil.createErrorMessage(message.getPublisherId(), e);
                             publish(errorMessage); //sending the error to the sender of 'message'
                         }
                     }
@@ -284,6 +286,11 @@ public class StreamrClient extends StreamrRESTClient {
             });
         }
         log.info("Connected to " + options.getWebsocketApiUrl());
+    }
+
+    private void handleInboxStreamErrorMessage(StreamMessage message) throws IOException {
+        Map<String, Object> content = message.getContent();
+        log.warn("Received error of type " + content.get("code") + " from " + message.getPublisherId() + ": " + content.get("message"));
     }
 
     /**

@@ -1,5 +1,8 @@
 package com.streamr.client.utils;
 
+import com.streamr.client.exceptions.InvalidGroupKeyRequestException;
+import com.streamr.client.exceptions.InvalidGroupKeyResponseException;
+import com.streamr.client.exceptions.MalformedMessageException;
 import com.streamr.client.exceptions.SigningRequiredException;
 import com.streamr.client.protocol.message_layer.*;
 import com.streamr.client.protocol.message_layer.StreamMessage.EncryptionType;
@@ -107,18 +110,31 @@ public class MessageCreationUtil {
         return streamMessage;
     }
 
-    public StreamMessage createErrorMessage(String destinationAddress, String message) {
+    public StreamMessage createErrorMessage(String destinationAddress, Exception e) {
         if (signingUtil == null) {
             throw new SigningRequiredException("Cannot create unsigned error message. Must authenticate with an Ethereum account");
         }
         Map<String, Object> data = new HashMap<>();
-        data.put("message", message);
+        data.put("code", getErrorCodeFromException(e));
+        data.put("message", e.getMessage());
         Pair<MessageID, MessageRef> pair = createDefaultMsgIdAndRef(destinationAddress); // using address as streamId (inbox stream)
         StreamMessage streamMessage = new StreamMessageV31(
                 pair.getLeft(), pair.getRight(), StreamMessage.ContentType.ERROR_MSG, EncryptionType.NONE, data,
                 StreamMessage.SignatureType.SIGNATURE_TYPE_NONE, null);
         signingUtil.signStreamMessage(streamMessage);
         return streamMessage;
+    }
+
+    private String getErrorCodeFromException(Exception e) {
+        if (e instanceof InvalidGroupKeyRequestException) {
+            return "INVALID_GROUP_KEY_REQUEST";
+        } else if (e instanceof InvalidGroupKeyResponseException) {
+            return "INVALID_GROUP_KEY_RESPONSE";
+        } else if (e instanceof MalformedMessageException) {
+            return "INVALID_CONTENT_TYPE";
+        } else {
+            return "UNEXPECTED_ERROR";
+        }
     }
 
     private int hash(String partitionKey) {

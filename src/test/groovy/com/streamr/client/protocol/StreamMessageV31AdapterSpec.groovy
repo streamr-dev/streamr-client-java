@@ -178,7 +178,7 @@ class StreamMessageV31AdapterSpec extends Specification {
 		String json29Wrong2 = "[31,[\"7wa7APtlTq6EC5iTCBy6dw\",0,1528228173462,0,\"publisherId\",\"1\"],null,29,0,\"{\\\"keys\\\":[{\\\"groupKey\\\":\\\"some-group-key\\\",\\\"wrongField\\\":123}]}\",0,null]"
 		String json30 = "[31,[\"7wa7APtlTq6EC5iTCBy6dw\",0,1528228173462,0,\"publisherId\",\"1\"],null,30,0,\"{\\\"streamId\\\":\\\"some-stream-id\\\",\\\"groupKey\\\":\\\"some new group key\\\",\\\"start\\\":123}\",0,null]"
 		String json30Wrong = "[31,[\"7wa7APtlTq6EC5iTCBy6dw\",0,1528228173462,0,\"publisherId\",\"1\"],null,30,0,\"{\\\"groupKey\\\":\\\"some new group key\\\",\\\"wrongField\\\":123}\",0,null]"
-		String json31 = "[31,[\"7wa7APtlTq6EC5iTCBy6dw\",0,1528228173462,0,\"publisherId\",\"1\"],null,31,0,\"{\\\"message\\\":\\\"some-error-message\\\"}\",0,null]"
+		String json31 = "[31,[\"7wa7APtlTq6EC5iTCBy6dw\",0,1528228173462,0,\"publisherId\",\"1\"],null,31,0,\"{\\\"code\\\":\\\"some-error-code\\\",\\\"message\\\":\\\"some-error-message\\\"}\",0,null]"
 		String json31Wrong = "[31,[\"7wa7APtlTq6EC5iTCBy6dw\",0,1528228173462,0,\"publisherId\",\"1\"],null,31,0,\"{\\\"wrongField\\\":123}\",0,null]"
 
 		when:
@@ -227,6 +227,7 @@ class StreamMessageV31AdapterSpec extends Specification {
 		then:
 		msg31.toJson() == json31
 		msg31.getContentType() == ContentType.ERROR_MSG
+		msg31.getContent().get("code") == "some-error-code"
 		msg31.getContent().get("message") == "some-error-message"
 		when:
 		StreamMessageV31 msg31Wrong = fromJsonToMsg(adapter, json31Wrong)

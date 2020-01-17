@@ -305,6 +305,9 @@ public abstract class StreamMessage implements ITimestamped {
                 throw new MalformedMessageException("Content of type " + ContentType.GROUP_KEY_RESET_SIMPLE + " must contain a 'start' field.");
             }
         } else if (contentType == ContentType.ERROR_MSG) {
+            if (!content.containsKey("code")) {
+                throw new MalformedMessageException("Content of type " + ContentType.ERROR_MSG + " must contain a 'code' field.");
+            }
             if (!content.containsKey("message")) {
                 throw new MalformedMessageException("Content of type " + ContentType.ERROR_MSG + " must contain a 'message' field.");
             }
