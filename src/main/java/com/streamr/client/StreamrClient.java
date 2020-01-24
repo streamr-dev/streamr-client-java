@@ -3,24 +3,19 @@ package com.streamr.client;
 import com.streamr.client.authentication.ApiKeyAuthenticationMethod;
 import com.streamr.client.authentication.AuthenticationMethod;
 import com.streamr.client.authentication.EthereumAuthenticationMethod;
+import com.streamr.client.exceptions.*;
 import com.streamr.client.options.ResendOption;
 import com.streamr.client.options.StreamrClientOptions;
 import com.streamr.client.protocol.control_layer.*;
 import com.streamr.client.protocol.message_layer.MessageRef;
 import com.streamr.client.rest.UserInfo;
-import com.streamr.client.subs.CombinedSubscription;
-import com.streamr.client.subs.HistoricalSubscription;
-import com.streamr.client.subs.RealTimeSubscription;
-import com.streamr.client.subs.Subscription;
+import com.streamr.client.subs.*;
 import com.streamr.client.utils.*;
 import org.apache.commons.codec.digest.DigestUtils;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.java_websocket.client.WebSocketClient;
 import org.java_websocket.handshake.ServerHandshake;
-import com.streamr.client.exceptions.ConnectionTimeoutException;
-import com.streamr.client.exceptions.PartitionNotSpecifiedException;
-import com.streamr.client.exceptions.SubscriptionNotFoundException;
 import com.streamr.client.protocol.message_layer.StreamMessage;
 import com.streamr.client.rest.Stream;
 
@@ -51,8 +46,14 @@ public class StreamrClient extends StreamrRESTClient {
     private Exception errorWhileConnecting = null;
 
     private String publisherId = null;
+    private final EncryptionUtil encryptionUtil;
     private final MessageCreationUtil msgCreationUtil;
     private final SubscribedStreamsUtil subscribedStreamsUtil;
+    private final KeyStorage keyStorage;
+    private final KeyExchangeUtil keyExchangeUtil;
+
+    private Stream inbox;
+    private Subscription inboxSub;
 
     private final HashMap<String, OneTimeResend> secondResends = new HashMap<>();
 
@@ -60,26 +61,38 @@ public class StreamrClient extends StreamrRESTClient {
 
     public StreamrClient(StreamrClientOptions options) {
         super(options);
-
+        AddressValidityUtil addressValidityUtil = new AddressValidityUtil(streamId -> {
+            try {
+                return getSubscribers(streamId);
+            } catch (IOException e) {
+                throw new RuntimeException(e);
+            }
+        }, (streamId, subscriberAddress) -> {
+            try {
+                return isSubscriber(streamId, subscriberAddress);
+            } catch (IOException e) {
+                throw new RuntimeException(e);
+            }
+        }, streamId -> {
+            try {
+                return getPublishers(streamId);
+            } catch (IOException e) {
+                throw new RuntimeException(e);
+            }
+        }, (streamId, publisherAddress) -> {
+            try {
+                return isPublisher(streamId, publisherAddress);
+            } catch (IOException e) {
+                throw new RuntimeException(e);
+            }
+        });
         subscribedStreamsUtil = new SubscribedStreamsUtil(id -> {
             try {
                 return getStream(id);
             } catch (IOException e) {
                 throw new RuntimeException(e);
             }
-        }, id -> {
-            try {
-                return getPublishers(id);
-            } catch (IOException e) {
-                throw new RuntimeException(e);
-            }
-        }, (s, p) -> {
-            try {
-                return isPublisher(s, p);
-            } catch (IOException e) {
-                throw new RuntimeException(e);
-            }
-        }, options.getSigningOptions().getVerifySignatures());
+        }, addressValidityUtil, options.getSigningOptions().getVerifySignatures());
 
         if (options.getAuthenticationMethod() instanceof ApiKeyAuthenticationMethod) {
             try {
@@ -90,12 +103,24 @@ public class StreamrClient extends StreamrRESTClient {
             }
         } else if (options.getAuthenticationMethod() instanceof EthereumAuthenticationMethod) {
             publisherId = ((EthereumAuthenticationMethod) options.getAuthenticationMethod()).getAddress();
+            try {
+                inbox = getStream(publisherId);
+            } catch (IOException e) {
+                throw new RuntimeException(e);
+            }
         }
         SigningUtil signingUtil = null;
         if (options.getPublishSignedMsgs()) {
             signingUtil = new SigningUtil(((EthereumAuthenticationMethod) options.getAuthenticationMethod()).getAccount());
         }
-        msgCreationUtil = new MessageCreationUtil(publisherId, signingUtil, options.getEncryptionOptions().getPublisherGroupKeys());
+        HashMap<String, UnencryptedGroupKey> publisherKeys = options.getEncryptionOptions().getPublisherGroupKeys();
+        keyStorage = options.getEncryptionOptions().getPublisherStoreKeyHistory() ? new KeyHistoryStorage(publisherKeys)
+                : new LatestKeyStorage(publisherKeys);
+        msgCreationUtil = new MessageCreationUtil(publisherId, signingUtil, keyStorage);
+        encryptionUtil = new EncryptionUtil(options.getEncryptionOptions().getRsaPublicKey(),
+                options.getEncryptionOptions().getRsaPrivateKey());
+        keyExchangeUtil = new KeyExchangeUtil(keyStorage, msgCreationUtil, encryptionUtil, addressValidityUtil,
+                this::publish, this::setGroupKeys);
 
         initWebsocket();
     }
@@ -211,6 +236,9 @@ public class StreamrClient extends StreamrRESTClient {
 
         if (firstTrial) {
             log.info("Connecting to " + options.getWebsocketApiUrl() + "...");
+            if (websocket == null) {
+                initWebsocket();
+            }
             websocket.connect();
             waitForState(State.Connected);
         } else {
@@ -231,17 +259,56 @@ public class StreamrClient extends StreamrRESTClient {
             }
             connect(false);
         }
+
+        if (inbox != null && inboxSub == null) {
+            inboxSub = subscribe(inbox, new MessageHandler() {
+                @Override
+                public void onMessage(Subscription sub, StreamMessage message) {
+                    try {
+                        if (message.getContentType().equals(StreamMessage.ContentType.GROUP_KEY_REQUEST)) {
+                            keyExchangeUtil.handleGroupKeyRequest(message);
+                        } else if (message.getContentType().equals(StreamMessage.ContentType.GROUP_KEY_RESPONSE_SIMPLE)) {
+                            keyExchangeUtil.handleGroupKeyResponse(message);
+                        } else if (message.getContentType().equals(StreamMessage.ContentType.ERROR_MSG)) {
+                            handleInboxStreamErrorMessage(message);
+                        } else {
+                            throw new MalformedMessageException("Cannot handle message with content type: " + message.getContentType());
+                        }
+                    } catch (Exception e) {
+                        log.warn(e.getMessage());
+                        // we don't notify the error to the originator if the message is unauthenticated.
+                        if (message.getSignature() != null) {
+                            StreamMessage errorMessage = msgCreationUtil.createErrorMessage(message.getPublisherId(), e);
+                            publish(errorMessage); //sending the error to the sender of 'message'
+                        }
+                    }
+                }
+            });
+        }
         log.info("Connected to " + options.getWebsocketApiUrl());
+    }
+
+    private void handleInboxStreamErrorMessage(StreamMessage message) throws IOException {
+        Map<String, Object> content = message.getContent();
+        log.warn("Received error of type " + content.get("code") + " from " + message.getPublisherId() + ": " + content.get("message"));
     }
 
     /**
      * Disconnects the websocket. Blocks until disconnected, or throws if the operation times out.
      */
     public void disconnect() throws ConnectionTimeoutException {
+        if (state == State.Disconnected) {
+            if (!websocket.isClosed()) {
+                websocket.closeConnection(0, "");
+                websocket = null;
+            }
+            return;
+        }
         log.info("Disconnecting...");
         state = State.Disconnecting;
 
-        websocket.close();
+        websocket.closeConnection(0, "");
+        websocket = null;
         waitForState(State.Disconnected);
 
         if (errorWhileConnecting != null) {
@@ -330,7 +397,7 @@ public class StreamrClient extends StreamrRESTClient {
     }
 
     private void handleMessage(StreamMessage message,
-                               BiConsumer<Subscription, StreamMessage> subMsgHandler) throws SubscriptionNotFoundException {
+                               HandleMessage subMsgHandler) throws SubscriptionNotFoundException {
         log.debug(message.getStreamId() + ": " + message.getSerializedContent());
 
         subscribedStreamsUtil.verifyStreamMessage(message);
@@ -346,7 +413,7 @@ public class StreamrClient extends StreamrRESTClient {
                 secondResends.remove(sub.getId());
             }
             try {
-                subMsgHandler.accept(sub, message);
+                subMsgHandler.apply(sub, message);
             } catch (Exception e) {
                 log.error(e);
             }
@@ -369,14 +436,18 @@ public class StreamrClient extends StreamrRESTClient {
         publish(stream, payload, timestamp, partitionKey, null);
     }
 
-    public void publish(Stream stream, Map<String, Object> payload, Date timestamp, String partitionKey, String groupKeyHex) {
+    public void publish(Stream stream, Map<String, Object> payload, Date timestamp, String partitionKey, UnencryptedGroupKey newGroupKey) {
         if (!getState().equals(StreamrClient.State.Connected)) {
             connect();
         }
-        if (groupKeyHex != null) {
-            options.getEncryptionOptions().getPublisherGroupKeys().put(stream.getId(), groupKeyHex);
+        if (newGroupKey != null) {
+            options.getEncryptionOptions().getPublisherGroupKeys().put(stream.getId(), newGroupKey);
         }
-        StreamMessage streamMessage = msgCreationUtil.createStreamMessage(stream, payload, timestamp, partitionKey, groupKeyHex);
+        StreamMessage streamMessage = msgCreationUtil.createStreamMessage(stream, payload, timestamp, partitionKey, newGroupKey);
+        publish(streamMessage);
+    }
+
+    private void publish(StreamMessage streamMessage) {
         PublishRequest req = new PublishRequest(streamMessage, getSessionToken());
         getWebsocket().send(req.toJson());
     }
@@ -398,36 +469,33 @@ public class StreamrClient extends StreamrRESTClient {
     }
 
     public Subscription subscribe(Stream stream, int partition, MessageHandler handler, ResendOption resendOption,
-                                  Map<String, String> groupKeys) {
+                                  Map<String, UnencryptedGroupKey> groupKeys) {
         return subscribe(stream, partition, handler, resendOption, groupKeys, false);
     }
 
     public Subscription subscribe(Stream stream, int partition, MessageHandler handler, ResendOption resendOption,
-                                  Map<String, String> groupKeys, boolean isExplicitResend) {
+                                  Map<String, UnencryptedGroupKey> groupKeys, boolean isExplicitResend) {
         if (!getState().equals(State.Connected)) {
             connect();
         }
 
         if (groupKeys != null) {
-            Map<String, String> keysPerPublisher = options.getEncryptionOptions().getSubscriberGroupKeys().get(stream.getId());
-            if (keysPerPublisher == null) {
-                options.getEncryptionOptions().getSubscriberGroupKeys().put(stream.getId(), new HashMap<>(groupKeys));
-            } else {
-                keysPerPublisher.putAll(groupKeys);
-            }
+            Map<String, UnencryptedGroupKey> keysPerPublisher = getKeysPerPublisher(stream.getId());
+            keysPerPublisher.putAll(groupKeys);
         }
 
         SubscribeRequest subscribeRequest = new SubscribeRequest(stream.getId(), partition, getSessionToken());
 
         Subscription sub;
+        BasicSubscription.GroupKeyRequestFunction requestFunction = (publisherId, start, end) -> sendGroupKeyRequest(stream.getId(), publisherId, start, end);
         if (resendOption == null) {
             sub = new RealTimeSubscription(stream.getId(), partition, handler, groupKeys,
-                    options.getPropagationTimeout(), options.getResendTimeout());
+                    requestFunction, options.getPropagationTimeout(), options.getResendTimeout());
         } else if (isExplicitResend) {
             sub = new HistoricalSubscription(stream.getId(), partition, handler, resendOption, groupKeys,
-                    options.getPropagationTimeout(), options.getResendTimeout());
+                    requestFunction, options.getPropagationTimeout(), options.getResendTimeout());
         } else {
-            sub = new CombinedSubscription(stream.getId(), partition, handler, resendOption, groupKeys,
+            sub = new CombinedSubscription(stream.getId(), partition, handler, resendOption, groupKeys, requestFunction,
                     options.getPropagationTimeout(), options.getResendTimeout());
         }
         sub.setGapHandler((MessageRef from, MessageRef to, String publisherId, String msgChainId) -> {
@@ -517,5 +585,36 @@ public class StreamrClient extends StreamrRESTClient {
     private void handleResendResponseResent(ResendResponseResent res) throws SubscriptionNotFoundException {
         Subscription sub = subs.get(res.getStreamId(), res.getStreamPartition());
         sub.endResend();
+    }
+
+    private HashMap<String, UnencryptedGroupKey> getKeysPerPublisher(String streamId) {
+        if (!options.getEncryptionOptions().getSubscriberGroupKeys().containsKey(streamId)) {
+            options.getEncryptionOptions().getSubscriberGroupKeys().put(streamId, new HashMap<>());
+        }
+        return options.getEncryptionOptions().getSubscriberGroupKeys().get(streamId);
+    }
+
+    private void setGroupKeys(String streamId, String publisherId, ArrayList<UnencryptedGroupKey> keys) throws InvalidGroupKeyResponseException {
+        UnencryptedGroupKey current = getKeysPerPublisher(streamId).get(publisherId);
+        UnencryptedGroupKey last = keys.get(keys.size() - 1);
+        if (current == null || current.getStartTime() < last.getStartTime()) {
+            getKeysPerPublisher(streamId).put(publisherId, last);
+        }
+        for (Subscription sub: subs.getAllForStreamId(streamId)) {
+            sub.setGroupKeys(publisherId, keys);
+        }
+    }
+
+    private void sendGroupKeyRequest(String streamId, String publisherId, Date start, Date end) {
+        if (!getState().equals(State.Connected)) {
+            connect();
+        }
+        StreamMessage request = msgCreationUtil.createGroupKeyRequest(publisherId, streamId, encryptionUtil.getPublicKeyAsPemString(), start, end);
+        publish(request);
+    }
+
+    @FunctionalInterface
+    public interface HandleMessage {
+        void apply(Subscription s, StreamMessage m) throws UnableToDecryptException;
     }
 }

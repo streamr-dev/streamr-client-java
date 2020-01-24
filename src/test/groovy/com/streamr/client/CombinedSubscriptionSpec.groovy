@@ -24,7 +24,7 @@ class CombinedSubscriptionSpec extends Specification {
             void onMessage(Subscription sub, StreamMessage message) {
 
             }
-        }, new ResendLastOption(10), new HashMap<String, String>(), 10L, 10L)
+        }, new ResendLastOption(10), new HashMap<String, String>(), null, 10L, 10L)
         GapDetectedException ex
         sub.setGapHandler(new OrderedMsgChain.GapHandlerFunction() {
             @Override

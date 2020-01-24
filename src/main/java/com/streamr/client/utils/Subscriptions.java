@@ -4,47 +4,63 @@ import com.streamr.client.exceptions.AlreadySubscribedException;
 import com.streamr.client.exceptions.SubscriptionNotFoundException;
 import com.streamr.client.subs.Subscription;
 
+import java.util.Collection;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.Map;
 import java.util.function.Consumer;
 
 public class Subscriptions {
 
-    private final Map<String, Subscription> subsByKey = new HashMap<>();
+    private final Map<String, Map<Integer, Subscription>> subsByStreamIdAndPartition = new HashMap<>();
 
-    private static String getKey(String streamId, int partition) {
-        return streamId + "-" + partition;
-    }
-
-    public void add(Subscription sub) {
-        String key = getKey(sub.getStreamId(), sub.getPartition());
-        if (subsByKey.containsKey(key)) {
+    /**
+     *
+     * @throws AlreadySubscribedException if there is already a subscription for the stream-partition
+     */
+    public void add(Subscription sub) throws AlreadySubscribedException {
+        Map<Integer, Subscription> subsByStreamId = subsByStreamIdAndPartition.get(sub.getStreamId());
+        if (subsByStreamId == null) {
+            subsByStreamId = new HashMap<>();
+            subsByStreamIdAndPartition.put(sub.getStreamId(), subsByStreamId);
+        }
+        if (subsByStreamId.containsKey(sub.getPartition())) {
             throw new AlreadySubscribedException(sub);
         } else {
-            subsByKey.put(key, sub);
+            subsByStreamId.put(sub.getPartition(), sub);
         }
     }
 
     public Subscription get(String streamId, int partition) throws SubscriptionNotFoundException {
-        String key = getKey(streamId, partition);
-
-        Subscription result = subsByKey.get(key);
+        Map<Integer, Subscription> subsByStreamId = subsByStreamIdAndPartition.get(streamId);
+        if (subsByStreamId == null) {
+            throw new SubscriptionNotFoundException(streamId, partition);
+        }
+        Subscription result = subsByStreamId.get(partition);
         if (result == null) {
             throw new SubscriptionNotFoundException(streamId, partition);
         }
         return result;
     }
 
+    public Collection<Subscription> getAllForStreamId(String streamId) {
+        Map<Integer, Subscription> subsByStreamId = subsByStreamIdAndPartition.get(streamId);
+        return subsByStreamId == null ? new HashSet<>() : subsByStreamId.values();
+    }
+
     public void remove(Subscription sub) throws SubscriptionNotFoundException {
-        String key = getKey(sub.getStreamId(), sub.getPartition());
-        if (subsByKey.containsKey(key)) {
-            subsByKey.remove(key);
+        Map<Integer, Subscription> subsByStreamId = subsByStreamIdAndPartition.get(sub.getStreamId());
+        if (subsByStreamId == null) {
+            throw new SubscriptionNotFoundException(sub.getStreamId(), sub.getPartition());
+        }
+        if (subsByStreamId.containsKey(sub.getPartition())) {
+            subsByStreamId.remove(sub.getPartition());
         } else {
             throw new SubscriptionNotFoundException(sub.getStreamId(), sub.getPartition());
         }
     }
 
     public void forEach(Consumer<Subscription> f) {
-        subsByKey.values().forEach(f);
+        subsByStreamIdAndPartition.values().forEach(map -> map.values().forEach(f));
     }
 }

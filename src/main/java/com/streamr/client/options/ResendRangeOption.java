@@ -29,4 +29,8 @@ public class ResendRangeOption extends ResendOption {
     public ControlMessage toRequest(String streamId, int streamPartition, String subId, String sessionToken) {
         return new ResendRangeRequest(streamId, streamPartition, subId, from, to, publisherId, msgChainId, sessionToken);
     }
+
+    public MessageRef getTo() {
+        return to;
+    }
 }

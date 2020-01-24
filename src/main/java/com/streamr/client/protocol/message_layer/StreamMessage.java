@@ -28,7 +28,8 @@ public abstract class StreamMessage implements ITimestamped {
         CONTENT_TYPE_JSON ((byte) 27),
         GROUP_KEY_REQUEST ((byte) 28),
         GROUP_KEY_RESPONSE_SIMPLE ((byte) 29),
-        GROUP_KEY_RESET_SIMPLE ((byte) 30);
+        GROUP_KEY_RESET_SIMPLE ((byte) 30),
+        ERROR_MSG ((byte) 31);
 
         private final byte id;
 
@@ -49,6 +50,8 @@ public abstract class StreamMessage implements ITimestamped {
                 return GROUP_KEY_RESPONSE_SIMPLE;
             } else if (id == GROUP_KEY_RESET_SIMPLE.id) {
                 return GROUP_KEY_RESET_SIMPLE;
+            } else if (id == ERROR_MSG.id) {
+                return ERROR_MSG;
             }
             throw new UnsupportedMessageException("Unrecognized content type: "+id);
         }
@@ -172,7 +175,7 @@ public abstract class StreamMessage implements ITimestamped {
 
     public Map<String, Object> getContent() throws IOException, EncryptedContentNotParsableException {
         if (content == null) {
-            if (encryptionType != EncryptionType.NONE) {
+            if (encryptionType == EncryptionType.AES || encryptionType == EncryptionType.NEW_KEY_AND_AES) {
                 throw new EncryptedContentNotParsableException(encryptionType);
             }
             this.content = HttpUtils.mapAdapter.fromJson(serializedContent);
@@ -194,11 +197,13 @@ public abstract class StreamMessage implements ITimestamped {
     }
 
     public void setSerializedContent(String serializedContent) throws IOException {
-        this.serializedContent = serializedContent;
         if (this.encryptionType == EncryptionType.NONE) {
             this.content = HttpUtils.mapAdapter.fromJson(serializedContent);
             validateContent(content, contentType);
+        } else {
+            this.content = null;
         }
+        this.serializedContent = serializedContent;
     }
 
     public void setSerializedContent(byte[] serializedContent) throws IOException {
@@ -256,6 +261,9 @@ public abstract class StreamMessage implements ITimestamped {
             if (!content.containsKey("publicKey")) {
                 throw new MalformedMessageException("Content of type " + ContentType.GROUP_KEY_REQUEST + " must contain a 'publicKey' field.");
             }
+            if (!content.containsKey("streamId")) {
+                throw new MalformedMessageException("Content of type " + ContentType.GROUP_KEY_REQUEST + " must contain a 'streamId' field.");
+            }
             if (content.containsKey("range")) {
                 try {
                     Map<String, Object> range = (Map<String, Object>) content.get("range");
@@ -268,6 +276,9 @@ public abstract class StreamMessage implements ITimestamped {
 
             }
         } else if (contentType == ContentType.GROUP_KEY_RESPONSE_SIMPLE) {
+            if (!content.containsKey("streamId")) {
+                throw new MalformedMessageException("Content of type " + ContentType.GROUP_KEY_REQUEST + " must contain a 'streamId' field.");
+            }
             if (!content.containsKey("keys")) {
                 throw new MalformedMessageException("Content of type " + ContentType.GROUP_KEY_RESPONSE_SIMPLE + " must contain a 'keys' field.");
             }
@@ -284,8 +295,21 @@ public abstract class StreamMessage implements ITimestamped {
             }
 
         } else if (contentType == ContentType.GROUP_KEY_RESET_SIMPLE) {
-            if (!content.containsKey("groupKey") || !content.containsKey("start")) {
-                throw new MalformedMessageException("Content of type " + ContentType.GROUP_KEY_RESET_SIMPLE + " must contain 'groupKey' and 'start' fields.");
+            if (!content.containsKey("streamId")) {
+                throw new MalformedMessageException("Content of type " + ContentType.GROUP_KEY_REQUEST + " must contain a 'streamId' field.");
+            }
+            if (!content.containsKey("groupKey")) {
+                throw new MalformedMessageException("Content of type " + ContentType.GROUP_KEY_RESET_SIMPLE + " must contain a 'groupKey' field.");
+            }
+            if (!content.containsKey("start")) {
+                throw new MalformedMessageException("Content of type " + ContentType.GROUP_KEY_RESET_SIMPLE + " must contain a 'start' field.");
+            }
+        } else if (contentType == ContentType.ERROR_MSG) {
+            if (!content.containsKey("code")) {
+                throw new MalformedMessageException("Content of type " + ContentType.ERROR_MSG + " must contain a 'code' field.");
+            }
+            if (!content.containsKey("message")) {
+                throw new MalformedMessageException("Content of type " + ContentType.ERROR_MSG + " must contain a 'message' field.");
             }
         }
     }

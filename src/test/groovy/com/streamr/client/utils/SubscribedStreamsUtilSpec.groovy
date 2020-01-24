@@ -32,9 +32,9 @@ class SubscribedStreamsUtilSpec extends Specification {
 
     List<String> publishers = ["publisherId"]
     Stream stream = new Stream("test-stream", "")
+    AddressValidityUtil addressValidityUtil = new AddressValidityUtil(null, null, { String id -> publishers }, { String s, String p -> p == "publisherId2"})
     SubscribedStreamsUtil getUtil(SignatureVerificationPolicy verifySignatures) {
-        return new SubscribedStreamsUtil({ String id -> stream }, { String id -> publishers },
-                { String s, String p -> p == "publisherId2"}, verifySignatures)
+        return new SubscribedStreamsUtil({ String id -> stream }, addressValidityUtil, verifySignatures)
     }
 
     void "can open the caches again after they have been closed (no CacheClosedException)"() {

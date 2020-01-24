@@ -6,7 +6,6 @@
       <module fileurl="file://$PROJECT_DIR$/.idea/modules/streamr-client-java_integrationTest.iml" filepath="$PROJECT_DIR$/.idea/modules/streamr-client-java_integrationTest.iml" group="streamr-client-java" />
       <module fileurl="file://$PROJECT_DIR$/.idea/modules/streamr-client-java_main.iml" filepath="$PROJECT_DIR$/.idea/modules/streamr-client-java_main.iml" group="streamr-client-java" />
       <module fileurl="file://$PROJECT_DIR$/.idea/modules/streamr-client-java_test.iml" filepath="$PROJECT_DIR$/.idea/modules/streamr-client-java_test.iml" group="streamr-client-java" />
-      <module fileurl="file://$PROJECT_DIR$/.idea/modules/streamr-java-client.iml" filepath="$PROJECT_DIR$/.idea/modules/streamr-java-client.iml" />
     </modules>
   </component>
 </project>

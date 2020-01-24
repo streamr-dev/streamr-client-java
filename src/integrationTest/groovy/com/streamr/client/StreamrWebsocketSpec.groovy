@@ -7,6 +7,8 @@ import com.streamr.client.protocol.message_layer.StreamMessageV31
 import com.streamr.client.rest.Stream
 import com.streamr.client.protocol.message_layer.StreamMessage
 import com.streamr.client.subs.Subscription
+import com.streamr.client.utils.GroupKey
+import com.streamr.client.utils.UnencryptedGroupKey
 import org.apache.commons.codec.binary.Hex
 import spock.util.concurrent.PollingConditions
 
@@ -17,10 +19,10 @@ class StreamrWebsocketSpec extends StreamrIntegrationSpecification {
 	private StreamrClient client
 	private SecureRandom secureRandom = new SecureRandom()
 
-	String genKey() {
+	UnencryptedGroupKey genKey() {
 		byte[] keyBytes = new byte[32]
 		secureRandom.nextBytes(keyBytes)
-		return Hex.encodeHexString(keyBytes)
+		return new UnencryptedGroupKey(Hex.encodeHexString(keyBytes), new Date())
 	}
 
 	void setup() {
@@ -148,9 +150,9 @@ class StreamrWebsocketSpec extends StreamrIntegrationSpecification {
 
 	void "subscriber can decrypt messages when he knows the keys used to encrypt"() {
 		Stream stream = client.createStream(new Stream(generateResourceName(), ""))
-		String keyHex = genKey()
-		HashMap<String, String> keys = new HashMap<>()
-		keys.put(client.getPublisherId(), keyHex)
+		UnencryptedGroupKey key = genKey()
+		HashMap<String, UnencryptedGroupKey> keys = new HashMap<>()
+		keys.put(client.getPublisherId(), key)
 
 		when:
 		// Subscribe to the stream
@@ -165,7 +167,7 @@ class StreamrWebsocketSpec extends StreamrIntegrationSpecification {
 
 		Thread.sleep(2000)
 
-		client.publish(stream, [test: 'clear text'], new Date(), null, keyHex)
+		client.publish(stream, [test: 'clear text'], new Date(), null, key)
 
 		Thread.sleep(2000)
 
@@ -181,6 +183,90 @@ class StreamrWebsocketSpec extends StreamrIntegrationSpecification {
 		then:
 		// no need to explicitly give the new group key to the subscriber
 		msg.getContent() == [test: 'another clear text']
+	}
+
+	void "subscriber can get the group key and decrypt encrypted messages using an RSA key pair"() {
+		given:
+		PollingConditions conditions1 = new PollingConditions(timeout: 10)
+		PollingConditions conditions2 = new PollingConditions(timeout: 10)
+
+		Stream stream = client.createStream(new Stream(generateResourceName(), ""))
+		UnencryptedGroupKey key = genKey()
+
+		when:
+		// Subscribe to the stream without knowing the group key
+		StreamMessage msg1 = null
+		StreamMessage msg2 = null
+		client.subscribe(stream, new MessageHandler() {
+			@Override
+			void onMessage(Subscription s, StreamMessage message) {
+				//reaching this point ensures that the signature verification and decryption didn't throw
+				if (msg1 == null) {
+					msg1 = message
+				} else {
+					msg2 = message
+				}
+			}
+		})
+
+		Thread.sleep(2000)
+
+		client.publish(stream, [test: 'clear text'], new Date(), null, key)
+
+		then:
+		conditions1.eventually {
+			assert msg1 != null
+			// the subscriber got the group key and can decrypt
+			assert msg1.getContent() == [test: 'clear text']
+		}
+
+		when:
+		// publishing a second message with a new group key
+		client.publish(stream, [test: 'another clear text'], new Date(), null, genKey())
+
+		then:
+		conditions2.eventually {
+			assert msg2 != null
+			// no need to explicitly give the new group key to the subscriber
+			msg2.getContent() == [test: 'another clear text']
+		}
+	}
+
+	void "subscriber can get the historical keys and decrypt old encrypted messages using an RSA key pair"() {
+		given:
+		PollingConditions conditions = new PollingConditions(timeout: 10)
+		Stream stream = client.createStream(new Stream(generateResourceName(), ""))
+		// publishing historical messages with different group keys before subscribing
+		client.publish(stream, [test: 'clear text'], new Date(), null, genKey())
+		client.publish(stream, [test: 'another clear text'], new Date(), null, genKey())
+		Thread.sleep(3000)
+
+		when:
+		// Subscribe to the stream with resend last without knowing the group keys
+		StreamMessage msg1 = null
+		StreamMessage msg2 = null
+		client.subscribe(stream, 0, new MessageHandler() {
+			@Override
+			void onMessage(Subscription s, StreamMessage message) {
+				//reaching this point ensures that the signature verification and decryption didn't throw
+				if (msg1 == null) {
+					msg1 = message
+				} else if (msg2 == null) {
+					msg2 = message
+				} else {
+					throw new RuntimeException("Received unexpected message: " + message.toJson())
+				}
+
+			}
+		}, new ResendLastOption(2))
+
+		then:
+		conditions.eventually {
+			assert msg1 != null && msg2 != null
+			// the subscriber got the group keys and can decrypt the old messages
+			assert msg1.getContent() == [test: 'clear text']
+			assert msg2.getContent() == [test: 'another clear text']
+		}
 	}
 
 	void "subscribe with resend last"() {
