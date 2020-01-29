@@ -23,6 +23,7 @@ public class StreamrClientOptions {
 
     public StreamrClientOptions(AuthenticationMethod authenticationMethod) {
         this.authenticationMethod = authenticationMethod;
+        this.publishSignedMsgs = authenticationMethod instanceof EthereumAuthenticationMethod;
     }
 
     public StreamrClientOptions(AuthenticationMethod authenticationMethod, SigningOptions signingOptions) {
