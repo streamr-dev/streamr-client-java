@@ -67,7 +67,7 @@ public class HistoricalSubscription extends BasicSubscription {
         keySequences.put(publisherId, new DecryptionKeySequence(groupKeys));
         // handle the historical messages received while we were waiting for the historical group keys
         handleInOrderQueue(publisherId);
-        if (resendDone) { // the messages in the queue were the last ones to handle
+        if (resendDone && encryptedMsgsQueue.isEmpty()) { // the messages in the queue were the last ones to handle
             this.handler.done(this);
         }
     }
@@ -125,7 +125,7 @@ public class HistoricalSubscription extends BasicSubscription {
     }
 
     @Override
-    public void handleRealTimeMessage(StreamMessage msg) throws GapDetectedException, UnsupportedMessageException, UnableToDecryptException {
+    public void handleRealTimeMessage(StreamMessage msg) throws GapDetectedException, UnsupportedMessageException {
         if (onRealTimeMsg != null) {
             onRealTimeMsg.accept(msg);
         }

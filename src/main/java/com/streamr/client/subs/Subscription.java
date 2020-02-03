@@ -76,9 +76,9 @@ public abstract class Subscription {
 
     public abstract void endResend() throws GapDetectedException;
 
-    public abstract void handleRealTimeMessage(StreamMessage msg) throws GapDetectedException, UnsupportedMessageException, UnableToDecryptException;
+    public abstract void handleRealTimeMessage(StreamMessage msg) throws GapDetectedException, UnsupportedMessageException;
 
-    public abstract void handleResentMessage(StreamMessage msg) throws GapDetectedException, UnsupportedMessageException, UnableToDecryptException;
+    public abstract void handleResentMessage(StreamMessage msg) throws GapDetectedException, UnsupportedMessageException;
 
     public abstract void setGapHandler(OrderedMsgChain.GapHandlerFunction gapHandler);
 

@@ -479,8 +479,8 @@ public class StreamrClient extends StreamrRESTClient {
             connect();
         }
 
+        Map<String, UnencryptedGroupKey> keysPerPublisher = getKeysPerPublisher(stream.getId());
         if (groupKeys != null) {
-            Map<String, UnencryptedGroupKey> keysPerPublisher = getKeysPerPublisher(stream.getId());
             keysPerPublisher.putAll(groupKeys);
         }
 
@@ -489,13 +489,13 @@ public class StreamrClient extends StreamrRESTClient {
         Subscription sub;
         BasicSubscription.GroupKeyRequestFunction requestFunction = (publisherId, start, end) -> sendGroupKeyRequest(stream.getId(), publisherId, start, end);
         if (resendOption == null) {
-            sub = new RealTimeSubscription(stream.getId(), partition, handler, groupKeys,
+            sub = new RealTimeSubscription(stream.getId(), partition, handler, keysPerPublisher,
                     requestFunction, options.getPropagationTimeout(), options.getResendTimeout());
         } else if (isExplicitResend) {
-            sub = new HistoricalSubscription(stream.getId(), partition, handler, resendOption, groupKeys,
+            sub = new HistoricalSubscription(stream.getId(), partition, handler, resendOption, keysPerPublisher,
                     requestFunction, options.getPropagationTimeout(), options.getResendTimeout());
         } else {
-            sub = new CombinedSubscription(stream.getId(), partition, handler, resendOption, groupKeys, requestFunction,
+            sub = new CombinedSubscription(stream.getId(), partition, handler, resendOption, keysPerPublisher, requestFunction,
                     options.getPropagationTimeout(), options.getResendTimeout());
         }
         sub.setGapHandler((MessageRef from, MessageRef to, String publisherId, String msgChainId) -> {

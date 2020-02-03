@@ -14,7 +14,7 @@ import org.apache.logging.log4j.Logger;
 import java.util.*;
 
 public abstract class BasicSubscription extends Subscription {
-    private static final Logger log = LogManager.getLogger();
+    protected static final Logger log = LogManager.getLogger();
 
     protected OrderingUtil orderingUtil;
     private final HashSet<String> waitingForGroupKey = new HashSet<>();
@@ -32,7 +32,7 @@ public abstract class BasicSubscription extends Subscription {
     }
 
     @Override
-    public void handleResentMessage(StreamMessage msg) throws GapDetectedException, UnsupportedMessageException, UnableToDecryptException {
+    public void handleResentMessage(StreamMessage msg) throws GapDetectedException, UnsupportedMessageException {
         orderingUtil.add(msg);
     }
 

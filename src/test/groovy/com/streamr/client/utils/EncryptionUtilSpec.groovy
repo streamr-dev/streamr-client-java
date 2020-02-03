@@ -155,6 +155,16 @@ class EncryptionUtilSpec extends Specification {
         then:
         noExceptionThrown()
     }
+    void "test"() {
+        byte[] keyBytes = new byte[32]
+        SecureRandom secureRandom = new SecureRandom()
+        secureRandom.nextBytes(keyBytes)
+        when:
+        String hex = Hex.encodeHexString(keyBytes)
+        UnencryptedGroupKey groupKey = new UnencryptedGroupKey(hex)
+        then:
+        Hex.encodeHexString(groupKey.getSecretKey().getEncoded()) == hex
+    }
     void "validatePublicKey() throws"() {
         when:
         EncryptionUtil.validatePublicKey("wrong public key")

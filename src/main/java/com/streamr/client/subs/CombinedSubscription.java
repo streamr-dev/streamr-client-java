@@ -37,11 +37,7 @@ public class CombinedSubscription extends Subscription {
                 // handle the real time messages received during the initial resend
                 while(!queue.isEmpty()) {
                     StreamMessage msg = queue.poll();
-                    try {
-                        realTime.handleRealTimeMessage(msg);
-                    } catch (UnableToDecryptException e) {
-                        handler.onUnableToDecrypt(e);
-                    }
+                    realTime.handleRealTimeMessage(msg);
                 }
                 sub = realTime;
             }
@@ -91,12 +87,12 @@ public class CombinedSubscription extends Subscription {
     }
 
     @Override
-    public void handleRealTimeMessage(StreamMessage msg) throws GapDetectedException, UnsupportedMessageException, UnableToDecryptException {
+    public void handleRealTimeMessage(StreamMessage msg) throws GapDetectedException, UnsupportedMessageException {
         sub.handleRealTimeMessage(msg);
     }
 
     @Override
-    public void handleResentMessage(StreamMessage msg) throws GapDetectedException, UnsupportedMessageException, UnableToDecryptException {
+    public void handleResentMessage(StreamMessage msg) throws GapDetectedException, UnsupportedMessageException {
         sub.handleResentMessage(msg);
     }
 

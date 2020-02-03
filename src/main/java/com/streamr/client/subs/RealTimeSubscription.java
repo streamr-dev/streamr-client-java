@@ -1,10 +1,7 @@
 package com.streamr.client.subs;
 
 import com.streamr.client.MessageHandler;
-import com.streamr.client.exceptions.GapDetectedException;
-import com.streamr.client.exceptions.InvalidGroupKeyResponseException;
-import com.streamr.client.exceptions.UnableToDecryptException;
-import com.streamr.client.exceptions.UnsupportedMessageException;
+import com.streamr.client.exceptions.*;
 import com.streamr.client.options.ResendOption;
 import com.streamr.client.protocol.message_layer.StreamMessage;
 import com.streamr.client.utils.EncryptionUtil;
@@ -29,8 +26,7 @@ public class RealTimeSubscription extends BasicSubscription {
         super(streamId, partition, handler, groupKeyRequestFunction, propagationTimeout, resendTimeout);
         if (groupKeys != null) {
             for (String publisherId: groupKeys.keySet()) {
-                String groupKeyHex = groupKeys.get(publisherId).getGroupKeyHex();
-                this.groupKeys.put(publisherId, new SecretKeySpec(DatatypeConverter.parseHexBinary(groupKeyHex), "AES"));
+                this.groupKeys.put(publisherId, groupKeys.get(publisherId).getSecretKey());
             }
         }
     }
@@ -113,7 +109,7 @@ public class RealTimeSubscription extends BasicSubscription {
     }
 
     @Override
-    public void handleRealTimeMessage(StreamMessage msg) throws GapDetectedException, UnsupportedMessageException, UnableToDecryptException {
+    public void handleRealTimeMessage(StreamMessage msg) throws GapDetectedException, UnsupportedMessageException {
         orderingUtil.add(msg);
     }
 

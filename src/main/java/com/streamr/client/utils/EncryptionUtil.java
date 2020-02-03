@@ -121,6 +121,7 @@ public class EncryptionUtil {
     plaintext is the concatenation of 'newGroupKeyHex' and the old serialized content of 'streamMessage'.
      */
     public static void encryptStreamMessageAndNewKey(String newGroupKeyHex, StreamMessage streamMessage, SecretKey groupKey) {
+        log.debug("Encrypting a new key: " + newGroupKeyHex + " with an old key: " + Hex.encodeHexString(groupKey.getEncoded()));
         streamMessage.setEncryptionType(StreamMessage.EncryptionType.NEW_KEY_AND_AES);
         byte[] groupKeyBytes = DatatypeConverter.parseHexBinary(newGroupKeyHex);
         byte[] payloadBytes = streamMessage.getSerializedContentAsBytes();
@@ -153,6 +154,12 @@ public class EncryptionUtil {
                 return new SecretKeySpec(Arrays.copyOfRange(plaintext, 0, 32), "AES");
             }
         } catch (Exception e) {
+            if (groupKey == null) {
+                log.debug("No key to decrypt");
+            } else {
+                log.debug("Failed to decrypt with : " + Hex.encodeHexString(groupKey.getEncoded()));
+            }
+
             streamMessage.setEncryptionType(encryptionType);
             throw new UnableToDecryptException(streamMessage.getSerializedContent());
         }
