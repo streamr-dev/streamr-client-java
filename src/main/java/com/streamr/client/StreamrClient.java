@@ -397,7 +397,7 @@ public class StreamrClient extends StreamrRESTClient {
     }
 
     private void handleMessage(StreamMessage message,
-                               HandleMessage subMsgHandler) throws SubscriptionNotFoundException {
+                               BiConsumer<Subscription, StreamMessage> subMsgHandler) throws SubscriptionNotFoundException {
         log.debug(message.getStreamId() + ": " + message.getSerializedContent());
 
         subscribedStreamsUtil.verifyStreamMessage(message);
@@ -412,11 +412,7 @@ public class StreamrClient extends StreamrRESTClient {
                 resend.interrupt();
                 secondResends.remove(sub.getId());
             }
-            try {
-                subMsgHandler.apply(sub, message);
-            } catch (Exception e) {
-                log.error(e);
-            }
+            subMsgHandler.accept(sub, message);
         }
     }
 
@@ -611,10 +607,5 @@ public class StreamrClient extends StreamrRESTClient {
         }
         StreamMessage request = msgCreationUtil.createGroupKeyRequest(publisherId, streamId, encryptionUtil.getPublicKeyAsPemString(), start, end);
         publish(request);
-    }
-
-    @FunctionalInterface
-    public interface HandleMessage {
-        void apply(Subscription s, StreamMessage m) throws UnableToDecryptException;
     }
 }

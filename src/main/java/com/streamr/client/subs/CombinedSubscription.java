@@ -41,6 +41,10 @@ public class CombinedSubscription extends Subscription {
                 }
                 sub = realTime;
             }
+            @Override
+            public void onUnableToDecrypt(UnableToDecryptException e) {
+                handler.onUnableToDecrypt(e);
+            }
         };
         // starts to request the initial resend
         sub = new HistoricalSubscription(streamId, partition, wrapperHandler, resendOption, groupKeys, groupKeyRequestFunction, propagationTimeout, resendTimeout, queue::push);
