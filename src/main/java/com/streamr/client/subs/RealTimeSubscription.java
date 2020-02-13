@@ -5,7 +5,6 @@ import com.streamr.client.exceptions.*;
 import com.streamr.client.options.ResendOption;
 import com.streamr.client.protocol.message_layer.StreamMessage;
 import com.streamr.client.utils.EncryptionUtil;
-import com.streamr.client.utils.GroupKey;
 import com.streamr.client.utils.OrderedMsgChain;
 import com.streamr.client.utils.UnencryptedGroupKey;
 
@@ -19,7 +18,16 @@ import java.util.Map;
 
 public class RealTimeSubscription extends BasicSubscription {
     private boolean resending = false;
-    private final Map<String, SecretKey> groupKeys = new HashMap<>(); // publisherId --> groupKey
+    private class KeyStorage {
+        private final HashMap<String, SecretKey> groupKeys = new HashMap<>(); // publisherId --> groupKey
+        public void put(String publisherId, SecretKey key) {
+            groupKeys.put(publisherId.toLowerCase(), key);
+        }
+        public SecretKey get(String publisherId) {
+            return groupKeys.get(publisherId.toLowerCase());
+        }
+    }
+    private final KeyStorage groupKeys = new KeyStorage();
     private final HashSet<String> alreadyFailedToDecrypt = new HashSet<>();
     public RealTimeSubscription(String streamId, int partition, MessageHandler handler, Map<String, UnencryptedGroupKey> groupKeys,
                                 GroupKeyRequestFunction groupKeyRequestFunction, long propagationTimeout, long resendTimeout) {

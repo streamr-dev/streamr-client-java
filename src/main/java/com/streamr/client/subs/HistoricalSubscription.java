@@ -23,7 +23,19 @@ public class HistoricalSubscription extends BasicSubscription {
     private final ResendOption resendOption;
     private boolean resendDone = false;
     private final Consumer<StreamMessage> onRealTimeMsg;
-    private final HashMap<String, DecryptionKeySequence> keySequences = new HashMap<>();
+    private class KeyStorage {
+        private final HashMap<String, DecryptionKeySequence> keySequences = new HashMap<>();
+        public boolean containsKey(String publisherId) {
+            return keySequences.containsKey(publisherId.toLowerCase());
+        }
+        public void put(String publisherId, DecryptionKeySequence keySequence) {
+            keySequences.put(publisherId.toLowerCase(), keySequence);
+        }
+        public DecryptionKeySequence get(String publisherId) {
+            return keySequences.get(publisherId.toLowerCase());
+        }
+    }
+    private final KeyStorage keySequences = new KeyStorage();
     public HistoricalSubscription(String streamId, int partition, MessageHandler handler, ResendOption resendOption,
                                   Map<String, UnencryptedGroupKey> groupKeys, GroupKeyRequestFunction groupKeyRequestFunction,
                                   long propagationTimeout, long resendTimeout, Consumer<StreamMessage> onRealTimeMsg) {
