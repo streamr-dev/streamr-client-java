@@ -1,14 +1,12 @@
 package com.streamr.client.utils;
 
-import com.streamr.client.exceptions.InvalidGroupKeyException;
-import com.streamr.client.exceptions.InvalidGroupKeyRequestException;
-import com.streamr.client.exceptions.InvalidGroupKeyResponseException;
-import com.streamr.client.exceptions.UnableToDecryptException;
+import com.streamr.client.exceptions.*;
 import com.streamr.client.protocol.message_layer.StreamMessage;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
 import java.io.IOException;
+import java.security.interfaces.RSAPublicKey;
 import java.util.*;
 import java.util.function.Consumer;
 import java.util.function.Function;
@@ -74,7 +72,14 @@ public class KeyExchangeUtil {
             throw new InvalidGroupKeyRequestException("Received group key request for stream '" + streamId + "' but no group key is set");
         }
         ArrayList<EncryptedGroupKey> encryptedGroupKeys = new ArrayList<>();
-        String publicKey = (String) content.get("publicKey");
+        String publicKeyString = (String) content.get("publicKey");
+        RSAPublicKey publicKey;
+        try {
+            EncryptionUtil.validatePublicKey(publicKeyString);
+            publicKey = EncryptionUtil.getPublicKeyFromString(publicKeyString);
+        } catch (Exception e) {
+            throw new InvalidGroupKeyRequestException(e.getMessage());
+        }
         for (UnencryptedGroupKey key: keys) {
             encryptedGroupKeys.add(key.getEncrypted(publicKey));
         }

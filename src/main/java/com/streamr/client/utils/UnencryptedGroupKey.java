@@ -3,6 +3,7 @@ package com.streamr.client.utils;
 import com.streamr.client.exceptions.InvalidGroupKeyException;
 
 import javax.crypto.SecretKey;
+import java.security.interfaces.RSAPublicKey;
 import java.util.Date;
 
 public class UnencryptedGroupKey extends GroupKey {
@@ -18,6 +19,11 @@ public class UnencryptedGroupKey extends GroupKey {
     }
 
     public EncryptedGroupKey getEncrypted(String publicKey) {
+        String ciphertext = EncryptionUtil.encryptWithPublicKey(groupKeyHex, publicKey);
+        return new EncryptedGroupKey(ciphertext, start);
+    }
+
+    public EncryptedGroupKey getEncrypted(RSAPublicKey publicKey) {
         String ciphertext = EncryptionUtil.encryptWithPublicKey(groupKeyHex, publicKey);
         return new EncryptedGroupKey(ciphertext, start);
     }

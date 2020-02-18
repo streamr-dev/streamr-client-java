@@ -67,7 +67,10 @@ public class EncryptionUtil {
 
     public static String encryptWithPublicKey(byte[] plaintext, String publicKey) {
         validatePublicKey(publicKey);
-        RSAPublicKey rsaPublicKey = getPublicKeyFromString(publicKey);
+        return encryptWithPublicKey(plaintext, getPublicKeyFromString(publicKey));
+    }
+
+    public static String encryptWithPublicKey(byte[] plaintext, RSAPublicKey rsaPublicKey) {
         try {
             rsaCipher.get().init(Cipher.ENCRYPT_MODE, rsaPublicKey);
             return Hex.encodeHexString(rsaCipher.get().doFinal(plaintext));
@@ -78,6 +81,11 @@ public class EncryptionUtil {
     }
 
     public static String encryptWithPublicKey(String plaintextHex, String publicKey) {
+        byte[] plaintext = DatatypeConverter.parseHexBinary(plaintextHex);
+        return encryptWithPublicKey(plaintext, publicKey);
+    }
+
+    public static String encryptWithPublicKey(String plaintextHex, RSAPublicKey publicKey) {
         byte[] plaintext = DatatypeConverter.parseHexBinary(plaintextHex);
         return encryptWithPublicKey(plaintext, publicKey);
     }
@@ -174,15 +182,15 @@ public class EncryptionUtil {
     }
 
     public static void validatePublicKey(String publicKey) {
-        if (publicKey == null || !publicKey.startsWith("-----BEGIN RSA PUBLIC KEY-----")
-                || !publicKey.endsWith("-----END RSA PUBLIC KEY-----\n")) {
+        if (publicKey == null || !publicKey.startsWith("-----BEGIN PUBLIC KEY-----")
+                || !publicKey.endsWith("-----END PUBLIC KEY-----\n")) {
             throw new InvalidRSAKeyException(true);
         }
     }
 
     public static void validatePrivateKey(String privateKey) {
-        if (privateKey == null || !privateKey.startsWith("-----BEGIN RSA PRIVATE KEY-----")
-                || !privateKey.endsWith("-----END RSA PRIVATE KEY-----\n")) {
+        if (privateKey == null || !privateKey.startsWith("-----BEGIN PRIVATE KEY-----")
+                || !privateKey.endsWith("-----END PRIVATE KEY-----\n")) {
             throw new InvalidRSAKeyException(false);
         }
     }
@@ -191,7 +199,7 @@ public class EncryptionUtil {
         StringWriter writer = new StringWriter();
         PemWriter pemWriter = new PemWriter(writer);
         try {
-            pemWriter.writeObject(new PemObject("RSA " + (isPublic ? "PUBLIC" : "PRIVATE")  + " KEY", key.getEncoded()));
+            pemWriter.writeObject(new PemObject((isPublic ? "PUBLIC" : "PRIVATE")  + " KEY", key.getEncoded()));
             pemWriter.flush();
         } catch (IOException e) {
             log.error(e);
@@ -217,7 +225,7 @@ public class EncryptionUtil {
 
     private static Cipher getRSACipher() {
         try {
-            return Cipher.getInstance("RSA");
+            return Cipher.getInstance("RSA/ECB/OAEPWithSHA1AndMGF1Padding");
         } catch (Exception e) {
             log.error(e);
             throw new RuntimeException(e);
@@ -225,8 +233,8 @@ public class EncryptionUtil {
     }
 
     public static RSAPublicKey getPublicKeyFromString(String publicKey) {
-        publicKey = publicKey.replace("-----BEGIN RSA PUBLIC KEY-----\n", "");
-        publicKey = publicKey.replace("-----END RSA PUBLIC KEY-----", "");
+        publicKey = publicKey.replace("-----BEGIN PUBLIC KEY-----\n", "");
+        publicKey = publicKey.replace("-----END PUBLIC KEY-----", "");
         byte[] encoded = Base64.decodeBase64(publicKey);
         try {
             KeyFactory kf = KeyFactory.getInstance("RSA");
@@ -238,8 +246,8 @@ public class EncryptionUtil {
     }
 
     public static RSAPrivateKey getPrivateKeyFromString(String privateKey) {
-        privateKey = privateKey.replace("-----BEGIN RSA PRIVATE KEY-----\n", "");
-        privateKey = privateKey.replace("-----END RSA PRIVATE KEY-----", "");
+        privateKey = privateKey.replace("-----BEGIN PRIVATE KEY-----\n", "");
+        privateKey = privateKey.replace("-----END PRIVATE KEY-----", "");
         byte[] encoded = Base64.decodeBase64(privateKey);
         try {
             KeyFactory kf = KeyFactory.getInstance("RSA");
