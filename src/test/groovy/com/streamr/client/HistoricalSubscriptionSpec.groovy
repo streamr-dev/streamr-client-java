@@ -359,10 +359,10 @@ class HistoricalSubscriptionSpec extends Specification {
         sub.endResend()
         then:
         callCount == 2
-        received.get(0).getContent() == [foo: 'bar1']
-        received.get(1).getContent() == [foo: 'bar2']
-        received.get(2).getContent() == [foo: 'bar3']
-        received.get(3).getContent() == [foo: 'bar4']
+        received.get(0).getContent() == [foo: 'bar3']
+        received.get(1).getContent() == [foo: 'bar4']
+        received.get(2).getContent() == [foo: 'bar1']
+        received.get(3).getContent() == [foo: 'bar2']
         subDone
     }
 

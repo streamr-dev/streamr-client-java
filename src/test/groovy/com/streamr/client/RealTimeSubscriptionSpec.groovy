@@ -351,6 +351,62 @@ class RealTimeSubscriptionSpec extends Specification {
         received.get(3).getContent() == [foo: 'bar4']
     }
 
+    void "queues messages when not able to decrypt and handles them once the key is updated (multiple publishers interleaved)"() {
+        String publisher1 = "publisherId1"
+        String publisher2 = "publisherId2"
+        StreamMessageV31 msg1Pub1 = new StreamMessageV31("streamId", 0, 1, 0, publisher1, "",
+                null, null, StreamMessage.ContentType.CONTENT_TYPE_JSON, StreamMessage.EncryptionType.NONE, [foo: 'bar1'], StreamMessage.SignatureType.SIGNATURE_TYPE_NONE, null)
+        StreamMessageV31 msg2Pub1 = new StreamMessageV31("streamId", 0, 2, 0, publisher1, "",
+                1, 0, StreamMessage.ContentType.CONTENT_TYPE_JSON, StreamMessage.EncryptionType.NONE, [foo: 'bar2'], StreamMessage.SignatureType.SIGNATURE_TYPE_NONE, null)
+        StreamMessageV31 msg3Pub1 = new StreamMessageV31("streamId", 0, 3, 0, publisher1, "",
+                2, 0, StreamMessage.ContentType.CONTENT_TYPE_JSON, StreamMessage.EncryptionType.NONE, [foo: 'bar3'], StreamMessage.SignatureType.SIGNATURE_TYPE_NONE, null)
+        StreamMessageV31 msg1Pub2 = new StreamMessageV31("streamId", 0, 1, 0, publisher2, "",
+                null, null, StreamMessage.ContentType.CONTENT_TYPE_JSON, StreamMessage.EncryptionType.NONE, [foo: 'bar4'], StreamMessage.SignatureType.SIGNATURE_TYPE_NONE, null)
+        StreamMessageV31 msg2Pub2 = new StreamMessageV31("streamId", 0, 2, 0, publisher2, "",
+                1, 0, StreamMessage.ContentType.CONTENT_TYPE_JSON, StreamMessage.EncryptionType.NONE, [foo: 'bar5'], StreamMessage.SignatureType.SIGNATURE_TYPE_NONE, null)
+
+        UnencryptedGroupKey groupKey1 = genKey()
+        UnencryptedGroupKey wrongGroupKey = genKey()
+        SecretKey secretKey1 = new SecretKeySpec(DatatypeConverter.parseHexBinary(groupKey1.groupKeyHex), "AES")
+        UnencryptedGroupKey groupKey2 = genKey()
+        SecretKey secretKey2 = new SecretKeySpec(DatatypeConverter.parseHexBinary(groupKey2.groupKeyHex), "AES")
+
+        EncryptionUtil.encryptStreamMessage(msg1Pub1, secretKey1)
+        EncryptionUtil.encryptStreamMessage(msg2Pub1, secretKey1)
+        EncryptionUtil.encryptStreamMessage(msg1Pub2, secretKey2)
+        EncryptionUtil.encryptStreamMessage(msg2Pub2, secretKey2)
+
+        int callCount = 0
+        ArrayList<StreamMessage> received = []
+        RealTimeSubscription sub = new RealTimeSubscription("streamId", 0, new MessageHandler() {
+            @Override
+            void onMessage(Subscription sub, StreamMessage message) {
+                received.add(message)
+            }
+        }, ['publisherId1': wrongGroupKey], new BasicSubscription.GroupKeyRequestFunction() {
+            @Override
+            void apply(String publisherId, Date start, Date end) {
+                callCount++
+            }
+        })
+        when:
+        sub.handleRealTimeMessage(msg1Pub1)
+        sub.handleRealTimeMessage(msg1Pub2)
+        sub.handleRealTimeMessage(msg2Pub1)
+        sub.setGroupKeys(publisher1, (ArrayList<UnencryptedGroupKey>)[groupKey1])
+        sub.handleRealTimeMessage(msg3Pub1)
+        sub.handleRealTimeMessage(msg2Pub2)
+        sub.setGroupKeys(publisher2, (ArrayList<UnencryptedGroupKey>)[groupKey2])
+
+        then:
+        callCount == 2
+        received.get(0).getContent() == [foo: 'bar1']
+        received.get(1).getContent() == [foo: 'bar2']
+        received.get(2).getContent() == [foo: 'bar3']
+        received.get(3).getContent() == [foo: 'bar4']
+        received.get(4).getContent() == [foo: 'bar5']
+    }
+
     void "throws when not able to decrypt for the second time"() {
         UnencryptedGroupKey groupKey = genKey()
         UnencryptedGroupKey wrongGroupKey = genKey()

@@ -79,7 +79,7 @@ public class HistoricalSubscription extends BasicSubscription {
         keySequences.put(publisherId, new DecryptionKeySequence(groupKeys));
         // handle the historical messages received while we were waiting for the historical group keys
         handleInOrderQueue(publisherId);
-        if (resendDone && encryptedMsgsQueue.isEmpty()) { // the messages in the queue were the last ones to handle
+        if (resendDone && encryptedMsgsQueues.isEmpty()) { // the messages in the queue were the last ones to handle
             this.handler.done(this);
         }
     }
@@ -128,7 +128,7 @@ public class HistoricalSubscription extends BasicSubscription {
 
     @Override
     public void endResend() throws GapDetectedException {
-        if (encryptedMsgsQueue.isEmpty()) {
+        if (encryptedMsgsQueues.isEmpty()) {
             this.handler.done(this);
         } else { // received all historical messages but not yet the keys to decrypt them
             resendDone = true;

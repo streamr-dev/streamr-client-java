@@ -18,7 +18,30 @@ public abstract class BasicSubscription extends Subscription {
 
     protected OrderingUtil orderingUtil;
     private final HashSet<String> waitingForGroupKey = new HashSet<>();
-    protected final ArrayDeque<StreamMessage> encryptedMsgsQueue = new ArrayDeque<>();
+    protected class MsgQueues {
+        private final HashMap<String, ArrayDeque<StreamMessage>> queues = new HashMap<>();
+
+        public ArrayDeque<StreamMessage> get(String publisherId) {
+            if (!queues.containsKey(publisherId.toLowerCase())) {
+                queues.put(publisherId.toLowerCase(), new ArrayDeque<>());
+            }
+            return queues.get(publisherId.toLowerCase());
+        }
+
+        public void offer(StreamMessage msg) {
+            get(msg.getPublisherId()).offer(msg);
+        }
+
+        public boolean isEmpty() {
+            for (ArrayDeque<StreamMessage> queue: queues.values()) {
+                if (!queue.isEmpty()) {
+                    return false;
+                }
+            }
+            return true;
+        }
+    }
+    protected final MsgQueues encryptedMsgsQueues = new MsgQueues();
     private final GroupKeyRequestFunction groupKeyRequestFunction;
     public BasicSubscription(String streamId, int partition, MessageHandler handler,
                              GroupKeyRequestFunction groupKeyRequestFunction, long propagationTimeout, long resendTimeout) {
@@ -53,13 +76,14 @@ public abstract class BasicSubscription extends Subscription {
     protected void requestGroupKeyAndQueueMessage(StreamMessage msgToQueue, Date start, Date end) {
         groupKeyRequestFunction.apply(msgToQueue.getPublisherId(), start, end);
         waitingForGroupKey.add(msgToQueue.getPublisherId());
-        encryptedMsgsQueue.offer(msgToQueue);
+        encryptedMsgsQueues.offer(msgToQueue);
     }
 
     protected void handleInOrderQueue(String publisherId) {
         waitingForGroupKey.remove(publisherId);
-        while (!encryptedMsgsQueue.isEmpty() && !waitingForGroupKey.contains(encryptedMsgsQueue.peek().getPublisherId())) {
-            decryptAndHandle(encryptedMsgsQueue.poll());
+        ArrayDeque<StreamMessage> queue = encryptedMsgsQueues.get(publisherId);
+        while (!queue.isEmpty()) {
+            decryptAndHandle(queue.poll());
         }
     }
 
@@ -73,7 +97,7 @@ public abstract class BasicSubscription extends Subscription {
         if (!waitingForGroupKey.contains(msg.getPublisherId())) {
             decryptAndHandle(msg);
         } else {
-            encryptedMsgsQueue.offer(msg);
+            encryptedMsgsQueues.offer(msg);
         }
     }
 
