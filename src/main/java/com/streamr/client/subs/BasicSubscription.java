@@ -12,12 +12,13 @@ import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
 import java.util.*;
+import java.util.concurrent.ConcurrentHashMap;
 
 public abstract class BasicSubscription extends Subscription {
     protected static final Logger log = LogManager.getLogger();
 
     protected OrderingUtil orderingUtil;
-    private final HashMap<String, Timer> pendingGroupKeyRequests = new HashMap<>();
+    private final ConcurrentHashMap<String, Timer> pendingGroupKeyRequests = new ConcurrentHashMap<>();
     protected class MsgQueues {
         private final HashMap<String, ArrayDeque<StreamMessage>> queues = new HashMap<>();
 
@@ -78,9 +79,11 @@ public abstract class BasicSubscription extends Subscription {
         TimerTask request = new TimerTask() {
             @Override
             public void run() {
-                if (pendingGroupKeyRequests.containsKey(msgToQueue.getPublisherId().toLowerCase())) {
-                    groupKeyRequestFunction.apply(msgToQueue.getPublisherId(), start, end);
-                    log.info("Sent group key request to " + msgToQueue.getPublisherId());
+                synchronized (BasicSubscription.this) {
+                    if (pendingGroupKeyRequests.containsKey(msgToQueue.getPublisherId().toLowerCase())) {
+                        groupKeyRequestFunction.apply(msgToQueue.getPublisherId(), start, end);
+                        log.info("Sent group key request to " + msgToQueue.getPublisherId());
+                    }
                 }
             }
         };
@@ -90,8 +93,10 @@ public abstract class BasicSubscription extends Subscription {
     }
 
     protected void handleInOrderQueue(String publisherId) {
-        pendingGroupKeyRequests.get(publisherId.toLowerCase()).cancel();
-        pendingGroupKeyRequests.remove(publisherId.toLowerCase());
+        synchronized (this) {
+            pendingGroupKeyRequests.get(publisherId.toLowerCase()).cancel();
+            pendingGroupKeyRequests.remove(publisherId.toLowerCase());
+        }
         ArrayDeque<StreamMessage> queue = encryptedMsgsQueues.get(publisherId);
         while (!queue.isEmpty()) {
             decryptAndHandle(queue.poll());
