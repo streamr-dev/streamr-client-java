@@ -212,7 +212,7 @@ class MessageCreationUtilSpec extends Specification {
                 "publisherInboxAddress", "streamId", "rsaPublicKey",
                 new Date(123), new Date(456))
         then:
-        msg.getStreamId() == "publisherInboxAddress"
+        msg.getStreamId() == "publisherInboxAddress".toLowerCase()
         msg.getPublisherId() == "subscriberId"
         msg.getContentType() == StreamMessage.ContentType.GROUP_KEY_REQUEST
         msg.getEncryptionType() == StreamMessage.EncryptionType.NONE
@@ -241,7 +241,7 @@ class MessageCreationUtilSpec extends Specification {
         when:
         StreamMessage msg = util.createGroupKeyResponse("subscriberInboxAddress", "streamId", [k1, k2])
         then:
-        msg.getStreamId() == "subscriberInboxAddress"
+        msg.getStreamId() == "subscriberInboxAddress".toLowerCase()
         msg.getContentType() == StreamMessage.ContentType.GROUP_KEY_RESPONSE_SIMPLE
         msg.getEncryptionType() == StreamMessage.EncryptionType.RSA
         msg.getContent().get("streamId") == "streamId"
@@ -265,7 +265,7 @@ class MessageCreationUtilSpec extends Specification {
         when:
         StreamMessage msg = util.createErrorMessage("destinationAddress", new InvalidGroupKeyRequestException("some error message"))
         then:
-        msg.getStreamId() == "destinationAddress"
+        msg.getStreamId() == "destinationAddress".toLowerCase()
         msg.getContentType() == StreamMessage.ContentType.ERROR_MSG
         msg.getEncryptionType() == StreamMessage.EncryptionType.NONE
         msg.getContent().get("code") == "INVALID_GROUP_KEY_REQUEST"

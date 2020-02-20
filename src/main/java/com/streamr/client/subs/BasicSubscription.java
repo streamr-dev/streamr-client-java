@@ -17,7 +17,7 @@ public abstract class BasicSubscription extends Subscription {
     protected static final Logger log = LogManager.getLogger();
 
     protected OrderingUtil orderingUtil;
-    private final HashSet<String> waitingForGroupKey = new HashSet<>();
+    private final HashMap<String, Timer> pendingGroupKeyRequests = new HashMap<>();
     protected class MsgQueues {
         private final HashMap<String, ArrayDeque<StreamMessage>> queues = new HashMap<>();
 
@@ -74,13 +74,24 @@ public abstract class BasicSubscription extends Subscription {
     }
 
     protected void requestGroupKeyAndQueueMessage(StreamMessage msgToQueue, Date start, Date end) {
-        groupKeyRequestFunction.apply(msgToQueue.getPublisherId(), start, end);
-        waitingForGroupKey.add(msgToQueue.getPublisherId());
+        Timer t = new Timer(true);
+        TimerTask request = new TimerTask() {
+            @Override
+            public void run() {
+                if (pendingGroupKeyRequests.containsKey(msgToQueue.getPublisherId().toLowerCase())) {
+                    groupKeyRequestFunction.apply(msgToQueue.getPublisherId(), start, end);
+                    log.info("Sent group key request to " + msgToQueue.getPublisherId());
+                }
+            }
+        };
+        t.schedule(request, 0, propagationTimeout);
+        pendingGroupKeyRequests.put(msgToQueue.getPublisherId().toLowerCase(), t);
         encryptedMsgsQueues.offer(msgToQueue);
     }
 
     protected void handleInOrderQueue(String publisherId) {
-        waitingForGroupKey.remove(publisherId);
+        pendingGroupKeyRequests.get(publisherId.toLowerCase()).cancel();
+        pendingGroupKeyRequests.remove(publisherId.toLowerCase());
         ArrayDeque<StreamMessage> queue = encryptedMsgsQueues.get(publisherId);
         while (!queue.isEmpty()) {
             decryptAndHandle(queue.poll());
@@ -94,7 +105,7 @@ public abstract class BasicSubscription extends Subscription {
     public abstract boolean decryptOrRequestGroupKey(StreamMessage msg) throws UnableToDecryptException;
 
     private void handleInOrder(StreamMessage msg) {
-        if (!waitingForGroupKey.contains(msg.getPublisherId())) {
+        if (!pendingGroupKeyRequests.containsKey(msg.getPublisherId().toLowerCase())) {
             decryptAndHandle(msg);
         } else {
             encryptedMsgsQueues.offer(msg);
@@ -107,7 +118,8 @@ public abstract class BasicSubscription extends Subscription {
             if (success) { // the message was successfully decrypted
                 handler.onMessage(this, msg);
             } else {
-                log.warn("Failed to decrypt. Requested the correct decryption key(s) and going to try again.");
+                log.warn("Failed to decrypt msg from " + msg.getPublisherId() +
+                        " . Going to request the correct decryption key(s) and try again.");
             }
         } catch (UnableToDecryptException e) { // failed to decrypt for the second time (after receiving the decryption key(s))
             handler.onUnableToDecrypt(e);

@@ -226,7 +226,7 @@ class HistoricalSubscriptionSpec extends Specification {
         received == plaintext
     }
 
-    void "calls the key handler function when no historical group keys are set"() {
+    void "calls key request function when no historical group keys are set (multiple times if no response)"() {
         UnencryptedGroupKey key = genKey()
         SecretKey groupKey = new SecretKeySpec(DatatypeConverter.parseHexBinary(key.groupKeyHex), "AES")
         Map plaintext = [foo: 'bar']
@@ -237,6 +237,8 @@ class HistoricalSubscriptionSpec extends Specification {
         String receivedPublisherId = null
         Date receivedStart = null
         Date receivedEnd = null
+        int nbCalls = 0
+        int timeout = 500
         HistoricalSubscription sub = new HistoricalSubscription("streamId", 0, new MessageHandler() {
             @Override
             void onMessage(Subscription sub, StreamMessage message) {
@@ -248,14 +250,19 @@ class HistoricalSubscriptionSpec extends Specification {
                 receivedPublisherId = publisherId
                 receivedStart = start
                 receivedEnd = end
+                nbCalls++
             }
-        })
+        }, timeout, 5000)
         when:
         sub.handleResentMessage(msg1)
+        Thread.sleep(timeout * 2 + 200)
+        sub.setGroupKeys(msg1.getPublisherId(), [key])
+        Thread.sleep(timeout * 3)
         then:
         receivedPublisherId == msg1.getPublisherId()
         receivedStart == msg1.getTimestampAsDate()
         receivedEnd.after(receivedStart)
+        nbCalls == 3
     }
 
     void "queues messages when not able to decrypt and handles them once the keys are set"() {

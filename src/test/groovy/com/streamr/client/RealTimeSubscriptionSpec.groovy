@@ -228,7 +228,7 @@ class RealTimeSubscriptionSpec extends Specification {
         received == plaintext
     }
 
-    void "calls the key handler function when not able to decrypt encrypted messages with the wrong key"() {
+    void "calls key request function when cannot decrypt messages with wrong key (multiple times when no response)"() {
         StreamMessageV31 msg1 = new StreamMessageV31("streamId", 0, 0, 0, "publisherId", "",
                 null, null, StreamMessage.ContentType.CONTENT_TYPE_JSON, StreamMessage.EncryptionType.NONE, [foo: 'bar'], StreamMessage.SignatureType.SIGNATURE_TYPE_NONE, null)
 
@@ -238,6 +238,8 @@ class RealTimeSubscriptionSpec extends Specification {
         EncryptionUtil.encryptStreamMessage(msg1, secretKey)
 
         String receivedPublisherId
+        int nbCalls = 0
+        int timeout = 500
         RealTimeSubscription sub = new RealTimeSubscription("streamId", 0, new MessageHandler() {
             @Override
             void onMessage(Subscription sub, StreamMessage message) {
@@ -246,12 +248,18 @@ class RealTimeSubscriptionSpec extends Specification {
             @Override
             void apply(String publisherId, Date start, Date end) {
                 receivedPublisherId = publisherId
+                nbCalls++
             }
-        })
+        }, timeout, 5000)
         when:
         sub.handleRealTimeMessage(msg1)
+        Thread.sleep(timeout * 2 + 200)
+        sub.setGroupKeys(msg1.getPublisherId(), [groupKey])
+        Thread.sleep(timeout * 3)
         then:
         receivedPublisherId == msg1.getPublisherId()
+        nbCalls == 3
+
     }
 
     void "queues messages when not able to decrypt and handles them once the key is updated"() {

@@ -25,7 +25,8 @@ import java.util.stream.Collectors;
 
 public class MessageCreationUtil {
 
-    private final String publisherId;
+    //TODO: change back to private after testing
+    public final String publisherId;
     private final String msgChainId;
     private final SigningUtil signingUtil;
     private final KeyStorage keyStorage;
@@ -86,7 +87,7 @@ public class MessageCreationUtil {
             data.put("range", range);
         }
 
-        Pair<MessageID, MessageRef> pair = createDefaultMsgIdAndRef(publisherAddress); // using address as streamId (inbox stream)
+        Pair<MessageID, MessageRef> pair = createDefaultMsgIdAndRef(publisherAddress.toLowerCase()); // using address as streamId (inbox stream)
         StreamMessage streamMessage = new StreamMessageV31(
                 pair.getLeft(), pair.getRight(), StreamMessage.ContentType.GROUP_KEY_REQUEST, EncryptionType.NONE, data,
                 StreamMessage.SignatureType.SIGNATURE_TYPE_NONE, null);
@@ -102,7 +103,7 @@ public class MessageCreationUtil {
         data.put("streamId", streamId);
         data.put("keys", encryptedGroupKeys.stream().map(GroupKey::toMap).collect(Collectors.toList()));
 
-        Pair<MessageID, MessageRef> pair = createDefaultMsgIdAndRef(subscriberAddress); // using address as streamId (inbox stream)
+        Pair<MessageID, MessageRef> pair = createDefaultMsgIdAndRef(subscriberAddress.toLowerCase()); // using address as streamId (inbox stream)
         StreamMessage streamMessage = new StreamMessageV31(
                 pair.getLeft(), pair.getRight(), StreamMessage.ContentType.GROUP_KEY_RESPONSE_SIMPLE, EncryptionType.RSA, data,
                 StreamMessage.SignatureType.SIGNATURE_TYPE_NONE, null);
@@ -117,7 +118,7 @@ public class MessageCreationUtil {
         Map<String, Object> data = new HashMap<>();
         data.put("code", getErrorCodeFromException(e));
         data.put("message", e.getMessage());
-        Pair<MessageID, MessageRef> pair = createDefaultMsgIdAndRef(destinationAddress); // using address as streamId (inbox stream)
+        Pair<MessageID, MessageRef> pair = createDefaultMsgIdAndRef(destinationAddress.toLowerCase()); // using address as streamId (inbox stream)
         StreamMessage streamMessage = new StreamMessageV31(
                 pair.getLeft(), pair.getRight(), StreamMessage.ContentType.ERROR_MSG, EncryptionType.NONE, data,
                 StreamMessage.SignatureType.SIGNATURE_TYPE_NONE, null);

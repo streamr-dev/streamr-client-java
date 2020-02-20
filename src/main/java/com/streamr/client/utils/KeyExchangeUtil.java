@@ -2,6 +2,7 @@ package com.streamr.client.utils;
 
 import com.streamr.client.exceptions.*;
 import com.streamr.client.protocol.message_layer.StreamMessage;
+import org.apache.commons.lang.RandomStringUtils;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
@@ -34,6 +35,7 @@ public class KeyExchangeUtil {
     }
 
     public void handleGroupKeyRequest(StreamMessage groupKeyRequest) throws InvalidGroupKeyRequestException {
+        System.out.println(messageCreationUtil.publisherId + " received group key request from: " + groupKeyRequest.getPublisherId());
         // if it was signed, the StreamrClient already checked the signature. If not, StreamrClient accepted it since the stream
         // does not require signed data for all types of messages.
         if (groupKeyRequest.getSignature() == null) {
@@ -85,9 +87,11 @@ public class KeyExchangeUtil {
         }
         StreamMessage response = messageCreationUtil.createGroupKeyResponse(subscriberId, streamId, encryptedGroupKeys);
         publishFunction.accept(response);
+        System.out.println(response.getPublisherId() + " sent group key response to: " + groupKeyRequest.getPublisherId());
     }
 
     public void handleGroupKeyResponse(StreamMessage groupKeyResponse) throws InvalidGroupKeyResponseException {
+        System.out.println(messageCreationUtil.publisherId + " received group key response from: " + groupKeyResponse.getPublisherId());
         // if it was signed, the StreamrClient already checked the signature. If not, StreamrClient accepted it since the stream
         // does not require signed data for all types of messages.
         if (groupKeyResponse.getSignature() == null) {
@@ -118,6 +122,7 @@ public class KeyExchangeUtil {
             }
         }
         setGroupKeysFunction.apply(streamId, groupKeyResponse.getPublisherId(), decryptedKeys);
+        System.out.println(messageCreationUtil.publisherId + " set group key received from: " + groupKeyResponse.getPublisherId());
     }
 
     @FunctionalInterface
