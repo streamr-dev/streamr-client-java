@@ -78,7 +78,6 @@ public class RealTimeSubscription extends BasicSubscription {
             }
             // we will queue real time messages while waiting for the group key (including this one
             // since it could not be decrypted)
-            System.out.println("Failed to decrypt once. Going to request key to " + msg.getPublisherId());
             requestGroupKeyAndQueueMessage(msg, null, null);
             alreadyFailedToDecrypt.add(msg.getPublisherId());
             return false;

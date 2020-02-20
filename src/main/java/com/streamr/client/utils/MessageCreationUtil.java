@@ -24,9 +24,7 @@ import java.util.Map;
 import java.util.stream.Collectors;
 
 public class MessageCreationUtil {
-
-    //TODO: change back to private after testing
-    public final String publisherId;
+    private final String publisherId;
     private final String msgChainId;
     private final SigningUtil signingUtil;
     private final KeyStorage keyStorage;

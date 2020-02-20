@@ -355,7 +355,7 @@ public class StreamrClient extends StreamrRESTClient {
 
     protected void handleMessage(String rawMessageAsString) {
         try {
-            System.out.println(getPublisherId() + "<< " + rawMessageAsString);
+            log.info(getPublisherId() + " << " + rawMessageAsString);
 
             // Handle different message types
             ControlMessage message = ControlMessage.fromJson(rawMessageAsString);
@@ -607,6 +607,5 @@ public class StreamrClient extends StreamrRESTClient {
         }
         StreamMessage request = msgCreationUtil.createGroupKeyRequest(publisherId, streamId, encryptionUtil.getPublicKeyAsPemString(), start, end);
         publish(request);
-        System.out.println(getPublisherId() + " sent group key request to: " + publisherId);
     }
 }
