@@ -16,9 +16,11 @@ import java.util.concurrent.ConcurrentHashMap;
 
 public abstract class BasicSubscription extends Subscription {
     protected static final Logger log = LogManager.getLogger();
+    public static final int MAX_NB_GROUP_KEY_REQUESTS = 10;
 
     protected OrderingUtil orderingUtil;
     private final ConcurrentHashMap<String, Timer> pendingGroupKeyRequests = new ConcurrentHashMap<>();
+    private final ConcurrentHashMap<String, Integer> nbGroupKeyRequestsCalls = new ConcurrentHashMap<>();
     protected class MsgQueues {
         private final HashMap<String, ArrayDeque<StreamMessage>> queues = new HashMap<>();
 
@@ -76,31 +78,43 @@ public abstract class BasicSubscription extends Subscription {
 
     protected void requestGroupKeyAndQueueMessage(StreamMessage msgToQueue, Date start, Date end) {
         Timer t = new Timer(true);
+        String publisherId = msgToQueue.getPublisherId().toLowerCase();
+        nbGroupKeyRequestsCalls.put(publisherId, 0);
         TimerTask request = new TimerTask() {
             @Override
             public void run() {
                 synchronized (BasicSubscription.this) {
-                    if (pendingGroupKeyRequests.containsKey(msgToQueue.getPublisherId().toLowerCase())) {
-                        groupKeyRequestFunction.apply(msgToQueue.getPublisherId(), start, end);
-                        log.info("Sent group key request to " + msgToQueue.getPublisherId());
+                    if (pendingGroupKeyRequests.containsKey(publisherId)) {
+                        if (nbGroupKeyRequestsCalls.get(publisherId) < MAX_NB_GROUP_KEY_REQUESTS) {
+                            nbGroupKeyRequestsCalls.put(publisherId, nbGroupKeyRequestsCalls.get(publisherId) + 1);
+                            groupKeyRequestFunction.apply(publisherId, start, end);
+                            log.info("Sent group key request to " + publisherId);
+                        } else {
+                            log.warn("Failed to received group key response from "
+                                    + publisherId + " after " + MAX_NB_GROUP_KEY_REQUESTS + " requests.");
+                            cancelGroupKeyRequest(publisherId);
+                        }
                     }
                 }
             }
         };
         t.schedule(request, 0, propagationTimeout);
-        pendingGroupKeyRequests.put(msgToQueue.getPublisherId().toLowerCase(), t);
+        pendingGroupKeyRequests.put(publisherId, t);
         encryptedMsgsQueues.offer(msgToQueue);
     }
 
     protected void handleInOrderQueue(String publisherId) {
-        synchronized (this) {
-            pendingGroupKeyRequests.get(publisherId.toLowerCase()).cancel();
-            pendingGroupKeyRequests.remove(publisherId.toLowerCase());
-        }
+        cancelGroupKeyRequest(publisherId);
         ArrayDeque<StreamMessage> queue = encryptedMsgsQueues.get(publisherId);
         while (!queue.isEmpty()) {
             decryptAndHandle(queue.poll());
         }
+    }
+
+    private synchronized void cancelGroupKeyRequest(String publisherId) {
+        pendingGroupKeyRequests.get(publisherId.toLowerCase()).cancel();
+        pendingGroupKeyRequests.get(publisherId.toLowerCase()).purge();
+        pendingGroupKeyRequests.remove(publisherId.toLowerCase());
     }
 
     public ArrayList<OrderedMsgChain> getChains() {

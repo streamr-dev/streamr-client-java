@@ -238,7 +238,7 @@ class HistoricalSubscriptionSpec extends Specification {
         Date receivedStart = null
         Date receivedEnd = null
         int nbCalls = 0
-        int timeout = 500
+        int timeout = 1000
         HistoricalSubscription sub = new HistoricalSubscription("streamId", 0, new MessageHandler() {
             @Override
             void onMessage(Subscription sub, StreamMessage message) {
@@ -255,11 +255,11 @@ class HistoricalSubscriptionSpec extends Specification {
         }, timeout, 5000)
         when:
         sub.handleResentMessage(msg1)
-        Thread.sleep(timeout * 2 + 200)
+        Thread.sleep(timeout * 2 + 500)
         sub.setGroupKeys(msg1.getPublisherId(), [key])
-        Thread.sleep(timeout * 3)
+        Thread.sleep(timeout * 2)
         then:
-        receivedPublisherId == msg1.getPublisherId()
+        receivedPublisherId == msg1.getPublisherId().toLowerCase()
         receivedStart == msg1.getTimestampAsDate()
         receivedEnd.after(receivedStart)
         nbCalls == 3

@@ -239,7 +239,7 @@ class RealTimeSubscriptionSpec extends Specification {
 
         String receivedPublisherId
         int nbCalls = 0
-        int timeout = 500
+        int timeout = 1000
         RealTimeSubscription sub = new RealTimeSubscription("streamId", 0, new MessageHandler() {
             @Override
             void onMessage(Subscription sub, StreamMessage message) {
@@ -253,12 +253,41 @@ class RealTimeSubscriptionSpec extends Specification {
         }, timeout, 5000)
         when:
         sub.handleRealTimeMessage(msg1)
-        Thread.sleep(timeout * 2 + 200)
+        Thread.sleep(timeout * 2 + 500)
         sub.setGroupKeys(msg1.getPublisherId(), [groupKey])
-        Thread.sleep(timeout * 3)
+        Thread.sleep(timeout * 2)
         then:
-        receivedPublisherId == msg1.getPublisherId()
+        receivedPublisherId == msg1.getPublisherId().toLowerCase()
         nbCalls == 3
+
+    }
+
+    void "calls key request function MAX_NB_GROUP_KEY_REQUESTS times"() {
+        StreamMessageV31 msg1 = new StreamMessageV31("streamId", 0, 0, 0, "publisherId", "",
+                null, null, StreamMessage.ContentType.CONTENT_TYPE_JSON, StreamMessage.EncryptionType.NONE, [foo: 'bar'], StreamMessage.SignatureType.SIGNATURE_TYPE_NONE, null)
+
+        UnencryptedGroupKey groupKey = genKey()
+        UnencryptedGroupKey wrongGroupKey = genKey()
+        SecretKey secretKey = new SecretKeySpec(DatatypeConverter.parseHexBinary(groupKey.groupKeyHex), "AES")
+        EncryptionUtil.encryptStreamMessage(msg1, secretKey)
+
+        int nbCalls = 0
+        int timeout = 200
+        RealTimeSubscription sub = new RealTimeSubscription("streamId", 0, new MessageHandler() {
+            @Override
+            void onMessage(Subscription sub, StreamMessage message) {
+            }
+        }, ['publisherId': wrongGroupKey], new BasicSubscription.GroupKeyRequestFunction() {
+            @Override
+            void apply(String publisherId, Date start, Date end) {
+                nbCalls++
+            }
+        }, timeout, 5000)
+        when:
+        sub.handleRealTimeMessage(msg1)
+        Thread.sleep(timeout * (BasicSubscription.MAX_NB_GROUP_KEY_REQUESTS + 2))
+        then:
+        nbCalls == BasicSubscription.MAX_NB_GROUP_KEY_REQUESTS
 
     }
 
