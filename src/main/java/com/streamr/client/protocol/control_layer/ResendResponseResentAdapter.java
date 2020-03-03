@@ -11,8 +11,8 @@ public class ResendResponseResentAdapter extends ControlLayerAdapter<ResendRespo
     public ResendResponseResent fromJson(JsonReader reader) throws IOException {
         String streamId = reader.nextString();
         int streamPartition = reader.nextInt();
-        String subId = reader.nextString();
-        return new ResendResponseResent(streamId, streamPartition, subId);
+        String requestId = reader.nextString();
+        return new ResendResponseResent(streamId, streamPartition, requestId);
     }
 
     @Override
@@ -22,7 +22,7 @@ public class ResendResponseResentAdapter extends ControlLayerAdapter<ResendRespo
         writer.value(ResendResponseResent.TYPE);
         writer.value(value.getStreamId());
         writer.value(value.getStreamPartition());
-        writer.value(value.getSubId());
+        writer.value(value.getRequestId());
         writer.endArray();
     }
 }

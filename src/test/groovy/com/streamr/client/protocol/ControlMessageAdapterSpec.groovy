@@ -46,7 +46,7 @@ class ControlMessageAdapterSpec extends Specification {
     }
     def "UnicastMessage"() {
         String msgJson = "[31,[\"7wa7APtlTq6EC5iTCBy6dw\",0,1528228173462,0,\"publisherId\",\"1\"],[1528228170000,0],27,0,\"{\\\"hello\\\":\\\"world\\\"}\",2,\"signature\"]"
-        String json = '[1,1,"subId",'+msgJson+']'
+        String json = '[1,1,"requestId",'+msgJson+']'
         when:
         ControlMessage msg = fromJson(adapter, json)
         then:
@@ -70,7 +70,7 @@ class ControlMessageAdapterSpec extends Specification {
         msg.toJson() == json
     }
     def "ResendResponseResending"() {
-        String json = '[1,4,"streamId",0,"subId"]'
+        String json = '[1,4,"streamId",0,"requestId"]'
         when:
         ControlMessage msg = fromJson(adapter, json)
         then:
@@ -78,7 +78,7 @@ class ControlMessageAdapterSpec extends Specification {
         msg.toJson() == json
     }
     def "ResendResponseResent"() {
-        String json = '[1,5,"streamId",0,"subId"]'
+        String json = '[1,5,"streamId",0,"requestId"]'
         when:
         ControlMessage msg = fromJson(adapter, json)
         then:
@@ -86,7 +86,7 @@ class ControlMessageAdapterSpec extends Specification {
         msg.toJson() == json
     }
     def "ResendResponseNoResend"() {
-        String json = '[1,6,"streamId",0,"subId"]'
+        String json = '[1,6,"streamId",0,"requestId"]'
         when:
         ControlMessage msg = fromJson(adapter, json)
         then:
@@ -127,7 +127,7 @@ class ControlMessageAdapterSpec extends Specification {
         msg.toJson() == json
     }
     def "ResendLastRequest"() {
-        String json = '[1,11,"streamId",0,"subId",4,"sessionToken"]'
+        String json = '[1,11,"streamId",0,"requestId",4,"sessionToken"]'
         when:
         ControlMessage msg = fromJson(adapter, json)
         then:
@@ -135,7 +135,7 @@ class ControlMessageAdapterSpec extends Specification {
         msg.toJson() == json
     }
     def "ResendFromRequest"() {
-        String json = '[1,12,"streamId",0,"subId",[143415425455,0],"publisherId","msgChainId","sessionToken"]'
+        String json = '[1,12,"streamId",0,"requestId",[143415425455,0],"publisherId","msgChainId","sessionToken"]'
         when:
         ControlMessage msg = fromJson(adapter, json)
         then:
@@ -143,7 +143,7 @@ class ControlMessageAdapterSpec extends Specification {
         msg.toJson() == json
     }
     def "ResendRangeRequest"() {
-        String json = '[1,13,"streamId",0,"subId",[143415425455,0],[14341542564555,7],"publisherId","msgChainId","sessionToken"]'
+        String json = '[1,13,"streamId",0,"requestId",[143415425455,0],[14341542564555,7],"publisherId","msgChainId","sessionToken"]'
         when:
         ControlMessage msg = fromJson(adapter, json)
         then:

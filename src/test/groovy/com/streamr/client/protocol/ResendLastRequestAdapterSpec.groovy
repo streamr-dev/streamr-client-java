@@ -31,7 +31,7 @@ class ResendLastRequestAdapterSpec extends Specification {
 	}
 
 	void "fromJson"() {
-		String json = '[1,11,"streamId",0,"subId",4,"sessionToken"]'
+		String json = '[1,11,"streamId",0,"requestId",4,"sessionToken"]'
 
 		when:
 		ResendLastRequest msg = toMsg(adapter, json)
@@ -39,13 +39,13 @@ class ResendLastRequestAdapterSpec extends Specification {
 		then:
 		msg.getStreamId() == "streamId"
 		msg.getStreamPartition() == 0
-		msg.getSubId() == "subId"
+		msg.getRequestId() == "requestId"
 		msg.getNumberLast() == 4
 		msg.getSessionToken() == "sessionToken"
 	}
 
 	void "fromJson (null session token)"() {
-		String json = '[1,11,"streamId",0,"subId",4,null]'
+		String json = '[1,11,"streamId",0,"requestId",4,null]'
 
 		when:
 		ResendLastRequest msg = toMsg(adapter, json)
@@ -53,28 +53,28 @@ class ResendLastRequestAdapterSpec extends Specification {
 		then:
 		msg.getStreamId() == "streamId"
 		msg.getStreamPartition() == 0
-		msg.getSubId() == "subId"
+		msg.getRequestId() == "requestId"
 		msg.getNumberLast() == 4
 		msg.getSessionToken() == null
 	}
 
 	void "toJson"() {
-		ResendLastRequest request = new ResendLastRequest("streamId", 0, "subId", 4, "sessionToken")
+		ResendLastRequest request = new ResendLastRequest("streamId", 0, "requestId", 4, "sessionToken")
 
 		when:
 		adapter.toJson(buffer, request)
 
 		then:
-		buffer.readString(utf8) == '[1,11,"streamId",0,"subId",4,"sessionToken"]'
+		buffer.readString(utf8) == '[1,11,"streamId",0,"requestId",4,"sessionToken"]'
 	}
 
 	void "toJson (null session token)"() {
-		ResendLastRequest request = new ResendLastRequest("streamId", 0, "subId", 4, null)
+		ResendLastRequest request = new ResendLastRequest("streamId", 0, "requestId", 4, null)
 
 		when:
 		adapter.toJson(buffer, request)
 
 		then:
-		buffer.readString(utf8) == '[1,11,"streamId",0,"subId",4,null]'
+		buffer.readString(utf8) == '[1,11,"streamId",0,"requestId",4,null]'
 	}
 }

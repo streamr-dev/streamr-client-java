@@ -5,15 +5,15 @@ public class ResendLastRequest extends ControlMessage {
 
     private final String streamId;
     private final int streamPartition;
-    private final String subId;
+    private final String requestId;
     private final int numberLast;
     private final String sessionToken;
 
-    public ResendLastRequest(String streamId, int streamPartition, String subId, int numberLast, String sessionToken) {
+    public ResendLastRequest(String streamId, int streamPartition, String requestId, int numberLast, String sessionToken) {
         super(TYPE);
         this.streamId = streamId;
         this.streamPartition = streamPartition;
-        this.subId = subId;
+        this.requestId = requestId;
         this.numberLast = numberLast;
         this.sessionToken = sessionToken;
     }
@@ -26,8 +26,8 @@ public class ResendLastRequest extends ControlMessage {
         return streamPartition;
     }
 
-    public String getSubId() {
-        return subId;
+    public String getRequestId() {
+        return requestId;
     }
 
     public int getNumberLast() {

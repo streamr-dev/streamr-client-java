@@ -31,7 +31,7 @@ class ResendResponseResendingAdapterSpec extends Specification {
 	}
 
 	void "fromJson"() {
-		String json = '[1,4,"streamId",0,"subId"]'
+		String json = '[1,4,"streamId",0,"requestId"]'
 
 		when:
 		ResendResponseResending msg = toMsg(adapter, json)
@@ -39,16 +39,16 @@ class ResendResponseResendingAdapterSpec extends Specification {
 		then:
 		msg.streamId == "streamId"
 		msg.streamPartition == 0
-		msg.subId == "subId"
+		msg.requestId == "requestId"
 	}
 
 	void "toJson"() {
-		ResendResponseResending request = new ResendResponseResending("streamId", 0, "subId")
+		ResendResponseResending request = new ResendResponseResending("streamId", 0, "requestId")
 
 		when:
 		adapter.toJson(buffer, request)
 
 		then:
-		buffer.readString(utf8) == '[1,4,"streamId",0,"subId"]'
+		buffer.readString(utf8) == '[1,4,"streamId",0,"requestId"]'
 	}
 }

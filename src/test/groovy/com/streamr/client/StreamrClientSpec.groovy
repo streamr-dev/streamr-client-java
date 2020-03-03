@@ -64,11 +64,11 @@ class StreamrClientSpec extends Specification {
         when:
         client.receiveMessage(new SubscribeResponse("test-stream", 0))
         then:
-        String subId = client.getSubId("test-stream", 0)
-        server.expect(new ResendLastRequest("test-stream", 0, subId, 10, client.getSessionToken()))
+        String requestId = client.getSubId("test-stream", 0)
+        server.expect(new ResendLastRequest("test-stream", 0, requestId, 10, client.getSessionToken()))
         server.noOtherMessagesReceived()
         when:
-        client.receiveMessage(new UnicastMessage(subId, createMsg("test-stream", 0, 0, null, null)))
+        client.receiveMessage(new UnicastMessage(requestId, createMsg("test-stream", 0, 0, null, null)))
         then:
         Thread.sleep(retryResendAfter + 200)
         server.noOtherMessagesReceived()
@@ -85,11 +85,11 @@ class StreamrClientSpec extends Specification {
         }, new ResendLastOption(10))
         server.expect(new SubscribeRequest("test-stream", 0, client.getSessionToken()))
         client.receiveMessage(new SubscribeResponse("test-stream", 0))
-        String subId = client.getSubId("test-stream", 0)
+        String requestId = client.getSubId("test-stream", 0)
         then:
         Thread.sleep(retryResendAfter + 200)
-        server.expect(new ResendLastRequest("test-stream", 0, subId, 10, client.getSessionToken()))
-        server.expect(new ResendLastRequest("test-stream", 0, subId, 10, client.getSessionToken()))
+        server.expect(new ResendLastRequest("test-stream", 0, requestId, 10, client.getSessionToken()))
+        server.expect(new ResendLastRequest("test-stream", 0, requestId, 10, client.getSessionToken()))
         server.noOtherMessagesReceived()
     }
 
@@ -106,13 +106,13 @@ class StreamrClientSpec extends Specification {
         client.receiveMessage(new SubscribeResponse("test-stream", 0))
         client.receiveMessage(new BroadcastMessage(createMsg("test-stream", 0, 0, null, null)))
         client.receiveMessage(new BroadcastMessage(createMsg("test-stream", 2, 0, 1, 0)))
-        String subId = client.getSubId("test-stream", 0)
+        String requestId = client.getSubId("test-stream", 0)
         Thread.sleep(gapFillTimeout)
         then:
-        server.expect(new ResendRangeRequest("test-stream", 0, subId, new MessageRef(0, 1), new MessageRef(1, 0), "", "", client.getSessionToken()))
+        server.expect(new ResendRangeRequest("test-stream", 0, requestId, new MessageRef(0, 1), new MessageRef(1, 0), "", "", client.getSessionToken()))
         when:
-        client.receiveMessage(new UnicastMessage(subId, createMsg("test-stream", 1, 0, 0, 0)))
-        client.receiveMessage(new ResendResponseResent("test-stream", 0, subId))
+        client.receiveMessage(new UnicastMessage(requestId, createMsg("test-stream", 1, 0, 0, 0)))
+        client.receiveMessage(new ResendResponseResent("test-stream", 0, requestId))
         then:
         Thread.sleep(gapFillTimeout + 200)
         server.noOtherMessagesReceived()
@@ -131,11 +131,11 @@ class StreamrClientSpec extends Specification {
         client.receiveMessage(new SubscribeResponse("test-stream", 0))
         client.receiveMessage(new BroadcastMessage(createMsg("test-stream", 0, 0, null, null)))
         client.receiveMessage(new BroadcastMessage(createMsg("test-stream", 2, 0, 1, 0)))
-        String subId = client.getSubId("test-stream", 0)
+        String requestId = client.getSubId("test-stream", 0)
         then:
         Thread.sleep(2 * gapFillTimeout + 200)
-        server.expect(new ResendRangeRequest("test-stream", 0, subId, new MessageRef(0, 1), new MessageRef(1, 0), "", "", client.getSessionToken()))
-        server.expect(new ResendRangeRequest("test-stream", 0, subId, new MessageRef(0, 1), new MessageRef(1, 0), "", "", client.getSessionToken()))
+        server.expect(new ResendRangeRequest("test-stream", 0, requestId, new MessageRef(0, 1), new MessageRef(1, 0), "", "", client.getSessionToken()))
+        server.expect(new ResendRangeRequest("test-stream", 0, requestId, new MessageRef(0, 1), new MessageRef(1, 0), "", "", client.getSessionToken()))
     }
 
     void "client reconnects while publishing if server is temporarily down"() {

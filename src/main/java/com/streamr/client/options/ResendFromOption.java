@@ -37,7 +37,7 @@ public class ResendFromOption extends ResendOption {
     }
 
     @Override
-    public ControlMessage toRequest(String streamId, int streamPartition, String subId, String sessionToken) {
-        return new ResendFromRequest(streamId, streamPartition, subId, from, publisherId, msgChainId, sessionToken);
+    public ControlMessage toRequest(String streamId, int streamPartition, String requestId, String sessionToken) {
+        return new ResendFromRequest(streamId, streamPartition, requestId, from, publisherId, msgChainId, sessionToken);
     }
 }

@@ -15,7 +15,7 @@ public class ResendLastOption extends ResendOption {
     }
 
     @Override
-    public ControlMessage toRequest(String streamId, int streamPartition, String subId, String sessionToken) {
-        return new ResendLastRequest(streamId, streamPartition, subId, numberLast, sessionToken);
+    public ControlMessage toRequest(String streamId, int streamPartition, String requestId, String sessionToken) {
+        return new ResendLastRequest(streamId, streamPartition, requestId, numberLast, sessionToken);
     }
 }

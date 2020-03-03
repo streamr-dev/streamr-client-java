@@ -11,10 +11,10 @@ public class ResendLastRequestAdapter extends ControlLayerAdapter<ResendLastRequ
     public ResendLastRequest fromJson(JsonReader reader) throws IOException {
         String streamId = reader.nextString();
         int streamPartition = reader.nextInt();
-        String subId = reader.nextString();
+        String requestId = reader.nextString();
         int numberLast = reader.nextInt();
         String sessionToken = nullSafe(reader, r -> r.nextString());
-        return new ResendLastRequest(streamId, streamPartition, subId, numberLast, sessionToken);
+        return new ResendLastRequest(streamId, streamPartition, requestId, numberLast, sessionToken);
     }
 
     @Override
@@ -24,7 +24,7 @@ public class ResendLastRequestAdapter extends ControlLayerAdapter<ResendLastRequ
         writer.value(ResendLastRequest.TYPE);
         writer.value(value.getStreamId());
         writer.value(value.getStreamPartition());
-        writer.value(value.getSubId());
+        writer.value(value.getRequestId());
         writer.value(value.getNumberLast());
         writer.value(value.getSessionToken());
         writer.endArray();

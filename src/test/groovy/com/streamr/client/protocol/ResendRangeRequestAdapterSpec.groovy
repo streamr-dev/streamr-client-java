@@ -32,7 +32,7 @@ class ResendRangeRequestAdapterSpec extends Specification {
 	}
 
 	void "fromJson"() {
-		String json = '[1,13,"streamId",0,"subId",[143415425455,0],[14341542564555,7],"publisherId","msgChainId","sessionToken"]'
+		String json = '[1,13,"streamId",0,"requestId",[143415425455,0],[14341542564555,7],"publisherId","msgChainId","sessionToken"]'
 
 		when:
 		ResendRangeRequest msg = toMsg(adapter, json)
@@ -40,7 +40,7 @@ class ResendRangeRequestAdapterSpec extends Specification {
 		then:
 		msg.getStreamId() == "streamId"
 		msg.getStreamPartition() == 0
-		msg.getSubId() == "subId"
+		msg.getRequestId() == "requestId"
 		msg.getFromMsgRef().getTimestamp() == 143415425455
 		msg.getFromMsgRef().getSequenceNumber() == 0
 		msg.getToMsgRef().getTimestamp() == 14341542564555
@@ -51,7 +51,7 @@ class ResendRangeRequestAdapterSpec extends Specification {
 	}
 
 	void "fromJson (null fields)"() {
-		String json = '[1,13,"streamId",0,"subId",[143415425455,0],[14341542564555,7],null,null,null]'
+		String json = '[1,13,"streamId",0,"requestId",[143415425455,0],[14341542564555,7],null,null,null]'
 
 		when:
 		ResendRangeRequest msg = toMsg(adapter, json)
@@ -59,7 +59,7 @@ class ResendRangeRequestAdapterSpec extends Specification {
 		then:
 		msg.getStreamId() == "streamId"
 		msg.getStreamPartition() == 0
-		msg.getSubId() == "subId"
+		msg.getRequestId() == "requestId"
 		msg.getFromMsgRef().getTimestamp() == 143415425455
 		msg.getFromMsgRef().getSequenceNumber() == 0
 		msg.getToMsgRef().getTimestamp() == 14341542564555
@@ -70,7 +70,7 @@ class ResendRangeRequestAdapterSpec extends Specification {
 	}
 
 	void "fromJson (from > to)"() {
-		String json = '[1,13,"streamId",0,"subId",[143415425455,0],[143415425000,0],"publisherId","msgChainId","sessionToken"]'
+		String json = '[1,13,"streamId",0,"requestId",[143415425455,0],[143415425000,0],"publisherId","msgChainId","sessionToken"]'
 
 		when:
 		ResendRangeRequest msg = toMsg(adapter, json)
@@ -78,28 +78,28 @@ class ResendRangeRequestAdapterSpec extends Specification {
 		then:
 		thrown(IllegalArgumentException)
 	}
-	
+
 	void "toJson"() {
 		MessageRef from = new MessageRef(143415425455L, 0L)
 		MessageRef to = new MessageRef(14341542564555L, 7L)
-		ResendRangeRequest request = new ResendRangeRequest("streamId", 0, "subId", from, to, "publisherId", "msgChainId", "sessionToken")
+		ResendRangeRequest request = new ResendRangeRequest("streamId", 0, "requestId", from, to, "publisherId", "msgChainId", "sessionToken")
 
 		when:
 		adapter.toJson(buffer, request)
 
 		then:
-		buffer.readString(utf8) == '[1,13,"streamId",0,"subId",[143415425455,0],[14341542564555,7],"publisherId","msgChainId","sessionToken"]'
+		buffer.readString(utf8) == '[1,13,"streamId",0,"requestId",[143415425455,0],[14341542564555,7],"publisherId","msgChainId","sessionToken"]'
 	}
 
 	void "toJson (null fields)"() {
 		MessageRef from = new MessageRef(143415425455L, 0L)
 		MessageRef to = new MessageRef(14341542564555L, 7L)
-		ResendRangeRequest request = new ResendRangeRequest("streamId", 0, "subId", from, to, null, null, null)
+		ResendRangeRequest request = new ResendRangeRequest("streamId", 0, "requestId", from, to, null, null, null)
 
 		when:
 		adapter.toJson(buffer, request)
 
 		then:
-		buffer.readString(utf8) == '[1,13,"streamId",0,"subId",[143415425455,0],[14341542564555,7],null,null,null]'
+		buffer.readString(utf8) == '[1,13,"streamId",0,"requestId",[143415425455,0],[14341542564555,7],null,null,null]'
 	}
 }

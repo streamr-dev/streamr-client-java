@@ -11,8 +11,8 @@ public class ResendResponseNoResendAdapter extends ControlLayerAdapter<ResendRes
     public ResendResponseNoResend fromJson(JsonReader reader) throws IOException {
         String streamId = reader.nextString();
         int streamPartition = reader.nextInt();
-        String subId = reader.nextString();
-        return new ResendResponseNoResend(streamId, streamPartition, subId);
+        String requestId = reader.nextString();
+        return new ResendResponseNoResend(streamId, streamPartition, requestId);
     }
 
     @Override
@@ -22,7 +22,7 @@ public class ResendResponseNoResendAdapter extends ControlLayerAdapter<ResendRes
         writer.value(ResendResponseNoResend.TYPE);
         writer.value(value.getStreamId());
         writer.value(value.getStreamPartition());
-        writer.value(value.getSubId());
+        writer.value(value.getRequestId());
         writer.endArray();
     }
 }

@@ -4,13 +4,13 @@ public abstract class ResendResponse extends ControlMessage {
 
     private String streamId;
     private int streamPartition;
-    private String subId;
+    private String requestId;
 
-    public ResendResponse(int type, String streamId, int streamPartition, String subId) {
+    public ResendResponse(int type, String streamId, int streamPartition, String requestId) {
         super(type);
         this.streamId = streamId;
         this.streamPartition = streamPartition;
-        this.subId = subId;
+        this.requestId = requestId;
     }
 
     public String getStreamId() {
@@ -21,7 +21,7 @@ public abstract class ResendResponse extends ControlMessage {
         return streamPartition;
     }
 
-    public String getSubId() {
-        return subId;
+    public String getRequestId() {
+        return requestId;
     }
 }
