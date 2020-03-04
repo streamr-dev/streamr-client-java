@@ -113,7 +113,6 @@ public class RealTimeSubscription extends BasicSubscription {
     @Override
     public void endResend() throws GapDetectedException {
         resending = false;
-        this.handler.done(this);
     }
 
     @Override

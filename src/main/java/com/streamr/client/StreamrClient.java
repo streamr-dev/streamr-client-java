@@ -578,13 +578,11 @@ public class StreamrClient extends StreamrRESTClient {
     }
 
     private void handleResendResponseNoResend(ResendResponseNoResend res) throws InvalidResendResponseException {
-        Subscription sub = resendUtil.getSub(res);
-        sub.endResend();
+        resendUtil.deleteDoneSub(res);
     }
 
     private void handleResendResponseResent(ResendResponseResent res) throws InvalidResendResponseException {
-        Subscription sub = resendUtil.getSub(res);
-        sub.endResend();
+        resendUtil.deleteDoneSub(res);
     }
 
     private HashMap<String, UnencryptedGroupKey> getKeysPerPublisher(String streamId) {

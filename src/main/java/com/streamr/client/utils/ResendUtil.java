@@ -12,7 +12,7 @@ public class ResendUtil {
     private long counter = 0L;
     private HashMap<String, Subscription> subForRequestId = new HashMap<>();
 
-    public String generateRequestId() {
+    private String generateRequestId() {
         String requestId = "" + counter;
         counter++;
         return requestId;
@@ -25,8 +25,13 @@ public class ResendUtil {
         return subForRequestId.get(resendResponse.getRequestId());
     }
 
-    public void deleteDoneSub(ResendResponse resendResponse) {
+    public void deleteDoneSub(ResendResponse resendResponse) throws InvalidResendResponseException {
         if (resendResponse.getType() == ResendResponseResent.TYPE || resendResponse.getType() == ResendResponseNoResend.TYPE) {
+            Subscription sub = getSub(resendResponse);
+            sub.deletePendingResendRequest(resendResponse.getRequestId());
+            if (sub.noPendingResendRequests()) {
+                sub.endResend();
+            }
             subForRequestId.remove(resendResponse.getRequestId());
         }
     }
@@ -34,7 +39,7 @@ public class ResendUtil {
     public String registerResendForSub(Subscription sub) {
         String requestId = generateRequestId();
         subForRequestId.put(requestId, sub);
-        // sub.addpending...
+        sub.addPendingResendRequest(requestId);
         return requestId;
     }
 }

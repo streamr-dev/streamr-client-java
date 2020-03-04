@@ -21,7 +21,7 @@ class StreamrClientSpec extends Specification {
 
     private static TestingStreamrClient client
     int gapFillTimeout = 500
-    int retryResendAfter = 500
+    int retryResendAfter = 1000
 
     void setupSpec() {
         server.start()
@@ -44,10 +44,14 @@ class StreamrClientSpec extends Specification {
         client.disconnect()
     }
 
-    StreamMessageV31 createMsg(String streamId, long timestamp, long sequenceNumber, Long prevTimestamp, Long prevSequenceNumber) {
-        MessageID msgId = new MessageID(streamId, 0, timestamp, sequenceNumber, "", "")
+    StreamMessageV31 createMsg(String streamId, long timestamp, long sequenceNumber, Long prevTimestamp, Long prevSequenceNumber, String publisherId) {
+        MessageID msgId = new MessageID(streamId, 0, timestamp, sequenceNumber, publisherId, "")
         MessageRef prev = prevTimestamp == null ? null : new MessageRef(prevTimestamp, prevSequenceNumber)
         return new StreamMessageV31(msgId, prev, StreamMessage.ContentType.CONTENT_TYPE_JSON, StreamMessage.EncryptionType.NONE, [hello: "world"], StreamMessage.SignatureType.SIGNATURE_TYPE_NONE, null)
+    }
+
+    StreamMessageV31 createMsg(String streamId, long timestamp, long sequenceNumber, Long prevTimestamp, Long prevSequenceNumber) {
+        return createMsg(streamId, timestamp, sequenceNumber, prevTimestamp, prevSequenceNumber, "")
     }
 
     void "subscribe() sends SubscribeRequest and 1 ResendLastRequest after SubscribeResponse if answer received"() {
@@ -97,7 +101,7 @@ class StreamrClientSpec extends Specification {
         Stream stream = new Stream("", "")
         stream.setId("test-stream")
         when:
-        client.subscribe(stream, new MessageHandler() {
+        Subscription sub = client.subscribe(stream, new MessageHandler() {
             @Override
             void onMessage(Subscription sub, StreamMessage message) {
             }
@@ -110,12 +114,55 @@ class StreamrClientSpec extends Specification {
         Thread.sleep(gapFillTimeout)
         then:
         server.expect(new ResendRangeRequest("test-stream", 0, requestId, new MessageRef(0, 1), new MessageRef(1, 0), "", "", client.getSessionToken()))
+        sub.isResending()
         when:
         client.receiveMessage(new UnicastMessage(requestId, createMsg("test-stream", 1, 0, 0, 0)))
         client.receiveMessage(new ResendResponseResent("test-stream", 0, requestId))
         then:
         Thread.sleep(gapFillTimeout + 200)
         server.noOtherMessagesReceived()
+        !sub.isResending()
+    }
+
+    void "still resending after 1 gap filled when 2 gaps detected"() {
+        Stream stream = new Stream("", "")
+        stream.setId("test-stream")
+        when:
+        Subscription sub = client.subscribe(stream, new MessageHandler() {
+            @Override
+            void onMessage(Subscription sub, StreamMessage message) {
+            }
+        })
+        server.expect(new SubscribeRequest("test-stream", 0, client.getSessionToken()))
+        client.receiveMessage(new SubscribeResponse("test-stream", 0))
+        client.receiveMessage(new BroadcastMessage(createMsg("test-stream", 0, 0, null, null, "publisher1")))
+        client.receiveMessage(new BroadcastMessage(createMsg("test-stream", 2, 0, 1, 0, "publisher1")))
+        String requestId1 = "0"
+        Thread.sleep(gapFillTimeout)
+        then:
+        server.expect(new ResendRangeRequest("test-stream", 0, requestId1, new MessageRef(0, 1), new MessageRef(1, 0), "publisher1", "", client.getSessionToken()))
+        sub.isResending()
+        when:
+        client.receiveMessage(new BroadcastMessage(createMsg("test-stream", 0, 0, null, null, "publisher2")))
+        client.receiveMessage(new BroadcastMessage(createMsg("test-stream", 2, 0, 1, 0, "publisher2")))
+        String requestId2 = "1"
+        Thread.sleep(gapFillTimeout)
+        then:
+        server.expect(new ResendRangeRequest("test-stream", 0, requestId2, new MessageRef(0, 1), new MessageRef(1, 0), "publisher2", "", client.getSessionToken()))
+        sub.isResending()
+        when:
+        client.receiveMessage(new UnicastMessage(requestId1, createMsg("test-stream", 1, 0, 0, 0, "publisher1")))
+        client.receiveMessage(new ResendResponseResent("test-stream", 0, requestId1))
+        then:
+        Thread.sleep(gapFillTimeout + 200)
+        sub.isResending()
+        when:
+        client.receiveMessage(new UnicastMessage(requestId2, createMsg("test-stream", 1, 0, 0, 0, "publisher2")))
+        client.receiveMessage(new ResendResponseResent("test-stream", 0, requestId2))
+        then:
+        Thread.sleep(gapFillTimeout + 200)
+        server.noOtherMessagesReceived()
+        !sub.isResending()
     }
 
     void "requests multiple resends if gap is detected and not filled"() {
@@ -134,7 +181,7 @@ class StreamrClientSpec extends Specification {
         String requestId1 = "0"
         String requestId2 = "1"
         then:
-        Thread.sleep(2 * gapFillTimeout + 200)
+        Thread.sleep(gapFillTimeout + retryResendAfter + 200)
         server.expect(new ResendRangeRequest("test-stream", 0, requestId1, new MessageRef(0, 1), new MessageRef(1, 0), "", "", client.getSessionToken()))
         server.expect(new ResendRangeRequest("test-stream", 0, requestId2, new MessageRef(0, 1), new MessageRef(1, 0), "", "", client.getSessionToken()))
     }

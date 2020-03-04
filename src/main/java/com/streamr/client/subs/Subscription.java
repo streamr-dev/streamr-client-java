@@ -24,6 +24,8 @@ public abstract class Subscription {
     protected final long propagationTimeout;
     protected final long resendTimeout;
 
+    protected final HashSet<String> pendingResendRequests = new HashSet<>();
+
     private State state;
 
     public enum State {
@@ -62,6 +64,18 @@ public abstract class Subscription {
 
     public boolean isSubscribed() {
         return state.equals(State.SUBSCRIBED);
+    }
+
+    public void addPendingResendRequest(String requestId) {
+        pendingResendRequests.add(requestId);
+    }
+
+    public void deletePendingResendRequest(String requestId) {
+        pendingResendRequests.remove(requestId);
+    }
+
+    public boolean noPendingResendRequests() {
+        return pendingResendRequests.isEmpty();
     }
 
     public abstract boolean isResending();
