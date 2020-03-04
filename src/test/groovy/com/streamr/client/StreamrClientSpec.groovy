@@ -64,7 +64,7 @@ class StreamrClientSpec extends Specification {
         when:
         client.receiveMessage(new SubscribeResponse("test-stream", 0))
         then:
-        String requestId = client.getSubId("test-stream", 0)
+        String requestId = "0"
         server.expect(new ResendLastRequest("test-stream", 0, requestId, 10, client.getSessionToken()))
         server.noOtherMessagesReceived()
         when:
@@ -85,7 +85,7 @@ class StreamrClientSpec extends Specification {
         }, new ResendLastOption(10))
         server.expect(new SubscribeRequest("test-stream", 0, client.getSessionToken()))
         client.receiveMessage(new SubscribeResponse("test-stream", 0))
-        String requestId = client.getSubId("test-stream", 0)
+        String requestId = "0"
         then:
         Thread.sleep(retryResendAfter + 200)
         server.expect(new ResendLastRequest("test-stream", 0, requestId, 10, client.getSessionToken()))
@@ -106,7 +106,7 @@ class StreamrClientSpec extends Specification {
         client.receiveMessage(new SubscribeResponse("test-stream", 0))
         client.receiveMessage(new BroadcastMessage(createMsg("test-stream", 0, 0, null, null)))
         client.receiveMessage(new BroadcastMessage(createMsg("test-stream", 2, 0, 1, 0)))
-        String requestId = client.getSubId("test-stream", 0)
+        String requestId = "0"
         Thread.sleep(gapFillTimeout)
         then:
         server.expect(new ResendRangeRequest("test-stream", 0, requestId, new MessageRef(0, 1), new MessageRef(1, 0), "", "", client.getSessionToken()))
@@ -131,11 +131,12 @@ class StreamrClientSpec extends Specification {
         client.receiveMessage(new SubscribeResponse("test-stream", 0))
         client.receiveMessage(new BroadcastMessage(createMsg("test-stream", 0, 0, null, null)))
         client.receiveMessage(new BroadcastMessage(createMsg("test-stream", 2, 0, 1, 0)))
-        String requestId = client.getSubId("test-stream", 0)
+        String requestId1 = "0"
+        String requestId2 = "1"
         then:
         Thread.sleep(2 * gapFillTimeout + 200)
-        server.expect(new ResendRangeRequest("test-stream", 0, requestId, new MessageRef(0, 1), new MessageRef(1, 0), "", "", client.getSessionToken()))
-        server.expect(new ResendRangeRequest("test-stream", 0, requestId, new MessageRef(0, 1), new MessageRef(1, 0), "", "", client.getSessionToken()))
+        server.expect(new ResendRangeRequest("test-stream", 0, requestId1, new MessageRef(0, 1), new MessageRef(1, 0), "", "", client.getSessionToken()))
+        server.expect(new ResendRangeRequest("test-stream", 0, requestId2, new MessageRef(0, 1), new MessageRef(1, 0), "", "", client.getSessionToken()))
     }
 
     void "client reconnects while publishing if server is temporarily down"() {
