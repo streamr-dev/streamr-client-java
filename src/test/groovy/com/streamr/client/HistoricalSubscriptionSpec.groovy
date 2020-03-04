@@ -305,6 +305,7 @@ class HistoricalSubscriptionSpec extends Specification {
         // Cannot decrypt msg2, queues it.
         sub.handleResentMessage(msg2)
         // faking the reception of the group key response
+        Thread.sleep(1000)
         sub.setGroupKeys(msg1.getPublisherId(), (ArrayList<GroupKey>)[groupKey1, groupKey2])
         sub.endResend()
         then:
@@ -361,6 +362,7 @@ class HistoricalSubscriptionSpec extends Specification {
         // Cannot decrypt msg4, queues it.
         sub.handleResentMessage(msg4)
         // faking the reception of the group key response
+        Thread.sleep(1000)
         sub.setGroupKeys(msg3.getPublisherId(), (ArrayList<GroupKey>)[groupKey3])
         sub.setGroupKeys(msg1.getPublisherId(), (ArrayList<GroupKey>)[groupKey1, groupKey2])
         sub.endResend()

@@ -80,6 +80,7 @@ public abstract class BasicSubscription extends Subscription {
         Timer t = new Timer(true);
         String publisherId = msgToQueue.getPublisherId().toLowerCase();
         nbGroupKeyRequestsCalls.put(publisherId, 0);
+        pendingGroupKeyRequests.put(publisherId, t);
         TimerTask request = new TimerTask() {
             @Override
             public void run() {
@@ -99,7 +100,6 @@ public abstract class BasicSubscription extends Subscription {
             }
         };
         t.schedule(request, 0, propagationTimeout);
-        pendingGroupKeyRequests.put(publisherId, t);
         encryptedMsgsQueues.offer(msgToQueue);
     }
 

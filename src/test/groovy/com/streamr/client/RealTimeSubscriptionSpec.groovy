@@ -21,6 +21,8 @@ import javax.crypto.spec.SecretKeySpec
 import javax.xml.bind.DatatypeConverter
 import java.nio.charset.StandardCharsets
 import java.security.SecureRandom
+import java.util.concurrent.atomic.AtomicInteger
+import java.util.function.Supplier
 
 class RealTimeSubscriptionSpec extends Specification {
     StreamMessageV31 msg = new StreamMessageV31("stream-id", 0, (new Date()).getTime(), 0, "publisherId", "msgChainId",
@@ -327,6 +329,7 @@ class RealTimeSubscriptionSpec extends Specification {
         // Cannot decrypt msg2, queues it.
         sub.handleRealTimeMessage(msg2)
         // faking the reception of the group key response
+        Thread.sleep(1000)
         sub.setGroupKeys(msg1.getPublisherId(), (ArrayList<UnencryptedGroupKey>)[groupKey])
         then:
         callCount == 1
@@ -378,6 +381,7 @@ class RealTimeSubscriptionSpec extends Specification {
         // Cannot decrypt msg4, queues it.
         sub.handleRealTimeMessage(msg4)
         // faking the reception of the group key response
+        Thread.sleep(2000)
         sub.setGroupKeys(msg1.getPublisherId(), (ArrayList<UnencryptedGroupKey>)[groupKey1])
         sub.setGroupKeys(msg3.getPublisherId(), (ArrayList<UnencryptedGroupKey>)[groupKey2])
         then:
@@ -430,11 +434,12 @@ class RealTimeSubscriptionSpec extends Specification {
         sub.handleRealTimeMessage(msg1Pub1)
         sub.handleRealTimeMessage(msg1Pub2)
         sub.handleRealTimeMessage(msg2Pub1)
+        Thread.sleep(1000)
         sub.setGroupKeys(publisher1, (ArrayList<UnencryptedGroupKey>)[groupKey1])
         sub.handleRealTimeMessage(msg3Pub1)
         sub.handleRealTimeMessage(msg2Pub2)
+        Thread.sleep(1000)
         sub.setGroupKeys(publisher2, (ArrayList<UnencryptedGroupKey>)[groupKey2])
-
         then:
         callCount == 2
         received.get(0).getContent() == [foo: 'bar1']
