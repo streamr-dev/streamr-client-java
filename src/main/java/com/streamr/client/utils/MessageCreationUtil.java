@@ -109,6 +109,22 @@ public class MessageCreationUtil {
         return streamMessage;
     }
 
+    public StreamMessage createGroupKeyReset(String subscriberAddress, String streamId, EncryptedGroupKey encryptedGroupKey) {
+        if (signingUtil == null) {
+            throw new SigningRequiredException("Cannot create unsigned group key reset. Must authenticate with an Ethereum account");
+        }
+        Map<String, Object> data = new HashMap<>();
+        data.put("streamId", streamId);
+        data.putAll(encryptedGroupKey.toMap());
+
+        Pair<MessageID, MessageRef> pair = createDefaultMsgIdAndRef(subscriberAddress.toLowerCase()); // using address as streamId (inbox stream)
+        StreamMessage streamMessage = new StreamMessageV31(
+                pair.getLeft(), pair.getRight(), StreamMessage.ContentType.GROUP_KEY_RESET_SIMPLE, EncryptionType.RSA, data,
+                StreamMessage.SignatureType.SIGNATURE_TYPE_NONE, null);
+        signingUtil.signStreamMessage(streamMessage);
+        return streamMessage;
+    }
+
     public StreamMessage createErrorMessage(String destinationAddress, Exception e) {
         if (signingUtil == null) {
             throw new SigningRequiredException("Cannot create unsigned error message. Must authenticate with an Ethereum account");
