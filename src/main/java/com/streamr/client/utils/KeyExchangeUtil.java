@@ -8,12 +8,18 @@ import org.apache.logging.log4j.Logger;
 
 import java.io.IOException;
 import java.security.interfaces.RSAPublicKey;
+import java.time.Clock;
+import java.time.Duration;
+import java.time.Instant;
 import java.util.*;
 import java.util.function.Consumer;
 import java.util.function.Function;
 
 public class KeyExchangeUtil {
     private static final Logger log = LogManager.getLogger();
+    private final Clock clock;
+    public static final int REVOCATION_THRESHOLD = 5;
+    public static final int REVOCATION_DELAY = 10; // in minutes
 
     private final KeyStorage keyStorage;
     private final MessageCreationUtil messageCreationUtil;
@@ -21,17 +27,28 @@ public class KeyExchangeUtil {
     private final AddressValidityUtil addressValidityUtil;
     private final Consumer<StreamMessage> publishFunction;
     private final SetGroupKeysFunction setGroupKeysFunction;
+    private Instant lastCallToCheckRevocation = Instant.MIN;
+    private final HashMap<String, RSAPublicKey> publicKeys = new HashMap<>();
 
 
     public KeyExchangeUtil(KeyStorage keyStorage, MessageCreationUtil messageCreationUtil, EncryptionUtil encryptionUtil,
                            AddressValidityUtil addressValidityUtil, Consumer<StreamMessage> publishFunction,
                            SetGroupKeysFunction setGroupKeysFunction) {
+        this(keyStorage, messageCreationUtil, encryptionUtil, addressValidityUtil, publishFunction,
+                setGroupKeysFunction, Clock.systemDefaultZone());
+    }
+
+    // constructor used for testing in KeyExchangeUtilSpec
+    public KeyExchangeUtil(KeyStorage keyStorage, MessageCreationUtil messageCreationUtil, EncryptionUtil encryptionUtil,
+                           AddressValidityUtil addressValidityUtil, Consumer<StreamMessage> publishFunction,
+                           SetGroupKeysFunction setGroupKeysFunction, Clock clock) {
         this.keyStorage = keyStorage;
         this.messageCreationUtil = messageCreationUtil;
         this.encryptionUtil = encryptionUtil;
         this.addressValidityUtil = addressValidityUtil;
         this.publishFunction = publishFunction;
         this.setGroupKeysFunction = setGroupKeysFunction;
+        this.clock = clock;
     }
 
     public void handleGroupKeyRequest(StreamMessage groupKeyRequest) throws InvalidGroupKeyRequestException {
@@ -84,6 +101,7 @@ public class KeyExchangeUtil {
         for (UnencryptedGroupKey key: keys) {
             encryptedGroupKeys.add(key.getEncrypted(publicKey));
         }
+        publicKeys.put(subscriberId, publicKey);
         StreamMessage response = messageCreationUtil.createGroupKeyResponse(subscriberId, streamId, encryptedGroupKeys);
         publishFunction.accept(response);
     }
@@ -119,6 +137,30 @@ public class KeyExchangeUtil {
             }
         }
         setGroupKeysFunction.apply(streamId, groupKeyResponse.getPublisherId(), decryptedKeys);
+    }
+
+    public boolean keyRevocationNeeded(String streamId) {
+        Instant now = clock.instant();
+        boolean res = false;
+        if (lastCallToCheckRevocation.plus(Duration.ofMinutes(REVOCATION_DELAY)).isBefore(now)) {
+            res = addressValidityUtil.nbSubscribersToRevoke(streamId) >= REVOCATION_THRESHOLD;
+        }
+        lastCallToCheckRevocation = now;
+        return res;
+    }
+
+    public void rekey(String streamId) {
+        UnencryptedGroupKey groupKeyReset = EncryptionUtil.genGroupKey();
+        for (String subscriberId: addressValidityUtil.getLocalSubscribersSet(streamId)) {
+            if (publicKeys.containsKey(subscriberId)) {
+                EncryptedGroupKey encryptedGroupKey = groupKeyReset.getEncrypted(publicKeys.get(subscriberId));
+                StreamMessage groupKeyResetMsg = messageCreationUtil.createGroupKeyReset(subscriberId, streamId, encryptedGroupKey);
+                publishFunction.accept(groupKeyResetMsg);
+            } else {
+                publicKeys.remove(subscriberId);
+            }
+        }
+        keyStorage.addKey(streamId, groupKeyReset);
     }
 
     @FunctionalInterface

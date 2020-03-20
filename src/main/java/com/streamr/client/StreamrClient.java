@@ -440,12 +440,19 @@ public class StreamrClient extends StreamrRESTClient {
             options.getEncryptionOptions().getPublisherGroupKeys().put(stream.getId(), newGroupKey);
         }
         StreamMessage streamMessage = msgCreationUtil.createStreamMessage(stream, payload, timestamp, partitionKey, newGroupKey);
+        if (keyExchangeUtil.keyRevocationNeeded(stream.getId())) {
+            keyExchangeUtil.rekey(stream.getId());
+        }
         publish(streamMessage);
     }
 
     private void publish(StreamMessage streamMessage) {
         PublishRequest req = new PublishRequest(streamMessage, getSessionToken());
         getWebsocket().send(req.toJson());
+    }
+
+    public void rekey(Stream stream) {
+        keyExchangeUtil.rekey(stream.getId());
     }
 
     /*

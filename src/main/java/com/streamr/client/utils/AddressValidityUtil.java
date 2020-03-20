@@ -48,6 +48,10 @@ public class AddressValidityUtil {
         return counter;
     }
 
+    public HashSet<String> getLocalSubscribersSet(String streamId) {
+        return localSubscribersSets.get(streamId);
+    }
+
     public boolean isValidSubscriber(String streamId, String subscriberId) {
         return isValid(streamId, subscriberId, this::getSubscribers, isSubscriberFunction);
     }
