@@ -2,6 +2,7 @@ package com.streamr.client.utils;
 
 import com.streamr.client.exceptions.*;
 import com.streamr.client.protocol.message_layer.StreamMessage;
+import com.streamr.client.protocol.message_layer.StreamMessageV31;
 import org.apache.commons.lang.RandomStringUtils;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
@@ -136,7 +137,47 @@ public class KeyExchangeUtil {
                 throw new InvalidGroupKeyResponseException(e.getMessage());
             }
         }
-        setGroupKeysFunction.apply(streamId, groupKeyResponse.getPublisherId(), decryptedKeys);
+        try {
+            setGroupKeysFunction.apply(streamId, groupKeyResponse.getPublisherId(), decryptedKeys);
+        } catch (UnableToSetKeysException e) {
+            throw new InvalidGroupKeyResponseException(e.getMessage());
+        }
+    }
+
+    public void handleGroupKeyReset(StreamMessageV31 groupKeyReset) throws InvalidGroupKeyResetException {
+        // if it was signed, the StreamrClient already checked the signature. If not, StreamrClient accepted it since the stream
+        // does not require signed data for all types of messages.
+        if (groupKeyReset.getSignature() == null) {
+            throw new InvalidGroupKeyResetException("Received unsigned group key reset (it must be signed to avoid MitM attacks).");
+        }
+        // No need to check if parsedContent contains the necessary fields because it was already checked during deserialization
+        Map<String, Object> content;
+        try {
+            content = groupKeyReset.getContent();
+        } catch (IOException e) {
+            log.error(e);
+            return;
+        }
+        String streamId = (String) content.get("streamId");
+        // A valid publisher of the client's inbox stream could send key resets for other streams to which
+        // the publisher doesn't have write permissions. Thus the following additional check is necessary.
+        if (!addressValidityUtil.isValidPublisher(streamId, groupKeyReset.getPublisherId())) {
+            throw new InvalidGroupKeyResetException("Received group key reset from an invalid publisher "
+                    + groupKeyReset.getPublisherId() + " for stream " + streamId);
+        }
+        UnencryptedGroupKey newGroupKey;
+        try {
+            newGroupKey = EncryptedGroupKey.fromMap(content).getDecrypted(encryptionUtil);
+        } catch (UnableToDecryptException | InvalidGroupKeyException e) {
+            throw new InvalidGroupKeyResetException(e.getMessage());
+        }
+        ArrayList<UnencryptedGroupKey> keyWrapped = new ArrayList<>();
+        keyWrapped.add(newGroupKey);
+        try {
+            setGroupKeysFunction.apply(streamId, groupKeyReset.getPublisherId(), keyWrapped);
+        } catch (UnableToSetKeysException e) {
+            throw new InvalidGroupKeyResetException(e.getMessage());
+        }
     }
 
     public boolean keyRevocationNeeded(String streamId) {
@@ -165,6 +206,6 @@ public class KeyExchangeUtil {
 
     @FunctionalInterface
     public interface SetGroupKeysFunction {
-        void apply(String streamId, String publisherId, ArrayList<UnencryptedGroupKey> keys) throws InvalidGroupKeyResponseException;
+        void apply(String streamId, String publisherId, ArrayList<UnencryptedGroupKey> keys) throws UnableToSetKeysException;
     }
 }

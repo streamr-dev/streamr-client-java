@@ -597,7 +597,7 @@ public class StreamrClient extends StreamrRESTClient {
         return options.getEncryptionOptions().getSubscriberGroupKeys().get(streamId);
     }
 
-    private void setGroupKeys(String streamId, String publisherId, ArrayList<UnencryptedGroupKey> keys) throws InvalidGroupKeyResponseException {
+    private void setGroupKeys(String streamId, String publisherId, ArrayList<UnencryptedGroupKey> keys) throws UnableToSetKeysException {
         UnencryptedGroupKey current = getKeysPerPublisher(streamId).get(publisherId);
         UnencryptedGroupKey last = keys.get(keys.size() - 1);
         if (current == null || current.getStartTime() < last.getStartTime()) {

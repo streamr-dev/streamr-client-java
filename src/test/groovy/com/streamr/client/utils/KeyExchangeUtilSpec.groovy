@@ -1,6 +1,7 @@
 package com.streamr.client.utils
 
 import com.streamr.client.exceptions.InvalidGroupKeyRequestException
+import com.streamr.client.exceptions.InvalidGroupKeyResetException
 import com.streamr.client.exceptions.InvalidGroupKeyResponseException
 import com.streamr.client.protocol.message_layer.MessageID
 import com.streamr.client.protocol.message_layer.StreamMessage
@@ -149,7 +150,7 @@ class KeyExchangeUtilSpec extends Specification {
         MessageID id = new MessageID("subscriberInbox", 0, 414, 0, "publisherId", "msgChainId")
         Map<String, Object> content = ["keys": [], "streamId": "streamId"]
         StreamMessage response = new StreamMessageV31(id, null, StreamMessage.ContentType.GROUP_KEY_RESPONSE_SIMPLE,
-                StreamMessage.EncryptionType.NONE, content, StreamMessage.SignatureType.SIGNATURE_TYPE_NONE, null)
+                StreamMessage.EncryptionType.RSA, content, StreamMessage.SignatureType.SIGNATURE_TYPE_NONE, null)
         when:
         util.handleGroupKeyResponse(response)
         then:
@@ -167,7 +168,7 @@ class KeyExchangeUtilSpec extends Specification {
         // Need to use Double because the Moshi parser converts all JSON numbers to double
         Map<String, Object> content = ["keys": [["groupKey": encryptedGroupKeyHex, "start": new Double(123)]], "streamId": "streamId"]
         StreamMessage response = new StreamMessageV31(id, null, StreamMessage.ContentType.GROUP_KEY_RESPONSE_SIMPLE,
-                StreamMessage.EncryptionType.NONE, content, StreamMessage.SignatureType.SIGNATURE_TYPE_ETH, "signature")
+                StreamMessage.EncryptionType.RSA, content, StreamMessage.SignatureType.SIGNATURE_TYPE_ETH, "signature")
         when:
         util.handleGroupKeyResponse(response)
         then:
@@ -185,11 +186,56 @@ class KeyExchangeUtilSpec extends Specification {
         // Need to use Double because the Moshi parser converts all JSON numbers to double
         Map<String, Object> content = ["keys": [["groupKey": encryptedGroupKeyHex, "start": new Double(123)]], "streamId": "streamId"]
         StreamMessage response = new StreamMessageV31(id, null, StreamMessage.ContentType.GROUP_KEY_RESPONSE_SIMPLE,
-                StreamMessage.EncryptionType.NONE, content, StreamMessage.SignatureType.SIGNATURE_TYPE_ETH, "signature")
+                StreamMessage.EncryptionType.RSA, content, StreamMessage.SignatureType.SIGNATURE_TYPE_ETH, "signature")
         when:
         util.handleGroupKeyResponse(response)
         then:
         received.groupKeyHex == groupKeyHex
+        received.startTime == 123L
+    }
+    void "should reject unsigned reset"() {
+        EncryptedGroupKey encryptedGroupKey = EncryptionUtil.genGroupKey().getEncrypted(encryptionUtil.publicKey)
+        MessageID id = new MessageID("subscriberInbox", 0, 414, 0, "publisherId", "msgChainId")
+        Map<String, Object> content = ["groupKey": encryptedGroupKey.groupKeyHex, "start": encryptedGroupKey.start.getTime(), "streamId": "streamId"]
+        StreamMessage reset = new StreamMessageV31(id, null, StreamMessage.ContentType.GROUP_KEY_RESET_SIMPLE,
+                StreamMessage.EncryptionType.RSA, content, StreamMessage.SignatureType.SIGNATURE_TYPE_NONE, null)
+        when:
+        util.handleGroupKeyReset(reset)
+        then:
+        InvalidGroupKeyResetException e = thrown(InvalidGroupKeyResetException)
+        e.message == "Received unsigned group key reset (it must be signed to avoid MitM attacks)."
+    }
+    void "should reject reset with invalid group key"() {
+        SecureRandom secureRandom = new SecureRandom()
+        byte[] keyBytes = new byte[16]
+        secureRandom.nextBytes(keyBytes)
+        String groupKeyHex = Hex.encodeHexString(keyBytes)
+        String encryptedGroupKeyHex = EncryptionUtil.encryptWithPublicKey(groupKeyHex, encryptionUtil.getPublicKeyAsPemString())
+
+        MessageID id = new MessageID("subscriberInbox", 0, 414, 0, "publisherId", "msgChainId")
+        // Need to use Double because the Moshi parser converts all JSON numbers to double
+        Map<String, Object> content = ["groupKey": encryptedGroupKeyHex, "start": new Double(123), "streamId": "streamId"]
+        StreamMessage reset = new StreamMessageV31(id, null, StreamMessage.ContentType.GROUP_KEY_RESET_SIMPLE,
+                StreamMessage.EncryptionType.RSA, content, StreamMessage.SignatureType.SIGNATURE_TYPE_ETH, "signature")
+        when:
+        util.handleGroupKeyReset(reset)
+        then:
+        InvalidGroupKeyResetException e = thrown(InvalidGroupKeyResetException)
+        e.message == "Group key must be 256 bits long, but got a key length of 128 bits."
+    }
+    void "should update client options and subscriptions with received group key reset"() {
+        UnencryptedGroupKey newGroupKey = EncryptionUtil.genGroupKey()
+        EncryptedGroupKey encryptedGroupKey = newGroupKey.getEncrypted(encryptionUtil.publicKey)
+
+        MessageID id = new MessageID("subscriberInbox", 0, 414, 0, "publisherId", "msgChainId")
+        // Need to use Double because the Moshi parser converts all JSON numbers to double
+        Map<String, Object> content = ["groupKey": encryptedGroupKey.groupKeyHex, "start": new Double(123), "streamId": "streamId"]
+        StreamMessage reset = new StreamMessageV31(id, null, StreamMessage.ContentType.GROUP_KEY_RESET_SIMPLE,
+                StreamMessage.EncryptionType.RSA, content, StreamMessage.SignatureType.SIGNATURE_TYPE_ETH, "signature")
+        when:
+        util.handleGroupKeyReset(reset)
+        then:
+        received.groupKeyHex == newGroupKey.groupKeyHex
         received.startTime == 123L
     }
 
