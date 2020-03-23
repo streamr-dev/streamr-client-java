@@ -269,6 +269,8 @@ public class StreamrClient extends StreamrRESTClient {
                             keyExchangeUtil.handleGroupKeyRequest(message);
                         } else if (message.getContentType().equals(StreamMessage.ContentType.GROUP_KEY_RESPONSE_SIMPLE)) {
                             keyExchangeUtil.handleGroupKeyResponse(message);
+                        } else if (message.getContentType().equals(StreamMessage.ContentType.GROUP_KEY_RESET_SIMPLE)) {
+                            keyExchangeUtil.handleGroupKeyReset(message);
                         } else if (message.getContentType().equals(StreamMessage.ContentType.ERROR_MSG)) {
                             handleInboxStreamErrorMessage(message);
                         } else {

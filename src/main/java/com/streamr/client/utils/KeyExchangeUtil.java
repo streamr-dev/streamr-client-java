@@ -144,7 +144,7 @@ public class KeyExchangeUtil {
         }
     }
 
-    public void handleGroupKeyReset(StreamMessageV31 groupKeyReset) throws InvalidGroupKeyResetException {
+    public void handleGroupKeyReset(StreamMessage groupKeyReset) throws InvalidGroupKeyResetException {
         // if it was signed, the StreamrClient already checked the signature. If not, StreamrClient accepted it since the stream
         // does not require signed data for all types of messages.
         if (groupKeyReset.getSignature() == null) {
