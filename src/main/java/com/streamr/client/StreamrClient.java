@@ -440,7 +440,7 @@ public class StreamrClient extends StreamrRESTClient {
             options.getEncryptionOptions().getPublisherGroupKeys().put(stream.getId(), newGroupKey);
         }
         StreamMessage streamMessage = msgCreationUtil.createStreamMessage(stream, payload, timestamp, partitionKey, newGroupKey);
-        if (keyExchangeUtil.keyRevocationNeeded(stream.getId())) {
+        if (options.getEncryptionOptions().autoRevoke() && keyExchangeUtil.keyRevocationNeeded(stream.getId())) {
             keyExchangeUtil.rekey(stream.getId());
         }
         publish(streamMessage);
