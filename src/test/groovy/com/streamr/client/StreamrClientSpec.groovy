@@ -139,8 +139,7 @@ class StreamrClientSpec extends Specification {
         server.expect(new ResendRangeRequest("test-stream", 0, subId, new MessageRef(0, 1), new MessageRef(1, 0), "", "", client.getSessionToken()))
         server.expect(new ResendRangeRequest("test-stream", 0, subId, new MessageRef(0, 1), new MessageRef(1, 0), "", "", client.getSessionToken()))
     }
-
-    /*
+    
     void "client reconnects while publishing if server is temporarily down"() {
         when:
         Stream stream = new Stream("", "")
@@ -207,7 +206,7 @@ class StreamrClientSpec extends Specification {
         conditions.eventually {
             receivedMessages.size() == 2
         }
-    }*/
+    }
 
     void "error message handler is called"() {
         setup:
