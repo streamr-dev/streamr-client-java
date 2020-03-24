@@ -2,8 +2,6 @@ package com.streamr.client.utils;
 
 import com.streamr.client.exceptions.*;
 import com.streamr.client.protocol.message_layer.StreamMessage;
-import com.streamr.client.protocol.message_layer.StreamMessageV31;
-import org.apache.commons.lang.RandomStringUtils;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
@@ -14,7 +12,6 @@ import java.time.Duration;
 import java.time.Instant;
 import java.util.*;
 import java.util.function.Consumer;
-import java.util.function.Function;
 
 public class KeyExchangeUtil {
     private static final Logger log = LogManager.getLogger();
@@ -192,15 +189,18 @@ public class KeyExchangeUtil {
 
     public void rekey(String streamId) {
         UnencryptedGroupKey groupKeyReset = EncryptionUtil.genGroupKey();
-        for (String subscriberId: addressValidityUtil.getLocalSubscribersSet(streamId)) {
-            if (publicKeys.containsKey(subscriberId)) {
+        Set<String> trueSubscribersSet = addressValidityUtil.getLocalSubscribersSet(streamId);
+        Set<String> revoked = new HashSet<>();
+        for (String subscriberId: publicKeys.keySet() ) { // iterating over local cache of Ethereum address --> RSA public key
+            if (trueSubscribersSet.contains(subscriberId)) { // if still valid subscriber, send the new key
                 EncryptedGroupKey encryptedGroupKey = groupKeyReset.getEncrypted(publicKeys.get(subscriberId));
                 StreamMessage groupKeyResetMsg = messageCreationUtil.createGroupKeyReset(subscriberId, streamId, encryptedGroupKey);
                 publishFunction.accept(groupKeyResetMsg);
-            } else {
-                publicKeys.remove(subscriberId);
+            } else { // no longer a valid subscriber, to be removed from local cache
+                revoked.add(subscriberId);
             }
         }
+        revoked.forEach(publicKeys::remove); // remove all revoked (Ethereum address --> RSA public key) from local cache
         keyStorage.addKey(streamId, groupKeyReset);
     }
 
