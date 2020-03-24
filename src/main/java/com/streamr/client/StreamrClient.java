@@ -269,6 +269,8 @@ public class StreamrClient extends StreamrRESTClient {
                             keyExchangeUtil.handleGroupKeyRequest(message);
                         } else if (message.getContentType().equals(StreamMessage.ContentType.GROUP_KEY_RESPONSE_SIMPLE)) {
                             keyExchangeUtil.handleGroupKeyResponse(message);
+                        } else if (message.getContentType().equals(StreamMessage.ContentType.GROUP_KEY_RESET_SIMPLE)) {
+                            keyExchangeUtil.handleGroupKeyReset(message);
                         } else if (message.getContentType().equals(StreamMessage.ContentType.ERROR_MSG)) {
                             handleInboxStreamErrorMessage(message);
                         } else {
@@ -440,12 +442,19 @@ public class StreamrClient extends StreamrRESTClient {
             options.getEncryptionOptions().getPublisherGroupKeys().put(stream.getId(), newGroupKey);
         }
         StreamMessage streamMessage = msgCreationUtil.createStreamMessage(stream, payload, timestamp, partitionKey, newGroupKey);
+        if (options.getEncryptionOptions().autoRevoke() && keyExchangeUtil.keyRevocationNeeded(stream.getId())) {
+            keyExchangeUtil.rekey(stream.getId());
+        }
         publish(streamMessage);
     }
 
     private void publish(StreamMessage streamMessage) {
         PublishRequest req = new PublishRequest(streamMessage, getSessionToken());
         getWebsocket().send(req.toJson());
+    }
+
+    public void rekey(Stream stream) {
+        keyExchangeUtil.rekey(stream.getId());
     }
 
     /*
@@ -590,7 +599,7 @@ public class StreamrClient extends StreamrRESTClient {
         return options.getEncryptionOptions().getSubscriberGroupKeys().get(streamId);
     }
 
-    private void setGroupKeys(String streamId, String publisherId, ArrayList<UnencryptedGroupKey> keys) throws InvalidGroupKeyResponseException {
+    private void setGroupKeys(String streamId, String publisherId, ArrayList<UnencryptedGroupKey> keys) throws UnableToSetKeysException {
         UnencryptedGroupKey current = getKeysPerPublisher(streamId).get(publisherId);
         UnencryptedGroupKey last = keys.get(keys.size() - 1);
         if (current == null || current.getStartTime() < last.getStartTime()) {

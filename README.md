@@ -170,15 +170,15 @@ NEVER | All signed events are verified. Unsigned events are always accepted.
 <a name="encryption"></a>
 ### Encryption
 
-We first introduce the `UnencryptedGroupKey` class: it defines a symmetric group key used by the publisher to encrypt data and by the subscriber to decrypt data. It can be constructed as follows:
+We first introduce the `UnencryptedGroupKey` class: it defines a symmetric AES-256 group key used by the publisher to encrypt data and by the subscriber to decrypt data. It can be constructed as follows:
 ```java
-// hexadecimal representation of a 256 bit key
-String groupKey1Hex = "b9e447d458ed8e5cb24cbd7dd0e957b44ef3109917cd2b7517857429b2659b5b";
+// hexadecimal representation of an AES 256 bit key
+String groupKey1Hex = "0xb9e447d458ed8e5cb24cbd7dd0e957b44ef3109917cd2b7517857429b2659b5b";
 // specify when the key was first used to encrypt
 Date start = new Date(4134515);
 UnencryptedGroupKey key1 = new GroupKey(groupKey1Hex, start);
 // can also specify only the hex string (default start time is now)
-UnencryptedGroupKey key2 = new GroupKey("a75113d458ed8e5cb24cbd7dd0e957b44ef3109917cd2b7517857429b26599f2");
+UnencryptedGroupKey key2 = new GroupKey("0xa75113d458ed8e5cb24cbd7dd0e957b44ef3109917cd2b7517857429b26599f2");
 ```
 
 These `UnencryptedGroupKey`s can then be passed as maps to the `EncryptionOptions`:
@@ -219,31 +219,36 @@ RSAPrivateKey rsaPrivateKey = (RSAPrivateKey) pair.getPrivate();
 EncryptionOptions options = new EncryptionOptions(publisherGroupKeys, subscriberGroupKeys, false, rsaPublicKey, rsaPrivateKey);
 ```
 
+We also need a way to revoke subscribers whose subscription expired. To this end, we need to "rekey" the system, meaning that a new group key must be defined by the publishers and shared only with the remaining subscibers and not the revoked ones.
+
+For now, the rekeying scheme is very simple and inefficient: for each remaining subscribers, the publisher sends to the susbcriber the group key encrypted with the subscriber's RSA public key.
+
+There are two ways to rekey (examples below):
+- using the automatic built-in revocation mechanism: it periodically checks how many subscribers should be revoked and rekey if the number reaches a threshold (5 subscribers).
+- explicitly calling the `rekey` method
+
+```java
+// default is true
+boolean autoRevoke = false; // determines whether the automatic revocation mechanism is to be used or not. In this case, it is deactivated.
+EncryptionOptions options = new EncryptionOptions(publisherGroupKeys, subscriberGroupKeys, storeKeys, rsaPublicKey, rsaPrivateKey, autoRevoke);
+
+StreamrClient client = new StreamrClient(...); // passing the encryption options here
+
+client.publish("streamId", ...); // publishing some message with an initial key
+
+client.rekey("streamId"); // can trigger a rekey of the stream at any moment to potentially revoke subscribers.
+
+client.publish("streamId", ...) // publishing with the new key generated during the rekey.
+```
+
+
 You can also use the default `EncryptionOptions`:
 
 ```java
-// empty UnencryptedGroupKey maps, publisher stores historical keys, automatically generated RSA key pair
+// empty UnencryptedGroupKey maps, publisher stores historical keys, automatically generated RSA key pair, autoRevoke is set
 EncryptionOptions options = EncryptionOptions.getDefault();
 ```
 
-Events published can be encrypted with AES-256 symmetric group keys. For now, they must be set at construction time for the publisher and the subscribers. Later, a secure key exchange protocol will allow the publisher to share the key with their subscribers.
-
-The `EncryptionOptions` instance can be constructed as follows:
-
-```java
-// stream --> group key
-HashMap<String, String> publisherGroupKeys = new HashMap<>();
-// every AES-256 group key must be represented as a hex string ("0x" prefix is optional)
-publisherGroupKeys.put("streamId", "0x...");
-
-// streamId --> (publisherId --> groupKeyHex)
-HashMap<String, HashMap<String, String>> subscriberGroupKeys = ...;
-
-EncryptionOptions encryptionOptions = new EncryptionOptions(publisherGroupKeys, subscriberGroupKeys);
-
-// can also be constructed using default values which are empty HashMaps
-EncryptionOptions defaultOptions = EncryptionOptions.getDefault();
-```
 
 <a name="other-options"></a>
 ### Other options

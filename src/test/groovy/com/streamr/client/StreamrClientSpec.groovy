@@ -12,6 +12,7 @@ import com.streamr.client.protocol.message_layer.StreamMessage
 import com.streamr.client.protocol.message_layer.StreamMessageV31
 import com.streamr.client.rest.Stream
 import com.streamr.client.subs.Subscription
+import com.streamr.client.utils.UnencryptedGroupKey
 import spock.lang.Specification
 import spock.util.concurrent.PollingConditions
 
@@ -35,7 +36,8 @@ class StreamrClientSpec extends Specification {
         server.clear()
         SigningOptions signingOptions = new SigningOptions(SigningOptions.SignatureComputationPolicy.NEVER, SigningOptions.SignatureVerificationPolicy.NEVER)
 
-        StreamrClientOptions options = new StreamrClientOptions(new ApiKeyAuthenticationMethod("apikey"), signingOptions, EncryptionOptions.getDefault(), server.getWsUrl(), "", gapFillTimeout, retryResendAfter)
+        EncryptionOptions encryptionOptions = new EncryptionOptions(new HashMap<>(), new HashMap<>(), true, null, null, false)
+        StreamrClientOptions options = new StreamrClientOptions(new ApiKeyAuthenticationMethod("apikey"), signingOptions, encryptionOptions, server.getWsUrl(), "", gapFillTimeout, retryResendAfter)
         client = new TestingStreamrClient(options)
         client.connect()
     }
@@ -137,7 +139,7 @@ class StreamrClientSpec extends Specification {
         server.expect(new ResendRangeRequest("test-stream", 0, subId, new MessageRef(0, 1), new MessageRef(1, 0), "", "", client.getSessionToken()))
         server.expect(new ResendRangeRequest("test-stream", 0, subId, new MessageRef(0, 1), new MessageRef(1, 0), "", "", client.getSessionToken()))
     }
-
+    
     void "client reconnects while publishing if server is temporarily down"() {
         when:
         Stream stream = new Stream("", "")

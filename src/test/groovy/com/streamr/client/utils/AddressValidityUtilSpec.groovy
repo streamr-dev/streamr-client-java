@@ -1,10 +1,7 @@
 package com.streamr.client.utils
 
-import org.cache2k.Cache
-import org.cache2k.Cache2kBuilder
 import spock.lang.Specification
 
-import java.util.concurrent.TimeUnit
 import java.util.function.BiFunction
 import java.util.function.Function
 
@@ -96,5 +93,49 @@ class AddressValidityUtilSpec extends Specification {
         res5
         res6
         !res7
+    }
+    void "nbSubscribersToRevoke()"() {
+        int streamId1CallCount = 0
+        int streamId2CallCount = 0
+        Function<String, List<String>> getSubscribersFunction = new Function<String, List<String>>() {
+            @Override
+            List<String> apply(String streamId) {
+                if (streamId == "streamId1") {
+                    streamId1CallCount++
+                    if (streamId1CallCount == 1) {
+                        return ["subscriberId1", "subscriberId2"]
+                    } else if (streamId1CallCount == 2) {
+                        return ["subscriberId1", "subscriberId3"]
+                    } else if (streamId1CallCount == 3) {
+                        return ["subscriberId1", "subscriberId3", "subscriberId8"]
+                    } else if (streamId1CallCount == 4) {
+                        return ["subscriberId4", "subscriberId3", "subscriberId2"]
+                    }
+                } else if (streamId == "streamId2") {
+                    streamId2CallCount++
+                    if (streamId2CallCount == 1) {
+                        return ["subscriberId1", "subscriberId2"]
+                    } else if (streamId2CallCount == 2) {
+                        return ["subscriberId1", "subscriberId2"]
+                    } else if (streamId2CallCount == 3) {
+                        return ["subscriberId5", "subscriberId3", "subscriberId8"]
+                    } else if (streamId2CallCount == 4) {
+                        return ["subscriberId9", "subscriberId10", "subscriberId11"]
+                    }
+                }
+                return null
+            }
+        }
+        when:
+        AddressValidityUtil util = new AddressValidityUtil(getSubscribersFunction, null, null, null)
+        then:
+        util.nbSubscribersToRevoke("streamId1") == 0
+        util.nbSubscribersToRevoke("streamId2") == 0
+        util.nbSubscribersToRevoke("streamId1") == 1
+        util.nbSubscribersToRevoke("streamId2") == 0
+        util.nbSubscribersToRevoke("streamId1") == 0
+        util.nbSubscribersToRevoke("streamId2") == 2
+        util.nbSubscribersToRevoke("streamId1") == 2
+        util.nbSubscribersToRevoke("streamId2") == 3
     }
 }

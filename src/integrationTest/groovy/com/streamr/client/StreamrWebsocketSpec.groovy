@@ -232,6 +232,54 @@ class StreamrWebsocketSpec extends StreamrIntegrationSpecification {
 		}
 	}
 
+	void "subscriber can get the new group key after reset and decrypt encrypted messages"() {
+		given:
+		PollingConditions conditions1 = new PollingConditions(timeout: 10)
+		PollingConditions conditions2 = new PollingConditions(timeout: 10)
+
+		Stream stream = client.createStream(new Stream(generateResourceName(), ""))
+		UnencryptedGroupKey key = genKey()
+
+		when:
+		// Subscribe to the stream without knowing the group key
+		StreamMessage msg1 = null
+		StreamMessage msg2 = null
+		client.subscribe(stream, new MessageHandler() {
+			@Override
+			void onMessage(Subscription s, StreamMessage message) {
+				//reaching this point ensures that the signature verification and decryption didn't throw
+				if (msg1 == null) {
+					msg1 = message
+				} else {
+					msg2 = message
+				}
+			}
+		})
+
+		Thread.sleep(2000)
+
+		client.publish(stream, [test: 'clear text'], new Date(), null, key)
+
+		then:
+		conditions1.eventually {
+			assert msg1 != null
+			// the subscriber got the group key and can decrypt
+			assert msg1.getContent() == [test: 'clear text']
+		}
+
+		when:
+		// publishing a second message after a rekey to revoke old subscribers
+		client.rekey(stream)
+		client.publish(stream, [test: 'another clear text'], new Date(), null)
+
+		then:
+		conditions2.eventually {
+			assert msg2 != null
+			// no need to explicitly give the new group key to the subscriber
+			msg2.getContent() == [test: 'another clear text']
+		}
+	}
+
 	void "subscriber can get the historical keys and decrypt old encrypted messages using an RSA key pair"() {
 		given:
 		PollingConditions conditions = new PollingConditions(timeout: 10)

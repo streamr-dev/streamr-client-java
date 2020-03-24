@@ -1,10 +1,7 @@
 package com.streamr.client.subs;
 
 import com.streamr.client.MessageHandler;
-import com.streamr.client.exceptions.GapDetectedException;
-import com.streamr.client.exceptions.InvalidGroupKeyResponseException;
-import com.streamr.client.exceptions.UnableToDecryptException;
-import com.streamr.client.exceptions.UnsupportedMessageException;
+import com.streamr.client.exceptions.*;
 import com.streamr.client.options.ResendOption;
 import com.streamr.client.protocol.message_layer.StreamMessage;
 import com.streamr.client.utils.OrderedMsgChain;
@@ -56,7 +53,7 @@ public class CombinedSubscription extends Subscription {
     }
 
     @Override
-    public void setGroupKeys(String publisherId, ArrayList<UnencryptedGroupKey> groupKeys) throws InvalidGroupKeyResponseException {
+    public void setGroupKeys(String publisherId, ArrayList<UnencryptedGroupKey> groupKeys) throws UnableToSetKeysException {
         sub.setGroupKeys(publisherId, groupKeys);
     }
 

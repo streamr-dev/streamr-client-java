@@ -14,9 +14,10 @@ public class EncryptionOptions {
     private boolean publisherStoreKeyHistory = true;
     private RSAPublicKey rsaPublicKey;
     private RSAPrivateKey rsaPrivateKey;
+    private boolean autoRevoke = true;
 
     public EncryptionOptions(HashMap<String, UnencryptedGroupKey> publisherGroupKeys, HashMap<String, HashMap<String, UnencryptedGroupKey>> subscriberGroupKeys,
-                             boolean publisherStoreKeyHistory, String rsaPublicKey, String rsaPrivateKey) {
+                             boolean publisherStoreKeyHistory, String rsaPublicKey, String rsaPrivateKey, boolean autoRevoke) {
         this.publisherGroupKeys = publisherGroupKeys;
         this.subscriberGroupKeys = subscriberGroupKeys;
         this.publisherStoreKeyHistory = publisherStoreKeyHistory;
@@ -28,10 +29,16 @@ public class EncryptionOptions {
             EncryptionUtil.validatePrivateKey(rsaPrivateKey);
             this.rsaPrivateKey = EncryptionUtil.getPrivateKeyFromString(rsaPrivateKey);
         }
+        this.autoRevoke = autoRevoke;
+    }
+
+    public EncryptionOptions(HashMap<String, UnencryptedGroupKey> publisherGroupKeys, HashMap<String, HashMap<String, UnencryptedGroupKey>> subscriberGroupKeys,
+                             boolean publisherStoreKeyHistory, String rsaPublicKey, String rsaPrivateKey) {
+        this(publisherGroupKeys, subscriberGroupKeys, publisherStoreKeyHistory, rsaPublicKey, rsaPrivateKey, true);
     }
 
     public EncryptionOptions(HashMap<String, UnencryptedGroupKey> publisherGroupKeys, HashMap<String, HashMap<String, UnencryptedGroupKey>> subscriberGroupKeys) {
-        this(publisherGroupKeys, subscriberGroupKeys, true, null, null);
+        this(publisherGroupKeys, subscriberGroupKeys, true, null, null, true);
     }
 
     public EncryptionOptions() {
@@ -56,6 +63,10 @@ public class EncryptionOptions {
 
     public RSAPrivateKey getRsaPrivateKey() {
         return rsaPrivateKey;
+    }
+
+    public boolean autoRevoke() {
+        return autoRevoke;
     }
 
     public static EncryptionOptions getDefault() {

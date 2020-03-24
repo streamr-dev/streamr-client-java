@@ -53,9 +53,9 @@ public class RealTimeSubscription extends BasicSubscription {
     }
 
     @Override
-    public void setGroupKeys(String publisherId, ArrayList<UnencryptedGroupKey> groupKeys) throws InvalidGroupKeyResponseException {
+    public void setGroupKeys(String publisherId, ArrayList<UnencryptedGroupKey> groupKeys) throws UnableToSetKeysException {
         if (groupKeys.size() != 1) {
-            throw new InvalidGroupKeyResponseException("Received "+groupKeys.size()+ " group keys for a real time subscription. Expected one.");
+            throw new UnableToSetKeysException("Received "+groupKeys.size()+ " group keys for a real time subscription. Expected one.");
         }
         this.groupKeys.put(publisherId, new SecretKeySpec(DatatypeConverter.parseHexBinary(groupKeys.get(0).getGroupKeyHex()), "AES"));
         // handle real time messages received while waiting for the group key

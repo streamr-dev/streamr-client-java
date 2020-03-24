@@ -26,6 +26,7 @@ import java.security.interfaces.RSAPublicKey;
 import java.security.spec.PKCS8EncodedKeySpec;
 import java.security.spec.X509EncodedKeySpec;
 import java.util.Arrays;
+import java.util.Date;
 
 public class EncryptionUtil {
     private static final Logger log = LogManager.getLogger();
@@ -61,6 +62,10 @@ public class EncryptionUtil {
         }
     }
 
+    public RSAPublicKey getPublicKey() {
+        return this.publicKey;
+    }
+
     public String getPublicKeyAsPemString() {
         return exportKeyAsPemString(this.publicKey, true);
     }
@@ -88,6 +93,17 @@ public class EncryptionUtil {
     public static String encryptWithPublicKey(String plaintextHex, RSAPublicKey publicKey) {
         byte[] plaintext = DatatypeConverter.parseHexBinary(plaintextHex);
         return encryptWithPublicKey(plaintext, publicKey);
+    }
+
+    public static UnencryptedGroupKey genGroupKey() {
+        byte[] keyBytes = new byte[32];
+        SecureRandom secureRandom = new SecureRandom();
+        secureRandom.nextBytes(keyBytes);
+        try {
+            return new UnencryptedGroupKey(Hex.encodeHexString(keyBytes), new Date());
+        } catch (InvalidGroupKeyException e) { // should never go here as the key is correctly constructed internally
+            throw new RuntimeException(e);
+        }
     }
 
     public static String encrypt(byte[] plaintext, SecretKey groupKey) {

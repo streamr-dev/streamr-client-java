@@ -1,10 +1,7 @@
 package com.streamr.client.subs;
 
 import com.streamr.client.MessageHandler;
-import com.streamr.client.exceptions.GapDetectedException;
-import com.streamr.client.exceptions.InvalidGroupKeyResponseException;
-import com.streamr.client.exceptions.UnableToDecryptException;
-import com.streamr.client.exceptions.UnsupportedMessageException;
+import com.streamr.client.exceptions.*;
 import com.streamr.client.options.ResendOption;
 import com.streamr.client.options.ResendRangeOption;
 import com.streamr.client.protocol.message_layer.StreamMessage;
@@ -72,9 +69,9 @@ public class HistoricalSubscription extends BasicSubscription {
     }
 
     @Override
-    public void setGroupKeys(String publisherId, ArrayList<UnencryptedGroupKey> groupKeys) throws InvalidGroupKeyResponseException {
+    public void setGroupKeys(String publisherId, ArrayList<UnencryptedGroupKey> groupKeys) throws UnableToSetKeysException {
         if (keySequences.containsKey(publisherId)) {
-            throw new InvalidGroupKeyResponseException("Received historical keys for publisher " + publisherId + " for a second time.");
+            throw new UnableToSetKeysException("Received historical keys for publisher " + publisherId + " for a second time.");
         }
         keySequences.put(publisherId, new DecryptionKeySequence(groupKeys));
         // handle the historical messages received while we were waiting for the historical group keys

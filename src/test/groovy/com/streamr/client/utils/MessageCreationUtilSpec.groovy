@@ -249,6 +249,32 @@ class MessageCreationUtilSpec extends Specification {
         msg.getSignature() != null
     }
 
+    void "should not be able to create unsigned group key reset"() {
+        when:
+        msgCreationUtil.createGroupKeyReset("", "", null)
+        then:
+        SigningRequiredException e = thrown SigningRequiredException
+        e.message == "Cannot create unsigned group key reset. Must authenticate with an Ethereum account"
+    }
+
+    void "creates correct group key reset"() {
+        String withoutPrefix = "23bead9b499af21c4c16e4511b3b6b08c3e22e76e0591f5ab5ba8d4c3a5b1820"
+        ECKey account = ECKey.fromPrivate(new BigInteger(withoutPrefix, 16))
+        SigningUtil signingUtil = new SigningUtil(account)
+        MessageCreationUtil util = new MessageCreationUtil("publisherId", signingUtil, keyStorage)
+        EncryptedGroupKey k = genEncryptedKey(32, new Date(123))
+        when:
+        StreamMessage msg = util.createGroupKeyReset("subscriberInboxAddress", "streamId", k)
+        then:
+        msg.getStreamId() == "subscriberInboxAddress".toLowerCase()
+        msg.getContentType() == StreamMessage.ContentType.GROUP_KEY_RESET_SIMPLE
+        msg.getEncryptionType() == StreamMessage.EncryptionType.RSA
+        msg.getContent().get("streamId") == "streamId"
+        msg.getContent().get("groupKey") == k.groupKeyHex
+        msg.getContent().get("start") == k.getStartTime()
+        msg.getSignature() != null
+    }
+
     void "should not be able to create unsigned error message"() {
         when:
         msgCreationUtil.createErrorMessage("", new Exception())
