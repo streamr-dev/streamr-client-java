@@ -187,9 +187,9 @@ public class KeyExchangeUtil {
         return res;
     }
 
-    public void rekey(String streamId) {
+    public void rekey(String streamId, boolean getSubscribersLocally) {
         UnencryptedGroupKey groupKeyReset = EncryptionUtil.genGroupKey();
-        Set<String> trueSubscribersSet = addressValidityUtil.getLocalSubscribersSet(streamId);
+        Set<String> trueSubscribersSet = addressValidityUtil.getSubscribersSet(streamId, getSubscribersLocally);
         Set<String> revoked = new HashSet<>();
         for (String subscriberId: publicKeys.keySet() ) { // iterating over local cache of Ethereum address --> RSA public key
             if (trueSubscribersSet.contains(subscriberId)) { // if still valid subscriber, send the new key

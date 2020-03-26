@@ -443,7 +443,7 @@ public class StreamrClient extends StreamrRESTClient {
         }
         StreamMessage streamMessage = msgCreationUtil.createStreamMessage(stream, payload, timestamp, partitionKey, newGroupKey);
         if (options.getEncryptionOptions().autoRevoke() && keyExchangeUtil.keyRevocationNeeded(stream.getId())) {
-            keyExchangeUtil.rekey(stream.getId());
+            keyExchangeUtil.rekey(stream.getId(), true);
         }
         publish(streamMessage);
     }
@@ -454,7 +454,7 @@ public class StreamrClient extends StreamrRESTClient {
     }
 
     public void rekey(Stream stream) {
-        keyExchangeUtil.rekey(stream.getId());
+        keyExchangeUtil.rekey(stream.getId(), false);
     }
 
     /*

@@ -324,13 +324,13 @@ class KeyExchangeUtilSpec extends Specification {
         util.handleGroupKeyRequest(request1) // should store subscriberId1 --> pk1
         util.handleGroupKeyRequest(request2) // should store subscriberId2 --> pk2
         util.handleGroupKeyRequest(request3) // should store subscriberId3 --> pk3
-        util.rekey("streamId")
+        util.rekey("streamId", true)
         then:
         1 * addressValidityUtil2.isValidSubscriber("streamId", "subscriberId1") >> true
         1 * addressValidityUtil2.isValidSubscriber("streamId", "subscriberId2") >> true
         1 * addressValidityUtil2.isValidSubscriber("streamId", "subscriberId3") >> true
         3 * storage.getKeysBetween("streamId", 123L, 456L) >> [genKey(32, new Date(123))]
-        1 * addressValidityUtil2.getLocalSubscribersSet("streamId") >> ["subscriberId1", "subscriberId3"]
+        1 * addressValidityUtil2.getSubscribersSet("streamId", true) >> ["subscriberId1", "subscriberId3"]
         2 * messageCreationUtil.createGroupKeyReset(*_) >> { arguments ->
             if (arguments[0] == "subscriberId1") {
                 assert arguments[1] == "streamId"
