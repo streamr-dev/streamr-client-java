@@ -492,13 +492,15 @@ public class StreamrClient extends StreamrRESTClient {
         BasicSubscription.GroupKeyRequestFunction requestFunction = (publisherId, start, end) -> sendGroupKeyRequest(stream.getId(), publisherId, start, end);
         if (resendOption == null) {
             sub = new RealTimeSubscription(stream.getId(), partition, handler, keysPerPublisher,
-                    requestFunction, options.getPropagationTimeout(), options.getResendTimeout());
+                    requestFunction, options.getPropagationTimeout(), options.getResendTimeout(),
+                    options.getSkipGapsOnFullQueue());
         } else if (isExplicitResend) {
             sub = new HistoricalSubscription(stream.getId(), partition, handler, resendOption, keysPerPublisher,
-                    requestFunction, options.getPropagationTimeout(), options.getResendTimeout());
+                    requestFunction, options.getPropagationTimeout(), options.getResendTimeout(),
+                    options.getSkipGapsOnFullQueue());
         } else {
             sub = new CombinedSubscription(stream.getId(), partition, handler, resendOption, keysPerPublisher, requestFunction,
-                    options.getPropagationTimeout(), options.getResendTimeout());
+                    options.getPropagationTimeout(), options.getResendTimeout(), options.getSkipGapsOnFullQueue());
         }
         sub.setGapHandler((MessageRef from, MessageRef to, String publisherId, String msgChainId) -> {
             ResendRangeRequest req = new ResendRangeRequest(stream.getId(), partition,

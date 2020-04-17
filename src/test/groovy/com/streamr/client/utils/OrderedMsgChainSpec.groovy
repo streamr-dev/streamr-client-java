@@ -28,7 +28,7 @@ class OrderedMsgChainSpec extends Specification {
             void accept(StreamMessage streamMessage) {
                 received.add(streamMessage)
             }
-        }, null, 5000L, 5000L)
+        }, null, 5000L, 5000L, false)
         when:
         util.add(msg1)
         util.add(msg2)
@@ -44,7 +44,7 @@ class OrderedMsgChainSpec extends Specification {
                     void accept(StreamMessage streamMessage) {
                         received.add(streamMessage)
                     }
-                }, null, 5000L, 5000L)
+                }, null, 5000L, 5000L, false)
         when:
         util.add(msg1)
         util.add(msg1)
@@ -66,7 +66,7 @@ class OrderedMsgChainSpec extends Specification {
             void apply(MessageRef from, MessageRef to, String publisherId, String msgChainId) {
 
             }
-        }, 5000L, 5000L)
+        }, 5000L, 5000L, false)
         when:
         util.add(msg1)
         util.add(msg2)
@@ -87,7 +87,7 @@ class OrderedMsgChainSpec extends Specification {
                     void accept(StreamMessage streamMessage) {
                         received.add(streamMessage)
                     }
-                }, null, 5000L, 5000L)
+                }, null, 5000L, 5000L, false)
         when:
         util.add(msg1)
         util.add(m2)
@@ -110,7 +110,7 @@ class OrderedMsgChainSpec extends Specification {
             void apply(MessageRef from, MessageRef to, String publisherId, String msgChainId) {
                 unexpected = new RuntimeException("Unexpected gap fill request")
             }
-        }, 300L, 300L)
+        }, 300L, 300L, false)
         when:
         util.add(msg1)
         util.add(msg5)
@@ -145,7 +145,7 @@ class OrderedMsgChainSpec extends Specification {
                     expected = e
                     throw e // mimic behavior of default handler
                 }
-            }, 100L, 100L)
+            }, 100L, 100L, false)
         } catch (GapFillFailedException e) {
             expected = e
         }
@@ -183,7 +183,7 @@ class OrderedMsgChainSpec extends Specification {
             void apply(MessageRef from, MessageRef to, String publisherId, String msgChainId) {
 
             }
-        }, 5000L, 5000L)
+        }, 5000L, 5000L, false)
         when:
         util.add(msg1)
         for (StreamMessage msg: shuffled) {
@@ -218,7 +218,7 @@ class OrderedMsgChainSpec extends Specification {
             void accept(StreamMessage streamMessage) {
                 received++;
             }
-        }, null, 5000L, 5000L)
+        }, null, 5000L, 5000L, false)
 
         when:
         util.add(createMessage(-1, null))
@@ -241,7 +241,7 @@ class OrderedMsgChainSpec extends Specification {
             void accept(StreamMessage streamMessage) {
                 received++
             }
-        }, gapHandler, 5000L, 5000L)
+        }, gapHandler, 5000L, 5000L, false)
         when:
         Closure produce = {
             for (int i=0; i<1000; i++) {

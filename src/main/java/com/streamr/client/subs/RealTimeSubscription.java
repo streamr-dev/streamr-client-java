@@ -29,9 +29,16 @@ public class RealTimeSubscription extends BasicSubscription {
     }
     private final KeyStorage groupKeys = new KeyStorage();
     private final HashSet<String> alreadyFailedToDecrypt = new HashSet<>();
-    public RealTimeSubscription(String streamId, int partition, MessageHandler handler, Map<String, UnencryptedGroupKey> groupKeys,
-                                GroupKeyRequestFunction groupKeyRequestFunction, long propagationTimeout, long resendTimeout) {
-        super(streamId, partition, handler, groupKeyRequestFunction, propagationTimeout, resendTimeout);
+    public RealTimeSubscription(String streamId,
+                                int partition,
+                                MessageHandler handler,
+                                Map<String, UnencryptedGroupKey> groupKeys,
+                                GroupKeyRequestFunction groupKeyRequestFunction,
+                                long propagationTimeout,
+                                long resendTimeout,
+                                boolean skipGapsOnFullQueue) {
+        super(streamId, partition, handler, groupKeyRequestFunction, propagationTimeout, resendTimeout,
+                skipGapsOnFullQueue);
         if (groupKeys != null) {
             for (String publisherId: groupKeys.keySet()) {
                 this.groupKeys.put(publisherId, groupKeys.get(publisherId).getSecretKey());
@@ -41,7 +48,8 @@ public class RealTimeSubscription extends BasicSubscription {
 
     public RealTimeSubscription(String streamId, int partition, MessageHandler handler, Map<String, UnencryptedGroupKey> groupKeys,
                                 GroupKeyRequestFunction groupKeyRequestFunction) {
-        this(streamId, partition, handler, groupKeys, groupKeyRequestFunction, Subscription.DEFAULT_PROPAGATION_TIMEOUT, Subscription.DEFAULT_RESEND_TIMEOUT);
+        this(streamId, partition, handler, groupKeys, groupKeyRequestFunction, Subscription.DEFAULT_PROPAGATION_TIMEOUT,
+                Subscription.DEFAULT_RESEND_TIMEOUT, Subscription.DEFAULT_SKIP_GAPS_ON_FULL_QUEUE);
     }
 
     public RealTimeSubscription(String streamId, int partition, MessageHandler handler, Map<String, UnencryptedGroupKey> groupKeys) {

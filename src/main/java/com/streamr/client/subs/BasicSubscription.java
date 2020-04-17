@@ -47,12 +47,13 @@ public abstract class BasicSubscription extends Subscription {
     protected final MsgQueues encryptedMsgsQueues = new MsgQueues();
     private final GroupKeyRequestFunction groupKeyRequestFunction;
     public BasicSubscription(String streamId, int partition, MessageHandler handler,
-                             GroupKeyRequestFunction groupKeyRequestFunction, long propagationTimeout, long resendTimeout) {
-        super(streamId, partition, handler, propagationTimeout, resendTimeout);
+                             GroupKeyRequestFunction groupKeyRequestFunction, long propagationTimeout,
+                             long resendTimeout, boolean skipGapsOnFullQueue) {
+        super(streamId, partition, handler, propagationTimeout, resendTimeout, skipGapsOnFullQueue);
         orderingUtil = new OrderingUtil(streamId, partition,
                 this::handleInOrder, (MessageRef from, MessageRef to, String publisherId, String msgChainId) -> {
             throw new GapDetectedException(streamId, partition, from, to, publisherId, msgChainId);
-        }, this.propagationTimeout, this.resendTimeout);
+        }, this.propagationTimeout, this.resendTimeout, this.skipGapsOnFullQueue);
         this.groupKeyRequestFunction = groupKeyRequestFunction != null ? groupKeyRequestFunction
                 : ((publisherId, start, end) -> log.warn("Group key missing for stream " + streamId + " and publisher " + publisherId + " but no handler is set."));
     }
@@ -69,7 +70,7 @@ public abstract class BasicSubscription extends Subscription {
 
     public void setGapHandler(OrderedMsgChain.GapHandlerFunction gapHandler) {
         orderingUtil = new OrderingUtil(streamId, partition,
-                this::handleInOrder, gapHandler, propagationTimeout, resendTimeout);
+                this::handleInOrder, gapHandler, propagationTimeout, resendTimeout, skipGapsOnFullQueue);
     }
 
     public OrderedMsgChain.GapHandlerFunction getGapHandler() {

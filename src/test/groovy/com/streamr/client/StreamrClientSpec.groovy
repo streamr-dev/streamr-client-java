@@ -37,7 +37,7 @@ class StreamrClientSpec extends Specification {
         SigningOptions signingOptions = new SigningOptions(SigningOptions.SignatureComputationPolicy.NEVER, SigningOptions.SignatureVerificationPolicy.NEVER)
 
         EncryptionOptions encryptionOptions = new EncryptionOptions(new HashMap<>(), new HashMap<>(), true, null, null, false)
-        StreamrClientOptions options = new StreamrClientOptions(new ApiKeyAuthenticationMethod("apikey"), signingOptions, encryptionOptions, server.getWsUrl(), "", gapFillTimeout, retryResendAfter)
+        StreamrClientOptions options = new StreamrClientOptions(new ApiKeyAuthenticationMethod("apikey"), signingOptions, encryptionOptions, server.getWsUrl(), "", gapFillTimeout, retryResendAfter, false)
         client = new TestingStreamrClient(options)
         client.connect()
     }

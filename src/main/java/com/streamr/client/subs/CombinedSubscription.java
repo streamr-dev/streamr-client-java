@@ -16,8 +16,8 @@ public class CombinedSubscription extends Subscription {
     private final ArrayDeque<StreamMessage> queue = new ArrayDeque<>();
     public CombinedSubscription(String streamId, int partition, MessageHandler handler, ResendOption resendOption,
                                 Map<String, UnencryptedGroupKey> groupKeys, BasicSubscription.GroupKeyRequestFunction groupKeyRequestFunction,
-                                long propagationTimeout, long resendTimeout) {
-        super(streamId, partition, handler, propagationTimeout, resendTimeout);
+                                long propagationTimeout, long resendTimeout, boolean skipGapsOnFullQueue) {
+        super(streamId, partition, handler, propagationTimeout, resendTimeout, skipGapsOnFullQueue);
         MessageHandler wrapperHandler = new MessageHandler() {
             @Override
             public void onMessage(Subscription sub, StreamMessage message) {
@@ -27,7 +27,8 @@ public class CombinedSubscription extends Subscription {
             public void done(Subscription s) {
                 handler.done(s);
                 // once the initial resend is done, switch to real time
-                RealTimeSubscription realTime = new RealTimeSubscription(streamId, partition, handler, groupKeys, groupKeyRequestFunction, propagationTimeout, resendTimeout);
+                RealTimeSubscription realTime = new RealTimeSubscription(streamId, partition, handler, groupKeys,
+                        groupKeyRequestFunction, propagationTimeout, resendTimeout, skipGapsOnFullQueue);
                 realTime.setGapHandler(sub.getGapHandler());
                 // set the last received references to the last references of the resent messages
                 realTime.setLastMessageRefs(sub.getChains());
@@ -44,7 +45,8 @@ public class CombinedSubscription extends Subscription {
             }
         };
         // starts to request the initial resend
-        sub = new HistoricalSubscription(streamId, partition, wrapperHandler, resendOption, groupKeys, groupKeyRequestFunction, propagationTimeout, resendTimeout, queue::push);
+        sub = new HistoricalSubscription(streamId, partition, wrapperHandler, resendOption, groupKeys,
+                groupKeyRequestFunction, propagationTimeout, resendTimeout, skipGapsOnFullQueue, queue::push);
     }
 
     @Override

@@ -30,10 +30,17 @@ public class OrderedMsgChain {
     private MessageRef lastReceived = null;
     private Timer gap = null;
     private int gapRequestCount = 0;
+    private boolean skipGapsOnFullQueue;
     private GapFillFailedException gapException = null;
 
-    public OrderedMsgChain(String publisherId, String msgChainId, Consumer<StreamMessage> inOrderHandler,
-                           GapHandlerFunction gapHandler, Function<GapFillFailedException, Void> gapFillFailedHandler, long propagationTimeout, long resendTimeout) {
+    public OrderedMsgChain(String publisherId,
+                           String msgChainId,
+                           Consumer<StreamMessage> inOrderHandler,
+                           GapHandlerFunction gapHandler,
+                           Function<GapFillFailedException, Void> gapFillFailedHandler,
+                           long propagationTimeout,
+                           long resendTimeout,
+                           boolean skipGapsOnFullQueue) {
         this.publisherId = publisherId;
         this.msgChainId = msgChainId;
         this.inOrderHandler = inOrderHandler;
@@ -41,6 +48,7 @@ public class OrderedMsgChain {
         this.gapFillFailedHandler = gapFillFailedHandler;
         this.propagationTimeout = propagationTimeout;
         this.resendTimeout = resendTimeout;
+        this.skipGapsOnFullQueue = skipGapsOnFullQueue;
         queue = new PriorityQueue<>(new Comparator<StreamMessage>() {
             @Override
             public int compare(StreamMessage o1, StreamMessage o2) {
@@ -48,9 +56,16 @@ public class OrderedMsgChain {
             }
         });
     }
-    public OrderedMsgChain(String publisherId, String msgChainId, Consumer<StreamMessage> inOrderHandler,
-                           GapHandlerFunction gapHandler, long propagationTimeout, long resendTimeout) {
-        this(publisherId, msgChainId, inOrderHandler, gapHandler, (GapFillFailedException e) -> { throw e; }, propagationTimeout, resendTimeout);
+    public OrderedMsgChain(String publisherId,
+                           String msgChainId,
+                           Consumer<StreamMessage> inOrderHandler,
+                           GapHandlerFunction gapHandler,
+                           long propagationTimeout,
+                           long resendTimeout,
+                           boolean skipGapsOnFullQueue) {
+        this(publisherId, msgChainId, inOrderHandler, gapHandler,
+                (GapFillFailedException e) -> { throw e; },
+                propagationTimeout, resendTimeout, skipGapsOnFullQueue);
     }
 
     public synchronized void add(StreamMessage unorderedMsg) {
@@ -69,6 +84,12 @@ public class OrderedMsgChain {
             // Prevent memory exhaustion under unusual conditions by limiting the queue size
             if (queue.size() < MAX_QUEUE_SIZE) {
                 queue.offer(unorderedMsg);
+            } else if (skipGapsOnFullQueue) {
+                log.warn("Queue is full. Emptying and processing new mesage.");
+                gap.cancel();
+                gap.purge();
+                queue.clear();
+                process(unorderedMsg);
             } else {
                 throw new IllegalStateException("Queue is full! Message: " + unorderedMsg.toJson());
             }

@@ -18,6 +18,7 @@ public class StreamrClientOptions {
     private long reconnectRetryInterval = 10 * 1000;
     private int propagationTimeout = 5000;
     private int resendTimeout = 5000;
+    private boolean skipGapsOnFullQueue = false;
 
     public StreamrClientOptions() {}
 
@@ -51,10 +52,11 @@ public class StreamrClientOptions {
 
     public StreamrClientOptions(AuthenticationMethod authenticationMethod, SigningOptions signingOptions,
                                 EncryptionOptions encryptionOptions, String websocketApiUrl, String restApiUrl,
-                                int propagationTimeout, int resendTimeout) {
+                                int propagationTimeout, int resendTimeout, boolean skipGapsOnFullQueue) {
         this(authenticationMethod, signingOptions, encryptionOptions, websocketApiUrl, restApiUrl);
         this.propagationTimeout = propagationTimeout;
         this.resendTimeout = resendTimeout;
+        this.skipGapsOnFullQueue = skipGapsOnFullQueue;
     }
 
     public AuthenticationMethod getAuthenticationMethod() {
@@ -111,6 +113,14 @@ public class StreamrClientOptions {
 
     public int getResendTimeout() {
         return resendTimeout;
+    }
+
+    public boolean getSkipGapsOnFullQueue() {
+        return skipGapsOnFullQueue;
+    }
+
+    public void setSkipGapsOnFullQueue(boolean skipGapsOnFullQueue) {
+        this.skipGapsOnFullQueue = skipGapsOnFullQueue;
     }
 
     private String addMissingQueryString(String url) {

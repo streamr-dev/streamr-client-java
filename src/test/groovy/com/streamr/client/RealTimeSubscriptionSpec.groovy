@@ -126,7 +126,7 @@ class RealTimeSubscriptionSpec extends Specification {
         StreamMessage msg1 = createMessage(1, 0, null, 0)
         StreamMessage afterMsg1 = createMessage(1, 1, null, 0)
         StreamMessage msg4 = createMessage(4, 0, 3, 0)
-        RealTimeSubscription sub = new RealTimeSubscription(msg1.getStreamId(), msg1.getStreamPartition(), empty, new HashMap<String, String>(), null, 10L, 10L)
+        RealTimeSubscription sub = new RealTimeSubscription(msg1.getStreamId(), msg1.getStreamPartition(), empty, new HashMap<String, String>(), null, 10L, 10L, false)
         GapDetectedException ex
         sub.setGapHandler(new OrderedMsgChain.GapHandlerFunction() {
             @Override
@@ -167,7 +167,7 @@ class RealTimeSubscriptionSpec extends Specification {
         StreamMessage msg1 = createMessage(1, 0, null, 0)
         StreamMessage afterMsg1 = createMessage(1, 1, null, 0)
         StreamMessage msg4 = createMessage(1, 4, 1, 3)
-        RealTimeSubscription sub = new RealTimeSubscription(msg1.getStreamId(), msg1.getStreamPartition(), empty, new HashMap<String, String>(), null, 10L, 10L)
+        RealTimeSubscription sub = new RealTimeSubscription(msg1.getStreamId(), msg1.getStreamPartition(), empty, new HashMap<String, String>(), null, 10L, 10L, false)
         GapDetectedException ex
         sub.setGapHandler(new OrderedMsgChain.GapHandlerFunction() {
             @Override
@@ -250,7 +250,7 @@ class RealTimeSubscriptionSpec extends Specification {
                 receivedPublisherId = publisherId
                 nbCalls++
             }
-        }, timeout, 5000)
+        }, timeout, 5000, false)
         when:
         sub.handleRealTimeMessage(msg1)
         Thread.sleep(timeout * 2 + 500)
@@ -282,7 +282,7 @@ class RealTimeSubscriptionSpec extends Specification {
             void apply(String publisherId, Date start, Date end) {
                 nbCalls++
             }
-        }, timeout, 5000)
+        }, timeout, 5000, false)
         when:
         sub.handleRealTimeMessage(msg1)
         Thread.sleep(timeout * (BasicSubscription.MAX_NB_GROUP_KEY_REQUESTS + 2))
