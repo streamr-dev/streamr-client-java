@@ -110,6 +110,7 @@ public class OrderedMsgChain {
     synchronized void clearGap() {
         if (gap != null) {
             gap.cancel();
+            gap.purge();
             gap = null;
             if (gapException != null) {
                 throw gapException;
