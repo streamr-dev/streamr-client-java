@@ -211,7 +211,7 @@ class OrderedMsgChainSpec extends Specification {
         result
     }
 
-    void "throws if the queue is full"() {
+    void "throws if the queue is full if skipGapsOnFullQueue is false"() {
         final int received = 0;
         OrderedMsgChain util = new OrderedMsgChain("publisherId", "msgChainId", new Consumer<StreamMessage>() {
             @Override
@@ -229,6 +229,29 @@ class OrderedMsgChainSpec extends Specification {
 
         then:
         thrown(IllegalStateException)
+    }
+
+    void "empties the queue if full if skipGapsOnFullQueue is true"() {
+        int received = 0
+        OrderedMsgChain util = new OrderedMsgChain("publisherId", "msgChainId", new Consumer<StreamMessage>() {
+            @Override
+            void accept(StreamMessage streamMessage) {
+                received++
+            }
+        }, null, 5000L, 5000L, true)
+
+        when:
+        util.add(createMessage(-1, null))
+        // there's a gap between the above and the below messages, so below messages are queued
+        for (int i=1; i <= OrderedMsgChain.MAX_QUEUE_SIZE; i++) {
+            util.add(createMessage(i, i-1))
+        }
+
+        received = 0
+        util.add(createMessage(OrderedMsgChain.MAX_QUEUE_SIZE + 100, OrderedMsgChain.MAX_QUEUE_SIZE + 95))
+
+        then:
+        received == 1
     }
 
     // Warning: non-deterministic test. If you see flakiness in this test, it may indicate
