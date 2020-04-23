@@ -6,10 +6,7 @@ import com.streamr.client.protocol.message_layer.StreamMessage;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
-import java.util.Comparator;
-import java.util.PriorityQueue;
-import java.util.Timer;
-import java.util.TimerTask;
+import java.util.*;
 import java.util.function.Consumer;
 import java.util.function.Function;
 
@@ -84,14 +81,28 @@ public class OrderedMsgChain {
             // Prevent memory exhaustion under unusual conditions by limiting the queue size
             if (queue.size() < MAX_QUEUE_SIZE) {
                 queue.offer(unorderedMsg);
-            } else if (skipGapsOnFullQueue) {
-                log.warn("Queue is full. Emptying and processing new mesage.");
-                gap.cancel();
-                gap.purge();
-                queue.clear();
-                process(unorderedMsg);
             } else {
-                throw new IllegalStateException("Queue is full! Message: " + unorderedMsg.toJson());
+
+
+                // Form diagnosis string
+                List<StreamMessage> queueAsArrayList = new ArrayList<>(queue);
+                String diagnosisString = String.format(
+                        "Queue for %s::%d was (%s, ..., %s) and new message is %s",
+                        unorderedMsg.getStreamId(),
+                        unorderedMsg.getStreamPartition(),
+                        queueAsArrayList.get(0).getMessageRef(),
+                        queueAsArrayList.get(queueAsArrayList.size() - 1).getMessageRef(),
+                        unorderedMsg.getMessageRef()
+                );
+
+                if (skipGapsOnFullQueue) {
+                    log.warn("Queue is full. Emptying and processing new message. " + diagnosisString);
+                    clearGap();
+                    queue.clear();
+                    process(unorderedMsg);
+                } else {
+                    throw new IllegalStateException("Queue is full! Message." + diagnosisString);
+                }
             }
         }
     }
