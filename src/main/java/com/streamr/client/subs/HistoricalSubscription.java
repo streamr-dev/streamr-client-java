@@ -1,12 +1,14 @@
 package com.streamr.client.subs;
 
 import com.streamr.client.MessageHandler;
-import com.streamr.client.exceptions.*;
+import com.streamr.client.exceptions.GapDetectedException;
+import com.streamr.client.exceptions.UnableToDecryptException;
+import com.streamr.client.exceptions.UnableToSetKeysException;
+import com.streamr.client.exceptions.UnsupportedMessageException;
 import com.streamr.client.options.ResendOption;
 import com.streamr.client.options.ResendRangeOption;
 import com.streamr.client.protocol.message_layer.StreamMessage;
 import com.streamr.client.utils.DecryptionKeySequence;
-import com.streamr.client.utils.GroupKey;
 import com.streamr.client.utils.UnencryptedGroupKey;
 
 import java.util.ArrayList;
@@ -14,7 +16,6 @@ import java.util.Date;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.function.Consumer;
-import java.util.function.Function;
 
 public class HistoricalSubscription extends BasicSubscription {
     private final ResendOption resendOption;
@@ -33,10 +34,18 @@ public class HistoricalSubscription extends BasicSubscription {
         }
     }
     private final KeyStorage keySequences = new KeyStorage();
-    public HistoricalSubscription(String streamId, int partition, MessageHandler handler, ResendOption resendOption,
-                                  Map<String, UnencryptedGroupKey> groupKeys, GroupKeyRequestFunction groupKeyRequestFunction,
-                                  long propagationTimeout, long resendTimeout, Consumer<StreamMessage> onRealTimeMsg) {
-        super(streamId, partition, handler, groupKeyRequestFunction, propagationTimeout, resendTimeout);
+    public HistoricalSubscription(String streamId,
+                                  int partition,
+                                  MessageHandler handler,
+                                  ResendOption resendOption,
+                                  Map<String, UnencryptedGroupKey> groupKeys,
+                                  GroupKeyRequestFunction groupKeyRequestFunction,
+                                  long propagationTimeout,
+                                  long resendTimeout,
+                                  boolean skipGapsOnFullQueue,
+                                  Consumer<StreamMessage> onRealTimeMsg) {
+        super(streamId, partition, handler, groupKeyRequestFunction, propagationTimeout, resendTimeout,
+                skipGapsOnFullQueue);
         this.resendOption = resendOption;
         this.onRealTimeMsg = onRealTimeMsg;
         if (groupKeys != null) {
@@ -48,16 +57,28 @@ public class HistoricalSubscription extends BasicSubscription {
         }
     }
 
-    public HistoricalSubscription(String streamId, int partition, MessageHandler handler, ResendOption resendOption,
-                                  Map<String, UnencryptedGroupKey> groupKeys, GroupKeyRequestFunction groupKeyRequestFunction,
-                                  long propagationTimeout, long resendTimeout) {
-        this(streamId, partition, handler, resendOption, groupKeys, groupKeyRequestFunction, propagationTimeout, resendTimeout, null);
+    public HistoricalSubscription(String streamId,
+                                  int partition,
+                                  MessageHandler handler,
+                                  ResendOption resendOption,
+                                  Map<String, UnencryptedGroupKey> groupKeys,
+                                  GroupKeyRequestFunction groupKeyRequestFunction,
+                                  long propagationTimeout,
+                                  long resendTimeout,
+                                  boolean skipGapsOnFullQueue) {
+        this(streamId, partition, handler, resendOption, groupKeys, groupKeyRequestFunction, propagationTimeout,
+                resendTimeout, skipGapsOnFullQueue, null);
     }
 
-    public HistoricalSubscription(String streamId, int partition, MessageHandler handler, ResendOption resendOption,
-                                  Map<String, UnencryptedGroupKey> groupKeys, GroupKeyRequestFunction groupKeyRequestFunction) {
+    public HistoricalSubscription(String streamId,
+                                  int partition,
+                                  MessageHandler handler,
+                                  ResendOption resendOption,
+                                  Map<String, UnencryptedGroupKey> groupKeys,
+                                  GroupKeyRequestFunction groupKeyRequestFunction) {
         this(streamId, partition, handler, resendOption, groupKeys, groupKeyRequestFunction,
-                Subscription.DEFAULT_PROPAGATION_TIMEOUT, Subscription.DEFAULT_RESEND_TIMEOUT);
+                Subscription.DEFAULT_PROPAGATION_TIMEOUT, Subscription.DEFAULT_RESEND_TIMEOUT,
+                Subscription.DEFAULT_SKIP_GAPS_ON_FULL_QUEUE);
     }
 
     public HistoricalSubscription(String streamId, int partition, MessageHandler handler, ResendOption resendOption, Map<String, UnencryptedGroupKey> groupKeys) {

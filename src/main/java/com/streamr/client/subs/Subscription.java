@@ -13,6 +13,7 @@ import java.util.*;
 public abstract class Subscription {
     public static final long DEFAULT_PROPAGATION_TIMEOUT = 5000L;
     public static final long DEFAULT_RESEND_TIMEOUT = 5000L;
+    public static final boolean DEFAULT_SKIP_GAPS_ON_FULL_QUEUE = true;
 
     protected final String streamId;
     protected final int partition;
@@ -20,6 +21,7 @@ public abstract class Subscription {
     protected final MessageHandler handler;
     protected final long propagationTimeout;
     protected final long resendTimeout;
+    protected final boolean skipGapsOnFullQueue;
 
     private State state;
 
@@ -28,13 +30,14 @@ public abstract class Subscription {
     }
 
     public Subscription(String streamId, int partition, MessageHandler handler,
-                        long propagationTimeout, long resendTimeout) {
+                        long propagationTimeout, long resendTimeout, boolean skipGapsOnFullQueue) {
         this.id = UUID.randomUUID().toString();
         this.streamId = streamId;
         this.partition = partition;
         this.handler = handler;
         this.propagationTimeout = propagationTimeout;
         this.resendTimeout = resendTimeout;
+        this.skipGapsOnFullQueue = skipGapsOnFullQueue;
     }
 
     public String getId() {

@@ -19,7 +19,7 @@ class StreamEndpointsSpec extends StreamrIntegrationSpecification {
 	}
 
     void cleanup() {
-        if (client != null && client.state != StreamrClient.State.Disconnected) {
+        if (client != null) {
             client.disconnect()
         }
     }

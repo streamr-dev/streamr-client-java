@@ -10,6 +10,8 @@ import com.streamr.client.subs.Subscription
 import com.streamr.client.utils.GroupKey
 import com.streamr.client.utils.UnencryptedGroupKey
 import org.apache.commons.codec.binary.Hex
+import org.java_websocket.WebSocket
+import org.java_websocket.enums.ReadyState
 import spock.util.concurrent.PollingConditions
 
 import java.security.SecureRandom
@@ -30,7 +32,7 @@ class StreamrWebsocketSpec extends StreamrIntegrationSpecification {
 	}
 
 	void cleanup() {
-		if (client != null && client.state != StreamrClient.State.Disconnected) {
+		if (client != null && client.state != ReadyState.CLOSED) {
 			client.disconnect()
 		}
 	}
@@ -40,13 +42,13 @@ class StreamrWebsocketSpec extends StreamrIntegrationSpecification {
 		client.connect()
 
 		then:
-		client.state == StreamrClient.State.Connected
+		client.state == ReadyState.OPEN
 
 		when:
 		client.disconnect()
 
 		then:
-		client.state == StreamrClient.State.Disconnected
+		client.state == ReadyState.CLOSED
 	}
 
 
@@ -57,7 +59,7 @@ class StreamrWebsocketSpec extends StreamrIntegrationSpecification {
 		client.publish(stream, [foo: "bar"], new Date())
 
 		then:
-		client.state == StreamrClient.State.Connected
+		client.state == ReadyState.OPEN
 	}
 
 	void "client automatically connects for subscribing"() {
@@ -70,7 +72,7 @@ class StreamrWebsocketSpec extends StreamrIntegrationSpecification {
 		})
 
 		then:
-		client.state == StreamrClient.State.Connected
+		client.state == ReadyState.OPEN
 	}
 
 	void "a subscriber receives published messages"() {

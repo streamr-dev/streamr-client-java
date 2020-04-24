@@ -16,6 +16,7 @@ import com.streamr.client.utils.OrderedMsgChain
 import com.streamr.client.utils.UnencryptedGroupKey
 import org.apache.commons.codec.binary.Hex
 import spock.lang.Specification
+import spock.util.concurrent.PollingConditions
 
 import javax.crypto.SecretKey
 import javax.crypto.spec.SecretKeySpec
@@ -126,7 +127,7 @@ class HistoricalSubscriptionSpec extends Specification {
         StreamMessage msg1 = createMessage(1, 0, null, 0)
         StreamMessage afterMsg1 = createMessage(1, 1, null, 0)
         StreamMessage msg4 = createMessage(4, 0, 3, 0)
-        HistoricalSubscription sub = new HistoricalSubscription(msg1.getStreamId(), msg1.getStreamPartition(), empty, null, new HashMap<String, String>(), null, 10L, 10L)
+        HistoricalSubscription sub = new HistoricalSubscription(msg1.getStreamId(), msg1.getStreamPartition(), empty, null, new HashMap<String, String>(), null, 10L, 10L, false)
         GapDetectedException ex
         sub.setGapHandler(new OrderedMsgChain.GapHandlerFunction() {
             @Override
@@ -167,7 +168,7 @@ class HistoricalSubscriptionSpec extends Specification {
         StreamMessage msg1 = createMessage(1, 0, null, 0)
         StreamMessage afterMsg1 = createMessage(1, 1, null, 0)
         StreamMessage msg4 = createMessage(1, 4, 1, 3)
-        HistoricalSubscription sub = new HistoricalSubscription(msg1.getStreamId(), msg1.getStreamPartition(), empty, null, new HashMap<String, String>(), null, 10L, 10L)
+        HistoricalSubscription sub = new HistoricalSubscription(msg1.getStreamId(), msg1.getStreamPartition(), empty, null, new HashMap<String, String>(), null, 10L, 10L, false)
         GapDetectedException ex
         sub.setGapHandler(new OrderedMsgChain.GapHandlerFunction() {
             @Override
@@ -238,7 +239,7 @@ class HistoricalSubscriptionSpec extends Specification {
         Date receivedStart = null
         Date receivedEnd = null
         int nbCalls = 0
-        int timeout = 1000
+        int timeout = 3000
         HistoricalSubscription sub = new HistoricalSubscription("streamId", 0, new MessageHandler() {
             @Override
             void onMessage(Subscription sub, StreamMessage message) {
@@ -252,10 +253,18 @@ class HistoricalSubscriptionSpec extends Specification {
                 receivedEnd = end
                 nbCalls++
             }
-        }, timeout, 5000)
+        }, timeout, 5000, false)
+
         when:
+        // First call to groupKeyRequestFunction
         sub.handleResentMessage(msg1)
-        Thread.sleep(timeout * 2 + 500)
+        // Wait for 2 timeouts to happen
+        Thread.sleep(timeout * 2 + 1500)
+        then:
+        nbCalls == 3
+
+
+        when:
         sub.setGroupKeys(msg1.getPublisherId(), [key])
         Thread.sleep(timeout * 2)
         then:
@@ -307,8 +316,11 @@ class HistoricalSubscriptionSpec extends Specification {
         // faking the reception of the group key response
         sub.setGroupKeys(msg1.getPublisherId(), (ArrayList<GroupKey>)[groupKey1, groupKey2])
         sub.endResend()
+
         then:
-        callCount == 1
+        new PollingConditions().within(10) {
+            callCount == 1
+        }
         received1.getContent() == [foo: 'bar1']
         received2.getContent() == [foo: 'bar2']
         subDone
@@ -354,22 +366,42 @@ class HistoricalSubscriptionSpec extends Specification {
         when:
         // Cannot decrypt msg1, queues it and calls the handler
         sub.handleResentMessage(msg1)
+        then:
+        new PollingConditions().within(10) {
+            callCount == 1
+        }
+
+        when:
         // Cannot decrypt msg2, queues it.
         sub.handleResentMessage(msg2)
+        then:
+        callCount == 1
+
+        when:
         // Cannot decrypt msg3, queues it and calls the handler
         sub.handleResentMessage(msg3)
+        then:
+        new PollingConditions().within(10) {
+            callCount == 2
+        }
+
+        when:
         // Cannot decrypt msg4, queues it.
         sub.handleResentMessage(msg4)
+        then:
+        callCount == 2
+
+        when:
         // faking the reception of the group key response
         sub.setGroupKeys(msg3.getPublisherId(), (ArrayList<GroupKey>)[groupKey3])
         sub.setGroupKeys(msg1.getPublisherId(), (ArrayList<GroupKey>)[groupKey1, groupKey2])
         sub.endResend()
         then:
-        callCount == 2
         received.get(0).getContent() == [foo: 'bar3']
         received.get(1).getContent() == [foo: 'bar4']
         received.get(2).getContent() == [foo: 'bar1']
         received.get(3).getContent() == [foo: 'bar2']
+        callCount == 2
         subDone
     }
 

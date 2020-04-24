@@ -17,9 +17,18 @@ public class OrderingUtil {
     private Function<GapFillFailedException, Void> gapFillFailedHandler;
     private long propagationTimeout;
     private long resendTimeout;
+    private boolean skipGapsOnFullQueue = false;
     private HashMap<String, OrderedMsgChain> chains = new HashMap<>();
-    public OrderingUtil(String streamId, int streamPartition, Consumer<StreamMessage> inOrderHandler,
-                        OrderedMsgChain.GapHandlerFunction gapHandler, Function<GapFillFailedException, Void> gapFillFailedHandler, long propagationTimeout, long resendTimeout) {
+
+    public OrderingUtil(
+            String streamId,
+            int streamPartition,
+            Consumer<StreamMessage> inOrderHandler,
+            OrderedMsgChain.GapHandlerFunction gapHandler,
+            Function<GapFillFailedException, Void> gapFillFailedHandler,
+            long propagationTimeout,
+            long resendTimeout,
+            boolean skipGapsOnFullQueue) {
         this.streamId = streamId;
         this.streamPartition = streamPartition;
         this.inOrderHandler = inOrderHandler;
@@ -27,10 +36,19 @@ public class OrderingUtil {
         this.gapFillFailedHandler = gapFillFailedHandler;
         this.propagationTimeout = propagationTimeout;
         this.resendTimeout = resendTimeout;
+        this.skipGapsOnFullQueue = skipGapsOnFullQueue;
     }
-    public OrderingUtil(String streamId, int streamPartition, Consumer<StreamMessage> inOrderHandler,
-                        OrderedMsgChain.GapHandlerFunction gapHandler, long propagationTimeout, long resendTimeout) {
-        this(streamId, streamPartition, inOrderHandler, gapHandler, (GapFillFailedException e) -> { throw e; }, propagationTimeout, resendTimeout);
+    public OrderingUtil(
+            String streamId,
+            int streamPartition,
+            Consumer<StreamMessage> inOrderHandler,
+            OrderedMsgChain.GapHandlerFunction gapHandler,
+            long propagationTimeout,
+            long resendTimeout,
+            boolean skipGapsOnFullQueue) {
+        this(streamId, streamPartition, inOrderHandler, gapHandler,
+                (GapFillFailedException e) -> { throw e; },
+                propagationTimeout, resendTimeout, skipGapsOnFullQueue);
     }
 
     public void add(StreamMessage unorderedMsg) {
@@ -48,7 +66,8 @@ public class OrderingUtil {
         String key = publisherId + msgChainId;
         if (!chains.containsKey(key)) {
             chains.put(key, new OrderedMsgChain(publisherId, msgChainId, inOrderHandler,
-                    gapHandler, gapFillFailedHandler, propagationTimeout, resendTimeout));
+                    gapHandler, gapFillFailedHandler, propagationTimeout, resendTimeout,
+                    skipGapsOnFullQueue));
         }
         return chains.get(key);
     }
@@ -65,7 +84,8 @@ public class OrderingUtil {
         for (OrderedMsgChain chain: previousChains) {
             String key = chain.getPublisherId() + chain.getMsgChainId();
             OrderedMsgChain newChain = new OrderedMsgChain(chain.getPublisherId(), chain.getMsgChainId(),
-                    inOrderHandler, gapHandler, gapFillFailedHandler, propagationTimeout, resendTimeout);
+                    inOrderHandler, gapHandler, gapFillFailedHandler, propagationTimeout, resendTimeout,
+                    skipGapsOnFullQueue);
             newChain.setLastReceived(chain.getLastReceived());
             chains.put(key, newChain);
 

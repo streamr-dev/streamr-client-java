@@ -28,7 +28,7 @@ class OrderedMsgChainSpec extends Specification {
             void accept(StreamMessage streamMessage) {
                 received.add(streamMessage)
             }
-        }, null, 5000L, 5000L)
+        }, null, 5000L, 5000L, false)
         when:
         util.add(msg1)
         util.add(msg2)
@@ -44,7 +44,7 @@ class OrderedMsgChainSpec extends Specification {
                     void accept(StreamMessage streamMessage) {
                         received.add(streamMessage)
                     }
-                }, null, 5000L, 5000L)
+                }, null, 5000L, 5000L, false)
         when:
         util.add(msg1)
         util.add(msg1)
@@ -66,7 +66,7 @@ class OrderedMsgChainSpec extends Specification {
             void apply(MessageRef from, MessageRef to, String publisherId, String msgChainId) {
 
             }
-        }, 5000L, 5000L)
+        }, 5000L, 5000L, false)
         when:
         util.add(msg1)
         util.add(msg2)
@@ -87,7 +87,7 @@ class OrderedMsgChainSpec extends Specification {
                     void accept(StreamMessage streamMessage) {
                         received.add(streamMessage)
                     }
-                }, null, 5000L, 5000L)
+                }, null, 5000L, 5000L, false)
         when:
         util.add(msg1)
         util.add(m2)
@@ -110,7 +110,7 @@ class OrderedMsgChainSpec extends Specification {
             void apply(MessageRef from, MessageRef to, String publisherId, String msgChainId) {
                 unexpected = new RuntimeException("Unexpected gap fill request")
             }
-        }, 300L, 300L)
+        }, 300L, 300L, false)
         when:
         util.add(msg1)
         util.add(msg5)
@@ -145,7 +145,7 @@ class OrderedMsgChainSpec extends Specification {
                     expected = e
                     throw e // mimic behavior of default handler
                 }
-            }, 100L, 100L)
+            }, 100L, 100L, false)
         } catch (GapFillFailedException e) {
             expected = e
         }
@@ -183,7 +183,7 @@ class OrderedMsgChainSpec extends Specification {
             void apply(MessageRef from, MessageRef to, String publisherId, String msgChainId) {
 
             }
-        }, 5000L, 5000L)
+        }, 5000L, 5000L, false)
         when:
         util.add(msg1)
         for (StreamMessage msg: shuffled) {
@@ -211,14 +211,14 @@ class OrderedMsgChainSpec extends Specification {
         result
     }
 
-    void "throws if the queue is full"() {
+    void "throws if the queue is full if skipGapsOnFullQueue is false"() {
         final int received = 0;
         OrderedMsgChain util = new OrderedMsgChain("publisherId", "msgChainId", new Consumer<StreamMessage>() {
             @Override
             void accept(StreamMessage streamMessage) {
                 received++;
             }
-        }, null, 5000L, 5000L)
+        }, null, 5000L, 5000L, false)
 
         when:
         util.add(createMessage(-1, null))
@@ -231,6 +231,31 @@ class OrderedMsgChainSpec extends Specification {
         thrown(IllegalStateException)
     }
 
+    void "empties the queue if full if skipGapsOnFullQueue is true"() {
+        int received = 0
+        OrderedMsgChain util = new OrderedMsgChain("publisherId", "msgChainId", new Consumer<StreamMessage>() {
+            @Override
+            void accept(StreamMessage streamMessage) {
+                received++
+            }
+        }, null, 5000L, 5000L, true)
+
+        when:
+        util.add(createMessage(-1, null))
+        // there's a gap between the above and the below messages, so below messages are queued
+        for (int i=1; i <= OrderedMsgChain.MAX_QUEUE_SIZE; i++) {
+            util.add(createMessage(i, i-1))
+        }
+
+        assert util.isQueueFull()
+
+        received = 0
+        util.add(createMessage(OrderedMsgChain.MAX_QUEUE_SIZE + 100, OrderedMsgChain.MAX_QUEUE_SIZE + 95))
+
+        then:
+        received == 1
+    }
+
     // Warning: non-deterministic test. If you see flakiness in this test, it may indicate
     // something is wrong in the thread-safety of the class under test.
     void "handles input from multiple threads correctly"() {
@@ -241,7 +266,7 @@ class OrderedMsgChainSpec extends Specification {
             void accept(StreamMessage streamMessage) {
                 received++
             }
-        }, gapHandler, 5000L, 5000L)
+        }, gapHandler, 5000L, 5000L, false)
         when:
         Closure produce = {
             for (int i=0; i<1000; i++) {
