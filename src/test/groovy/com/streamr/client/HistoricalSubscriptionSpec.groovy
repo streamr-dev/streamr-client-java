@@ -16,6 +16,7 @@ import com.streamr.client.utils.OrderedMsgChain
 import com.streamr.client.utils.UnencryptedGroupKey
 import org.apache.commons.codec.binary.Hex
 import spock.lang.Specification
+import spock.util.concurrent.PollingConditions
 
 import javax.crypto.SecretKey
 import javax.crypto.spec.SecretKeySpec
@@ -238,7 +239,7 @@ class HistoricalSubscriptionSpec extends Specification {
         Date receivedStart = null
         Date receivedEnd = null
         int nbCalls = 0
-        int timeout = 1000
+        int timeout = 3000
         HistoricalSubscription sub = new HistoricalSubscription("streamId", 0, new MessageHandler() {
             @Override
             void onMessage(Subscription sub, StreamMessage message) {
@@ -253,9 +254,17 @@ class HistoricalSubscriptionSpec extends Specification {
                 nbCalls++
             }
         }, timeout, 5000, false)
+
         when:
+        // First call to groupKeyRequestFunction
         sub.handleResentMessage(msg1)
-        Thread.sleep(timeout * 2 + 500)
+        // Wait for 2 timeouts to happen
+        Thread.sleep(timeout * 2 + 1500)
+        then:
+        nbCalls == 3
+
+
+        when:
         sub.setGroupKeys(msg1.getPublisherId(), [key])
         Thread.sleep(timeout * 2)
         then:
@@ -307,8 +316,11 @@ class HistoricalSubscriptionSpec extends Specification {
         // faking the reception of the group key response
         sub.setGroupKeys(msg1.getPublisherId(), (ArrayList<GroupKey>)[groupKey1, groupKey2])
         sub.endResend()
+
         then:
-        callCount == 1
+        new PollingConditions().within(5) {
+            callCount == 1
+        }
         received1.getContent() == [foo: 'bar1']
         received2.getContent() == [foo: 'bar2']
         subDone
@@ -365,7 +377,9 @@ class HistoricalSubscriptionSpec extends Specification {
         sub.setGroupKeys(msg1.getPublisherId(), (ArrayList<GroupKey>)[groupKey1, groupKey2])
         sub.endResend()
         then:
-        callCount == 2
+        new PollingConditions().within(5) {
+            callCount == 2
+        }
         received.get(0).getContent() == [foo: 'bar3']
         received.get(1).getContent() == [foo: 'bar4']
         received.get(2).getContent() == [foo: 'bar1']
