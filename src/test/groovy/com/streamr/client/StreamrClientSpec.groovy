@@ -172,6 +172,7 @@ class StreamrClientSpec extends Specification {
     void "subscribed client reconnects if server is temporarily down"() {
         when:
         client.options.reconnectRetryInterval = 1000
+        client.options.connectionTimeoutMillis = 1000
 
         Stream stream = new Stream("", "")
         stream.setId("test-stream")
@@ -192,15 +193,15 @@ class StreamrClientSpec extends Specification {
                 sleep(2000)
                 server.stop()
                 server = new TestWebSocketServer("localhost", 6000)
-                sleep(2000)
+                sleep(4000)
                 server.start()
-                sleep(2000)
+                sleep(10000)
                 server.sendSubscribeToAll(stream.getId(), 0)
                 server.sendToAll(stream, Collections.singletonMap("key", "msg #2"))
             }
         }.start()
 
-        PollingConditions conditions = new PollingConditions(timeout: 10, initialDelay: 1.25, factor: 1)
+        PollingConditions conditions = new PollingConditions(timeout: 20, initialDelay: 1.25, factor: 1)
 
         then:
         conditions.eventually {
