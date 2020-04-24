@@ -247,6 +247,8 @@ class OrderedMsgChainSpec extends Specification {
             util.add(createMessage(i, i-1))
         }
 
+        assert util.isQueueFull()
+
         received = 0
         util.add(createMessage(OrderedMsgChain.MAX_QUEUE_SIZE + 100, OrderedMsgChain.MAX_QUEUE_SIZE + 95))
 

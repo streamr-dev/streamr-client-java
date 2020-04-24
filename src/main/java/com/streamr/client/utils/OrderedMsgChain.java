@@ -218,6 +218,11 @@ public class OrderedMsgChain {
         gap.schedule(task, propagationTimeout, resendTimeout);
     }
 
+    // Used in unit test only
+    boolean isQueueFull() {
+        return this.queue.size() == MAX_QUEUE_SIZE;
+    }
+
     @FunctionalInterface
     public interface GapHandlerFunction {
         void apply(MessageRef from, MessageRef to, String publisherId, String msgChainId);
