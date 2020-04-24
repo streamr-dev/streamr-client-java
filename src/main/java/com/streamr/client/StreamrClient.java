@@ -192,11 +192,17 @@ public class StreamrClient extends StreamrRESTClient {
     }
 
     private void sleepThenReconnect() {
+        if (!userWantsToConnect) { // TODO: remove?
+            return;
+        }
         log.warn("Disconnected. Attempting to reconnect in " + options.getReconnectRetryInterval() / 1000 + " seconds.");
         currentReconnectThread = new Thread(() -> {
             try {
                 this.websocket.closeConnection(0, "");
                 Thread.sleep(options.getReconnectRetryInterval());
+                if (!userWantsToConnect) { // TODO: remove?
+                    return;
+                }
                 this.reconnect();
             } catch (InterruptedException e){
                 e.printStackTrace();
