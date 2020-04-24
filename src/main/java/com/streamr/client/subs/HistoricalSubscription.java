@@ -1,12 +1,14 @@
 package com.streamr.client.subs;
 
 import com.streamr.client.MessageHandler;
-import com.streamr.client.exceptions.*;
+import com.streamr.client.exceptions.GapDetectedException;
+import com.streamr.client.exceptions.UnableToDecryptException;
+import com.streamr.client.exceptions.UnableToSetKeysException;
+import com.streamr.client.exceptions.UnsupportedMessageException;
 import com.streamr.client.options.ResendOption;
 import com.streamr.client.options.ResendRangeOption;
 import com.streamr.client.protocol.message_layer.StreamMessage;
 import com.streamr.client.utils.DecryptionKeySequence;
-import com.streamr.client.utils.GroupKey;
 import com.streamr.client.utils.UnencryptedGroupKey;
 
 import java.util.ArrayList;
@@ -14,7 +16,6 @@ import java.util.Date;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.function.Consumer;
-import java.util.function.Function;
 
 public class HistoricalSubscription extends BasicSubscription {
     private final ResendOption resendOption;

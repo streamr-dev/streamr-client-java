@@ -366,24 +366,42 @@ class HistoricalSubscriptionSpec extends Specification {
         when:
         // Cannot decrypt msg1, queues it and calls the handler
         sub.handleResentMessage(msg1)
+        then:
+        new PollingConditions().within(10) {
+            callCount == 1
+        }
+
+        when:
         // Cannot decrypt msg2, queues it.
         sub.handleResentMessage(msg2)
+        then:
+        callCount == 1
+
+        when:
         // Cannot decrypt msg3, queues it and calls the handler
         sub.handleResentMessage(msg3)
+        then:
+        new PollingConditions().within(10) {
+            callCount == 2
+        }
+
+        when:
         // Cannot decrypt msg4, queues it.
         sub.handleResentMessage(msg4)
+        then:
+        callCount == 2
+
+        when:
         // faking the reception of the group key response
         sub.setGroupKeys(msg3.getPublisherId(), (ArrayList<GroupKey>)[groupKey3])
         sub.setGroupKeys(msg1.getPublisherId(), (ArrayList<GroupKey>)[groupKey1, groupKey2])
         sub.endResend()
         then:
-        new PollingConditions().within(10) {
-            callCount == 2
-        }
         received.get(0).getContent() == [foo: 'bar3']
         received.get(1).getContent() == [foo: 'bar4']
         received.get(2).getContent() == [foo: 'bar1']
         received.get(3).getContent() == [foo: 'bar2']
+        callCount == 2
         subDone
     }
 

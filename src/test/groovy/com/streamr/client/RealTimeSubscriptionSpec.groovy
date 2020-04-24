@@ -9,8 +9,6 @@ import com.streamr.client.subs.BasicSubscription
 import com.streamr.client.subs.RealTimeSubscription
 import com.streamr.client.subs.Subscription
 import com.streamr.client.utils.EncryptionUtil
-import com.streamr.client.utils.GroupKey
-import com.streamr.client.utils.HttpUtils
 import com.streamr.client.utils.OrderedMsgChain
 import com.streamr.client.utils.UnencryptedGroupKey
 import org.apache.commons.codec.binary.Hex
@@ -20,7 +18,6 @@ import spock.util.concurrent.PollingConditions
 import javax.crypto.SecretKey
 import javax.crypto.spec.SecretKeySpec
 import javax.xml.bind.DatatypeConverter
-import java.nio.charset.StandardCharsets
 import java.security.SecureRandom
 
 class RealTimeSubscriptionSpec extends Specification {
@@ -391,23 +388,41 @@ class RealTimeSubscriptionSpec extends Specification {
         when:
         // Cannot decrypt msg1, queues it and calls the handler
         sub.handleRealTimeMessage(msg1)
+        then:
+        new PollingConditions().within(10) {
+            callCount == 1
+        }
+
+        when:
         // Cannot decrypt msg2, queues it.
         sub.handleRealTimeMessage(msg2)
+        then:
+        callCount == 1
+
+        when:
         // Cannot decrypt msg3, queues it and calls the handler
         sub.handleRealTimeMessage(msg3)
-        // Cannot decrypt msg4, queues it.
-        sub.handleRealTimeMessage(msg4)
-        // faking the reception of the group key response
-        sub.setGroupKeys(msg1.getPublisherId(), (ArrayList<UnencryptedGroupKey>)[groupKey1])
-        sub.setGroupKeys(msg3.getPublisherId(), (ArrayList<UnencryptedGroupKey>)[groupKey2])
         then:
         new PollingConditions().within(10) {
             callCount == 2
         }
+
+        when:
+        // Cannot decrypt msg4, queues it.
+        sub.handleRealTimeMessage(msg4)
+        then:
+        callCount == 2
+
+        when:
+        // faking the reception of the group key response
+        sub.setGroupKeys(msg1.getPublisherId(), (ArrayList<UnencryptedGroupKey>)[groupKey1])
+        sub.setGroupKeys(msg3.getPublisherId(), (ArrayList<UnencryptedGroupKey>)[groupKey2])
+        then:
         received.get(0).getContent() == [foo: 'bar1']
         received.get(1).getContent() == [foo: 'bar2']
         received.get(2).getContent() == [foo: 'bar3']
         received.get(3).getContent() == [foo: 'bar4']
+        callCount == 2
     }
 
     void "queues messages when not able to decrypt and handles them once the key is updated (multiple publishers interleaved)"() {
@@ -451,6 +466,12 @@ class RealTimeSubscriptionSpec extends Specification {
         when:
         sub.handleRealTimeMessage(msg1Pub1)
         sub.handleRealTimeMessage(msg1Pub2)
+        then:
+        new PollingConditions().within(10) {
+            callCount == 2
+        }
+
+        when:
         sub.handleRealTimeMessage(msg2Pub1)
         sub.setGroupKeys(publisher1, (ArrayList<UnencryptedGroupKey>)[groupKey1])
         sub.handleRealTimeMessage(msg3Pub1)
@@ -458,14 +479,12 @@ class RealTimeSubscriptionSpec extends Specification {
         sub.setGroupKeys(publisher2, (ArrayList<UnencryptedGroupKey>)[groupKey2])
 
         then:
-        new PollingConditions().within(10) {
-            callCount == 2
-        }
         received.get(0).getContent() == [foo: 'bar1']
         received.get(1).getContent() == [foo: 'bar2']
         received.get(2).getContent() == [foo: 'bar3']
         received.get(3).getContent() == [foo: 'bar4']
         received.get(4).getContent() == [foo: 'bar5']
+        callCount == 2
     }
 
     void "throws when not able to decrypt for the second time"() {
