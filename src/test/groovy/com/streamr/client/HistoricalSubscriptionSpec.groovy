@@ -318,7 +318,7 @@ class HistoricalSubscriptionSpec extends Specification {
         sub.endResend()
 
         then:
-        new PollingConditions().within(5) {
+        new PollingConditions().within(10) {
             callCount == 1
         }
         received1.getContent() == [foo: 'bar1']
@@ -377,7 +377,7 @@ class HistoricalSubscriptionSpec extends Specification {
         sub.setGroupKeys(msg1.getPublisherId(), (ArrayList<GroupKey>)[groupKey1, groupKey2])
         sub.endResend()
         then:
-        new PollingConditions().within(5) {
+        new PollingConditions().within(10) {
             callCount == 2
         }
         received.get(0).getContent() == [foo: 'bar3']

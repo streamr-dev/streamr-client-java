@@ -333,7 +333,7 @@ class RealTimeSubscriptionSpec extends Specification {
         sub.handleRealTimeMessage(msg1)
 
         then:
-        new PollingConditions().within(5) {
+        new PollingConditions().within(10) {
             callCount == 1
         }
 
@@ -401,7 +401,7 @@ class RealTimeSubscriptionSpec extends Specification {
         sub.setGroupKeys(msg1.getPublisherId(), (ArrayList<UnencryptedGroupKey>)[groupKey1])
         sub.setGroupKeys(msg3.getPublisherId(), (ArrayList<UnencryptedGroupKey>)[groupKey2])
         then:
-        new PollingConditions().within(5) {
+        new PollingConditions().within(10) {
             callCount == 2
         }
         received.get(0).getContent() == [foo: 'bar1']
@@ -458,7 +458,7 @@ class RealTimeSubscriptionSpec extends Specification {
         sub.setGroupKeys(publisher2, (ArrayList<UnencryptedGroupKey>)[groupKey2])
 
         then:
-        new PollingConditions().within(5) {
+        new PollingConditions().within(10) {
             callCount == 2
         }
         received.get(0).getContent() == [foo: 'bar1']
