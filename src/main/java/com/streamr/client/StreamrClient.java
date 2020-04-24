@@ -156,7 +156,7 @@ public class StreamrClient extends StreamrRESTClient {
                 public void onError(Exception ex) {
                     log.error(ex);
                     if (ex instanceof IOException) {
-                        sleepThenReconnect();
+                        //sleepThenReconnect();
                     } else {
                         if (getReadyState() == ReadyState.OPEN) {
                             errorWhileConnecting = ex;
