@@ -18,7 +18,7 @@ public class StreamrClientOptions {
     private long reconnectRetryInterval = 10 * 1000;
     private int propagationTimeout = 5000;
     private int resendTimeout = 5000;
-    private boolean skipGapsOnFullQueue = false;
+    private boolean skipGapsOnFullQueue = true;
 
     public StreamrClientOptions() {}
 
