@@ -188,8 +188,9 @@ class StreamrClientSpec extends Specification {
         serverRestart.start()
 
         def errors = Collections.synchronizedList([])
+        List<Thread> threads = []
         for (int i = 4; i < 100; ++i) {
-            new Thread(){
+            def thread = new Thread(){
                 void run() {
                     try {
                         client.publish(stream, ["test": i])
@@ -197,10 +198,16 @@ class StreamrClientSpec extends Specification {
                         errors.add(e)
                     }
                 }
-            }.start()
+            }
+            threads.add(thread)
         }
 
+        threads.each { it.start() }
+
         then:
+        new PollingConditions().within(60) {
+            threads.find { it.alive } == null
+        }
         errors == []
 
     }
