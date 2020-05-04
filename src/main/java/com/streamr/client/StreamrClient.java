@@ -14,7 +14,6 @@ import com.streamr.client.utils.*;
 import org.apache.commons.codec.digest.DigestUtils;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
-import org.java_websocket.WebSocket;
 import org.java_websocket.client.WebSocketClient;
 import org.java_websocket.enums.ReadyState;
 import org.java_websocket.exceptions.WebsocketNotConnectedException;
@@ -56,7 +55,7 @@ public class StreamrClient extends StreamrRESTClient {
 
     private ErrorMessageHandler errorMessageHandler;
     private Thread currentReconnectThread;
-    private boolean userWantsToConnect = false;
+    private boolean stayConnected = false;
 
     public StreamrClient(StreamrClientOptions options) {
         super(options);
@@ -145,7 +144,7 @@ public class StreamrClient extends StreamrRESTClient {
                 @Override
                 public void onClose(int code, String reason, boolean remote) {
                     log.info("Connection closed! Code: " + code + ", Reason: " + reason);
-                    if (remote && userWantsToConnect) {
+                    if (remote && stayConnected) {
                         sleepThenReconnect();
                     } else {
                         StreamrClient.this.onClose();
@@ -192,7 +191,7 @@ public class StreamrClient extends StreamrRESTClient {
     }
 
     private void sleepThenReconnect() {
-        if (!userWantsToConnect) { // TODO: remove?
+        if (!stayConnected) { // TODO: remove?
             return;
         }
         log.warn("Disconnected. Attempting to reconnect in " + options.getReconnectRetryInterval() / 1000 + " seconds.");
@@ -200,7 +199,7 @@ public class StreamrClient extends StreamrRESTClient {
             try {
                 this.websocket.closeConnection(0, "");
                 Thread.sleep(options.getReconnectRetryInterval());
-                if (!userWantsToConnect) { // TODO: remove?
+                if (!stayConnected) { // TODO: remove?
                     return;
                 }
                 this.reconnect();
@@ -232,7 +231,7 @@ public class StreamrClient extends StreamrRESTClient {
      * Connects the websocket. Blocks until connected, or throws if the connection times out.
      */
     public void connect() throws ConnectionTimeoutException {
-        userWantsToConnect = true;
+        stayConnected = true;
         connect(true);
     }
 
@@ -307,7 +306,7 @@ public class StreamrClient extends StreamrRESTClient {
      * Disconnects the websocket. Blocks until disconnected, or throws if the operation times out.
      */
     public void disconnect() throws ConnectionTimeoutException {
-        userWantsToConnect = false;
+        stayConnected = false;
         if (currentReconnectThread != null) {
             currentReconnectThread.interrupt();
         }
@@ -447,7 +446,8 @@ public class StreamrClient extends StreamrRESTClient {
 
     public void publish(Stream stream, Map<String, Object> payload, Date timestamp, String partitionKey, UnencryptedGroupKey newGroupKey) {
         if (!getState().equals(ReadyState.OPEN)) {
-            if (!userWantsToConnect) {
+            if (!stayConnected) {
+                // Convenience feature: allow user to call publish() without having had called connect() beforehand.
                 connect();
             } else {
                 waitForState(ReadyState.OPEN);
