@@ -170,10 +170,12 @@ class StreamrClientSpec extends Specification {
     }
 
     void "calling publish from multiple threads during a server disconnect does not cause errors (CORE-1912)"() {
-        when:
+        setup:
         Stream stream = new Stream("", "")
         stream.setId("test-stream")
         stream.setPartitions(1)
+
+        and:
         Thread serverRestart = new Thread(){
             void run(){
                 server.stop()
@@ -181,16 +183,12 @@ class StreamrClientSpec extends Specification {
                 server.start()
             }
         }
-        client.publish(stream, ["test": 1])
-        client.publish(stream, ["test": 2])
-        client.publish(stream, ["test": 3])
 
-        serverRestart.start()
-
+        and:
         def errors = Collections.synchronizedList([])
         List<Thread> threads = []
         for (int i = 4; i < 100; ++i) {
-            def thread = new Thread(){
+            threads.add(new Thread(){
                 void run() {
                     try {
                         client.publish(stream, ["test": i])
@@ -198,10 +196,14 @@ class StreamrClientSpec extends Specification {
                         errors.add(e)
                     }
                 }
-            }
-            threads.add(thread)
+            })
         }
 
+        when:
+        client.publish(stream, ["test": 1])
+        client.publish(stream, ["test": 2])
+        client.publish(stream, ["test": 3])
+        serverRestart.start()
         threads.each { it.start() }
 
         then:
