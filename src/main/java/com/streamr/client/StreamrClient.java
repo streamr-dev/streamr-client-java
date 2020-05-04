@@ -447,7 +447,14 @@ public class StreamrClient extends StreamrRESTClient {
 
     public void publish(Stream stream, Map<String, Object> payload, Date timestamp, String partitionKey, UnencryptedGroupKey newGroupKey) {
         if (!getState().equals(ReadyState.OPEN)) {
-            connect();
+            if (!userWantsToConnect) {
+                connect();
+            } else {
+                waitForState(ReadyState.OPEN);
+                if (!getState().equals(ReadyState.OPEN)) {
+                    throw new RuntimeException("Was unable to publish because readyState never changed to OPEN");
+                }
+            }
         }
         if (newGroupKey != null) {
             options.getEncryptionOptions().getPublisherGroupKeys().put(stream.getId(), newGroupKey);
