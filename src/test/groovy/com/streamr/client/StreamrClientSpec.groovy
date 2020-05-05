@@ -169,6 +169,51 @@ class StreamrClientSpec extends Specification {
         client.publish(stream, ["test": 6])
     }
 
+    void "calling publish from multiple threads during a server disconnect does not cause errors (CORE-1912)"() {
+        setup:
+        Stream stream = new Stream("", "")
+        stream.setId("test-stream")
+        stream.setPartitions(1)
+
+        and:
+        Thread serverRestart = new Thread(){
+            void run(){
+                server.stop()
+                server = new TestWebSocketServer("localhost", 6000)
+                server.start()
+            }
+        }
+
+        and:
+        def errors = Collections.synchronizedList([])
+        List<Thread> threads = []
+        for (int i = 4; i < 100; ++i) {
+            threads.add(new Thread(){
+                void run() {
+                    try {
+                        client.publish(stream, ["test": i])
+                    } catch (e) {
+                        errors.add(e)
+                    }
+                }
+            })
+        }
+
+        when:
+        client.publish(stream, ["test": 1])
+        client.publish(stream, ["test": 2])
+        client.publish(stream, ["test": 3])
+        serverRestart.start()
+        threads.each { it.start() }
+
+        then:
+        new PollingConditions().within(60) {
+            threads.find { it.alive } == null
+        }
+        errors == []
+
+    }
+
     void "subscribed client reconnects if server is temporarily down"() {
         when:
         client.options.reconnectRetryInterval = 1000
