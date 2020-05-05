@@ -207,7 +207,7 @@ public class StreamrClient extends StreamrRESTClient {
                 e.printStackTrace();
                 Thread.currentThread().interrupt();
             }
-        });
+        }, "sleepThenReconnectThread-" + System.currentTimeMillis());
         currentReconnectThread.start();
     }
 
