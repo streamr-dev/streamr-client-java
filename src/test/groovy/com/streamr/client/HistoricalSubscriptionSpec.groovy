@@ -314,6 +314,7 @@ class HistoricalSubscriptionSpec extends Specification {
         // Cannot decrypt msg2, queues it.
         sub.handleResentMessage(msg2)
         // faking the reception of the group key response
+        Thread.sleep(100)
         sub.setGroupKeys(msg1.getPublisherId(), (ArrayList<GroupKey>)[groupKey1, groupKey2])
         sub.endResend()
 
