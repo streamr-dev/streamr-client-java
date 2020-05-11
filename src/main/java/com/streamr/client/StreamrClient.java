@@ -26,6 +26,9 @@ import java.net.URI;
 import java.net.URISyntaxException;
 import java.nio.channels.NotYetConnectedException;
 import java.util.*;
+import java.util.concurrent.Executors;
+import java.util.concurrent.ScheduledExecutorService;
+import java.util.concurrent.TimeUnit;
 import java.util.function.BiConsumer;
 
 /**
@@ -39,7 +42,6 @@ public class StreamrClient extends StreamrRESTClient {
     private WebSocketClient websocket;
 
     protected final Subscriptions subs = new Subscriptions();
-    private Exception errorWhileConnecting = null;
 
     private String publisherId = null;
     private final EncryptionUtil encryptionUtil;
@@ -54,8 +56,8 @@ public class StreamrClient extends StreamrRESTClient {
     private final HashMap<String, OneTimeResend> secondResends = new HashMap<>();
 
     private ErrorMessageHandler errorMessageHandler;
-    private Thread currentReconnectThread;
-    private boolean stayConnected = false;
+    private boolean keepConnected = false;
+    private final ScheduledExecutorService executorService = Executors.newSingleThreadScheduledExecutor();
 
     public StreamrClient(StreamrClientOptions options) {
         super(options);
@@ -119,8 +121,6 @@ public class StreamrClient extends StreamrRESTClient {
                 options.getEncryptionOptions().getRsaPrivateKey());
         keyExchangeUtil = new KeyExchangeUtil(keyStorage, msgCreationUtil, encryptionUtil, addressValidityUtil,
                 this::publish, this::setGroupKeys);
-
-        initWebsocket();
     }
 
     public StreamrClient(AuthenticationMethod authenticationMethod) {
@@ -134,6 +134,11 @@ public class StreamrClient extends StreamrRESTClient {
                 public void onOpen(ServerHandshake handshakedata) {
                     log.info("Connection established");
                     StreamrClient.this.onOpen();
+                    try {
+                        StreamrClient.this.subs.forEach(StreamrClient.this::resubscribe);
+                    } catch (WebsocketNotConnectedException e) {
+                        log.error(e);
+                    }
                 }
 
                 @Override
@@ -144,9 +149,7 @@ public class StreamrClient extends StreamrRESTClient {
                 @Override
                 public void onClose(int code, String reason, boolean remote) {
                     log.info("Connection closed! Code: " + code + ", Reason: " + reason);
-                    if (remote && stayConnected) {
-                        sleepThenReconnect();
-                    } else {
+                    if (!keepConnected) {
                         StreamrClient.this.onClose();
                     }
                 }
@@ -154,13 +157,7 @@ public class StreamrClient extends StreamrRESTClient {
                 @Override
                 public void onError(Exception ex) {
                     log.error(ex);
-                    if (ex instanceof IOException) {
-                        //sleepThenReconnect();
-                    } else {
-                        if (getReadyState() == ReadyState.OPEN) {
-                            errorWhileConnecting = ex;
-                        }
-
+                    if (!(ex instanceof IOException)) {
                         StreamrClient.this.onError(ex);
                     }
                 }
@@ -190,81 +187,46 @@ public class StreamrClient extends StreamrRESTClient {
         return websocket;
     }
 
-    private void sleepThenReconnect() {
-        if (!stayConnected) { // TODO: remove?
-            return;
-        }
-        log.warn("Disconnected. Attempting to reconnect in " + options.getReconnectRetryInterval() / 1000 + " seconds.");
-        currentReconnectThread = new Thread(() -> {
-            try {
-                this.websocket.closeConnection(0, "");
-                Thread.sleep(options.getReconnectRetryInterval());
-                if (!stayConnected) { // TODO: remove?
-                    return;
-                }
-                this.reconnect();
-            } catch (InterruptedException e){
-                e.printStackTrace();
-                Thread.currentThread().interrupt();
-            }
-        }, "sleepThenReconnectThread-" + System.currentTimeMillis());
-        currentReconnectThread.start();
-    }
-
-    private void reconnect() {
-        initWebsocket();
-        websocket.connect();
-        waitForState(ReadyState.OPEN);
-        if (getState() == ReadyState.OPEN) {
-            try {
-                StreamrClient.this.subs.forEach(StreamrClient.this::resubscribe);
-            } catch (WebsocketNotConnectedException e) {
-                log.error(e);
-                sleepThenReconnect();
-            }
-        } else {
-            sleepThenReconnect();
-        }
-    }
-
     /**
      * Connects the websocket. Blocks until connected, or throws if the connection times out.
      */
     public void connect() throws ConnectionTimeoutException {
-        stayConnected = true;
-        connect(true);
-    }
-
-    private void connect(boolean firstTrial) throws ConnectionTimeoutException {
         if (getState() == ReadyState.OPEN) {
-            log.warn("Trying to connect when already connected to " + options.getWebsocketApiUrl());
             return;
         }
 
-        if (firstTrial) {
+        if (!keepConnected) {
+            keepConnected = true;
             log.info("Connecting to " + options.getWebsocketApiUrl() + "...");
-            if (websocket == null) {
-                initWebsocket();
-            }
-            websocket.connect();
-            waitForState(ReadyState.OPEN);
-        } else {
-            log.info("Reconnecting to " + options.getWebsocketApiUrl() + "...");
-            reconnect();
+            executorService.scheduleAtFixedRate(() -> {
+                        if (keepConnected) {
+                            if (getState() != ReadyState.OPEN) {
+                                boolean isReconnect = this.websocket != null;
+                                log.info("Not connected. Attempting to " + (isReconnect ? "reconnect" : "connect"));
+                                if (isReconnect) {
+                                    this.websocket.closeConnection(0, "");
+                                }
+                                initWebsocket();
+                                this.websocket.connect();
+                            }
+                        } else {
+                            if (getState() != ReadyState.CLOSED) {
+                                log.info("Closing connection");
+                                websocket.closeConnection(0, "");
+                                websocket = null;
+                                executorService.shutdown();
+                            }
+                        }
+                },
+                    0,
+                    options.getReconnectRetryInterval(),
+                    TimeUnit.MILLISECONDS
+            );
         }
 
-        if (errorWhileConnecting != null) {
-            Exception ex = errorWhileConnecting;
-            errorWhileConnecting = null;
-            throw new RuntimeException(ex);
-        } else if (getState() != ReadyState.OPEN) {
-            log.warn("Failed to connect to " + options.getWebsocketApiUrl() + ". Going to retry in " + options.getReconnectRetryInterval() / 1000 + " seconds.");
-            try {
-                Thread.sleep(options.getReconnectRetryInterval());
-            } catch (InterruptedException e) {
-                e.printStackTrace();
-            }
-            connect(false);
+        waitForState(ReadyState.OPEN);
+        if (getState() != ReadyState.OPEN) {
+            throw new ConnectionTimeoutException(options.getWebsocketApiUrl());
         }
 
         if (inbox != null && inboxSub == null) {
@@ -306,27 +268,18 @@ public class StreamrClient extends StreamrRESTClient {
      * Disconnects the websocket. Blocks until disconnected, or throws if the operation times out.
      */
     public void disconnect() throws ConnectionTimeoutException {
-        stayConnected = false;
-        if (currentReconnectThread != null) {
-            currentReconnectThread.interrupt();
-        }
         if (getState() == ReadyState.CLOSED) {
-            if (!websocket.isClosed()) {
-                websocket.closeConnection(0, "");
-                websocket = null;
-            }
             return;
         }
-        log.info("Disconnecting...");
 
-        websocket.closeConnection(0, "");
+        keepConnected = false;
         waitForState(ReadyState.CLOSED);
-        websocket = null;
-
-        if (errorWhileConnecting != null) {
-            throw new RuntimeException(errorWhileConnecting);
-        } else if (getState() != ReadyState.CLOSED) {
-            throw new ConnectionTimeoutException(options.getWebsocketApiUrl());
+        ReadyState state = getState();
+        if (state != ReadyState.CLOSED) {
+            throw new RuntimeException(String.format(
+                    "Failed to disconnect: never went from %s to CLOSED readyState",
+                    state
+            ));
         }
     }
 
@@ -335,8 +288,8 @@ public class StreamrClient extends StreamrRESTClient {
     }
 
     private void waitForState(ReadyState target) {
-        long iterations = options.getConnectionTimeoutMillis() / 100;
-        while (errorWhileConnecting == null && getState() != target && iterations > 0) {
+        long iterations = (options.getReconnectRetryInterval()  + options.getConnectionTimeoutMillis() + 500) / 100;
+        while (getState() != target && iterations > 0) {
             try {
                 Thread.sleep(100);
                 iterations--;
@@ -347,9 +300,6 @@ public class StreamrClient extends StreamrRESTClient {
     }
 
     private void send(ControlMessage message) {
-        if (getState() != ReadyState.OPEN) {
-            connect();
-        }
         this.websocket.send(message.toJson());
     }
 
@@ -446,7 +396,7 @@ public class StreamrClient extends StreamrRESTClient {
 
     public void publish(Stream stream, Map<String, Object> payload, Date timestamp, String partitionKey, UnencryptedGroupKey newGroupKey) {
         if (!getState().equals(ReadyState.OPEN)) {
-            if (!stayConnected) {
+            if (!keepConnected) {
                 // Convenience feature: allow user to call publish() without having had called connect() beforehand.
                 connect();
             } else {
