@@ -318,7 +318,7 @@ class HistoricalSubscriptionSpec extends Specification {
         sub.endResend()
 
         then:
-        new PollingConditions().within(10) {
+        new PollingConditions().within(20) {
             callCount == 1
         }
         received1.getContent() == [foo: 'bar1']
