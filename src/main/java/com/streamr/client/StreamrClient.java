@@ -58,6 +58,7 @@ public class StreamrClient extends StreamrRESTClient {
     private ErrorMessageHandler errorMessageHandler;
     private boolean keepConnected = false;
     private final ScheduledExecutorService executorService = Executors.newSingleThreadScheduledExecutor();
+    private final Object lock = new Object();
 
     public StreamrClient(StreamrClientOptions options) {
         super(options);
@@ -196,32 +197,34 @@ public class StreamrClient extends StreamrRESTClient {
         }
 
         if (!keepConnected) {
-            keepConnected = true;
-            log.info("Connecting to " + options.getWebsocketApiUrl() + "...");
-            executorService.scheduleAtFixedRate(() -> {
-                        if (keepConnected) {
-                            if (getState() != ReadyState.OPEN) {
-                                boolean isReconnect = this.websocket != null;
-                                log.info("Not connected. Attempting to " + (isReconnect ? "reconnect" : "connect"));
-                                if (isReconnect) {
-                                    this.websocket.closeConnection(0, "");
+            synchronized (lock) {
+                keepConnected = true;
+                log.info("Connecting to " + options.getWebsocketApiUrl() + "...");
+                executorService.scheduleAtFixedRate(() -> {
+                            if (keepConnected) {
+                                if (getState() != ReadyState.OPEN) {
+                                    boolean isReconnect = this.websocket != null;
+                                    log.info("Not connected. Attempting to " + (isReconnect ? "reconnect" : "connect"));
+                                    if (isReconnect) {
+                                        this.websocket.closeConnection(0, "");
+                                    }
+                                    initWebsocket();
+                                    this.websocket.connect();
                                 }
-                                initWebsocket();
-                                this.websocket.connect();
+                            } else {
+                                if (getState() != ReadyState.CLOSED) {
+                                    log.info("Closing connection");
+                                    websocket.closeConnection(0, "");
+                                    websocket = null;
+                                    executorService.shutdown();
+                                }
                             }
-                        } else {
-                            if (getState() != ReadyState.CLOSED) {
-                                log.info("Closing connection");
-                                websocket.closeConnection(0, "");
-                                websocket = null;
-                                executorService.shutdown();
-                            }
-                        }
-                },
-                    0,
-                    options.getReconnectRetryInterval(),
-                    TimeUnit.MILLISECONDS
-            );
+                        },
+                        0,
+                        options.getReconnectRetryInterval(),
+                        TimeUnit.MILLISECONDS
+                );
+            }
         }
 
         waitForState(ReadyState.OPEN);
@@ -272,7 +275,9 @@ public class StreamrClient extends StreamrRESTClient {
             return;
         }
 
-        keepConnected = false;
+        synchronized (lock) {
+            keepConnected = false;
+        }
         waitForState(ReadyState.CLOSED);
         ReadyState state = getState();
         if (state != ReadyState.CLOSED) {
