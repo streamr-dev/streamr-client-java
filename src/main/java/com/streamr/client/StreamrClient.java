@@ -293,11 +293,12 @@ public class StreamrClient extends StreamrRESTClient {
     }
 
     private void waitForState(ReadyState target) {
-        long iterations = (options.getReconnectRetryInterval()  + options.getConnectionTimeoutMillis() + 500) / 100;
-        while (getState() != target && iterations > 0) {
+        long maxWaitTime = options.getReconnectRetryInterval() + options.getConnectionTimeoutMillis() + 500;
+        long timeWaited = 0;
+        while (getState() != target && timeWaited < maxWaitTime) {
             try {
                 Thread.sleep(100);
-                iterations--;
+                timeWaited += 100;
             } catch (InterruptedException e) {
                 // ignore
             }
