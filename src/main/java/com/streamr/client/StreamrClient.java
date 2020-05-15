@@ -196,8 +196,8 @@ public class StreamrClient extends StreamrRESTClient {
             return;
         }
 
-        if (!keepConnected) {
-            synchronized (stateChangeLock) {
+        synchronized (stateChangeLock) {
+            if (!keepConnected) {
                 keepConnected = true;
                 log.info("Connecting to " + options.getWebsocketApiUrl() + "...");
                 executorService.scheduleAtFixedRate(() -> {
