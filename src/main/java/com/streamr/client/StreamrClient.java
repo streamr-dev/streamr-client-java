@@ -58,7 +58,7 @@ public class StreamrClient extends StreamrRESTClient {
     private ErrorMessageHandler errorMessageHandler;
     private boolean keepConnected = false;
     private final ScheduledExecutorService executorService = Executors.newSingleThreadScheduledExecutor();
-    private final Object lock = new Object();
+    private final Object stateChangeLock = new Object();
 
     public StreamrClient(StreamrClientOptions options) {
         super(options);
@@ -197,7 +197,7 @@ public class StreamrClient extends StreamrRESTClient {
         }
 
         if (!keepConnected) {
-            synchronized (lock) {
+            synchronized (stateChangeLock) {
                 keepConnected = true;
                 log.info("Connecting to " + options.getWebsocketApiUrl() + "...");
                 executorService.scheduleAtFixedRate(() -> {
@@ -275,7 +275,7 @@ public class StreamrClient extends StreamrRESTClient {
             return;
         }
 
-        synchronized (lock) {
+        synchronized (stateChangeLock) {
             keepConnected = false;
         }
         waitForState(ReadyState.CLOSED);
