@@ -328,7 +328,7 @@ class StreamrWebsocketSpec extends StreamrIntegrationSpecification {
 
 		when:
 		client.publish(stream, [i: 1])
-		Thread.sleep(5000) // wait to land in storage
+		Thread.sleep(6000) // wait to land in storage
 		// Subscribe to the stream
 		sub = client.subscribe(stream, 0, new MessageHandler() {
 			@Override
@@ -337,7 +337,7 @@ class StreamrWebsocketSpec extends StreamrIntegrationSpecification {
 			}
 		}, new ResendLastOption(1))
 
-		Thread.sleep(5000)
+		Thread.sleep(6000)
 
 		then:
 		received
@@ -389,7 +389,7 @@ class StreamrWebsocketSpec extends StreamrIntegrationSpecification {
 		for (int i = 0; i <= 10; i++) {
 			client.publish(stream, [i: i])
 		}
-		Thread.sleep(5000) // wait to land in storage
+		Thread.sleep(6000) // wait to land in storage
 
 		int i = 0
 		// Subscribe to the stream
@@ -436,7 +436,7 @@ class StreamrWebsocketSpec extends StreamrIntegrationSpecification {
 				resendFromDate = new Date()
 			}
 		}
-		Thread.sleep(5000) // wait to land in storage
+		Thread.sleep(6000) // wait to land in storage
 
 		int i = 0
 		// Subscribe to the stream
@@ -487,7 +487,7 @@ class StreamrWebsocketSpec extends StreamrIntegrationSpecification {
 				resendToDate = new Date(date.getTime() - 1)
 			}
 		}
-		Thread.sleep(5000) // wait to land in storage
+		Thread.sleep(6000) // wait to land in storage
 
 		int i = 0
 		// Subscribe to the stream
