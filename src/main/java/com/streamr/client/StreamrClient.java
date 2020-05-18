@@ -401,17 +401,8 @@ public class StreamrClient extends StreamrRESTClient {
     }
 
     public void publish(Stream stream, Map<String, Object> payload, Date timestamp, String partitionKey, UnencryptedGroupKey newGroupKey) {
-        if (!getState().equals(ReadyState.OPEN)) {
-            if (!keepConnected) {
-                // Convenience feature: allow user to call publish() without having had called connect() beforehand.
-                connect();
-            } else {
-                waitForState(ReadyState.OPEN);
-                if (!getState().equals(ReadyState.OPEN)) {
-                    throw new RuntimeException("Was unable to publish because readyState never changed to OPEN");
-                }
-            }
-        }
+        // Convenience feature: allow user to call publish() without having had called connect() beforehand.
+        connect();
         if (newGroupKey != null) {
             options.getEncryptionOptions().getPublisherGroupKeys().put(stream.getId(), newGroupKey);
         }
@@ -419,7 +410,13 @@ public class StreamrClient extends StreamrRESTClient {
         if (options.getEncryptionOptions().autoRevoke() && keyExchangeUtil.keyRevocationNeeded(stream.getId())) {
             keyExchangeUtil.rekey(stream.getId(), true);
         }
-        publish(streamMessage);
+        try {
+            publish(streamMessage);
+        } catch (WebsocketNotConnectedException e) {
+            // TODO: re-try sending once. Need to implement proper message enqueuing while not connected later.
+            connect();
+            publish(streamMessage);
+        }
     }
 
     private void publish(StreamMessage streamMessage) {
