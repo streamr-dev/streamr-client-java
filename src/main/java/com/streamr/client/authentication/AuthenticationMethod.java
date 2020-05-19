@@ -56,9 +56,14 @@ public abstract class AuthenticationMethod {
         return responseAdapter.fromJson(json);
     }
 
-    static class LoginResponse {
+    public static class LoginResponse {
         private String token;
         private Date expires;
+
+        public LoginResponse(String token, Date expires) {
+            this.token = token;
+            this.expires = expires;
+        }
 
         public String getSessionToken() {
             return token;
