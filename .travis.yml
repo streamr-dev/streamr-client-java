@@ -1,18 +1,27 @@
 language: java
+jdk:
+- openjdk8
 dist: trusty
 sudo: true
 branches:
   only:
   - master
   - "/^v\\d+\\.\\d+(\\.\\d+)?(-\\S*)?$/"
+env:
+  global:
+  - NODE_VERSION=12
+before_install:
+  - nvm install $NODE_VERSION
 install:
   - ./gradlew assemble -x signArchives
 jobs:
   include:
-  - stage: Unit tests
+  - stage: Tests
+    name: Unit Tests
     script:
     - "./gradlew test --stacktrace --info"
-  - stage: Integration tests
+  - stage: Tests
+    name: Integration Tests
     script:
     - sudo /etc/init.d/mysql stop
     - sudo sysctl fs.inotify.max_user_watches=524288; sudo sysctl -p
@@ -22,3 +31,9 @@ jobs:
     - "$TRAVIS_BUILD_DIR/streamr-docker-dev/streamr-docker-dev/bin.sh log -f engine-and-editor broker-node-storage-1 broker-node-no-storage-1 broker-node-no-storage-2 &"
     - "$TRAVIS_BUILD_DIR/streamr-docker-dev/streamr-docker-dev/bin.sh wait"
     - "./gradlew integrationTest --stacktrace --info"
+  - stage: Tests
+    name: streamr-client tests
+    env:
+    - CAN_FAIL=True
+    script:
+    - ".travis_scripts/streamr-client-test.sh"

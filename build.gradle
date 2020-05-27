@@ -85,6 +85,15 @@ artifacts {
 	archives javadocJar, sourcesJar
 }
 
+task fatJar(type: Jar) {
+	manifest {
+		attributes 'Implementation-Version': version,
+				'Main-Class': 'streamr.client.StreamrClient'
+	}
+	from { configurations.compile.collect { it.isDirectory() ? it : zipTree(it) } }
+	with jar
+}
+
 archivesBaseName='client'
 
 signing {
