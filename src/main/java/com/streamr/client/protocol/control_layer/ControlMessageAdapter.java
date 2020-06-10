@@ -34,6 +34,7 @@ public class ControlMessageAdapter extends JsonAdapter<ControlMessage> {
     public ControlMessage fromJson(JsonReader reader) throws IOException {
         reader.beginArray();
         int version = reader.nextInt();
+
         ControlMessage msg;
         if (version == ControlMessage.LATEST_VERSION) {
             int type = reader.nextInt();

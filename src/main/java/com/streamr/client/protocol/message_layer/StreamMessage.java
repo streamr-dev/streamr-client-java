@@ -313,4 +313,9 @@ public abstract class StreamMessage implements ITimestamped {
             }
         }
     }
+
+    @Override
+    public String toString() {
+        return this.getClass().getSimpleName() + ": " + this.toJson();
+    }
 }

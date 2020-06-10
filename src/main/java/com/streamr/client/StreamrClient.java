@@ -336,7 +336,7 @@ public class StreamrClient extends StreamrRESTClient {
                         UnicastMessage msg = (UnicastMessage) message;
                         handleMessage(msg.getStreamMessage(), Subscription::handleResentMessage);
                     } else if (message.getType() == SubscribeResponse.TYPE) {
-                        handleSubcribeResponse((SubscribeResponse)message);
+                        handleSubscribeResponse((SubscribeResponse)message);
                     } else if (message.getType() == UnsubscribeResponse.TYPE) {
                         handleUnsubcribeResponse((UnsubscribeResponse)message);
                     } else if (message.getType() == ResendResponseResending.TYPE) {
@@ -420,7 +420,7 @@ public class StreamrClient extends StreamrRESTClient {
     }
 
     private void publish(StreamMessage streamMessage) {
-        PublishRequest req = new PublishRequest(streamMessage, getSessionToken());
+        PublishRequest req = new PublishRequest(newRequestId(), streamMessage, getSessionToken());
         getWebsocket().send(req.toJson());
     }
 
@@ -460,7 +460,7 @@ public class StreamrClient extends StreamrRESTClient {
             keysPerPublisher.putAll(groupKeys);
         }
 
-        SubscribeRequest subscribeRequest = new SubscribeRequest(stream.getId(), partition, getSessionToken());
+        SubscribeRequest subscribeRequest = new SubscribeRequest(newRequestId(), stream.getId(), partition, getSessionToken());
 
         Subscription sub;
         BasicSubscription.GroupKeyRequestFunction requestFunction = (publisherId, start, end) -> sendGroupKeyRequest(stream.getId(), publisherId, start, end);
@@ -477,8 +477,16 @@ public class StreamrClient extends StreamrRESTClient {
                     options.getPropagationTimeout(), options.getResendTimeout(), options.getSkipGapsOnFullQueue());
         }
         sub.setGapHandler((MessageRef from, MessageRef to, String publisherId, String msgChainId) -> {
-            ResendRangeRequest req = new ResendRangeRequest(stream.getId(), partition,
-                    sub.getId(), from, to, publisherId, msgChainId, getSessionToken());
+            ResendRangeRequest req = new ResendRangeRequest(
+                    newRequestId(),
+                    stream.getId(),
+                    partition,
+                    from,
+                    to,
+                    publisherId,
+                    msgChainId,
+                    getSessionToken()
+            );
             sub.setResending(true);
             send(req);
         });
@@ -489,7 +497,7 @@ public class StreamrClient extends StreamrRESTClient {
     }
 
     private void resubscribe(Subscription sub) {
-        SubscribeRequest subscribeRequest = new SubscribeRequest(sub.getStreamId(), sub.getPartition(), getSessionToken());
+        SubscribeRequest subscribeRequest = new SubscribeRequest(newRequestId(), sub.getStreamId(), sub.getPartition(), getSessionToken());
         sub.setState(Subscription.State.SUBSCRIBING);
         send(subscribeRequest);
     }
@@ -525,18 +533,18 @@ public class StreamrClient extends StreamrRESTClient {
      */
 
     public void unsubscribe(Subscription sub) {
-        UnsubscribeRequest unsubscribeRequest = new UnsubscribeRequest(sub.getStreamId(), sub.getPartition());
+        UnsubscribeRequest unsubscribeRequest = new UnsubscribeRequest(newRequestId(), sub.getStreamId(), sub.getPartition());
         sub.setState(Subscription.State.UNSUBSCRIBING);
         sub.setResending(false);
         send(unsubscribeRequest);
     }
 
-    private void handleSubcribeResponse(SubscribeResponse res) throws SubscriptionNotFoundException {
+    private void handleSubscribeResponse(SubscribeResponse res) throws SubscriptionNotFoundException {
         Subscription sub = subs.get(res.getStreamId(), res.getStreamPartition());
         sub.setState(Subscription.State.SUBSCRIBED);
         if (sub.hasResendOptions()) {
             ResendOption resendOption = sub.getResendOption();
-            ControlMessage req = resendOption.toRequest(res.getStreamId(), res.getStreamPartition(), sub.getId(), this.getSessionToken());
+            ControlMessage req = resendOption.toRequest(newRequestId(), res.getStreamId(), res.getStreamPartition(), this.getSessionToken());
             send(req);
             OneTimeResend resend = new OneTimeResend(websocket, req, options.getResendTimeout(), sub);
             secondResends.put(sub.getId(), resend);
@@ -589,5 +597,9 @@ public class StreamrClient extends StreamrRESTClient {
         }
         StreamMessage request = msgCreationUtil.createGroupKeyRequest(publisherId, streamId, encryptionUtil.getPublicKeyAsPemString(), start, end);
         publish(request);
+    }
+
+    private String newRequestId() {
+        return UUID.randomUUID().toString();
     }
 }

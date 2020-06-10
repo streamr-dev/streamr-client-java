@@ -7,15 +7,8 @@ public class SubscribeRequest extends ControlMessage {
     private final int streamPartition;
     private final String sessionToken;
 
-    public SubscribeRequest(String streamId, String sessionToken) {
-        super(TYPE);
-        this.streamId = streamId;
-        this.streamPartition = 0;
-        this.sessionToken = sessionToken;
-    }
-
-    public SubscribeRequest(String streamId, int streamPartition, String sessionToken) {
-        super(TYPE);
+    public SubscribeRequest(String requestId, String streamId, int streamPartition, String sessionToken) {
+        super(TYPE, requestId);
         this.streamId = streamId;
         this.streamPartition = streamPartition;
         this.sessionToken = sessionToken;

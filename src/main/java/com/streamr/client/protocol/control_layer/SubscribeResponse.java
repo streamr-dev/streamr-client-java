@@ -6,8 +6,8 @@ public class SubscribeResponse extends ControlMessage {
     private final String streamId;
     private final int streamPartition;
 
-    public SubscribeResponse(String streamId, int streamPartition) {
-        super(TYPE);
+    public SubscribeResponse(String requestId, String streamId, int streamPartition) {
+        super(TYPE, requestId);
         this.streamId = streamId;
         this.streamPartition = streamPartition;
     }

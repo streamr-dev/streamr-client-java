@@ -12,15 +12,16 @@ public class ResendRangeRequestAdapter extends ControlLayerAdapter<ResendRangeRe
 
     @Override
     public ResendRangeRequest fromJson(JsonReader reader) throws IOException {
+        // Version and type already read
+        String requestId = reader.nextString();
         String streamId = reader.nextString();
         int streamPartition = reader.nextInt();
-        String subId = reader.nextString();
         MessageRef from = msgRefAdapter.fromJson(reader);
         MessageRef to = msgRefAdapter.fromJson(reader);
         String publisherId = nullSafe(reader, r -> r.nextString());
         String msgChainId = nullSafe(reader, r -> r.nextString());
         String sessionToken = nullSafe(reader, r -> r.nextString());
-        return new ResendRangeRequest(streamId, streamPartition, subId, from, to, publisherId, msgChainId, sessionToken);
+        return new ResendRangeRequest(requestId, streamId, streamPartition, from, to, publisherId, msgChainId, sessionToken);
     }
 
     @Override
@@ -28,9 +29,9 @@ public class ResendRangeRequestAdapter extends ControlLayerAdapter<ResendRangeRe
         writer.beginArray();
         writer.value(ControlMessage.LATEST_VERSION);
         writer.value(ResendRangeRequest.TYPE);
+        writer.value(value.getRequestId());
         writer.value(value.getStreamId());
         writer.value(value.getStreamPartition());
-        writer.value(value.getSubId());
         msgRefAdapter.toJson(writer, value.getFromMsgRef());
         msgRefAdapter.toJson(writer, value.getToMsgRef());
         writer.value(value.getPublisherId());

@@ -13,8 +13,10 @@ public class BroadcastMessageAdapter extends ControlLayerAdapter<BroadcastMessag
 
     @Override
     public BroadcastMessage fromJson(JsonReader reader) throws IOException {
+        // Version and type already read
+        String requestId = reader.nextString();
         StreamMessage streamMessage = streamMessageAdapter.fromJson(reader);
-        return new BroadcastMessage(streamMessage);
+        return new BroadcastMessage(requestId, streamMessage);
     }
 
     @Override
@@ -22,6 +24,7 @@ public class BroadcastMessageAdapter extends ControlLayerAdapter<BroadcastMessag
         writer.beginArray();
         writer.value(ControlMessage.LATEST_VERSION);
         writer.value(BroadcastMessage.TYPE);
+        writer.value(value.getRequestId());
         streamMessageAdapter.toJson(writer, value.getStreamMessage());
         writer.endArray();
     }
