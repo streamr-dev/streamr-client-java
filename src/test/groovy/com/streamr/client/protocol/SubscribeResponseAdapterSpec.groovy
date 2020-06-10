@@ -14,7 +14,7 @@ class SubscribeResponseAdapterSpec extends Specification {
 
 		where:
 		serializedMessage | message
-		'[1,2,"requestId","streamId",0]' | new SubscribeResponse("requestId", "streamId", 0)
+		'[2,2,"requestId","streamId",0]' | new SubscribeResponse("requestId", "streamId", 0)
 	}
 
 }

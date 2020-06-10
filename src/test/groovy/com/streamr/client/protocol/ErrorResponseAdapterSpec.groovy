@@ -13,6 +13,6 @@ class ErrorResponseAdapterSpec extends Specification {
 
 		where:
 		serializedMessage | message
-		'[2,7,"requestId","errorMessage","ERROR_CODE"]' | new ErrorResponse("requestId", "error", "ERROR_CODE")
+		'[2,7,"requestId","errorMessage","ERROR_CODE"]' | new ErrorResponse("requestId", "errorMessage", "ERROR_CODE")
 	}
 }
