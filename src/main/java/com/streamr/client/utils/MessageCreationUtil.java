@@ -85,7 +85,8 @@ public class MessageCreationUtil {
             data.put("range", range);
         }
 
-        Pair<MessageID, MessageRef> pair = createDefaultMsgIdAndRef(publisherAddress.toLowerCase()); // using address as streamId (inbox stream)
+        String keyExchangeStreamId = StreamMessage.KEY_EXCHANGE_STREAM_PREFIX + publisherAddress.toLowerCase();
+        Pair<MessageID, MessageRef> pair = createDefaultMsgIdAndRef(keyExchangeStreamId);
         StreamMessage streamMessage = new StreamMessageV31(
                 pair.getLeft(), pair.getRight(), StreamMessage.ContentType.GROUP_KEY_REQUEST, EncryptionType.NONE, data,
                 StreamMessage.SignatureType.SIGNATURE_TYPE_NONE, null);
@@ -101,7 +102,8 @@ public class MessageCreationUtil {
         data.put("streamId", streamId);
         data.put("keys", encryptedGroupKeys.stream().map(GroupKey::toMap).collect(Collectors.toList()));
 
-        Pair<MessageID, MessageRef> pair = createDefaultMsgIdAndRef(subscriberAddress.toLowerCase()); // using address as streamId (inbox stream)
+        String keyExchangeStreamId = StreamMessage.KEY_EXCHANGE_STREAM_PREFIX + subscriberAddress.toLowerCase();
+        Pair<MessageID, MessageRef> pair = createDefaultMsgIdAndRef(keyExchangeStreamId);
         StreamMessage streamMessage = new StreamMessageV31(
                 pair.getLeft(), pair.getRight(), StreamMessage.ContentType.GROUP_KEY_RESPONSE_SIMPLE, EncryptionType.RSA, data,
                 StreamMessage.SignatureType.SIGNATURE_TYPE_NONE, null);
@@ -117,7 +119,8 @@ public class MessageCreationUtil {
         data.put("streamId", streamId);
         data.putAll(encryptedGroupKey.toMap());
 
-        Pair<MessageID, MessageRef> pair = createDefaultMsgIdAndRef(subscriberAddress.toLowerCase()); // using address as streamId (inbox stream)
+        String keyExchangeStreamId = StreamMessage.KEY_EXCHANGE_STREAM_PREFIX + subscriberAddress.toLowerCase();
+        Pair<MessageID, MessageRef> pair = createDefaultMsgIdAndRef(keyExchangeStreamId);
         StreamMessage streamMessage = new StreamMessageV31(
                 pair.getLeft(), pair.getRight(), StreamMessage.ContentType.GROUP_KEY_RESET_SIMPLE, EncryptionType.RSA, data,
                 StreamMessage.SignatureType.SIGNATURE_TYPE_NONE, null);
@@ -132,7 +135,9 @@ public class MessageCreationUtil {
         Map<String, Object> data = new HashMap<>();
         data.put("code", getErrorCodeFromException(e));
         data.put("message", e.getMessage());
-        Pair<MessageID, MessageRef> pair = createDefaultMsgIdAndRef(destinationAddress.toLowerCase()); // using address as streamId (inbox stream)
+
+        String keyExchangeStreamId = StreamMessage.KEY_EXCHANGE_STREAM_PREFIX + destinationAddress.toLowerCase();
+        Pair<MessageID, MessageRef> pair = createDefaultMsgIdAndRef(keyExchangeStreamId);
         StreamMessage streamMessage = new StreamMessageV31(
                 pair.getLeft(), pair.getRight(), StreamMessage.ContentType.ERROR_MSG, EncryptionType.NONE, data,
                 StreamMessage.SignatureType.SIGNATURE_TYPE_NONE, null);

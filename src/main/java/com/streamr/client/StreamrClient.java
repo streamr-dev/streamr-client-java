@@ -50,8 +50,8 @@ public class StreamrClient extends StreamrRESTClient {
     private final KeyStorage keyStorage;
     private final KeyExchangeUtil keyExchangeUtil;
 
-    private Stream inbox;
-    private Subscription inboxSub;
+    private Stream keyExchangeStream;
+    private Subscription keyExchangeSub;
 
     private final HashMap<String, OneTimeResend> secondResends = new HashMap<>();
 
@@ -104,11 +104,12 @@ public class StreamrClient extends StreamrRESTClient {
             }
         } else if (options.getAuthenticationMethod() instanceof EthereumAuthenticationMethod) {
             publisherId = ((EthereumAuthenticationMethod) options.getAuthenticationMethod()).getAddress();
-            try {
-                inbox = getStream(publisherId);
-            } catch (IOException e) {
-                throw new RuntimeException(e);
-            }
+
+            // The key exchange stream is a system stream.
+            // It doesn't explicitly exist, but as per spec, we can subscribe to it anyway.
+            keyExchangeStream = new Stream("Inbox stream for " + publisherId, "");
+            keyExchangeStream.setId("SYSTEM/keyexchange/"+publisherId);
+            keyExchangeStream.setPartitions(1);
         }
         SigningUtil signingUtil = null;
         if (options.getPublishSignedMsgs()) {
@@ -232,8 +233,8 @@ public class StreamrClient extends StreamrRESTClient {
             throw new ConnectionTimeoutException(options.getWebsocketApiUrl());
         }
 
-        if (inbox != null && inboxSub == null) {
-            inboxSub = subscribe(inbox, new MessageHandler() {
+        if (keyExchangeStream != null && keyExchangeSub == null) {
+            keyExchangeSub = subscribe(keyExchangeStream, new MessageHandler() {
                 @Override
                 public void onMessage(Subscription sub, StreamMessage message) {
                     try {

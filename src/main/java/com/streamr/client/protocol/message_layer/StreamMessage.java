@@ -22,6 +22,7 @@ public abstract class StreamMessage implements ITimestamped {
     private static final Logger log = LogManager.getLogger();
     private static final StreamMessageAdapter adapter = new StreamMessageAdapter();
 
+    public static final String KEY_EXCHANGE_STREAM_PREFIX = "SYSTEM/keyexchange/";
     public static final int LATEST_VERSION = 31;
 
     public enum ContentType {

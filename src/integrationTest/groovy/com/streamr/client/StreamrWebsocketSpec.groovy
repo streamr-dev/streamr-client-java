@@ -3,14 +3,12 @@ package com.streamr.client
 import com.streamr.client.options.ResendFromOption
 import com.streamr.client.options.ResendLastOption
 import com.streamr.client.options.ResendRangeOption
+import com.streamr.client.protocol.message_layer.StreamMessage
 import com.streamr.client.protocol.message_layer.StreamMessageV31
 import com.streamr.client.rest.Stream
-import com.streamr.client.protocol.message_layer.StreamMessage
 import com.streamr.client.subs.Subscription
-import com.streamr.client.utils.GroupKey
 import com.streamr.client.utils.UnencryptedGroupKey
 import org.apache.commons.codec.binary.Hex
-import org.java_websocket.WebSocket
 import org.java_websocket.enums.ReadyState
 import spock.util.concurrent.PollingConditions
 
