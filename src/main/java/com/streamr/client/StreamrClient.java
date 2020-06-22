@@ -7,6 +7,7 @@ import com.streamr.client.exceptions.*;
 import com.streamr.client.options.ResendOption;
 import com.streamr.client.options.StreamrClientOptions;
 import com.streamr.client.protocol.control_layer.*;
+import com.streamr.client.protocol.message_layer.GroupKeyRequest;
 import com.streamr.client.protocol.message_layer.MessageRef;
 import com.streamr.client.rest.UserInfo;
 import com.streamr.client.subs.*;
@@ -46,7 +47,7 @@ public class StreamrClient extends StreamrRESTClient {
     private String publisherId = null;
     private final EncryptionUtil encryptionUtil;
     private final MessageCreationUtil msgCreationUtil;
-    private final SubscribedStreamsUtil subscribedStreamsUtil;
+    private final StreamMessageValidator streamMessageValidator;
     private final KeyStorage keyStorage;
     private final KeyExchangeUtil keyExchangeUtil;
 
@@ -87,7 +88,7 @@ public class StreamrClient extends StreamrRESTClient {
                 throw new RuntimeException(e);
             }
         });
-        subscribedStreamsUtil = new SubscribedStreamsUtil(id -> {
+        streamMessageValidator = new StreamMessageValidator(id -> {
             try {
                 return getStream(id);
             } catch (IOException e) {
@@ -181,7 +182,7 @@ public class StreamrClient extends StreamrRESTClient {
 
     public void onOpen() {}
     public void onClose() {
-        subscribedStreamsUtil.clearAndClose();
+        streamMessageValidator.clearAndClose();
     }
     public void onError(Exception ex) {}
 
@@ -239,23 +240,24 @@ public class StreamrClient extends StreamrRESTClient {
                 public void onMessage(Subscription sub, StreamMessage message) {
                     try {
                         if (message.getContentType().equals(StreamMessage.ContentType.GROUP_KEY_REQUEST)) {
-                            keyExchangeUtil.handleGroupKeyRequest(message);
+                            try {
+                                keyExchangeUtil.handleGroupKeyRequest(message);
+                            } catch (Exception e) {
+                                GroupKeyRequest groupKeyRequest = GroupKeyRequest.fromMap(message.getContent());
+                                StreamMessage errorMessage = msgCreationUtil.createGroupKeyErrorResponse(message.getPublisherId(), groupKeyRequest, e);
+                                publish(errorMessage); //sending the error to the sender of 'message'
+                            }
                         } else if (message.getContentType().equals(StreamMessage.ContentType.GROUP_KEY_RESPONSE_SIMPLE)) {
                             keyExchangeUtil.handleGroupKeyResponse(message);
                         } else if (message.getContentType().equals(StreamMessage.ContentType.GROUP_KEY_RESET_SIMPLE)) {
                             keyExchangeUtil.handleGroupKeyReset(message);
-                        } else if (message.getContentType().equals(StreamMessage.ContentType.ERROR_MSG)) {
+                        } else if (message.getContentType().equals(StreamMessage.ContentType.GROUP_KEY_RESPONSE_ERROR)) {
                             handleInboxStreamErrorMessage(message);
                         } else {
                             throw new MalformedMessageException("Cannot handle message with content type: " + message.getContentType());
                         }
                     } catch (Exception e) {
-                        log.warn(e.getMessage());
-                        // we don't notify the error to the originator if the message is unauthenticated.
-                        if (message.getSignature() != null) {
-                            StreamMessage errorMessage = msgCreationUtil.createErrorMessage(message.getPublisherId(), e);
-                            publish(errorMessage); //sending the error to the sender of 'message'
-                        }
+                        log.error(e.getMessage());
                     }
                 }
             });
@@ -369,7 +371,7 @@ public class StreamrClient extends StreamrRESTClient {
                                BiConsumer<Subscription, StreamMessage> subMsgHandler) throws SubscriptionNotFoundException {
         log.debug(message.getStreamId() + ": " + message.getSerializedContent());
 
-        subscribedStreamsUtil.verifyStreamMessage(message);
+        streamMessageValidator.validate(message);
         Subscription sub = subs.get(message.getStreamId(), message.getStreamPartition());
 
         // Only call the handler if we are in subscribed state (and not for example UNSUBSCRIBING)

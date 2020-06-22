@@ -55,6 +55,7 @@ public class Stream {
     private StreamConfig config;
     private Boolean uiChannel;
     private Boolean requireSignedData;
+    private Boolean requireEncryptedData;
     private Date dateCreated;
     private Date lastUpdated;
 
@@ -116,6 +117,14 @@ public class Stream {
 
     public void setRequireSignedData(boolean requireSignedData) {
         this.requireSignedData = requireSignedData;
+    }
+
+    public Boolean requiresEncryptedData() {
+        return requireEncryptedData;
+    }
+
+    public void setRequireEncryptedData(Boolean requireEncryptedData) {
+        this.requireEncryptedData = requireEncryptedData;
     }
 
     public Date getDateCreated() {

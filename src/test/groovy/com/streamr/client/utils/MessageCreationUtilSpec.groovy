@@ -277,7 +277,7 @@ class MessageCreationUtilSpec extends Specification {
 
     void "should not be able to create unsigned error message"() {
         when:
-        msgCreationUtil.createErrorMessage("", new Exception())
+        msgCreationUtil.createGroupKeyErrorResponse("", "streamId", "requestId", new Exception())
         then:
         SigningRequiredException e = thrown SigningRequiredException
         e.message == "Cannot create unsigned error message. Must authenticate with an Ethereum account"
@@ -289,11 +289,13 @@ class MessageCreationUtilSpec extends Specification {
         SigningUtil signingUtil = new SigningUtil(account)
         MessageCreationUtil util = new MessageCreationUtil("publisherId", signingUtil, keyStorage)
         when:
-        StreamMessage msg = util.createErrorMessage("destinationAddress", new InvalidGroupKeyRequestException("some error message"))
+        StreamMessage msg = util.createGroupKeyErrorResponse("destinationAddress", "streamId", "requestId", new InvalidGroupKeyRequestException("some error message"))
         then:
         msg.getStreamId() == "destinationAddress".toLowerCase()
-        msg.getContentType() == StreamMessage.ContentType.ERROR_MSG
+        msg.getContentType() == StreamMessage.ContentType.GROUP_KEY_RESPONSE_ERROR
         msg.getEncryptionType() == StreamMessage.EncryptionType.NONE
+        msg.getContent().get("requestId") == "requestId"
+        msg.getContent().get("streamId") == "streamId"
         msg.getContent().get("code") == "INVALID_GROUP_KEY_REQUEST"
         msg.getContent().get("message") == "some error message"
         msg.getSignature() != null

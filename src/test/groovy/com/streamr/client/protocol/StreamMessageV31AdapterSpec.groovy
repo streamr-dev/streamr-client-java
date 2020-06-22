@@ -2,7 +2,6 @@ package com.streamr.client.protocol
 
 import com.squareup.moshi.JsonReader
 import com.squareup.moshi.JsonWriter
-import com.streamr.client.exceptions.ContentTypeNotParsableException
 import com.streamr.client.exceptions.EncryptedContentNotParsableException
 import com.streamr.client.exceptions.MalformedMessageException
 import com.streamr.client.protocol.message_layer.*
@@ -226,7 +225,7 @@ class StreamMessageV31AdapterSpec extends Specification {
 		StreamMessageV31 msg31 = fromJsonToMsg(adapter, json31)
 		then:
 		msg31.toJson() == json31
-		msg31.getContentType() == ContentType.ERROR_MSG
+		msg31.getContentType() == ContentType.GROUP_KEY_RESPONSE_ERROR
 		msg31.getContent().get("code") == "some-error-code"
 		msg31.getContent().get("message") == "some-error-message"
 		when:

@@ -10,9 +10,6 @@ import com.streamr.client.rest.Stream;
 import org.apache.commons.lang3.RandomStringUtils;
 import org.apache.commons.lang3.tuple.Pair;
 
-import javax.crypto.SecretKey;
-import javax.crypto.spec.SecretKeySpec;
-import javax.xml.bind.DatatypeConverter;
 import java.nio.ByteBuffer;
 import java.nio.charset.StandardCharsets;
 import java.security.MessageDigest;
@@ -128,18 +125,22 @@ public class MessageCreationUtil {
         return streamMessage;
     }
 
-    public StreamMessage createErrorMessage(String destinationAddress, Exception e) {
+    public StreamMessage createGroupKeyErrorResponse(String destinationAddress, GroupKeyRequest request, Exception e) {
         if (signingUtil == null) {
             throw new SigningRequiredException("Cannot create unsigned error message. Must authenticate with an Ethereum account");
         }
-        Map<String, Object> data = new HashMap<>();
-        data.put("code", getErrorCodeFromException(e));
-        data.put("message", e.getMessage());
+
+        GroupKeyErrorResponse response = new GroupKeyErrorResponse(
+                request.getRequestId(),
+                request.getStreamId(),
+                getErrorCodeFromException(e),
+                e.getMessage()
+        );
 
         String keyExchangeStreamId = StreamMessage.KEY_EXCHANGE_STREAM_PREFIX + destinationAddress.toLowerCase();
         Pair<MessageID, MessageRef> pair = createDefaultMsgIdAndRef(keyExchangeStreamId);
         StreamMessage streamMessage = new StreamMessageV31(
-                pair.getLeft(), pair.getRight(), StreamMessage.ContentType.ERROR_MSG, EncryptionType.NONE, data,
+                pair.getLeft(), pair.getRight(), StreamMessage.ContentType.GROUP_KEY_RESPONSE_ERROR, EncryptionType.NONE, response.toMap(),
                 StreamMessage.SignatureType.SIGNATURE_TYPE_NONE, null);
         signingUtil.signStreamMessage(streamMessage);
         return streamMessage;
