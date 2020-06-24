@@ -14,8 +14,8 @@ class ResendFromRequestAdapterSpec extends Specification {
 
 		where:
 		serializedMessage | message
-		'[2,12,"requestId","streamId",0,[143415425455,0],"publisherId","msgChainId","sessionToken"]' | new ResendFromRequest("requestId", "streamId", 0, new MessageRef(143415425455L, 0L), "publisherId", "msgChainId", "sessionToken")
-		'[2,12,"requestId","streamId",0,[143415425455,0],null,null,null]' | new ResendFromRequest("requestId", "streamId", 0, new MessageRef(143415425455L, 0L), null)
+		'[2,12,"requestId","streamId",0,[143415425455,0],"publisherId","sessionToken"]' | new ResendFromRequest("requestId", "streamId", 0, new MessageRef(143415425455L, 0L), "publisherId", "sessionToken")
+		'[2,12,"requestId","streamId",0,[143415425455,0],null,null]' | new ResendFromRequest("requestId", "streamId", 0, new MessageRef(143415425455L, 0L), null)
 	}
 
 }

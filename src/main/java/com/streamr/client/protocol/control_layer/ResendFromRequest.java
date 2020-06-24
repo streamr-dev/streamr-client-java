@@ -9,21 +9,19 @@ public class ResendFromRequest extends ControlMessage {
     private final int streamPartition;
     private final MessageRef fromMsgRef;
     private final String publisherId;
-    private final String msgChainId;
     private final String sessionToken;
 
     public ResendFromRequest(String requestId, String streamId, int streamPartition, MessageRef fromMsgRef, String sessionToken) {
-        this(requestId, streamId, streamPartition, fromMsgRef, null, null, sessionToken);
+        this(requestId, streamId, streamPartition, fromMsgRef, null, sessionToken);
     }
 
     public ResendFromRequest(String requestId, String streamId, int streamPartition, MessageRef fromMsgRef,
-                             String publisherId, String msgChainId, String sessionToken) {
+                             String publisherId, String sessionToken) {
         super(TYPE, requestId);
         this.streamId = streamId;
         this.streamPartition = streamPartition;
         this.fromMsgRef = fromMsgRef;
         this.publisherId = publisherId;
-        this.msgChainId = msgChainId;
         this.sessionToken = sessionToken;
     }
 
@@ -41,10 +39,6 @@ public class ResendFromRequest extends ControlMessage {
 
     public String getPublisherId() {
         return publisherId;
-    }
-
-    public String getMsgChainId() {
-        return msgChainId;
     }
 
     public String getSessionToken() {

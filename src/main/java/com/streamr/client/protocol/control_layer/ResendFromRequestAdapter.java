@@ -18,9 +18,8 @@ public class ResendFromRequestAdapter extends ControlLayerAdapter<ResendFromRequ
         int streamPartition = reader.nextInt();
         MessageRef from = msgRefAdapter.fromJson(reader);
         String publisherId = nullSafe(reader, r -> r.nextString());
-        String msgChainId = nullSafe(reader, r -> r.nextString());
         String sessionToken = nullSafe(reader, r -> r.nextString());
-        return new ResendFromRequest(requestId, streamId, streamPartition, from, publisherId, msgChainId, sessionToken);
+        return new ResendFromRequest(requestId, streamId, streamPartition, from, publisherId, sessionToken);
     }
 
     @Override
@@ -33,7 +32,6 @@ public class ResendFromRequestAdapter extends ControlLayerAdapter<ResendFromRequ
         writer.value(value.getStreamPartition());
         msgRefAdapter.toJson(writer, value.getFromMsgRef());
         writer.value(value.getPublisherId());
-        writer.value(value.getMsgChainId());
         writer.value(value.getSessionToken());
         writer.endArray();
     }
