@@ -28,12 +28,24 @@ public class GroupKeyRequest extends AbstractGroupKeyMessage {
         return requestId;
     }
 
+    public void setRequestId(String requestId) {
+        this.requestId = requestId;
+    }
+
     public String getPublicKey() {
         return publicKey;
     }
 
+    public void setPublicKey(String publicKey) {
+        this.publicKey = publicKey;
+    }
+
     public Range getRange() {
         return range;
+    }
+
+    public void setRange(Range range) {
+        this.range = range;
     }
 
     public static GroupKeyRequest fromMap(Map<String, Object> map) {
@@ -50,8 +62,24 @@ public class GroupKeyRequest extends AbstractGroupKeyMessage {
         map.put("requestId", requestId);
         map.put("streamId", streamId);
         map.put("publicKey", publicKey);
-        map.put("range", range.toMap());
+        if (range != null) {
+            map.put("range", range.toMap());
+        }
+
         return map;
+    }
+
+    @Override
+    public boolean equals(Object o) {
+        if (this == o) return true;
+        if (o == null || getClass() != o.getClass()) return false;
+        GroupKeyRequest that = (GroupKeyRequest) o;
+        return this.toMap().equals(that.toMap());
+    }
+
+    @Override
+    public int hashCode() {
+        return toMap().hashCode();
     }
 
     public static class Range {

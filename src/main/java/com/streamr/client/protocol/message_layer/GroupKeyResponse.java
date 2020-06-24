@@ -1,5 +1,6 @@
 package com.streamr.client.protocol.message_layer;
 
+import com.streamr.client.utils.GroupKey;
 import com.streamr.client.utils.ValidationUtil;
 
 import java.util.*;
@@ -7,18 +8,15 @@ import java.util.stream.Collectors;
 
 public class GroupKeyResponse extends AbstractGroupKeyMessage {
     private String requestId;
-    private String publicKey;
     private Collection<Key> keys;
 
-    public GroupKeyResponse(String requestId, String streamId, String publicKey, Collection<Key> keys) {
+    public GroupKeyResponse(String requestId, String streamId, Collection<Key> keys) {
         super(streamId);
 
         ValidationUtil.checkNotNull(requestId, "requestId");
-        ValidationUtil.checkNotNull(publicKey, "publicKey");
         ValidationUtil.checkNotNull(keys, "keys");
 
         this.requestId = requestId;
-        this.publicKey = publicKey;
         this.keys = keys;
     }
 
@@ -26,28 +24,31 @@ public class GroupKeyResponse extends AbstractGroupKeyMessage {
         return requestId;
     }
 
-    public String getPublicKey() {
-        return publicKey;
+    public void setRequestId(String requestId) {
+        this.requestId = requestId;
     }
 
     public Collection<Key> getKeys() {
         return keys;
     }
 
+    public void setKeys(Collection<Key> keys) {
+        this.keys = keys;
+    }
+
     public static GroupKeyResponse fromMap(Map<String, Object> map) {
         List<Key> keys = new ArrayList<>();
-        List<Map<String, Object>> keyMaps = (List<Map<String, Object>>) map.get(map.get("keys"));
+        List<Map<String, Object>> keyMaps = (List<Map<String, Object>>) map.get("keys");
 
         if (keyMaps != null) {
             keys = keyMaps.stream()
-                    .map(keyAsMap -> Key.fromMap(keyAsMap))
+                    .map(Key::fromMap)
                     .collect(Collectors.toList());
         }
 
         return new GroupKeyResponse(
                 (String) map.get("requestId"),
                 (String) map.get("streamId"),
-                (String) map.get("publicKey"),
                 keys
         );
     }
@@ -56,8 +57,7 @@ public class GroupKeyResponse extends AbstractGroupKeyMessage {
         Map<String, Object> map = new LinkedHashMap<>();
         map.put("requestId", requestId);
         map.put("streamId", streamId);
-        map.put("publicKey", publicKey);
-        map.put("keys", keys.stream().map(key -> key.toMap()).collect(Collectors.toList()));
+        map.put("keys", keys.stream().map(Key::toMap).collect(Collectors.toList()));
         return map;
     }
 
@@ -90,6 +90,24 @@ public class GroupKeyResponse extends AbstractGroupKeyMessage {
             map.put("groupKey", groupKey);
             map.put("start", start);
             return map;
+        }
+
+        public static Key fromGroupKey(GroupKey key) {
+            return new Key(
+                    key.getGroupKeyHex(),
+                    key.getStartTime()
+            );
+        }
+
+        @Override
+        public boolean equals(Object o) {
+            if (this == o) return true;
+            if (o == null || getClass() != o.getClass()) return false;
+
+            Key key = (Key) o;
+
+            if (start != key.start) return false;
+            return groupKey.equals(key.groupKey);
         }
     }
 }

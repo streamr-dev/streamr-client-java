@@ -168,6 +168,10 @@ public abstract class StreamMessage implements ITimestamped {
         return contentType;
     }
 
+    public void setContentType(ContentType contentType) {
+        this.contentType = contentType;
+    }
+
     public EncryptionType getEncryptionType() {
         return encryptionType;
     }

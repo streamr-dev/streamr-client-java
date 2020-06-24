@@ -52,6 +52,11 @@ public class KeyExchangeUtil {
     }
 
     public void handleGroupKeyRequest(StreamMessage streamMessage) throws InvalidGroupKeyRequestException {
+        // The StreamMessage should already be validated by the StreamrClient, but double-check
+        if (streamMessage.getSignature() == null) {
+            throw new InvalidGroupKeyRequestException("Received unsigned group key request (the public key must be signed to avoid MitM attacks).");
+        }
+
         GroupKeyRequest request = GroupKeyRequest.fromMap(streamMessage.getContent());
 
         String streamId = request.getStreamId();
@@ -86,11 +91,16 @@ public class KeyExchangeUtil {
             encryptedGroupKeys.add(key.getEncrypted(publicKey));
         }
         publicKeys.put(sender, publicKey);
-        StreamMessage response = messageCreationUtil.createGroupKeyResponse(sender, streamId, encryptedGroupKeys);
+        StreamMessage response = messageCreationUtil.createGroupKeyResponse(sender, request, encryptedGroupKeys);
         publishFunction.accept(response);
     }
 
     public void handleGroupKeyResponse(StreamMessage streamMessage) throws InvalidGroupKeyResponseException {
+        // The StreamMessage should already be validated by the StreamrClient, but double-check
+        if (streamMessage.getSignature() == null) {
+            throw new InvalidGroupKeyResponseException("Received unsigned group key response (it must be signed to avoid MitM attacks).");
+        }
+
         GroupKeyResponse response = GroupKeyResponse.fromMap(streamMessage.getContent());
 
         // A valid publisher of the client's inbox stream could send key responses for other streams to which
@@ -116,6 +126,11 @@ public class KeyExchangeUtil {
     }
 
     public void handleGroupKeyReset(StreamMessage streamMessage) throws InvalidGroupKeyResetException {
+        // The StreamMessage should already be validated by the StreamrClient, but double-check
+        if (streamMessage.getSignature() == null) {
+            throw new InvalidGroupKeyResetException("Received unsigned group key reset (it must be signed to avoid MitM attacks).");
+        }
+
         GroupKeyReset reset = GroupKeyReset.fromMap(streamMessage.getContent());
         // A valid publisher of the client's inbox stream could send key resets for other streams to which
         // the publisher doesn't have write permissions. Thus the following additional check is necessary.

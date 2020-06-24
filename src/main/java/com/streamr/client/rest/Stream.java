@@ -51,11 +51,11 @@ public class Stream {
     private String id;
     private String name;
     private String description;
-    private Integer partitions;
+    private int partitions = 1;
     private StreamConfig config;
     private Boolean uiChannel;
-    private Boolean requireSignedData;
-    private Boolean requireEncryptedData;
+    private boolean requireSignedData;
+    private boolean requireEncryptedData;
     private Date dateCreated;
     private Date lastUpdated;
 
@@ -88,11 +88,11 @@ public class Stream {
         this.description = description;
     }
 
-    public Integer getPartitions() {
+    public int getPartitions() {
         return partitions;
     }
 
-    public void setPartitions(Integer partitions) {
+    public void setPartitions(int partitions) {
         this.partitions = partitions;
     }
 
@@ -109,9 +109,6 @@ public class Stream {
     }
 
     public boolean requiresSignedData() {
-        if (requireSignedData == null) {
-            return false;
-        }
         return requireSignedData;
     }
 
@@ -119,11 +116,11 @@ public class Stream {
         this.requireSignedData = requireSignedData;
     }
 
-    public Boolean requiresEncryptedData() {
+    public boolean requiresEncryptedData() {
         return requireEncryptedData;
     }
 
-    public void setRequireEncryptedData(Boolean requireEncryptedData) {
+    public void setRequireEncryptedData(boolean requireEncryptedData) {
         this.requireEncryptedData = requireEncryptedData;
     }
 

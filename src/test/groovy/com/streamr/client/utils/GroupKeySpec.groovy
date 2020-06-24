@@ -33,30 +33,6 @@ class GroupKeySpec extends Specification {
         !k1.equals(k2)
     }
 
-    void "toMap()"() {
-        when:
-        Date now = new Date()
-        EncryptedGroupKey k1 = new EncryptedGroupKey("0x123", now)
-
-        byte[] keyBytes = new byte[32]
-        SecureRandom secureRandom = new SecureRandom()
-        secureRandom.nextBytes(keyBytes)
-        String k2String = Hex.encodeHexString(keyBytes)
-        UnencryptedGroupKey k2 = new UnencryptedGroupKey(k2String, now)
-
-        then:
-        k1.toMap() == ["groupKey": "0x123", "start": now.getTime()]
-        k2.toMap() == ["groupKey": k2String, "start": now.getTime()]
-    }
-
-    void "fromMap()"() {
-        when:
-        EncryptedGroupKey k = EncryptedGroupKey.fromMap(["groupKey": "0x123", "start": new Double(123)])
-        then:
-        k.groupKeyHex == "0x123"
-        k.start == new Date(123)
-    }
-
     void "getEncrypted()"() {
         when:
         byte[] keyBytes = new byte[32]

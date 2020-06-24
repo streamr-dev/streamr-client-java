@@ -2,6 +2,10 @@ package com.streamr.client.utils
 
 import com.streamr.client.exceptions.InvalidGroupKeyRequestException
 import com.streamr.client.exceptions.SigningRequiredException
+import com.streamr.client.protocol.message_layer.GroupKeyErrorResponse
+import com.streamr.client.protocol.message_layer.GroupKeyRequest
+import com.streamr.client.protocol.message_layer.GroupKeyReset
+import com.streamr.client.protocol.message_layer.GroupKeyResponse
 import com.streamr.client.protocol.message_layer.StreamMessage
 import com.streamr.client.protocol.message_layer.StreamMessageV31
 import com.streamr.client.rest.Stream
@@ -196,6 +200,7 @@ class MessageCreationUtilSpec extends Specification {
 
     void "should not be able to create unsigned group key request"() {
         when:
+        // msgCreationUtil has null signingUtil
         msgCreationUtil.createGroupKeyRequest("", "", "", null, null)
         then:
         SigningRequiredException e = thrown SigningRequiredException
@@ -212,20 +217,25 @@ class MessageCreationUtilSpec extends Specification {
                 "publisherInboxAddress", "streamId", "rsaPublicKey",
                 new Date(123), new Date(456))
         then:
-        msg.getStreamId() == "publisherInboxAddress".toLowerCase()
+        msg.getStreamId() == StreamMessage.KEY_EXCHANGE_STREAM_PREFIX + "publisherInboxAddress".toLowerCase()
         msg.getPublisherId() == "subscriberId"
         msg.getContentType() == StreamMessage.ContentType.GROUP_KEY_REQUEST
         msg.getEncryptionType() == StreamMessage.EncryptionType.NONE
-        msg.getContent().get("streamId") == "streamId"
-        msg.getContent().get("publicKey") == "rsaPublicKey"
-        ((Map<String, Object>) msg.getContent().get("range")).get("start") == 123
-        ((Map<String, Object>) msg.getContent().get("range")).get("end") == 456
+
+        GroupKeyRequest.fromMap(msg.getContent()).getStreamId() == "streamId"
+        GroupKeyRequest.fromMap(msg.getContent()).getPublicKey() == "rsaPublicKey"
+        GroupKeyRequest.fromMap(msg.getContent()).getRange().getStart() == 123L
+        GroupKeyRequest.fromMap(msg.getContent()).getRange().getEnd() == 456
         msg.getSignature() != null
     }
 
     void "should not be able to create unsigned group key response"() {
+        GroupKeyRequest request = new GroupKeyRequest("requestId", "streamId", "publicKey")
+
         when:
-        msgCreationUtil.createGroupKeyResponse("", "", null)
+        // msgCreationUtil has null signingUtil
+        msgCreationUtil.createGroupKeyResponse("", request, null)
+
         then:
         SigningRequiredException e = thrown SigningRequiredException
         e.message == "Cannot create unsigned group key response. Must authenticate with an Ethereum account"
@@ -238,19 +248,27 @@ class MessageCreationUtilSpec extends Specification {
         MessageCreationUtil util = new MessageCreationUtil("publisherId", signingUtil, keyStorage)
         EncryptedGroupKey k1 = genEncryptedKey(32, new Date(123))
         EncryptedGroupKey k2 = genEncryptedKey(32, new Date(4556))
+        GroupKeyRequest request = new GroupKeyRequest("requestId", "streamId", "publicKey")
+
         when:
-        StreamMessage msg = util.createGroupKeyResponse("subscriberInboxAddress", "streamId", [k1, k2])
+        StreamMessage msg = util.createGroupKeyResponse("subscriberInboxAddress", request, [k1, k2])
+
         then:
-        msg.getStreamId() == "subscriberInboxAddress".toLowerCase()
+        msg.getStreamId() == StreamMessage.KEY_EXCHANGE_STREAM_PREFIX + "subscriberInboxAddress".toLowerCase()
         msg.getContentType() == StreamMessage.ContentType.GROUP_KEY_RESPONSE_SIMPLE
         msg.getEncryptionType() == StreamMessage.EncryptionType.RSA
-        msg.getContent().get("streamId") == "streamId"
-        msg.getContent().get("keys") == [k1.toMap(), k2.toMap()]
+
+        GroupKeyResponse.fromMap(msg.getContent()).getStreamId() == "streamId"
+        GroupKeyResponse.fromMap(msg.getContent()).getKeys() == [
+                GroupKeyResponse.Key.fromGroupKey(k1),
+                GroupKeyResponse.Key.fromGroupKey(k2)
+        ]
         msg.getSignature() != null
     }
 
     void "should not be able to create unsigned group key reset"() {
         when:
+        // msgCreationUtil has null signingUtil
         msgCreationUtil.createGroupKeyReset("", "", null)
         then:
         SigningRequiredException e = thrown SigningRequiredException
@@ -266,18 +284,19 @@ class MessageCreationUtilSpec extends Specification {
         when:
         StreamMessage msg = util.createGroupKeyReset("subscriberInboxAddress", "streamId", k)
         then:
-        msg.getStreamId() == "subscriberInboxAddress".toLowerCase()
+        msg.getStreamId() == StreamMessage.KEY_EXCHANGE_STREAM_PREFIX + "subscriberInboxAddress".toLowerCase()
         msg.getContentType() == StreamMessage.ContentType.GROUP_KEY_RESET_SIMPLE
         msg.getEncryptionType() == StreamMessage.EncryptionType.RSA
-        msg.getContent().get("streamId") == "streamId"
-        msg.getContent().get("groupKey") == k.groupKeyHex
-        msg.getContent().get("start") == k.getStartTime()
+        GroupKeyReset.fromMap(msg.getContent()).getStreamId() == "streamId"
+        GroupKeyReset.fromMap(msg.getContent()).getGroupKey() == k.groupKeyHex
+        GroupKeyReset.fromMap(msg.getContent()).getStart() == k.getStartTime()
         msg.getSignature() != null
     }
 
     void "should not be able to create unsigned error message"() {
         when:
-        msgCreationUtil.createGroupKeyErrorResponse("", "streamId", "requestId", new Exception())
+        // msgCreationUtil has null signingUtil
+        msgCreationUtil.createGroupKeyErrorResponse("", new GroupKeyRequest("requestId", "streamId", "publicKey"), new Exception())
         then:
         SigningRequiredException e = thrown SigningRequiredException
         e.message == "Cannot create unsigned error message. Must authenticate with an Ethereum account"
@@ -289,15 +308,15 @@ class MessageCreationUtilSpec extends Specification {
         SigningUtil signingUtil = new SigningUtil(account)
         MessageCreationUtil util = new MessageCreationUtil("publisherId", signingUtil, keyStorage)
         when:
-        StreamMessage msg = util.createGroupKeyErrorResponse("destinationAddress", "streamId", "requestId", new InvalidGroupKeyRequestException("some error message"))
+        StreamMessage msg = util.createGroupKeyErrorResponse("destinationAddress", new GroupKeyRequest("requestId", "streamId", "publicKey"), new InvalidGroupKeyRequestException("some error message"))
         then:
-        msg.getStreamId() == "destinationAddress".toLowerCase()
+        msg.getStreamId() == StreamMessage.KEY_EXCHANGE_STREAM_PREFIX + "destinationAddress".toLowerCase()
         msg.getContentType() == StreamMessage.ContentType.GROUP_KEY_RESPONSE_ERROR
         msg.getEncryptionType() == StreamMessage.EncryptionType.NONE
-        msg.getContent().get("requestId") == "requestId"
-        msg.getContent().get("streamId") == "streamId"
-        msg.getContent().get("code") == "INVALID_GROUP_KEY_REQUEST"
-        msg.getContent().get("message") == "some error message"
+        GroupKeyErrorResponse.fromMap(msg.getContent()).getRequestId() == "requestId"
+        GroupKeyErrorResponse.fromMap(msg.getContent()).getStreamId() == "streamId"
+        GroupKeyErrorResponse.fromMap(msg.getContent()).getCode() == "INVALID_GROUP_KEY_REQUEST"
+        GroupKeyErrorResponse.fromMap(msg.getContent()).getMessage() == "some error message"
         msg.getSignature() != null
     }
 }

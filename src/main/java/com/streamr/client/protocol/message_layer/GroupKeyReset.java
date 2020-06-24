@@ -21,8 +21,16 @@ public class GroupKeyReset extends AbstractGroupKeyMessage {
         return groupKey;
     }
 
+    public void setGroupKey(String groupKey) {
+        this.groupKey = groupKey;
+    }
+
     public long getStart() {
         return start;
+    }
+
+    public void setStart(long start) {
+        this.start = start;
     }
 
     public static GroupKeyReset fromMap(Map<String, Object> map) {

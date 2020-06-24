@@ -1,5 +1,6 @@
 package com.streamr.client;
 
+import com.streamr.client.exceptions.ResourceNotFoundException;
 import com.streamr.client.options.ResendOption;
 import com.streamr.client.options.StreamrClientOptions;
 import com.streamr.client.protocol.control_layer.ControlMessage;
@@ -9,13 +10,13 @@ import com.streamr.client.rest.UserInfo;
 import com.streamr.client.subs.Subscription;
 import com.streamr.client.utils.UnencryptedGroupKey;
 
-import java.util.ArrayList;
-import java.util.List;
-import java.util.Map;
+import java.io.IOException;
+import java.util.*;
 
 public class TestingStreamrClient extends StreamrClient {
 
     List<StreamMessage> receivedStreamMessages = new ArrayList<>();
+    HashMap<String, Stream> mockStreams = new LinkedHashMap<>();
 
     public TestingStreamrClient(StreamrClientOptions options) {
         super(options);
@@ -49,4 +50,19 @@ public class TestingStreamrClient extends StreamrClient {
         return receivedStreamMessages;
     }
 
+    public void addMockStream(Stream stream) {
+        mockStreams.put(stream.getId(), stream);
+    }
+
+    @Override
+    public Stream getStream(String streamId) throws IOException, ResourceNotFoundException {
+        if (mockStreams.containsKey(streamId)) {
+            return mockStreams.get(streamId);
+        } else {
+            // Return a default mock
+            Stream stream = new Stream("default mock stream from TestingStreamrClient", "");
+            stream.setId(streamId);
+            return stream;
+        }
+    }
 }
