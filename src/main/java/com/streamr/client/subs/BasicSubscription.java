@@ -113,9 +113,12 @@ public abstract class BasicSubscription extends Subscription {
     }
 
     private synchronized void cancelGroupKeyRequest(String publisherId) {
-        pendingGroupKeyRequests.get(publisherId.toLowerCase()).cancel();
-        pendingGroupKeyRequests.get(publisherId.toLowerCase()).purge();
-        pendingGroupKeyRequests.remove(publisherId.toLowerCase());
+        if (pendingGroupKeyRequests.containsKey(publisherId)) {
+            Timer timer = pendingGroupKeyRequests.get(publisherId.toLowerCase());
+            timer.cancel();
+            timer.purge();
+            pendingGroupKeyRequests.remove(publisherId.toLowerCase());
+        }
     }
 
     public ArrayList<OrderedMsgChain> getChains() {
