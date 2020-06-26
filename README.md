@@ -35,7 +35,7 @@ And the artifact itself:
   <dependency>
     <groupId>com.streamr</groupId>
     <artifactId>client</artifactId>
-    <version>1.0.0</version>
+    <version>1.5.0</version>
   </dependency>
   ...
 </dependencies>
@@ -54,7 +54,7 @@ repositories {
 And the artifact itself:
 ```
 dependencies {
-    implementation 'com.streamr:client:1.0.0'
+    implementation 'com.streamr:client:1.5.0'
 }
 ```
 
