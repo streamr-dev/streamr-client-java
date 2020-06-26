@@ -113,11 +113,12 @@ public abstract class BasicSubscription extends Subscription {
     }
 
     private synchronized void cancelGroupKeyRequest(String publisherId) {
+        publisherId = publisherId.toLowerCase();
         if (pendingGroupKeyRequests.containsKey(publisherId)) {
-            Timer timer = pendingGroupKeyRequests.get(publisherId.toLowerCase());
+            Timer timer = pendingGroupKeyRequests.get(publisherId);
             timer.cancel();
             timer.purge();
-            pendingGroupKeyRequests.remove(publisherId.toLowerCase());
+            pendingGroupKeyRequests.remove(publisherId);
         }
     }
 

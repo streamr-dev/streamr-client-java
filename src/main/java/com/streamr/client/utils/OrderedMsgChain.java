@@ -197,10 +197,20 @@ public class OrderedMsgChain {
                     // Request gapfill or fail if max requests reached
                     if (gapRequestCount < MAX_GAP_REQUESTS) {
                         gapRequestCount++;
-                        gapHandler.apply(from, to, publisherId, msgChainId);
+                        if (gapHandler != null) {
+                            gapHandler.apply(from, to, publisherId, msgChainId);
+                        } else {
+                            log.error(String.format("Failed to request gapfill because the gapHandler is null. streamId %s, streamPartition %d, publisherId %s, msgChainId %s.",
+                                    queue.peek().getStreamId(), queue.peek().getStreamPartition(), publisherId, msgChainId));
+                        }
                     } else {
                         try {
-                            gapFillFailedHandler.apply(new GapFillFailedException(from, to, publisherId, msgChainId, MAX_GAP_REQUESTS));
+                            if (gapFillFailedHandler != null) {
+                                gapFillFailedHandler.apply(new GapFillFailedException(from, to, publisherId, msgChainId, MAX_GAP_REQUESTS));
+                            } else {
+                                log.error(String.format("Failed to report failed gapfill because gapFillFailedHandler is null. streamId %s, streamPartition %d, publisherId %s, msgChainId %s.",
+                                        queue.peek().getStreamId(), queue.peek().getStreamPartition(), publisherId, msgChainId));
+                            }
                         } finally {
                             clearGap();
 
