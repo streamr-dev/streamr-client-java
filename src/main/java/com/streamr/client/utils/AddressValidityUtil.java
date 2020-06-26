@@ -97,8 +97,8 @@ public class AddressValidityUtil {
         HashMap<String, Boolean> addresses = safeGetCache(cache).get(streamId);
         if (addresses == null) {
             addresses = new HashMap<>();
-            for (String publisher: getFunction.apply(streamId)) {
-                addresses.put(publisher, true);
+            for (String address: getFunction.apply(streamId)) {
+                addresses.put(address, true);
             }
             safeGetCache(cache).put(streamId, addresses);
         }
