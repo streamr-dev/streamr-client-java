@@ -141,10 +141,11 @@ public abstract class BasicSubscription extends Subscription {
             if (success) { // the message was successfully decrypted
                 handler.onMessage(this, msg);
             } else {
-                log.warn("Failed to decrypt msg from " + msg.getPublisherId() +
+                log.info("Failed to decrypt msg from " + msg.getPublisherId() +
                         " . Going to request the correct decryption key(s) and try again.");
             }
         } catch (UnableToDecryptException e) { // failed to decrypt for the second time (after receiving the decryption key(s))
+            log.error("Failed to decrypt msg from " + msg.getPublisherId() + " even after receiving the decryption keys.");
             handler.onUnableToDecrypt(e);
         }
     }
