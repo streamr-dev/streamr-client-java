@@ -217,7 +217,7 @@ class MessageCreationUtilSpec extends Specification {
                 "publisherInboxAddress", "streamId", "rsaPublicKey",
                 new Date(123), new Date(456))
         then:
-        msg.getStreamId() == StreamMessage.KEY_EXCHANGE_STREAM_PREFIX + "publisherInboxAddress".toLowerCase()
+        msg.getStreamId() == KeyExchangeUtil.getKeyExchangeStreamId("publisherInboxAddress")
         msg.getPublisherId() == "subscriberId"
         msg.getContentType() == StreamMessage.ContentType.GROUP_KEY_REQUEST
         msg.getEncryptionType() == StreamMessage.EncryptionType.NONE
@@ -254,7 +254,7 @@ class MessageCreationUtilSpec extends Specification {
         StreamMessage msg = util.createGroupKeyResponse("subscriberInboxAddress", request, [k1, k2])
 
         then:
-        msg.getStreamId() == StreamMessage.KEY_EXCHANGE_STREAM_PREFIX + "subscriberInboxAddress".toLowerCase()
+        msg.getStreamId() == KeyExchangeUtil.getKeyExchangeStreamId("subscriberInboxAddress")
         msg.getContentType() == StreamMessage.ContentType.GROUP_KEY_RESPONSE_SIMPLE
         msg.getEncryptionType() == StreamMessage.EncryptionType.RSA
 
@@ -284,7 +284,7 @@ class MessageCreationUtilSpec extends Specification {
         when:
         StreamMessage msg = util.createGroupKeyReset("subscriberInboxAddress", "streamId", k)
         then:
-        msg.getStreamId() == StreamMessage.KEY_EXCHANGE_STREAM_PREFIX + "subscriberInboxAddress".toLowerCase()
+        msg.getStreamId() == KeyExchangeUtil.getKeyExchangeStreamId("subscriberInboxAddress")
         msg.getContentType() == StreamMessage.ContentType.GROUP_KEY_RESET_SIMPLE
         msg.getEncryptionType() == StreamMessage.EncryptionType.RSA
         GroupKeyReset.fromMap(msg.getContent()).getStreamId() == "streamId"
@@ -310,7 +310,7 @@ class MessageCreationUtilSpec extends Specification {
         when:
         StreamMessage msg = util.createGroupKeyErrorResponse("destinationAddress", new GroupKeyRequest("requestId", "streamId", "publicKey"), new InvalidGroupKeyRequestException("some error message"))
         then:
-        msg.getStreamId() == StreamMessage.KEY_EXCHANGE_STREAM_PREFIX + "destinationAddress".toLowerCase()
+        msg.getStreamId() == KeyExchangeUtil.getKeyExchangeStreamId("destinationAddress")
         msg.getContentType() == StreamMessage.ContentType.GROUP_KEY_RESPONSE_ERROR
         msg.getEncryptionType() == StreamMessage.EncryptionType.NONE
         GroupKeyErrorResponse.fromMap(msg.getContent()).getRequestId() == "requestId"

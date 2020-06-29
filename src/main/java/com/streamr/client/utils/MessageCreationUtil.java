@@ -76,7 +76,7 @@ public class MessageCreationUtil {
         }
         GroupKeyRequest request = new GroupKeyRequest(UUID.randomUUID().toString(), streamId, rsaPublicKey, range);
 
-        String keyExchangeStreamId = StreamMessage.KEY_EXCHANGE_STREAM_PREFIX + publisherAddress.toLowerCase();
+        String keyExchangeStreamId = KeyExchangeUtil.getKeyExchangeStreamId(publisherAddress);
         Pair<MessageID, MessageRef> pair = createDefaultMsgIdAndRef(keyExchangeStreamId);
         StreamMessage streamMessage = new StreamMessageV31(
                 pair.getLeft(), pair.getRight(), StreamMessage.ContentType.GROUP_KEY_REQUEST, EncryptionType.NONE, request.toMap(),
@@ -98,7 +98,7 @@ public class MessageCreationUtil {
                         .collect(Collectors.toList())
         );
 
-        String keyExchangeStreamId = StreamMessage.KEY_EXCHANGE_STREAM_PREFIX + subscriberAddress.toLowerCase();
+        String keyExchangeStreamId = KeyExchangeUtil.getKeyExchangeStreamId(subscriberAddress);
         Pair<MessageID, MessageRef> pair = createDefaultMsgIdAndRef(keyExchangeStreamId);
         StreamMessage streamMessage = new StreamMessageV31(
                 pair.getLeft(), pair.getRight(), StreamMessage.ContentType.GROUP_KEY_RESPONSE_SIMPLE, EncryptionType.RSA, response.toMap(),
@@ -114,7 +114,7 @@ public class MessageCreationUtil {
 
         GroupKeyReset reset = new GroupKeyReset(streamId, encryptedGroupKey.getGroupKeyHex(), encryptedGroupKey.getStartTime());
 
-        String keyExchangeStreamId = StreamMessage.KEY_EXCHANGE_STREAM_PREFIX + subscriberAddress.toLowerCase();
+        String keyExchangeStreamId = KeyExchangeUtil.getKeyExchangeStreamId(subscriberAddress);
         Pair<MessageID, MessageRef> pair = createDefaultMsgIdAndRef(keyExchangeStreamId);
         StreamMessage streamMessage = new StreamMessageV31(
                 pair.getLeft(), pair.getRight(), StreamMessage.ContentType.GROUP_KEY_RESET_SIMPLE, EncryptionType.RSA, reset.toMap(),
@@ -135,7 +135,7 @@ public class MessageCreationUtil {
                 e.getMessage()
         );
 
-        String keyExchangeStreamId = StreamMessage.KEY_EXCHANGE_STREAM_PREFIX + destinationAddress.toLowerCase();
+        String keyExchangeStreamId = KeyExchangeUtil.getKeyExchangeStreamId(destinationAddress);
         Pair<MessageID, MessageRef> pair = createDefaultMsgIdAndRef(keyExchangeStreamId);
         StreamMessage streamMessage = new StreamMessageV31(
                 pair.getLeft(), pair.getRight(), StreamMessage.ContentType.GROUP_KEY_RESPONSE_ERROR, EncryptionType.NONE, response.toMap(),

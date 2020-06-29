@@ -109,7 +109,7 @@ public class StreamrClient extends StreamrRESTClient {
             // The key exchange stream is a system stream.
             // It doesn't explicitly exist, but as per spec, we can subscribe to it anyway.
             keyExchangeStream = new Stream("Key exchange stream for " + publisherId, "");
-            keyExchangeStream.setId(StreamMessage.KEY_EXCHANGE_STREAM_PREFIX + publisherId);
+            keyExchangeStream.setId(KeyExchangeUtil.getKeyExchangeStreamId(publisherId));
             keyExchangeStream.setPartitions(1);
         }
         SigningUtil signingUtil = null;

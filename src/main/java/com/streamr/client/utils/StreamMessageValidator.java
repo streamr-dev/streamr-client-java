@@ -123,7 +123,7 @@ public class StreamMessageValidator {
 
         AbstractGroupKeyMessage request = AbstractGroupKeyMessage.fromContent(streamMessage.getContent(), streamMessage.getContentType());
         String sender = streamMessage.getPublisherId();
-        String recipient = streamMessage.getStreamId().substring(StreamMessage.KEY_EXCHANGE_STREAM_PREFIX.length());
+        String recipient = KeyExchangeUtil.getRecipientFromKeyExchangeStreamId(streamMessage.getStreamId());
 
         // Check that the recipient of the request is a valid publisher of the stream
         if (!addressValidityUtil.isValidPublisher(request.getStreamId(), recipient)) {
@@ -148,7 +148,7 @@ public class StreamMessageValidator {
 
         AbstractGroupKeyMessage response = AbstractGroupKeyMessage.fromContent(streamMessage.getContent(), streamMessage.getContentType());
         String sender = streamMessage.getPublisherId();
-        String recipient = streamMessage.getStreamId().substring(StreamMessage.KEY_EXCHANGE_STREAM_PREFIX.length());
+        String recipient = KeyExchangeUtil.getRecipientFromKeyExchangeStreamId(streamMessage.getStreamId());
 
         // Check that the sender of the request is a valid publisher of the stream
         if (!addressValidityUtil.isValidPublisher(response.getStreamId(), sender)) {
@@ -161,13 +161,9 @@ public class StreamMessageValidator {
         }
     }
 
-    private static boolean isKeyExchangeStream(String streamId) {
-        return streamId.startsWith(StreamMessage.KEY_EXCHANGE_STREAM_PREFIX);
-    }
-
     private static void assertKeyExchangeStream(StreamMessage streamMessage) {
-        if (!isKeyExchangeStream(streamMessage.getStreamId())) {
-            throw new ValidationException(streamMessage, ValidationException.Reason.INVALID_MESSAGE, "Group key requests can only occur on stream ids of form " + StreamMessage.KEY_EXCHANGE_STREAM_PREFIX + "{address}");
+        if (!KeyExchangeUtil.isKeyExchangeStreamId(streamMessage.getStreamId())) {
+            throw new ValidationException(streamMessage, ValidationException.Reason.INVALID_MESSAGE, "Group key requests can only occur on stream ids of form " + KeyExchangeUtil.KEY_EXCHANGE_STREAM_PREFIX + "{address}");
         }
     }
 

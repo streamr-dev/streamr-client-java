@@ -30,6 +30,7 @@ public class KeyExchangeUtil {
     private Instant lastCallToCheckRevocation = Instant.MIN;
     private final HashMap<String, RSAPublicKey> publicKeys = new HashMap<>();
 
+    public static final String KEY_EXCHANGE_STREAM_PREFIX = "SYSTEM/keyexchange/";
 
     public KeyExchangeUtil(KeyStorage keyStorage, MessageCreationUtil messageCreationUtil, EncryptionUtil encryptionUtil,
                            AddressValidityUtil addressValidityUtil, Consumer<StreamMessage> publishFunction,
@@ -178,6 +179,18 @@ public class KeyExchangeUtil {
         }
         revoked.forEach(publicKeys::remove); // remove all revoked (Ethereum address --> RSA public key) from local cache
         keyStorage.addKey(streamId, groupKeyReset);
+    }
+
+    public static String getKeyExchangeStreamId(String recipientAddress) {
+        return KEY_EXCHANGE_STREAM_PREFIX + recipientAddress.toLowerCase();
+    }
+
+    public static boolean isKeyExchangeStreamId(String streamId) {
+        return streamId.startsWith(KEY_EXCHANGE_STREAM_PREFIX);
+    }
+
+    public static String getRecipientFromKeyExchangeStreamId(String keyExchangeStreamId) {
+        return keyExchangeStreamId.substring(KEY_EXCHANGE_STREAM_PREFIX.length());
     }
 
     @FunctionalInterface
