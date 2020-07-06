@@ -5,6 +5,7 @@ import com.streamr.client.options.ResendLastOption
 import com.streamr.client.options.ResendRangeOption
 import com.streamr.client.protocol.message_layer.StreamMessage
 import com.streamr.client.protocol.message_layer.StreamMessageV31
+import com.streamr.client.rest.Permission
 import com.streamr.client.rest.Stream
 import com.streamr.client.subs.Subscription
 import com.streamr.client.utils.UnencryptedGroupKey
@@ -16,8 +17,11 @@ import java.security.SecureRandom
 
 class StreamrWebsocketSpec extends StreamrIntegrationSpecification {
 
-	private StreamrClient client
 	private SecureRandom secureRandom = new SecureRandom()
+	private StreamrClient publisher
+	private StreamrClient subscriber
+	private Stream stream
+	PollingConditions within10sec = new PollingConditions(timeout: 10)
 
 	UnencryptedGroupKey genKey() {
 		byte[] keyBytes = new byte[32]
@@ -26,64 +30,69 @@ class StreamrWebsocketSpec extends StreamrIntegrationSpecification {
 	}
 
 	void setup() {
-		client = createClientWithPrivateKey(generatePrivateKey())
+		publisher = createClientWithPrivateKey(generatePrivateKey())
+		subscriber = createClientWithPrivateKey(generatePrivateKey())
+
+		stream = publisher.createStream(new Stream(generateResourceName(), ""))
+		publisher.grant(stream, Permission.Operation.stream_get, subscriber.getPublisherId())
+		publisher.grant(stream, Permission.Operation.stream_subscribe, subscriber.getPublisherId())
 	}
 
 	void cleanup() {
-		if (client != null && client.state != ReadyState.CLOSED) {
-			client.disconnect()
+		if (publisher != null && publisher.state != ReadyState.CLOSED) {
+			publisher.disconnect()
+		}
+		if (subscriber != null && subscriber.state != ReadyState.CLOSED) {
+			subscriber.disconnect()
 		}
 	}
 
 	void "client can connect and disconnect over websocket"() {
 		when:
-		client.connect()
+		publisher.connect()
 
 		then:
-		client.state == ReadyState.OPEN
+		publisher.state == ReadyState.OPEN
 
 		when:
-		client.disconnect()
+		publisher.disconnect()
 
 		then:
-		client.state == ReadyState.CLOSED
+		publisher.state == ReadyState.CLOSED
 	}
 
 
 	void "client automatically connects for publishing"() {
-		Stream stream = client.createStream(new Stream(generateResourceName(), ""))
+		Stream stream = publisher.createStream(new Stream(generateResourceName(), ""))
 
 		when:
-		client.publish(stream, [foo: "bar"], new Date())
+		publisher.publish(stream, [foo: "bar"], new Date())
 
 		then:
-		client.state == ReadyState.OPEN
+		publisher.state == ReadyState.OPEN
 	}
 
 	void "client automatically connects for subscribing"() {
-		Stream stream = client.createStream(new Stream(generateResourceName(), ""))
+		Stream stream = subscriber.createStream(new Stream(generateResourceName(), ""))
 
 		when:
-		client.subscribe(stream, new MessageHandler() {
+		subscriber.subscribe(stream, new MessageHandler() {
 			@Override
 			void onMessage(Subscription s, StreamMessage message) {}
 		})
 
 		then:
-		client.state == ReadyState.OPEN
+		subscriber.state == ReadyState.OPEN
 	}
 
 	void "a subscriber receives published messages"() {
 		int msgCount = 0
-		int timeout = 10 * 1000
 		Subscription sub
-
-		Stream stream = client.createStream(new Stream(generateResourceName(), ""))
 
 		when:
 		// Subscribe to the stream
 		StreamMessage latestMsg
-		sub = client.subscribe(stream, new MessageHandler() {
+		sub = subscriber.subscribe(stream, new MessageHandler() {
 			@Override
 			void onMessage(Subscription s, StreamMessage message) {
 				msgCount++
@@ -91,31 +100,31 @@ class StreamrWebsocketSpec extends StreamrIntegrationSpecification {
 			}
 
 		})
-
 		Thread.sleep(2000)
 
 		// Produce messages to the stream
 		for (int i=1; i<=10; i++) {
-			client.publish(stream, [i: i])
+			publisher.publish(stream, [i: i])
 			Thread.sleep(200)
-		}
-
-		// Allow some time for the messages to be received
-		while (msgCount < 10 && timeout > 0) {
-			Thread.sleep(200)
-			timeout -= 200
 		}
 
 		then:
 		// All messages have been received by subscriber
-		msgCount == 10
-		timeout > 0
+		within10sec.eventually {
+			msgCount == 10
+		}
 		latestMsg.content.i == 10
 
 		when:
-		client.unsubscribe(sub)
-		Thread.sleep(2000)
-		client.publish(stream, [i: 11])
+		subscriber.unsubscribe(sub)
+
+		then:
+		within10sec.eventually {
+			!sub.isSubscribed()
+		}
+
+		when:
+		publisher.publish(stream, [i: 11])
 
 		then:
 		// No more messages should be received, since we're unsubscribed
@@ -123,12 +132,10 @@ class StreamrWebsocketSpec extends StreamrIntegrationSpecification {
 	}
 
 	void "subscriber receives signed message if published with signature"() {
-		Stream stream = client.createStream(new Stream(generateResourceName(), ""))
-
 		when:
 		// Subscribe to the stream
 		StreamMessageV31 msg
-		client.subscribe(stream, new MessageHandler() {
+		subscriber.subscribe(stream, new MessageHandler() {
 			@Override
 			void onMessage(Subscription s, StreamMessage message) {
 				//reaching this point ensures that the signature verification didn't throw
@@ -138,66 +145,60 @@ class StreamrWebsocketSpec extends StreamrIntegrationSpecification {
 
 		Thread.sleep(2000)
 
-		client.publish(stream, [test: 'signed'])
-
-		Thread.sleep(2000)
+		publisher.publish(stream, [test: 'signed'])
 
 		then:
-		msg.getPublisherId() == client.getPublisherId()
+		within10sec.eventually {
+			msg != null
+		}
+		msg.getPublisherId() == publisher.getPublisherId()
 		msg.signatureType == StreamMessage.SignatureType.SIGNATURE_TYPE_ETH
 		msg.signature != null
 	}
 
 	void "subscriber can decrypt messages when he knows the keys used to encrypt"() {
-		Stream stream = client.createStream(new Stream(generateResourceName(), ""))
 		UnencryptedGroupKey key = genKey()
 		HashMap<String, UnencryptedGroupKey> keys = new HashMap<>()
-		keys.put(client.getPublisherId(), key)
+		keys.put(publisher.getPublisherId(), key)
 
 		when:
 		// Subscribe to the stream
 		StreamMessageV31 msg
-		client.subscribe(stream, 0, new MessageHandler() {
+		subscriber.subscribe(stream, 0, new MessageHandler() {
 			@Override
 			void onMessage(Subscription s, StreamMessage message) {
 				//reaching this point ensures that the signature verification and decryption didn't throw
 				msg = (StreamMessageV31) message
 			}
 		}, null, keys)
-
 		Thread.sleep(2000)
 
-		client.publish(stream, [test: 'clear text'], new Date(), null, key)
-
-		Thread.sleep(2000)
+		publisher.publish(stream, [test: 'clear text'], new Date(), null, key)
 
 		then:
-		msg.getContent() == [test: 'clear text']
+		within10sec.eventually {
+			msg != null && msg.getContent() == [test: 'clear text']
+		}
 
 		when:
 		// publishing a second message with a new group key
-		client.publish(stream, [test: 'another clear text'], new Date(), null, genKey())
-
-		Thread.sleep(2000)
+		publisher.publish(stream, [test: 'another clear text'], new Date(), null, genKey())
 
 		then:
 		// no need to explicitly give the new group key to the subscriber
-		msg.getContent() == [test: 'another clear text']
+		within10sec.eventually {
+			msg.getContent() == [test: 'another clear text']
+		}
 	}
 
 	void "subscriber can get the group key and decrypt encrypted messages using an RSA key pair"() {
-		given:
-		PollingConditions conditions1 = new PollingConditions(timeout: 10)
-		PollingConditions conditions2 = new PollingConditions(timeout: 10)
-
-		Stream stream = client.createStream(new Stream(generateResourceName(), ""))
 		UnencryptedGroupKey key = genKey()
 
 		when:
 		// Subscribe to the stream without knowing the group key
 		StreamMessage msg1 = null
 		StreamMessage msg2 = null
-		client.subscribe(stream, new MessageHandler() {
+		subscriber.subscribe(stream, new MessageHandler() {
 			@Override
 			void onMessage(Subscription s, StreamMessage message) {
 				//reaching this point ensures that the signature verification and decryption didn't throw
@@ -208,13 +209,12 @@ class StreamrWebsocketSpec extends StreamrIntegrationSpecification {
 				}
 			}
 		})
-
 		Thread.sleep(2000)
 
-		client.publish(stream, [test: 'clear text'], new Date(), null, key)
+		publisher.publish(stream, [test: 'clear text'], new Date(), null, key)
 
 		then:
-		conditions1.eventually {
+		within10sec.eventually {
 			assert msg1 != null
 			// the subscriber got the group key and can decrypt
 			assert msg1.getContent() == [test: 'clear text']
@@ -222,10 +222,10 @@ class StreamrWebsocketSpec extends StreamrIntegrationSpecification {
 
 		when:
 		// publishing a second message with a new group key
-		client.publish(stream, [test: 'another clear text'], new Date(), null, genKey())
+		publisher.publish(stream, [test: 'another clear text'], new Date(), null, genKey())
 
 		then:
-		conditions2.eventually {
+		within10sec.eventually {
 			assert msg2 != null
 			// no need to explicitly give the new group key to the subscriber
 			msg2.getContent() == [test: 'another clear text']
@@ -233,18 +233,13 @@ class StreamrWebsocketSpec extends StreamrIntegrationSpecification {
 	}
 
 	void "subscriber can get the new group key after reset and decrypt encrypted messages"() {
-		given:
-		PollingConditions conditions1 = new PollingConditions(timeout: 10)
-		PollingConditions conditions2 = new PollingConditions(timeout: 10)
-
-		Stream stream = client.createStream(new Stream(generateResourceName(), ""))
 		UnencryptedGroupKey key = genKey()
 
 		when:
 		// Subscribe to the stream without knowing the group key
 		StreamMessage msg1 = null
 		StreamMessage msg2 = null
-		client.subscribe(stream, new MessageHandler() {
+		subscriber.subscribe(stream, new MessageHandler() {
 			@Override
 			void onMessage(Subscription s, StreamMessage message) {
 				//reaching this point ensures that the signature verification and decryption didn't throw
@@ -255,13 +250,12 @@ class StreamrWebsocketSpec extends StreamrIntegrationSpecification {
 				}
 			}
 		})
-
 		Thread.sleep(2000)
 
-		client.publish(stream, [test: 'clear text'], new Date(), null, key)
+		publisher.publish(stream, [test: 'clear text'], new Date(), null, key)
 
 		then:
-		conditions1.eventually {
+		within10sec.eventually {
 			assert msg1 != null
 			// the subscriber got the group key and can decrypt
 			assert msg1.getContent() == [test: 'clear text']
@@ -269,11 +263,11 @@ class StreamrWebsocketSpec extends StreamrIntegrationSpecification {
 
 		when:
 		// publishing a second message after a rekey to revoke old subscribers
-		client.rekey(stream)
-		client.publish(stream, [test: 'another clear text'], new Date(), null)
+		publisher.rekey(stream)
+		publisher.publish(stream, [test: 'another clear text'], new Date(), null)
 
 		then:
-		conditions2.eventually {
+		within10sec.eventually {
 			assert msg2 != null
 			// no need to explicitly give the new group key to the subscriber
 			msg2.getContent() == [test: 'another clear text']
@@ -281,19 +275,16 @@ class StreamrWebsocketSpec extends StreamrIntegrationSpecification {
 	}
 
 	void "subscriber can get the historical keys and decrypt old encrypted messages using an RSA key pair"() {
-		given:
-		PollingConditions conditions = new PollingConditions(timeout: 10)
-		Stream stream = client.createStream(new Stream(generateResourceName(), ""))
 		// publishing historical messages with different group keys before subscribing
-		client.publish(stream, [test: 'clear text'], new Date(), null, genKey())
-		client.publish(stream, [test: 'another clear text'], new Date(), null, genKey())
+		publisher.publish(stream, [test: 'clear text'], new Date(), null, genKey())
+		publisher.publish(stream, [test: 'another clear text'], new Date(), null, genKey())
 		Thread.sleep(3000)
 
 		when:
 		// Subscribe to the stream with resend last without knowing the group keys
 		StreamMessage msg1 = null
 		StreamMessage msg2 = null
-		client.subscribe(stream, 0, new MessageHandler() {
+		subscriber.subscribe(stream, 0, new MessageHandler() {
 			@Override
 			void onMessage(Subscription s, StreamMessage message) {
 				//reaching this point ensures that the signature verification and decryption didn't throw
@@ -309,7 +300,7 @@ class StreamrWebsocketSpec extends StreamrIntegrationSpecification {
 		}, new ResendLastOption(2))
 
 		then:
-		conditions.eventually {
+		within10sec.eventually {
 			assert msg1 != null && msg2 != null
 			// the subscriber got the group keys and can decrypt the old messages
 			assert msg1.getContent() == [test: 'clear text']
@@ -319,16 +310,13 @@ class StreamrWebsocketSpec extends StreamrIntegrationSpecification {
 
 	void "subscribe with resend last"() {
 		Subscription sub
-
-		Stream stream = client.createStream(new Stream(generateResourceName(), ""))
-
 		boolean received = false
 
 		when:
-		client.publish(stream, [i: 1])
+		publisher.publish(stream, [i: 1])
 		Thread.sleep(6000) // wait to land in storage
 		// Subscribe to the stream
-		sub = client.subscribe(stream, 0, new MessageHandler() {
+		sub = subscriber.subscribe(stream, 0, new MessageHandler() {
 			@Override
 			void onMessage(Subscription s, StreamMessage message) {
 				received = message.getContent() == [i: 1]
@@ -339,24 +327,18 @@ class StreamrWebsocketSpec extends StreamrIntegrationSpecification {
 
 		then:
 		received
-		client.unsubscribe(sub)
 	}
 
 	void "subscribe with resend from"() {
-        given:
-        def conditions = new PollingConditions(timeout: 10)
-
-        Stream stream = client.createStream(new Stream(generateResourceName(), ""))
-
         boolean received = false
         boolean done = false
 
         when:
-        client.publish(stream, [i: 1])
+        publisher.publish(stream, [i: 1])
 		Thread.sleep(2000)
 
         // Subscribe to the stream
-        Subscription sub = client.subscribe(stream, 0, new MessageHandler() {
+        Subscription sub = subscriber.subscribe(stream, 0, new MessageHandler() {
             @Override
             void onMessage(Subscription s, StreamMessage message) {
                 received = message.getContent() == [i: 1]
@@ -367,31 +349,25 @@ class StreamrWebsocketSpec extends StreamrIntegrationSpecification {
         }, new ResendFromOption(new Date(0)))
 
         then:
-        conditions.eventually() {
+        within10sec.eventually() {
             assert done
             assert received
-            client.unsubscribe(sub)
         }
 	}
 
 	void "resend last"() {
-		given:
-		def conditions = new PollingConditions(timeout: 10)
-
-		Stream stream = client.createStream(new Stream(generateResourceName(), ""))
-
 		List receivedMsg = []
 		boolean done = false
 
 		when:
 		for (int i = 0; i <= 10; i++) {
-			client.publish(stream, [i: i])
+			publisher.publish(stream, [i: i])
 		}
 		Thread.sleep(6000) // wait to land in storage
 
 		int i = 0
-		// Subscribe to the stream
-		client.resend(stream, 0, new MessageHandler() {
+		// Resend last
+		subscriber.resend(stream, 0, new MessageHandler() {
 			@Override
 			void onMessage(Subscription s, StreamMessage message) {
 				receivedMsg.push(message.getContent())
@@ -410,25 +386,20 @@ class StreamrWebsocketSpec extends StreamrIntegrationSpecification {
 			Collections.singletonMap("i", 10.0)
 		]
 
-		conditions.eventually() {
+		within10sec.eventually() {
 			assert done
 			assert receivedMsg == expectedMessages
 		}
 	}
 
 	void "resend from"() {
-		given:
-		def conditions = new PollingConditions(timeout: 10)
-
-		Stream stream = client.createStream(new Stream(generateResourceName(), ""))
-
 		List receivedMsg = []
 		boolean done = false
 		Date resendFromDate
 
 		when:
 		for (int i = 0; i <= 10; i++) {
-			client.publish(stream, [i: i])
+			publisher.publish(stream, [i: i])
 
 			if (i == 7) {
 				resendFromDate = new Date()
@@ -437,8 +408,8 @@ class StreamrWebsocketSpec extends StreamrIntegrationSpecification {
 		Thread.sleep(6000) // wait to land in storage
 
 		int i = 0
-		// Subscribe to the stream
-		client.resend(stream, 0, new MessageHandler() {
+		// Resend from
+		subscriber.resend(stream, 0, new MessageHandler() {
 			@Override
 			void onMessage(Subscription s, StreamMessage message) {
 				receivedMsg.push(message.getContent())
@@ -455,18 +426,13 @@ class StreamrWebsocketSpec extends StreamrIntegrationSpecification {
 				Collections.singletonMap("i", 10.0)
 		]
 
-		conditions.eventually() {
+		within10sec.eventually() {
 			assert done
 			assert receivedMsg == expectedMessages
 		}
 	}
 
 	void "resend range"() {
-		given:
-		def conditions = new PollingConditions(timeout: 10)
-
-		Stream stream = client.createStream(new Stream(generateResourceName(), ""))
-
 		List receivedMsg = []
 		boolean done = false
 		Date resendFromDate
@@ -475,7 +441,7 @@ class StreamrWebsocketSpec extends StreamrIntegrationSpecification {
 		when:
 		for (int i = 0; i <= 10; i++) {
 			Date date = new Date()
-			client.publish(stream, [i: i], date)
+			publisher.publish(stream, [i: i], date)
 
 			if (i == 3) {
 				resendFromDate = new Date(date.getTime() + 1)
@@ -487,9 +453,8 @@ class StreamrWebsocketSpec extends StreamrIntegrationSpecification {
 		}
 		Thread.sleep(6000) // wait to land in storage
 
-		int i = 0
-		// Subscribe to the stream
-		client.resend(stream, 0, new MessageHandler() {
+		// Resend range
+		subscriber.resend(stream, 0, new MessageHandler() {
 			@Override
 			void onMessage(Subscription s, StreamMessage message) {
 				receivedMsg.push(message.getContent())
@@ -506,7 +471,7 @@ class StreamrWebsocketSpec extends StreamrIntegrationSpecification {
 				Collections.singletonMap("i", 6.0)
 		]
 
-		conditions.eventually() {
+		within10sec.eventually() {
 			assert done
 			assert receivedMsg == expectedMessages
 		}
