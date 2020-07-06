@@ -215,9 +215,8 @@ class StreamrWebsocketSpec extends StreamrIntegrationSpecification {
 
 		then:
 		within10sec.eventually {
-			assert msg1 != null
 			// the subscriber got the group key and can decrypt
-			assert msg1.getContent() == [test: 'clear text']
+			msg1 != null && msg1.getContent() == [test: 'clear text']
 		}
 
 		when:
@@ -226,9 +225,8 @@ class StreamrWebsocketSpec extends StreamrIntegrationSpecification {
 
 		then:
 		within10sec.eventually {
-			assert msg2 != null
 			// no need to explicitly give the new group key to the subscriber
-			msg2.getContent() == [test: 'another clear text']
+			msg2 != null && msg2.getContent() == [test: 'another clear text']
 		}
 	}
 
@@ -256,9 +254,8 @@ class StreamrWebsocketSpec extends StreamrIntegrationSpecification {
 
 		then:
 		within10sec.eventually {
-			assert msg1 != null
 			// the subscriber got the group key and can decrypt
-			assert msg1.getContent() == [test: 'clear text']
+			msg1 != null && msg1.getContent() == [test: 'clear text']
 		}
 
 		when:
@@ -268,22 +265,24 @@ class StreamrWebsocketSpec extends StreamrIntegrationSpecification {
 
 		then:
 		within10sec.eventually {
-			assert msg2 != null
 			// no need to explicitly give the new group key to the subscriber
-			msg2.getContent() == [test: 'another clear text']
+			msg2 != null && msg2.getContent() == [test: 'another clear text']
 		}
 	}
 
 	void "subscriber can get the historical keys and decrypt old encrypted messages using an RSA key pair"() {
+		List<UnencryptedGroupKey> keys = [genKey(), genKey()]
+
 		// publishing historical messages with different group keys before subscribing
-		publisher.publish(stream, [test: 'clear text'], new Date(), null, genKey())
-		publisher.publish(stream, [test: 'another clear text'], new Date(), null, genKey())
+		publisher.publish(stream, [test: 'clear text'], new Date(), null, keys[0])
+		publisher.publish(stream, [test: 'another clear text'], new Date(), null, keys[1])
 		Thread.sleep(3000)
 
 		when:
 		// Subscribe to the stream with resend last without knowing the group keys
 		StreamMessage msg1 = null
 		StreamMessage msg2 = null
+		StreamMessage msg3 = null
 		subscriber.subscribe(stream, 0, new MessageHandler() {
 			@Override
 			void onMessage(Subscription s, StreamMessage message) {
@@ -292,6 +291,8 @@ class StreamrWebsocketSpec extends StreamrIntegrationSpecification {
 					msg1 = message
 				} else if (msg2 == null) {
 					msg2 = message
+				} else if (msg3 == null) {
+					msg3 = message
 				} else {
 					throw new RuntimeException("Received unexpected message: " + message.toJson())
 				}
@@ -301,11 +302,21 @@ class StreamrWebsocketSpec extends StreamrIntegrationSpecification {
 
 		then:
 		within10sec.eventually {
-			assert msg1 != null && msg2 != null
-			// the subscriber got the group keys and can decrypt the old messages
-			assert msg1.getContent() == [test: 'clear text']
-			assert msg2.getContent() == [test: 'another clear text']
+			msg1 != null && msg2 != null
 		}
+		// the subscriber got the group keys and can decrypt the old messages
+		msg1.getContent() == [test: 'clear text']
+		msg2.getContent() == [test: 'another clear text']
+
+		when:
+		// The publisher publishes another message with latest key
+		publisher.publish(stream, [test: '3'], new Date(), null, keys[1])
+
+		then:
+		within10sec.eventually {
+			msg3 != null
+		}
+		msg3.getContent() == [test: '3']
 	}
 
 	void "subscribe with resend last"() {
@@ -350,8 +361,7 @@ class StreamrWebsocketSpec extends StreamrIntegrationSpecification {
 
         then:
         within10sec.eventually() {
-            assert done
-            assert received
+            done && received
         }
 	}
 
@@ -387,8 +397,7 @@ class StreamrWebsocketSpec extends StreamrIntegrationSpecification {
 		]
 
 		within10sec.eventually() {
-			assert done
-			assert receivedMsg == expectedMessages
+			done && receivedMsg == expectedMessages
 		}
 	}
 
@@ -427,8 +436,7 @@ class StreamrWebsocketSpec extends StreamrIntegrationSpecification {
 		]
 
 		within10sec.eventually() {
-			assert done
-			assert receivedMsg == expectedMessages
+			done && receivedMsg == expectedMessages
 		}
 	}
 
@@ -472,8 +480,7 @@ class StreamrWebsocketSpec extends StreamrIntegrationSpecification {
 		]
 
 		within10sec.eventually() {
-			assert done
-			assert receivedMsg == expectedMessages
+			done && receivedMsg == expectedMessages
 		}
 	}
 }
