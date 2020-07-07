@@ -9,8 +9,8 @@ public class PublishRequest extends ControlMessage {
     private final StreamMessage streamMessage;
     private final String sessionToken;
 
-    public PublishRequest(StreamMessage streamMessage, String sessionToken) {
-        super(TYPE);
+    public PublishRequest(String requestId, StreamMessage streamMessage, String sessionToken) {
+        super(TYPE, requestId);
         this.streamMessage = streamMessage;
         this.sessionToken = sessionToken;
     }

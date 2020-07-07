@@ -17,7 +17,4 @@ public class EncryptedGroupKey extends GroupKey {
         return new UnencryptedGroupKey(plaintext, start);
     }
 
-    public static EncryptedGroupKey fromMap(Map<String, Object> map) {
-        return new EncryptedGroupKey((String) map.get("groupKey"), new Date(((Double) map.get("start")).longValue()));
-    }
 }

@@ -265,6 +265,7 @@ class HistoricalSubscriptionSpec extends Specification {
 
 
         when:
+        // the group keys are set, no further calls should occur
         sub.setGroupKeys(msg1.getPublisherId(), [key])
         Thread.sleep(timeout * 2)
         then:

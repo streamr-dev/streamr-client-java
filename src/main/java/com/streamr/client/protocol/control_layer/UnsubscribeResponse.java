@@ -5,8 +5,8 @@ public class UnsubscribeResponse extends ControlMessage {
     private String streamId;
     private int streamPartition;
 
-    public UnsubscribeResponse(String streamId, int streamPartition) {
-        super(TYPE);
+    public UnsubscribeResponse(String requestId, String streamId, int streamPartition) {
+        super(TYPE, requestId);
         this.streamId = streamId;
         this.streamPartition = streamPartition;
     }

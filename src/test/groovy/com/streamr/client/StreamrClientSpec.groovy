@@ -3,6 +3,7 @@ package com.streamr.client
 import com.streamr.client.authentication.ApiKeyAuthenticationMethod
 import com.streamr.client.options.EncryptionOptions
 import com.streamr.client.options.ResendLastOption
+import com.streamr.client.options.ResendOption
 import com.streamr.client.options.SigningOptions
 import com.streamr.client.options.StreamrClientOptions
 import com.streamr.client.protocol.control_layer.*
@@ -12,7 +13,7 @@ import com.streamr.client.protocol.message_layer.StreamMessage
 import com.streamr.client.protocol.message_layer.StreamMessageV31
 import com.streamr.client.rest.Stream
 import com.streamr.client.subs.Subscription
-import com.streamr.client.utils.UnencryptedGroupKey
+import groovy.transform.CompileStatic
 import spock.lang.Specification
 import spock.util.concurrent.PollingConditions
 
@@ -20,16 +21,39 @@ class StreamrClientSpec extends Specification {
 
     private static TestWebSocketServer server = new TestWebSocketServer("localhost", 6000)
 
-    private static TestingStreamrClient client
+    TestingStreamrClient client
     int gapFillTimeout = 500
     int retryResendAfter = 500
 
+    static Stream stream
+
     void setupSpec() {
         server.start()
+
+        stream = new Stream("", "")
+        stream.setId("test-stream")
+        stream.setPartitions(1)
     }
 
     void cleanupSpec() {
         server.stop()
+    }
+
+    void subscribeClient(ResendOption resendOption = null) {
+        Subscription sub = client.subscribe(stream, 0, new MessageHandler() {
+            @Override
+            void onMessage(Subscription sub, StreamMessage message) {}
+        }, resendOption)
+
+        new PollingConditions().eventually {
+            server.receivedControlMessages.size() == 1
+        }
+        server.expect(new SubscribeRequest(server.receivedControlMessages[0].message.requestId, stream.id, 0, client.sessionToken))
+
+        client.receiveMessage(new SubscribeResponse(server.receivedControlMessages[0].message.requestId, stream.id, 0))
+        new PollingConditions().eventually {
+            sub.isSubscribed()
+        }
     }
 
     void setup() {
@@ -55,100 +79,74 @@ class StreamrClientSpec extends Specification {
     }
 
     void "subscribe() sends SubscribeRequest and 1 ResendLastRequest after SubscribeResponse if answer received"() {
-        Stream stream = new Stream("", "")
-        stream.setId("test-stream")
         when:
-        client.subscribe(stream, 0, new MessageHandler() {
-            @Override
-            void onMessage(Subscription sub, StreamMessage message) {
-            }
-        }, new ResendLastOption(10))
+        subscribeClient(new ResendLastOption(10))
+
         then:
-        server.expect(new SubscribeRequest("test-stream", 0, client.getSessionToken()))
+        new PollingConditions().eventually {
+            server.receivedControlMessages.size() == 2
+        }
+        server.expect(new ResendLastRequest(server.receivedControlMessages[1].message.requestId, stream.id, 0, 10, client.sessionToken))
+
         when:
-        client.receiveMessage(new SubscribeResponse("test-stream", 0))
-        then:
-        String subId = client.getSubId("test-stream", 0)
-        server.expect(new ResendLastRequest("test-stream", 0, subId, 10, client.getSessionToken()))
-        server.noOtherMessagesReceived()
-        when:
-        client.receiveMessage(new UnicastMessage(subId, createMsg("test-stream", 0, 0, null, null)))
-        then:
+        client.receiveMessage(new UnicastMessage(server.receivedControlMessages[1].message.requestId, createMsg("test-stream", 0, 0, null, null)))
         Thread.sleep(retryResendAfter + 200)
+
+        then:
         server.noOtherMessagesReceived()
     }
 
     void "subscribe() sends 2 ResendLastRequest after SubscribeResponse if no answer received"() {
-        Stream stream = new Stream("", "")
-        stream.setId("test-stream")
         when:
-        client.subscribe(stream, 0, new MessageHandler() {
-            @Override
-            void onMessage(Subscription sub, StreamMessage message) {
-            }
-        }, new ResendLastOption(10))
-        server.expect(new SubscribeRequest("test-stream", 0, client.getSessionToken()))
-        client.receiveMessage(new SubscribeResponse("test-stream", 0))
-        String subId = client.getSubId("test-stream", 0)
-        then:
+        subscribeClient(new ResendLastOption(10))
         Thread.sleep(retryResendAfter + 200)
-        server.expect(new ResendLastRequest("test-stream", 0, subId, 10, client.getSessionToken()))
-        server.expect(new ResendLastRequest("test-stream", 0, subId, 10, client.getSessionToken()))
-        server.noOtherMessagesReceived()
+
+        then:
+        server.receivedControlMessages.size() == 3
+        server.expect(new ResendLastRequest(server.receivedControlMessages[1].message.requestId, stream.id, 0, 10, client.sessionToken))
+        server.expect(new ResendLastRequest(server.receivedControlMessages[2].message.requestId, stream.id, 0, 10, client.sessionToken))
     }
 
     void "requests a single resend if gap is detected and then filled"() {
-        Stream stream = new Stream("", "")
-        stream.setId("test-stream")
         when:
-        client.subscribe(stream, new MessageHandler() {
-            @Override
-            void onMessage(Subscription sub, StreamMessage message) {
-            }
-        })
-        server.expect(new SubscribeRequest("test-stream", 0, client.getSessionToken()))
-        client.receiveMessage(new SubscribeResponse("test-stream", 0))
-        client.receiveMessage(new BroadcastMessage(createMsg("test-stream", 0, 0, null, null)))
-        client.receiveMessage(new BroadcastMessage(createMsg("test-stream", 2, 0, 1, 0)))
-        String subId = client.getSubId("test-stream", 0)
+        subscribeClient()
+        client.receiveMessage(new BroadcastMessage("", createMsg("test-stream", 0, 0, null, null)))
+        client.receiveMessage(new BroadcastMessage("", createMsg("test-stream", 2, 0, 1, 0)))
         Thread.sleep(gapFillTimeout)
+
         then:
-        server.expect(new ResendRangeRequest("test-stream", 0, subId, new MessageRef(0, 1), new MessageRef(1, 0), "", "", client.getSessionToken()))
+        new PollingConditions().eventually {
+            server.receivedControlMessages.size() == 2
+        }
+        server.expect(new ResendRangeRequest(server.receivedControlMessages[1].message.requestId, stream.id, 0, new MessageRef(0, 1), new MessageRef(1, 0), "", "", client.sessionToken))
+
         when:
-        client.receiveMessage(new UnicastMessage(subId, createMsg("test-stream", 1, 0, 0, 0)))
-        client.receiveMessage(new ResendResponseResent("test-stream", 0, subId))
+        client.receiveMessage(new UnicastMessage(server.receivedControlMessages[1].message.requestId, createMsg("test-stream", 1, 0, 0, 0)))
+        client.receiveMessage(new ResendResponseResent(server.receivedControlMessages[1].message.requestId, stream.id, 0))
+
         then:
         Thread.sleep(gapFillTimeout + 200)
         server.noOtherMessagesReceived()
     }
 
     void "requests multiple resends if gap is detected and not filled"() {
-        Stream stream = new Stream("", "")
-        stream.setId("test-stream")
         when:
-        client.subscribe(stream, new MessageHandler() {
-            @Override
-            void onMessage(Subscription sub, StreamMessage message) {
-            }
-        })
-        server.expect(new SubscribeRequest("test-stream", 0, client.getSessionToken()))
-        client.receiveMessage(new SubscribeResponse("test-stream", 0))
-        client.receiveMessage(new BroadcastMessage(createMsg("test-stream", 0, 0, null, null)))
-        client.receiveMessage(new BroadcastMessage(createMsg("test-stream", 2, 0, 1, 0)))
-        String subId = client.getSubId("test-stream", 0)
-        then:
+        subscribeClient()
+        client.receiveMessage(new BroadcastMessage("", createMsg("test-stream", 0, 0, null, null)))
+        client.receiveMessage(new BroadcastMessage("", createMsg("test-stream", 2, 0, 1, 0)))
         Thread.sleep(2 * gapFillTimeout + 200)
-        server.expect(new ResendRangeRequest("test-stream", 0, subId, new MessageRef(0, 1), new MessageRef(1, 0), "", "", client.getSessionToken()))
-        server.expect(new ResendRangeRequest("test-stream", 0, subId, new MessageRef(0, 1), new MessageRef(1, 0), "", "", client.getSessionToken()))
+
+        then:
+        new PollingConditions().eventually {
+            server.receivedControlMessages.size() == 3
+        }
+        server.expect(new ResendRangeRequest(server.receivedControlMessages[1].message.requestId, stream.id, 0, new MessageRef(0, 1), new MessageRef(1, 0), "", "", client.sessionToken))
+        server.expect(new ResendRangeRequest(server.receivedControlMessages[2].message.requestId, stream.id, 0, new MessageRef(0, 1), new MessageRef(1, 0), "", "", client.sessionToken))
     }
-    
+
     void "client reconnects while publishing if server is temporarily down"() {
-        when:
-        Stream stream = new Stream("", "")
-        stream.setId("test-stream")
-        stream.setPartitions(1)
-        Thread serverRestart = new Thread(){
-            void run(){
+        Thread serverRestart = new Thread() {
+            void run() {
                 server.stop()
                 server = new TestWebSocketServer("localhost", 6000)
                 sleep(2000)
@@ -156,10 +154,18 @@ class StreamrClientSpec extends Specification {
                 sleep(2000)
             }
         }
-        then:
+
+        when:
         client.publish(stream, ["test": 1])
         Thread.sleep(200)
         client.publish(stream, ["test": 2])
+
+        then:
+        new PollingConditions().eventually {
+            server.receivedControlMessages.size() == 2
+        }
+
+        when:
         serverRestart.start()
         Thread.sleep(200)
         client.publish(stream, ["test": 3])
@@ -169,16 +175,15 @@ class StreamrClientSpec extends Specification {
         client.publish(stream, ["test": 5])
         Thread.sleep(200)
         client.publish(stream, ["test": 6])
+
+        then:
+        new PollingConditions().eventually {
+            server.receivedControlMessages.size() == 4 // count restarts on the server restart
+        }
     }
 
     void "calling publish from multiple threads during a server disconnect does not cause errors (CORE-1912)"() {
-        setup:
-        Stream stream = new Stream("", "")
-        stream.setId("test-stream")
-        stream.setPartitions(1)
-
-        and:
-        Thread serverRestart = new Thread(){
+        Thread serverRestart = new Thread() {
             void run(){
                 server.stop()
                 server = new TestWebSocketServer("localhost", 6000)
@@ -186,11 +191,10 @@ class StreamrClientSpec extends Specification {
             }
         }
 
-        and:
-        def errors = Collections.synchronizedList([])
+        List errors = Collections.synchronizedList([])
         List<Thread> threads = []
         for (int i = 4; i < 100; ++i) {
-            threads.add(new Thread(){
+            threads.add(new Thread() {
                 void run() {
                     try {
                         client.publish(stream, ["test": i])
@@ -213,55 +217,51 @@ class StreamrClientSpec extends Specification {
             threads.find { it.alive } == null
         }
         errors == []
-
     }
 
     void "subscribed client reconnects if server is temporarily down"() {
+        subscribeClient()
+
         when:
-        Stream stream = new Stream("", "")
-        stream.setId("test-stream")
-        stream.setPartitions(1)
-
-        List<StreamMessage> receivedMessages = new ArrayList<>()
-        client.subscribe(stream, new MessageHandler() {
-            @Override
-            void onMessage(Subscription sub, StreamMessage message) {
-                receivedMessages.push(message)
-            }
-        })
-
-        new Thread() {
-            void run() {
-                server.sendSubscribeToAll(stream.getId(), 0)
-                server.sendToAll(stream, Collections.singletonMap("key", "msg #1"))
-                sleep(2000)
-                server.stop()
-                server = new TestWebSocketServer("localhost", 6000)
-                sleep(4000)
-                server.start()
-                sleep(10000)
-                server.sendSubscribeToAll(stream.getId(), 0)
-                server.sendToAll(stream, Collections.singletonMap("key", "msg #2"))
-            }
-        }.start()
-
-        PollingConditions conditions = new PollingConditions(timeout: 20, initialDelay: 1.25, factor: 1)
+        server.broadcastMessageToAll(stream, Collections.singletonMap("key", "msg #1"))
 
         then:
-        conditions.eventually {
-            receivedMessages.size() == 2
+        new PollingConditions().eventually {
+            client.getReceivedStreamMessages().size() == 1
+        }
+
+        when:
+        server.stop()
+        server = new TestWebSocketServer("localhost", 6000)
+        sleep(4000)
+        server.start()
+        sleep(10000)
+
+        then:
+        // Client should have resubscribed
+        server.expect(new SubscribeRequest(server.receivedControlMessages[0].message.requestId, stream.id, 0, client.sessionToken))
+
+        when:
+        server.respondTo(server.receivedControlMessages[0])
+        server.broadcastMessageToAll(stream, Collections.singletonMap("key", "msg #2"))
+
+        then:
+        new PollingConditions().eventually {
+            println "Checking received messages: ${client.getReceivedStreamMessages().size()}"
+            client.getReceivedStreamMessages().size() == 2
         }
     }
 
     void "error message handler is called"() {
-        setup:
         boolean errorIsHandled = false
-        when:
         client.setErrorMessageHandler({ ErrorResponse error ->
             errorIsHandled = true
         })
-        ErrorResponse err = new ErrorResponse("error occured")
+        ErrorResponse err = new ErrorResponse("requestId", "error occurred", "TEST_ERROR")
+
+        when:
         client.handleMessage(err.toJson())
+
         then:
         errorIsHandled
     }

@@ -7,10 +7,12 @@ import com.streamr.client.exceptions.*;
 import com.streamr.client.options.ResendOption;
 import com.streamr.client.options.StreamrClientOptions;
 import com.streamr.client.protocol.control_layer.*;
+import com.streamr.client.protocol.message_layer.GroupKeyRequest;
 import com.streamr.client.protocol.message_layer.MessageRef;
 import com.streamr.client.rest.UserInfo;
 import com.streamr.client.subs.*;
 import com.streamr.client.utils.*;
+import org.apache.commons.codec.binary.Base64;
 import org.apache.commons.codec.digest.DigestUtils;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
@@ -24,6 +26,7 @@ import com.streamr.client.rest.Stream;
 import java.io.IOException;
 import java.net.URI;
 import java.net.URISyntaxException;
+import java.nio.ByteBuffer;
 import java.nio.channels.NotYetConnectedException;
 import java.util.*;
 import java.util.concurrent.Executors;
@@ -46,12 +49,12 @@ public class StreamrClient extends StreamrRESTClient {
     private String publisherId = null;
     private final EncryptionUtil encryptionUtil;
     private final MessageCreationUtil msgCreationUtil;
-    private final SubscribedStreamsUtil subscribedStreamsUtil;
+    private final StreamMessageValidator streamMessageValidator;
     private final KeyStorage keyStorage;
     private final KeyExchangeUtil keyExchangeUtil;
 
-    private Stream inbox;
-    private Subscription inboxSub;
+    private Stream keyExchangeStream;
+    private Subscription keyExchangeSub;
 
     private final HashMap<String, OneTimeResend> secondResends = new HashMap<>();
 
@@ -59,6 +62,7 @@ public class StreamrClient extends StreamrRESTClient {
     private boolean keepConnected = false;
     private final ScheduledExecutorService executorService = Executors.newSingleThreadScheduledExecutor();
     private final Object stateChangeLock = new Object();
+    private int requestCounter = 0;
 
     public StreamrClient(StreamrClientOptions options) {
         super(options);
@@ -87,7 +91,7 @@ public class StreamrClient extends StreamrRESTClient {
                 throw new RuntimeException(e);
             }
         });
-        subscribedStreamsUtil = new SubscribedStreamsUtil(id -> {
+        streamMessageValidator = new StreamMessageValidator(id -> {
             try {
                 return getStream(id);
             } catch (IOException e) {
@@ -104,11 +108,12 @@ public class StreamrClient extends StreamrRESTClient {
             }
         } else if (options.getAuthenticationMethod() instanceof EthereumAuthenticationMethod) {
             publisherId = ((EthereumAuthenticationMethod) options.getAuthenticationMethod()).getAddress();
-            try {
-                inbox = getStream(publisherId);
-            } catch (IOException e) {
-                throw new RuntimeException(e);
-            }
+
+            // The key exchange stream is a system stream.
+            // It doesn't explicitly exist, but as per spec, we can subscribe to it anyway.
+            keyExchangeStream = new Stream("Key exchange stream for " + publisherId, "");
+            keyExchangeStream.setId(KeyExchangeUtil.getKeyExchangeStreamId(publisherId));
+            keyExchangeStream.setPartitions(1);
         }
         SigningUtil signingUtil = null;
         if (options.getPublishSignedMsgs()) {
@@ -180,7 +185,7 @@ public class StreamrClient extends StreamrRESTClient {
 
     public void onOpen() {}
     public void onClose() {
-        subscribedStreamsUtil.clearAndClose();
+        streamMessageValidator.clearAndClose();
     }
     public void onError(Exception ex) {}
 
@@ -232,29 +237,30 @@ public class StreamrClient extends StreamrRESTClient {
             throw new ConnectionTimeoutException(options.getWebsocketApiUrl());
         }
 
-        if (inbox != null && inboxSub == null) {
-            inboxSub = subscribe(inbox, new MessageHandler() {
+        if (keyExchangeStream != null && keyExchangeSub == null) {
+            keyExchangeSub = subscribe(keyExchangeStream, new MessageHandler() {
                 @Override
                 public void onMessage(Subscription sub, StreamMessage message) {
                     try {
                         if (message.getContentType().equals(StreamMessage.ContentType.GROUP_KEY_REQUEST)) {
-                            keyExchangeUtil.handleGroupKeyRequest(message);
+                            try {
+                                keyExchangeUtil.handleGroupKeyRequest(message);
+                            } catch (Exception e) {
+                                GroupKeyRequest groupKeyRequest = GroupKeyRequest.fromMap(message.getContent());
+                                StreamMessage errorMessage = msgCreationUtil.createGroupKeyErrorResponse(message.getPublisherId(), groupKeyRequest, e);
+                                publish(errorMessage); //sending the error to the sender of 'message'
+                            }
                         } else if (message.getContentType().equals(StreamMessage.ContentType.GROUP_KEY_RESPONSE_SIMPLE)) {
                             keyExchangeUtil.handleGroupKeyResponse(message);
                         } else if (message.getContentType().equals(StreamMessage.ContentType.GROUP_KEY_RESET_SIMPLE)) {
                             keyExchangeUtil.handleGroupKeyReset(message);
-                        } else if (message.getContentType().equals(StreamMessage.ContentType.ERROR_MSG)) {
+                        } else if (message.getContentType().equals(StreamMessage.ContentType.GROUP_KEY_RESPONSE_ERROR)) {
                             handleInboxStreamErrorMessage(message);
                         } else {
                             throw new MalformedMessageException("Cannot handle message with content type: " + message.getContentType());
                         }
                     } catch (Exception e) {
-                        log.warn(e.getMessage());
-                        // we don't notify the error to the originator if the message is unauthenticated.
-                        if (message.getSignature() != null) {
-                            StreamMessage errorMessage = msgCreationUtil.createErrorMessage(message.getPublisherId(), e);
-                            publish(errorMessage); //sending the error to the sender of 'message'
-                        }
+                        log.error(e.getMessage());
                     }
                 }
             });
@@ -336,7 +342,7 @@ public class StreamrClient extends StreamrRESTClient {
                         UnicastMessage msg = (UnicastMessage) message;
                         handleMessage(msg.getStreamMessage(), Subscription::handleResentMessage);
                     } else if (message.getType() == SubscribeResponse.TYPE) {
-                        handleSubcribeResponse((SubscribeResponse)message);
+                        handleSubscribeResponse((SubscribeResponse)message);
                     } else if (message.getType() == UnsubscribeResponse.TYPE) {
                         handleUnsubcribeResponse((UnsubscribeResponse)message);
                     } else if (message.getType() == ResendResponseResending.TYPE) {
@@ -368,7 +374,7 @@ public class StreamrClient extends StreamrRESTClient {
                                BiConsumer<Subscription, StreamMessage> subMsgHandler) throws SubscriptionNotFoundException {
         log.debug(message.getStreamId() + ": " + message.getSerializedContent());
 
-        subscribedStreamsUtil.verifyStreamMessage(message);
+        streamMessageValidator.validate(message);
         Subscription sub = subs.get(message.getStreamId(), message.getStreamPartition());
 
         // Only call the handler if we are in subscribed state (and not for example UNSUBSCRIBING)
@@ -420,7 +426,7 @@ public class StreamrClient extends StreamrRESTClient {
     }
 
     private void publish(StreamMessage streamMessage) {
-        PublishRequest req = new PublishRequest(streamMessage, getSessionToken());
+        PublishRequest req = new PublishRequest(newRequestId("pub"), streamMessage, getSessionToken());
         getWebsocket().send(req.toJson());
     }
 
@@ -460,7 +466,7 @@ public class StreamrClient extends StreamrRESTClient {
             keysPerPublisher.putAll(groupKeys);
         }
 
-        SubscribeRequest subscribeRequest = new SubscribeRequest(stream.getId(), partition, getSessionToken());
+        SubscribeRequest subscribeRequest = new SubscribeRequest(newRequestId("sub"), stream.getId(), partition, getSessionToken());
 
         Subscription sub;
         BasicSubscription.GroupKeyRequestFunction requestFunction = (publisherId, start, end) -> sendGroupKeyRequest(stream.getId(), publisherId, start, end);
@@ -477,8 +483,16 @@ public class StreamrClient extends StreamrRESTClient {
                     options.getPropagationTimeout(), options.getResendTimeout(), options.getSkipGapsOnFullQueue());
         }
         sub.setGapHandler((MessageRef from, MessageRef to, String publisherId, String msgChainId) -> {
-            ResendRangeRequest req = new ResendRangeRequest(stream.getId(), partition,
-                    sub.getId(), from, to, publisherId, msgChainId, getSessionToken());
+            ResendRangeRequest req = new ResendRangeRequest(
+                    newRequestId("resend"),
+                    stream.getId(),
+                    partition,
+                    from,
+                    to,
+                    publisherId,
+                    msgChainId,
+                    getSessionToken()
+            );
             sub.setResending(true);
             send(req);
         });
@@ -489,7 +503,7 @@ public class StreamrClient extends StreamrRESTClient {
     }
 
     private void resubscribe(Subscription sub) {
-        SubscribeRequest subscribeRequest = new SubscribeRequest(sub.getStreamId(), sub.getPartition(), getSessionToken());
+        SubscribeRequest subscribeRequest = new SubscribeRequest(newRequestId("resub"), sub.getStreamId(), sub.getPartition(), getSessionToken());
         sub.setState(Subscription.State.SUBSCRIBING);
         send(subscribeRequest);
     }
@@ -525,18 +539,18 @@ public class StreamrClient extends StreamrRESTClient {
      */
 
     public void unsubscribe(Subscription sub) {
-        UnsubscribeRequest unsubscribeRequest = new UnsubscribeRequest(sub.getStreamId(), sub.getPartition());
+        UnsubscribeRequest unsubscribeRequest = new UnsubscribeRequest(newRequestId("unsub"), sub.getStreamId(), sub.getPartition());
         sub.setState(Subscription.State.UNSUBSCRIBING);
         sub.setResending(false);
         send(unsubscribeRequest);
     }
 
-    private void handleSubcribeResponse(SubscribeResponse res) throws SubscriptionNotFoundException {
+    private void handleSubscribeResponse(SubscribeResponse res) throws SubscriptionNotFoundException {
         Subscription sub = subs.get(res.getStreamId(), res.getStreamPartition());
         sub.setState(Subscription.State.SUBSCRIBED);
         if (sub.hasResendOptions()) {
             ResendOption resendOption = sub.getResendOption();
-            ControlMessage req = resendOption.toRequest(res.getStreamId(), res.getStreamPartition(), sub.getId(), this.getSessionToken());
+            ControlMessage req = resendOption.toRequest(newRequestId("resend"), res.getStreamId(), res.getStreamPartition(), this.getSessionToken());
             send(req);
             OneTimeResend resend = new OneTimeResend(websocket, req, options.getResendTimeout(), sub);
             secondResends.put(sub.getId(), resend);
@@ -589,5 +603,16 @@ public class StreamrClient extends StreamrRESTClient {
         }
         StreamMessage request = msgCreationUtil.createGroupKeyRequest(publisherId, streamId, encryptionUtil.getPublicKeyAsPemString(), start, end);
         publish(request);
+    }
+
+    private String newRequestId(String prefix) {
+        UUID uuid = UUID.randomUUID();
+
+        byte[] bytes = new byte[16];
+        ByteBuffer bb = ByteBuffer.wrap(bytes);
+        bb.putLong(uuid.getMostSignificantBits());
+        bb.putLong(uuid.getLeastSignificantBits());
+
+        return String.format("%s.%s.%d", prefix, Base64.encodeBase64URLSafeString(bytes), requestCounter++);
     }
 }

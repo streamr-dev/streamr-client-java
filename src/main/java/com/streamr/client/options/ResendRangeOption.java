@@ -26,8 +26,8 @@ public class ResendRangeOption extends ResendOption {
     }
 
     @Override
-    public ControlMessage toRequest(String streamId, int streamPartition, String subId, String sessionToken) {
-        return new ResendRangeRequest(streamId, streamPartition, subId, from, to, publisherId, msgChainId, sessionToken);
+    public ControlMessage toRequest(String requestId, String streamId, int streamPartition, String sessionToken) {
+        return new ResendRangeRequest(requestId, streamId, streamPartition, from, to, publisherId, msgChainId, sessionToken);
     }
 
     public MessageRef getTo() {

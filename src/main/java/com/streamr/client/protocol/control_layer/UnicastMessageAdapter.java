@@ -13,9 +13,10 @@ public class UnicastMessageAdapter extends ControlLayerAdapter<UnicastMessage> {
 
     @Override
     public UnicastMessage fromJson(JsonReader reader) throws IOException {
-        String subId = reader.nextString();
+        // Version and type already read
+        String requestId = reader.nextString();
         StreamMessage streamMessage = streamMessageAdapter.fromJson(reader);
-        return new UnicastMessage(subId, streamMessage);
+        return new UnicastMessage(requestId, streamMessage);
     }
 
     @Override
@@ -23,7 +24,7 @@ public class UnicastMessageAdapter extends ControlLayerAdapter<UnicastMessage> {
         writer.beginArray();
         writer.value(ControlMessage.LATEST_VERSION);
         writer.value(UnicastMessage.TYPE);
-        writer.value(value.getSubId());
+        writer.value(value.getRequestId());
         streamMessageAdapter.toJson(writer, value.getStreamMessage());
         writer.endArray();
     }

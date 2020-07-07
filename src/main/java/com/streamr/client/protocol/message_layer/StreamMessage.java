@@ -4,13 +4,11 @@ import java.io.IOException;
 import java.nio.charset.Charset;
 import java.nio.charset.StandardCharsets;
 import java.util.Date;
-import java.util.List;
 import java.util.Map;
 
 import com.squareup.moshi.JsonReader;
 import com.squareup.moshi.JsonWriter;
 import com.streamr.client.exceptions.EncryptedContentNotParsableException;
-import com.streamr.client.exceptions.MalformedMessageException;
 import com.streamr.client.utils.HttpUtils;
 import com.streamr.client.exceptions.UnsupportedMessageException;
 import okio.Buffer;
@@ -21,7 +19,6 @@ public abstract class StreamMessage implements ITimestamped {
 
     private static final Logger log = LogManager.getLogger();
     private static final StreamMessageAdapter adapter = new StreamMessageAdapter();
-
     public static final int LATEST_VERSION = 31;
 
     public enum ContentType {
@@ -29,7 +26,7 @@ public abstract class StreamMessage implements ITimestamped {
         GROUP_KEY_REQUEST ((byte) 28),
         GROUP_KEY_RESPONSE_SIMPLE ((byte) 29),
         GROUP_KEY_RESET_SIMPLE ((byte) 30),
-        ERROR_MSG ((byte) 31);
+        GROUP_KEY_RESPONSE_ERROR((byte) 31);
 
         private final byte id;
 
@@ -50,8 +47,8 @@ public abstract class StreamMessage implements ITimestamped {
                 return GROUP_KEY_RESPONSE_SIMPLE;
             } else if (id == GROUP_KEY_RESET_SIMPLE.id) {
                 return GROUP_KEY_RESET_SIMPLE;
-            } else if (id == ERROR_MSG.id) {
-                return ERROR_MSG;
+            } else if (id == GROUP_KEY_RESPONSE_ERROR.id) {
+                return GROUP_KEY_RESPONSE_ERROR;
             }
             throw new UnsupportedMessageException("Unrecognized content type: "+id);
         }
@@ -169,16 +166,24 @@ public abstract class StreamMessage implements ITimestamped {
         return contentType;
     }
 
+    public void setContentType(ContentType contentType) {
+        this.contentType = contentType;
+    }
+
     public EncryptionType getEncryptionType() {
         return encryptionType;
     }
 
-    public Map<String, Object> getContent() throws IOException, EncryptedContentNotParsableException {
+    public Map<String, Object> getContent() {
         if (content == null) {
             if (encryptionType == EncryptionType.AES || encryptionType == EncryptionType.NEW_KEY_AND_AES) {
                 throw new EncryptedContentNotParsableException(encryptionType);
             }
-            this.content = HttpUtils.mapAdapter.fromJson(serializedContent);
+            try {
+                this.content = HttpUtils.mapAdapter.fromJson(serializedContent);
+            } catch (IOException e) {
+                throw new RuntimeException("Failed to parse message content: " + serializedContent);
+            }
             validateContent(content, contentType);
         }
         return content;
@@ -257,60 +262,14 @@ public abstract class StreamMessage implements ITimestamped {
     }
 
     private static void validateContent(Map<String, Object> content, ContentType contentType) {
-        if (contentType == ContentType.GROUP_KEY_REQUEST) {
-            if (!content.containsKey("publicKey")) {
-                throw new MalformedMessageException("Content of type " + ContentType.GROUP_KEY_REQUEST + " must contain a 'publicKey' field.");
-            }
-            if (!content.containsKey("streamId")) {
-                throw new MalformedMessageException("Content of type " + ContentType.GROUP_KEY_REQUEST + " must contain a 'streamId' field.");
-            }
-            if (content.containsKey("range")) {
-                try {
-                    Map<String, Object> range = (Map<String, Object>) content.get("range");
-                    if (!range.containsKey("start") || !range.containsKey("end")) {
-                        throw new MalformedMessageException("Content of type " + ContentType.GROUP_KEY_REQUEST + " must contain 'start' and 'end' fields.");
-                    }
-                } catch (ClassCastException e) {
-                    throw new MalformedMessageException("'range' field must be a Map<String,Object>.");
-                }
-
-            }
-        } else if (contentType == ContentType.GROUP_KEY_RESPONSE_SIMPLE) {
-            if (!content.containsKey("streamId")) {
-                throw new MalformedMessageException("Content of type " + ContentType.GROUP_KEY_REQUEST + " must contain a 'streamId' field.");
-            }
-            if (!content.containsKey("keys")) {
-                throw new MalformedMessageException("Content of type " + ContentType.GROUP_KEY_RESPONSE_SIMPLE + " must contain a 'keys' field.");
-            }
-            try {
-                List<Map<String,Object>> keys = (List<Map<String,Object>>) content.get("keys");
-                for (Map<String, Object> key: keys) {
-                    if (!key.containsKey("groupKey") || !key.containsKey("start")) {
-                        throw new MalformedMessageException("Each element in field 'keys' of content of type " +
-                                ContentType.GROUP_KEY_RESPONSE_SIMPLE + " must contain 'groupKey' and 'start' fields.");
-                    }
-                }
-            } catch (ClassCastException e) {
-                throw new MalformedMessageException("'keys' field must be a List<Map<String,Object>>.");
-            }
-
-        } else if (contentType == ContentType.GROUP_KEY_RESET_SIMPLE) {
-            if (!content.containsKey("streamId")) {
-                throw new MalformedMessageException("Content of type " + ContentType.GROUP_KEY_REQUEST + " must contain a 'streamId' field.");
-            }
-            if (!content.containsKey("groupKey")) {
-                throw new MalformedMessageException("Content of type " + ContentType.GROUP_KEY_RESET_SIMPLE + " must contain a 'groupKey' field.");
-            }
-            if (!content.containsKey("start")) {
-                throw new MalformedMessageException("Content of type " + ContentType.GROUP_KEY_RESET_SIMPLE + " must contain a 'start' field.");
-            }
-        } else if (contentType == ContentType.ERROR_MSG) {
-            if (!content.containsKey("code")) {
-                throw new MalformedMessageException("Content of type " + ContentType.ERROR_MSG + " must contain a 'code' field.");
-            }
-            if (!content.containsKey("message")) {
-                throw new MalformedMessageException("Content of type " + ContentType.ERROR_MSG + " must contain a 'message' field.");
-            }
+        if (contentType != ContentType.CONTENT_TYPE_JSON) {
+            // Throws if the content is not valid
+            AbstractGroupKeyMessage.fromContent(content, contentType);
         }
+    }
+
+    @Override
+    public String toString() {
+        return this.getClass().getSimpleName() + ": " + this.toJson();
     }
 }

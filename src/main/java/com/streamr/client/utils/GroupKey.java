@@ -21,13 +21,6 @@ public abstract class GroupKey {
         return start.getTime();
     }
 
-    public Map<String, Object> toMap() {
-        Map<String, Object> map = new HashMap<>();
-        map.put("groupKey", groupKeyHex);
-        map.put("start", getStartTime());
-        return map;
-    }
-
     @Override
     public boolean equals(Object other) {
         if (!(other instanceof GroupKey)) {

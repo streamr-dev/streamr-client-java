@@ -7,11 +7,6 @@ branches:
   only:
   - master
   - "/^v\\d+\\.\\d+(\\.\\d+)?(-\\S*)?$/"
-env:
-  global:
-  - NODE_VERSION=12
-before_install:
-  - nvm install $NODE_VERSION
 install:
   - ./gradlew assemble -x signArchives
 jobs:
@@ -32,8 +27,6 @@ jobs:
     - "$TRAVIS_BUILD_DIR/streamr-docker-dev/streamr-docker-dev/bin.sh wait"
     - "./gradlew integrationTest --stacktrace --info"
   - stage: Tests
-    name: streamr-client tests
-    env:
-    - CAN_FAIL=True
+    name: Cross-client tests
     script:
-    - ".travis_scripts/streamr-client-test.sh"
+    - ".travis_scripts/cross-client-tests.sh"

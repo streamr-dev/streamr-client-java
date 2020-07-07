@@ -10,17 +10,11 @@ import com.streamr.client.rest.Stream;
 import org.apache.commons.lang3.RandomStringUtils;
 import org.apache.commons.lang3.tuple.Pair;
 
-import javax.crypto.SecretKey;
-import javax.crypto.spec.SecretKeySpec;
-import javax.xml.bind.DatatypeConverter;
 import java.nio.ByteBuffer;
 import java.nio.charset.StandardCharsets;
 import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
-import java.util.Date;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
+import java.util.*;
 import java.util.stream.Collectors;
 
 public class MessageCreationUtil {
@@ -75,35 +69,39 @@ public class MessageCreationUtil {
         if (signingUtil == null) {
             throw new SigningRequiredException("Cannot create unsigned group key request. Must authenticate with an Ethereum account");
         }
-        Map<String, Object> data = new HashMap<>();
-        data.put("streamId", streamId);
-        data.put("publicKey", rsaPublicKey);
-        if (start != null && end != null) {
-            Map<String, Long> range = new HashMap<>();
-            range.put("start", start.getTime());
-            range.put("end", end.getTime());
-            data.put("range", range);
-        }
 
-        Pair<MessageID, MessageRef> pair = createDefaultMsgIdAndRef(publisherAddress.toLowerCase()); // using address as streamId (inbox stream)
+        GroupKeyRequest.Range range = null;
+        if (start != null && end != null) {
+            range = new GroupKeyRequest.Range(start.getTime(), end.getTime());
+        }
+        GroupKeyRequest request = new GroupKeyRequest(UUID.randomUUID().toString(), streamId, rsaPublicKey, range);
+
+        String keyExchangeStreamId = KeyExchangeUtil.getKeyExchangeStreamId(publisherAddress);
+        Pair<MessageID, MessageRef> pair = createDefaultMsgIdAndRef(keyExchangeStreamId);
         StreamMessage streamMessage = new StreamMessageV31(
-                pair.getLeft(), pair.getRight(), StreamMessage.ContentType.GROUP_KEY_REQUEST, EncryptionType.NONE, data,
+                pair.getLeft(), pair.getRight(), StreamMessage.ContentType.GROUP_KEY_REQUEST, EncryptionType.NONE, request.toMap(),
                 StreamMessage.SignatureType.SIGNATURE_TYPE_NONE, null);
         signingUtil.signStreamMessage(streamMessage);
         return streamMessage;
     }
 
-    public StreamMessage createGroupKeyResponse(String subscriberAddress, String streamId, List<EncryptedGroupKey> encryptedGroupKeys) {
+    public StreamMessage createGroupKeyResponse(String subscriberAddress, GroupKeyRequest request, List<EncryptedGroupKey> encryptedGroupKeys) {
         if (signingUtil == null) {
             throw new SigningRequiredException("Cannot create unsigned group key response. Must authenticate with an Ethereum account");
         }
-        Map<String, Object> data = new HashMap<>();
-        data.put("streamId", streamId);
-        data.put("keys", encryptedGroupKeys.stream().map(GroupKey::toMap).collect(Collectors.toList()));
 
-        Pair<MessageID, MessageRef> pair = createDefaultMsgIdAndRef(subscriberAddress.toLowerCase()); // using address as streamId (inbox stream)
+        GroupKeyResponse response = new GroupKeyResponse(
+                request.getRequestId(),
+                request.getStreamId(),
+                encryptedGroupKeys.stream()
+                        .map(GroupKeyResponse.Key::fromGroupKey)
+                        .collect(Collectors.toList())
+        );
+
+        String keyExchangeStreamId = KeyExchangeUtil.getKeyExchangeStreamId(subscriberAddress);
+        Pair<MessageID, MessageRef> pair = createDefaultMsgIdAndRef(keyExchangeStreamId);
         StreamMessage streamMessage = new StreamMessageV31(
-                pair.getLeft(), pair.getRight(), StreamMessage.ContentType.GROUP_KEY_RESPONSE_SIMPLE, EncryptionType.RSA, data,
+                pair.getLeft(), pair.getRight(), StreamMessage.ContentType.GROUP_KEY_RESPONSE_SIMPLE, EncryptionType.RSA, response.toMap(),
                 StreamMessage.SignatureType.SIGNATURE_TYPE_NONE, null);
         signingUtil.signStreamMessage(streamMessage);
         return streamMessage;
@@ -113,28 +111,34 @@ public class MessageCreationUtil {
         if (signingUtil == null) {
             throw new SigningRequiredException("Cannot create unsigned group key reset. Must authenticate with an Ethereum account");
         }
-        Map<String, Object> data = new HashMap<>();
-        data.put("streamId", streamId);
-        data.putAll(encryptedGroupKey.toMap());
 
-        Pair<MessageID, MessageRef> pair = createDefaultMsgIdAndRef(subscriberAddress.toLowerCase()); // using address as streamId (inbox stream)
+        GroupKeyReset reset = new GroupKeyReset(streamId, encryptedGroupKey.getGroupKeyHex(), encryptedGroupKey.getStartTime());
+
+        String keyExchangeStreamId = KeyExchangeUtil.getKeyExchangeStreamId(subscriberAddress);
+        Pair<MessageID, MessageRef> pair = createDefaultMsgIdAndRef(keyExchangeStreamId);
         StreamMessage streamMessage = new StreamMessageV31(
-                pair.getLeft(), pair.getRight(), StreamMessage.ContentType.GROUP_KEY_RESET_SIMPLE, EncryptionType.RSA, data,
+                pair.getLeft(), pair.getRight(), StreamMessage.ContentType.GROUP_KEY_RESET_SIMPLE, EncryptionType.RSA, reset.toMap(),
                 StreamMessage.SignatureType.SIGNATURE_TYPE_NONE, null);
         signingUtil.signStreamMessage(streamMessage);
         return streamMessage;
     }
 
-    public StreamMessage createErrorMessage(String destinationAddress, Exception e) {
+    public StreamMessage createGroupKeyErrorResponse(String destinationAddress, GroupKeyRequest request, Exception e) {
         if (signingUtil == null) {
             throw new SigningRequiredException("Cannot create unsigned error message. Must authenticate with an Ethereum account");
         }
-        Map<String, Object> data = new HashMap<>();
-        data.put("code", getErrorCodeFromException(e));
-        data.put("message", e.getMessage());
-        Pair<MessageID, MessageRef> pair = createDefaultMsgIdAndRef(destinationAddress.toLowerCase()); // using address as streamId (inbox stream)
+
+        GroupKeyErrorResponse response = new GroupKeyErrorResponse(
+                request.getRequestId(),
+                request.getStreamId(),
+                getErrorCodeFromException(e),
+                e.getMessage()
+        );
+
+        String keyExchangeStreamId = KeyExchangeUtil.getKeyExchangeStreamId(destinationAddress);
+        Pair<MessageID, MessageRef> pair = createDefaultMsgIdAndRef(keyExchangeStreamId);
         StreamMessage streamMessage = new StreamMessageV31(
-                pair.getLeft(), pair.getRight(), StreamMessage.ContentType.ERROR_MSG, EncryptionType.NONE, data,
+                pair.getLeft(), pair.getRight(), StreamMessage.ContentType.GROUP_KEY_RESPONSE_ERROR, EncryptionType.NONE, response.toMap(),
                 StreamMessage.SignatureType.SIGNATURE_TYPE_NONE, null);
         signingUtil.signStreamMessage(streamMessage);
         return streamMessage;

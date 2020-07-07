@@ -9,9 +9,11 @@ public class UnsubscribeResponseAdapter extends ControlLayerAdapter<UnsubscribeR
 
     @Override
     public UnsubscribeResponse fromJson(JsonReader reader) throws IOException {
+        // Version and type already read
+        String requestId = reader.nextString();
         String streamId = reader.nextString();
         int streamPartition = reader.nextInt();
-        return new UnsubscribeResponse(streamId, streamPartition);
+        return new UnsubscribeResponse(requestId, streamId, streamPartition);
     }
 
     @Override
@@ -19,6 +21,7 @@ public class UnsubscribeResponseAdapter extends ControlLayerAdapter<UnsubscribeR
         writer.beginArray();
         writer.value(ControlMessage.LATEST_VERSION);
         writer.value(UnsubscribeResponse.TYPE);
+        writer.value(value.getRequestId());
         writer.value(value.getStreamId());
         writer.value(value.getStreamPartition());
         writer.endArray();

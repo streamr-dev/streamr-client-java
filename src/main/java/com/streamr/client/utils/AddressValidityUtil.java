@@ -28,6 +28,13 @@ public class AddressValidityUtil {
     private final Function<String, List<String>> getPublishersFunction;
     private final BiFunction<String, String, Boolean> isPublisherFunction;
 
+    /**
+     *
+     * @param getSubscribersFunction (streamId)
+     * @param isSubscriberFunction (streamId, address)
+     * @param getPublishersFunction (streamId)
+     * @param isPublisherFunction (streamId, address)
+     */
     public AddressValidityUtil(Function<String, List<String>> getSubscribersFunction, BiFunction<String, String, Boolean> isSubscriberFunction,
                                Function<String, List<String>> getPublishersFunction, BiFunction<String, String, Boolean> isPublisherFunction) {
         this.getSubscribersFunction = getSubscribersFunction;
@@ -90,8 +97,8 @@ public class AddressValidityUtil {
         HashMap<String, Boolean> addresses = safeGetCache(cache).get(streamId);
         if (addresses == null) {
             addresses = new HashMap<>();
-            for (String publisher: getFunction.apply(streamId)) {
-                addresses.put(publisher, true);
+            for (String address: getFunction.apply(streamId)) {
+                addresses.put(address, true);
             }
             safeGetCache(cache).put(streamId, addresses);
         }

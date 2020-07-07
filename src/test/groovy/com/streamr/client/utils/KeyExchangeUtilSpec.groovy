@@ -3,6 +3,9 @@ package com.streamr.client.utils
 import com.streamr.client.exceptions.InvalidGroupKeyRequestException
 import com.streamr.client.exceptions.InvalidGroupKeyResetException
 import com.streamr.client.exceptions.InvalidGroupKeyResponseException
+import com.streamr.client.protocol.message_layer.GroupKeyRequest
+import com.streamr.client.protocol.message_layer.GroupKeyReset
+import com.streamr.client.protocol.message_layer.GroupKeyResponse
 import com.streamr.client.protocol.message_layer.MessageID
 import com.streamr.client.protocol.message_layer.StreamMessage
 import com.streamr.client.protocol.message_layer.StreamMessageV31
@@ -40,6 +43,7 @@ class KeyExchangeUtilSpec extends Specification {
     AddressValidityUtil addressValidityUtil = new AddressValidityUtil({ String id -> new ArrayList<>()}, { String s1, String s2 -> s1 == "streamId" && s2 == "subscriberId"},
             { String id -> new ArrayList<>()}, { String s, String p -> true})
     UnencryptedGroupKey received
+
     void setup() {
         storage = Mock(KeyStorage)
         messageCreationUtil = Mock(MessageCreationUtil)
@@ -61,54 +65,60 @@ class KeyExchangeUtilSpec extends Specification {
         }
         util = new KeyExchangeUtil(storage, messageCreationUtil, encryptionUtil, addressValidityUtil, publish, setGroupKeysFunction)
     }
+
     void "should reject unsigned request"() {
         MessageID id = new MessageID("publisherInbox", 0, 414, 0, "subscriberId", "msgChainId")
-        Map<String, Object> content = ["publicKey": "rsa public key", "streamId": "streamId"]
-        StreamMessage request = new StreamMessageV31(id, null, StreamMessage.ContentType.GROUP_KEY_REQUEST,
-                StreamMessage.EncryptionType.NONE, content, StreamMessage.SignatureType.SIGNATURE_TYPE_NONE, null)
+        GroupKeyRequest request = new GroupKeyRequest("requestId", "streamId", "rsa public key")
+        StreamMessage streamMessage = new StreamMessageV31(id, null, StreamMessage.ContentType.GROUP_KEY_REQUEST,
+                StreamMessage.EncryptionType.NONE, request.toMap(), StreamMessage.SignatureType.SIGNATURE_TYPE_NONE, null)
+
         when:
-        util.handleGroupKeyRequest(request)
+        util.handleGroupKeyRequest(streamMessage)
         then:
         InvalidGroupKeyRequestException e = thrown(InvalidGroupKeyRequestException)
         e.message == "Received unsigned group key request (the public key must be signed to avoid MitM attacks)."
     }
+
     void "should reject request from invalid subscriber"() {
         MessageID id = new MessageID("publisherInbox", 0, 414, 0, "wrong-subscriberId", "msgChainId")
-        Map<String, Object> content = ["publicKey": "rsa public key", "streamId": "streamId"]
-        StreamMessage request = new StreamMessageV31(id, null, StreamMessage.ContentType.GROUP_KEY_REQUEST,
-                StreamMessage.EncryptionType.NONE, content, StreamMessage.SignatureType.SIGNATURE_TYPE_ETH, "signature")
+        GroupKeyRequest request = new GroupKeyRequest("requestId", "streamId", "rsa public key")
+        StreamMessage streamMessage = new StreamMessageV31(id, null, StreamMessage.ContentType.GROUP_KEY_REQUEST,
+                StreamMessage.EncryptionType.NONE, request.toMap(), StreamMessage.SignatureType.SIGNATURE_TYPE_ETH, "signature")
+
         when:
-        util.handleGroupKeyRequest(request)
+        util.handleGroupKeyRequest(streamMessage)
         then:
         InvalidGroupKeyRequestException e = thrown(InvalidGroupKeyRequestException)
         e.message == "Received group key request for stream 'streamId' from invalid address 'wrong-subscriberId'"
     }
     void "should reject request for a stream for which the client does not have a group key"() {
         MessageID id = new MessageID("publisherInbox", 0, 414, 0, "subscriberId", "msgChainId")
-        Map<String, Object> content = ["publicKey": "rsa public key", "streamId": "streamId"]
-        StreamMessage request = new StreamMessageV31(id, null, StreamMessage.ContentType.GROUP_KEY_REQUEST,
-                StreamMessage.EncryptionType.NONE, content, StreamMessage.SignatureType.SIGNATURE_TYPE_ETH, "signature")
+        GroupKeyRequest request = new GroupKeyRequest("requestId", "streamId", "rsa public key")
+        StreamMessage streamMessage = new StreamMessageV31(id, null, StreamMessage.ContentType.GROUP_KEY_REQUEST,
+                StreamMessage.EncryptionType.NONE, request.toMap(), StreamMessage.SignatureType.SIGNATURE_TYPE_ETH, "signature")
+
         when:
-        util.handleGroupKeyRequest(request)
+        util.handleGroupKeyRequest(streamMessage)
         then:
         1 * storage.getLatestKey("streamId") >> null
         InvalidGroupKeyRequestException e = thrown(InvalidGroupKeyRequestException)
         e.message == "Received group key request for stream 'streamId' but no group key is set"
     }
+
     void "should send group key response (latest key)"() {
         MessageID id = new MessageID("publisherInbox", 0, 414, 0, "subscriberId", "msgChainId")
-        Map<String, Object> content = ["publicKey": encryptionUtil.publicKeyAsPemString, "streamId": "streamId"]
-        StreamMessage request = new StreamMessageV31(id, null, StreamMessage.ContentType.GROUP_KEY_REQUEST,
-                StreamMessage.EncryptionType.NONE, content, StreamMessage.SignatureType.SIGNATURE_TYPE_ETH, "signature")
+        GroupKeyRequest request = new GroupKeyRequest("requestId", "streamId", encryptionUtil.publicKeyAsPemString)
+        StreamMessage streamMessage = new StreamMessageV31(id, null, StreamMessage.ContentType.GROUP_KEY_REQUEST,
+                StreamMessage.EncryptionType.NONE, request.toMap(), StreamMessage.SignatureType.SIGNATURE_TYPE_ETH, "signature")
         UnencryptedGroupKey key = genKey(32, new Date(123))
+
         when:
-        util.handleGroupKeyRequest(request)
+        util.handleGroupKeyRequest(streamMessage)
         then:
         1 * storage.getLatestKey("streamId") >> key
-        1 * messageCreationUtil.createGroupKeyResponse(*_) >> { arguments ->
-            assert arguments[0] == "subscriberId"
-            assert arguments[1] == "streamId"
-            ArrayList<EncryptedGroupKey> keys = arguments[2]
+        1 * messageCreationUtil.createGroupKeyResponse(_, _, _) >> { String subscriberId, GroupKeyRequest req, List<EncryptedGroupKey> keys ->
+            assert subscriberId == "subscriberId"
+            assert req == request
             assert keys.size() == 1
             EncryptedGroupKey received = keys[0]
             assert Hex.encodeHexString(encryptionUtil.decryptWithPrivateKey(received.groupKeyHex)) == key.groupKeyHex
@@ -118,22 +128,23 @@ class KeyExchangeUtilSpec extends Specification {
         published.size() == 1
         published.get(0) == response
     }
+
     void "should send group key response (range of keys)"() {
         MessageID id = new MessageID("publisherInbox", 0, 414, 0, "subscriberId", "msgChainId")
         // Need to use Double because Moshi parser converts all JSON numbers to double
-        Map<String, Object> content = ["publicKey": encryptionUtil.publicKeyAsPemString, "streamId": "streamId", "range": ["start": new Double(123), "end": new Double(456)]]
-        StreamMessage request = new StreamMessageV31(id, null, StreamMessage.ContentType.GROUP_KEY_REQUEST,
-                StreamMessage.EncryptionType.NONE, content, StreamMessage.SignatureType.SIGNATURE_TYPE_ETH, "signature")
+        GroupKeyRequest request = new GroupKeyRequest("requestId", "streamId", encryptionUtil.publicKeyAsPemString, new GroupKeyRequest.Range(123, 456))
+        StreamMessage streamMessage = new StreamMessageV31(id, null, StreamMessage.ContentType.GROUP_KEY_REQUEST,
+                StreamMessage.EncryptionType.NONE, request.toMap(), StreamMessage.SignatureType.SIGNATURE_TYPE_ETH, "signature")
         UnencryptedGroupKey key1 = genKey(32, new Date(123))
         UnencryptedGroupKey key2 = genKey(32, new Date(300))
+
         when:
-        util.handleGroupKeyRequest(request)
+        util.handleGroupKeyRequest(streamMessage)
         then:
         1 * storage.getKeysBetween("streamId", 123L, 456L) >> [key1, key2]
-        1 * messageCreationUtil.createGroupKeyResponse(*_) >> { arguments ->
-            assert arguments[0] == "subscriberId"
-            assert arguments[1] == "streamId"
-            ArrayList<EncryptedGroupKey> keys = arguments[2]
+        1 * messageCreationUtil.createGroupKeyResponse(_, _, _) >> { String subscriberId, GroupKeyRequest req, List<EncryptedGroupKey> keys ->
+            assert subscriberId == "subscriberId"
+            assert req == request
             assert keys.size() ==2
             EncryptedGroupKey received1 = keys[0]
             assert Hex.encodeHexString(encryptionUtil.decryptWithPrivateKey(received1.groupKeyHex)) == key1.groupKeyHex
@@ -146,17 +157,21 @@ class KeyExchangeUtilSpec extends Specification {
         published.size() == 1
         published.get(0) == response
     }
+
     void "should reject unsigned response"() {
         MessageID id = new MessageID("subscriberInbox", 0, 414, 0, "publisherId", "msgChainId")
-        Map<String, Object> content = ["keys": [], "streamId": "streamId"]
-        StreamMessage response = new StreamMessageV31(id, null, StreamMessage.ContentType.GROUP_KEY_RESPONSE_SIMPLE,
-                StreamMessage.EncryptionType.RSA, content, StreamMessage.SignatureType.SIGNATURE_TYPE_NONE, null)
+
+        GroupKeyResponse response = new GroupKeyResponse("requestId", "streamId", new ArrayList<GroupKeyResponse.Key>());
+        StreamMessage streamMessage = new StreamMessageV31(id, null, StreamMessage.ContentType.GROUP_KEY_RESPONSE_SIMPLE,
+                StreamMessage.EncryptionType.RSA, response.toMap(), StreamMessage.SignatureType.SIGNATURE_TYPE_NONE, null)
+
         when:
-        util.handleGroupKeyResponse(response)
+        util.handleGroupKeyResponse(streamMessage)
         then:
         InvalidGroupKeyResponseException e = thrown(InvalidGroupKeyResponseException)
         e.message == "Received unsigned group key response (it must be signed to avoid MitM attacks)."
     }
+
     void "should reject response with invalid group key"() {
         SecureRandom secureRandom = new SecureRandom()
         byte[] keyBytes = new byte[16]
@@ -165,16 +180,22 @@ class KeyExchangeUtilSpec extends Specification {
         String encryptedGroupKeyHex = EncryptionUtil.encryptWithPublicKey(groupKeyHex, encryptionUtil.getPublicKeyAsPemString())
 
         MessageID id = new MessageID("subscriberInbox", 0, 414, 0, "publisherId", "msgChainId")
-        // Need to use Double because the Moshi parser converts all JSON numbers to double
-        Map<String, Object> content = ["keys": [["groupKey": encryptedGroupKeyHex, "start": new Double(123)]], "streamId": "streamId"]
-        StreamMessage response = new StreamMessageV31(id, null, StreamMessage.ContentType.GROUP_KEY_RESPONSE_SIMPLE,
-                StreamMessage.EncryptionType.RSA, content, StreamMessage.SignatureType.SIGNATURE_TYPE_ETH, "signature")
+
+        GroupKeyResponse response = new GroupKeyResponse("requestId", "streamId", [
+                new GroupKeyResponse.Key(encryptedGroupKeyHex, 123L)
+        ])
+
+        StreamMessage streamMessage = new StreamMessageV31(id, null, StreamMessage.ContentType.GROUP_KEY_RESPONSE_SIMPLE,
+                StreamMessage.EncryptionType.RSA, response.toMap(), StreamMessage.SignatureType.SIGNATURE_TYPE_ETH, "signature")
+
         when:
-        util.handleGroupKeyResponse(response)
+        util.handleGroupKeyResponse(streamMessage)
+
         then:
         InvalidGroupKeyResponseException e = thrown(InvalidGroupKeyResponseException)
         e.message == "Group key must be 256 bits long, but got a key length of 128 bits."
     }
+
     void "should update client options and subscriptions with received group key"() {
         SecureRandom secureRandom = new SecureRandom()
         byte[] keyBytes = new byte[32]
@@ -183,28 +204,35 @@ class KeyExchangeUtilSpec extends Specification {
         String encryptedGroupKeyHex = EncryptionUtil.encryptWithPublicKey(groupKeyHex, encryptionUtil.getPublicKeyAsPemString())
 
         MessageID id = new MessageID("subscriberInbox", 0, 414, 0, "publisherId", "msgChainId")
-        // Need to use Double because the Moshi parser converts all JSON numbers to double
-        Map<String, Object> content = ["keys": [["groupKey": encryptedGroupKeyHex, "start": new Double(123)]], "streamId": "streamId"]
-        StreamMessage response = new StreamMessageV31(id, null, StreamMessage.ContentType.GROUP_KEY_RESPONSE_SIMPLE,
-                StreamMessage.EncryptionType.RSA, content, StreamMessage.SignatureType.SIGNATURE_TYPE_ETH, "signature")
+
+        GroupKeyResponse response = new GroupKeyResponse("requestId", "streamId", [
+                new GroupKeyResponse.Key(encryptedGroupKeyHex, 123L)
+        ])
+        StreamMessage streamMessage = new StreamMessageV31(id, null, StreamMessage.ContentType.GROUP_KEY_RESPONSE_SIMPLE,
+                StreamMessage.EncryptionType.RSA, response.toMap(), StreamMessage.SignatureType.SIGNATURE_TYPE_ETH, "signature")
+
         when:
-        util.handleGroupKeyResponse(response)
+        util.handleGroupKeyResponse(streamMessage)
         then:
         received.groupKeyHex == groupKeyHex
         received.startTime == 123L
     }
+
     void "should reject unsigned reset"() {
         EncryptedGroupKey encryptedGroupKey = EncryptionUtil.genGroupKey().getEncrypted(encryptionUtil.publicKey)
         MessageID id = new MessageID("subscriberInbox", 0, 414, 0, "publisherId", "msgChainId")
-        Map<String, Object> content = ["groupKey": encryptedGroupKey.groupKeyHex, "start": encryptedGroupKey.start.getTime(), "streamId": "streamId"]
-        StreamMessage reset = new StreamMessageV31(id, null, StreamMessage.ContentType.GROUP_KEY_RESET_SIMPLE,
-                StreamMessage.EncryptionType.RSA, content, StreamMessage.SignatureType.SIGNATURE_TYPE_NONE, null)
+
+        GroupKeyReset reset = new GroupKeyReset("streamId", encryptedGroupKey.groupKeyHex, encryptedGroupKey.start.getTime())
+        StreamMessage streamMessage = new StreamMessageV31(id, null, StreamMessage.ContentType.GROUP_KEY_RESET_SIMPLE,
+                StreamMessage.EncryptionType.RSA, reset.toMap(), StreamMessage.SignatureType.SIGNATURE_TYPE_NONE, null)
+
         when:
-        util.handleGroupKeyReset(reset)
+        util.handleGroupKeyReset(streamMessage)
         then:
         InvalidGroupKeyResetException e = thrown(InvalidGroupKeyResetException)
         e.message == "Received unsigned group key reset (it must be signed to avoid MitM attacks)."
     }
+
     void "should reject reset with invalid group key"() {
         SecureRandom secureRandom = new SecureRandom()
         byte[] keyBytes = new byte[16]
@@ -213,27 +241,29 @@ class KeyExchangeUtilSpec extends Specification {
         String encryptedGroupKeyHex = EncryptionUtil.encryptWithPublicKey(groupKeyHex, encryptionUtil.getPublicKeyAsPemString())
 
         MessageID id = new MessageID("subscriberInbox", 0, 414, 0, "publisherId", "msgChainId")
-        // Need to use Double because the Moshi parser converts all JSON numbers to double
-        Map<String, Object> content = ["groupKey": encryptedGroupKeyHex, "start": new Double(123), "streamId": "streamId"]
-        StreamMessage reset = new StreamMessageV31(id, null, StreamMessage.ContentType.GROUP_KEY_RESET_SIMPLE,
-                StreamMessage.EncryptionType.RSA, content, StreamMessage.SignatureType.SIGNATURE_TYPE_ETH, "signature")
+
+        GroupKeyReset reset = new GroupKeyReset("streamId", encryptedGroupKeyHex, 123L)
+        StreamMessage streamMessage = new StreamMessageV31(id, null, StreamMessage.ContentType.GROUP_KEY_RESET_SIMPLE,
+                StreamMessage.EncryptionType.RSA, reset.toMap(), StreamMessage.SignatureType.SIGNATURE_TYPE_ETH, "signature")
+
         when:
-        util.handleGroupKeyReset(reset)
+        util.handleGroupKeyReset(streamMessage)
         then:
         InvalidGroupKeyResetException e = thrown(InvalidGroupKeyResetException)
         e.message == "Group key must be 256 bits long, but got a key length of 128 bits."
     }
+
     void "should update client options and subscriptions with received group key reset"() {
         UnencryptedGroupKey newGroupKey = EncryptionUtil.genGroupKey()
         EncryptedGroupKey encryptedGroupKey = newGroupKey.getEncrypted(encryptionUtil.publicKey)
 
         MessageID id = new MessageID("subscriberInbox", 0, 414, 0, "publisherId", "msgChainId")
-        // Need to use Double because the Moshi parser converts all JSON numbers to double
-        Map<String, Object> content = ["groupKey": encryptedGroupKey.groupKeyHex, "start": new Double(123), "streamId": "streamId"]
-        StreamMessage reset = new StreamMessageV31(id, null, StreamMessage.ContentType.GROUP_KEY_RESET_SIMPLE,
-                StreamMessage.EncryptionType.RSA, content, StreamMessage.SignatureType.SIGNATURE_TYPE_ETH, "signature")
+
+        GroupKeyReset reset = new GroupKeyReset("streamId", encryptedGroupKey.groupKeyHex, 123L)
+        StreamMessage streamMessage = new StreamMessageV31(id, null, StreamMessage.ContentType.GROUP_KEY_RESET_SIMPLE,
+                StreamMessage.EncryptionType.RSA, reset.toMap(), StreamMessage.SignatureType.SIGNATURE_TYPE_ETH, "signature")
         when:
-        util.handleGroupKeyReset(reset)
+        util.handleGroupKeyReset(streamMessage)
         then:
         received.groupKeyHex == newGroupKey.groupKeyHex
         received.startTime == 123L
@@ -294,27 +324,32 @@ class KeyExchangeUtilSpec extends Specification {
 
     void "should rekey by sending group key resets"() {
         MessageID id1 = new MessageID("publisherInbox", 0, 414, 0, "subscriberId1", "msgChainId")
+
         EncryptionUtil encryptionUtil1 = new EncryptionUtil()
         RSAPublicKey pk1 = encryptionUtil1.publicKey
-        Map<String, Object> content1 = ["publicKey": EncryptionUtil.exportKeyAsPemString(pk1, true), "streamId": "streamId", "range": ["start": new Double(123), "end": new Double(456)]]
+
+        GroupKeyRequest content1 = new GroupKeyRequest("request1", "streamId", EncryptionUtil.exportKeyAsPemString(pk1, true), new GroupKeyRequest.Range(123L, 456L))
         StreamMessage request1 = new StreamMessageV31(id1, null, StreamMessage.ContentType.GROUP_KEY_REQUEST,
-                StreamMessage.EncryptionType.NONE, content1, StreamMessage.SignatureType.SIGNATURE_TYPE_ETH, "signature")
+                StreamMessage.EncryptionType.NONE, content1.toMap(), StreamMessage.SignatureType.SIGNATURE_TYPE_ETH, "signature")
+
         MessageID id2 = new MessageID("publisherInbox", 0, 414, 0, "subscriberId2", "msgChainId")
         RSAPublicKey pk2 = new EncryptionUtil().publicKey
-        Map<String, Object> content2 = ["publicKey": EncryptionUtil.exportKeyAsPemString(pk2, true), "streamId": "streamId", "range": ["start": new Double(123), "end": new Double(456)]]
+        GroupKeyRequest content2 = new GroupKeyRequest("request2", "streamId", EncryptionUtil.exportKeyAsPemString(pk2, true), new GroupKeyRequest.Range(123L, 456L))
         StreamMessage request2 = new StreamMessageV31(id2, null, StreamMessage.ContentType.GROUP_KEY_REQUEST,
-                StreamMessage.EncryptionType.NONE, content2, StreamMessage.SignatureType.SIGNATURE_TYPE_ETH, "signature")
+                StreamMessage.EncryptionType.NONE, content2.toMap(), StreamMessage.SignatureType.SIGNATURE_TYPE_ETH, "signature")
+
         MessageID id3 = new MessageID("publisherInbox", 0, 414, 0, "subscriberId3", "msgChainId")
         EncryptionUtil encryptionUtil3 = new EncryptionUtil()
         RSAPublicKey pk3 = encryptionUtil3.publicKey
-        Map<String, Object> content3 = ["publicKey": EncryptionUtil.exportKeyAsPemString(pk3, true), "streamId": "streamId", "range": ["start": new Double(123), "end": new Double(456)]]
+        GroupKeyRequest content3 = new GroupKeyRequest("request2", "streamId", EncryptionUtil.exportKeyAsPemString(pk3, true), new GroupKeyRequest.Range(123L, 456L))
         StreamMessage request3 = new StreamMessageV31(id3, null, StreamMessage.ContentType.GROUP_KEY_REQUEST,
-                StreamMessage.EncryptionType.NONE, content3, StreamMessage.SignatureType.SIGNATURE_TYPE_ETH, "signature")
+                StreamMessage.EncryptionType.NONE, content3.toMap(), StreamMessage.SignatureType.SIGNATURE_TYPE_ETH, "signature")
 
         AddressValidityUtil addressValidityUtil2 = Mock(AddressValidityUtil)
         util = new KeyExchangeUtil(storage, messageCreationUtil, encryptionUtil, addressValidityUtil2, publish, setGroupKeysFunction)
         UnencryptedGroupKey resetKey1
         UnencryptedGroupKey resetKey3
+
         StreamMessageV31 reset1 = new StreamMessageV31(new MessageID("subscriberId1", 0, 5145, 0, "publisherId", ""), null,
                 StreamMessage.ContentType.GROUP_KEY_RESET_SIMPLE, StreamMessage.EncryptionType.RSA, "reset", StreamMessage.SignatureType.SIGNATURE_TYPE_ETH, "signature")
         StreamMessageV31 reset3 = new StreamMessageV31(new MessageID("subscriberId3", 0, 5145, 0, "publisherId", ""), null,
@@ -325,6 +360,7 @@ class KeyExchangeUtilSpec extends Specification {
         util.handleGroupKeyRequest(request2) // should store subscriberId2 --> pk2
         util.handleGroupKeyRequest(request3) // should store subscriberId3 --> pk3
         util.rekey("streamId", true)
+
         then:
         1 * addressValidityUtil2.isValidSubscriber("streamId", "subscriberId1") >> true
         1 * addressValidityUtil2.isValidSubscriber("streamId", "subscriberId2") >> true
