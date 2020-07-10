@@ -111,6 +111,7 @@ public class HistoricalSubscription extends BasicSubscription {
         if (!keySequences.containsKey(msg.getPublisherId())) {
             Date start = msg.getTimestampAsDate();
             Date end = resendOption instanceof ResendRangeOption ? ((ResendRangeOption) resendOption).getTo().getTimestampAsDate() : new Date();
+            log.debug("Failed to decrypt {}, requesting group key and queuing message", msg.getMessageRef());
             requestGroupKeyAndQueueMessage(msg, start, end);
             return false;
         }

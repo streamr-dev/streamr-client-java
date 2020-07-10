@@ -79,7 +79,7 @@ public abstract class BasicSubscription extends Subscription {
     }
 
     protected void requestGroupKeyAndQueueMessage(StreamMessage msgToQueue, Date start, Date end) {
-        Timer t = new Timer(true);
+        Timer t = new Timer(String.format("GroupKeyTimer-%s-%s", msgToQueue.getStreamId(), msgToQueue.getMessageRef().toString()), true);
         String publisherId = msgToQueue.getPublisherId().toLowerCase();
         nbGroupKeyRequestsCalls.put(publisherId, 0);
         TimerTask request = new TimerTask() {
@@ -143,11 +143,12 @@ public abstract class BasicSubscription extends Subscription {
             if (success) { // the message was successfully decrypted
                 handler.onMessage(this, msg);
             } else {
-                log.info("Failed to decrypt msg from " + msg.getPublisherId() +
-                        " . Going to request the correct decryption key(s) and try again.");
+                log.info("Failed to decrypt msg {} from {}. Going to request the correct decryption key(s) and try again.",
+                        msg.getMessageRef(), msg.getPublisherId());
             }
         } catch (UnableToDecryptException e) { // failed to decrypt for the second time (after receiving the decryption key(s))
-            log.error("Failed to decrypt msg from " + msg.getPublisherId() + " even after receiving the decryption keys.");
+            log.error("Failed to decrypt msg {} from {} even after receiving the decryption keys.",
+                    msg.getMessageRef(), msg.getPublisherId());
             handler.onUnableToDecrypt(e);
         }
     }

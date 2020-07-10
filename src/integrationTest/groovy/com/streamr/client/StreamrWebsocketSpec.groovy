@@ -483,4 +483,41 @@ class StreamrWebsocketSpec extends StreamrIntegrationSpecification {
 			done && receivedMsg == expectedMessages
 		}
 	}
+
+	void "subscribe with resend last, with key exchange"() {
+		boolean stop = false
+		int publishedMessages = 0
+		int receivedMessages = 0
+		Thread publisherThread = Thread.start {
+			int i = 0
+			while (!stop) {
+				// The publisher generates a new key for every message
+				publishedMessages++
+				publisher.publish(stream, [i: i++], new Date(), "", UnencryptedGroupKey.generate())
+				Thread.sleep(500)
+			}
+		}
+		Thread.sleep(2000) // make sure the publisher has time to publish some messages
+
+		when:
+		// Subscribe with resend last
+		subscriber.subscribe(stream, 0, new MessageHandler() {
+			@Override
+			void onMessage(Subscription s, StreamMessage message) {
+				receivedMessages++
+			}
+		}, new ResendLastOption(1000)) // resend all previous messages to make the counters match
+		Thread.sleep(3000) // Time to do the key exchanges etc.
+		stop = true
+
+		then:
+		within10sec.eventually {
+			!publisherThread.isAlive()
+		}
+
+		then:
+		within10sec.eventually {
+			publishedMessages == receivedMessages
+		}
+	}
 }
