@@ -271,10 +271,10 @@ class StreamrWebsocketSpec extends StreamrIntegrationSpecification {
 	}
 
 	void "subscriber can get the historical keys and decrypt old encrypted messages using an RSA key pair"() {
-		List<UnencryptedGroupKey> keys = [genKey(), genKey()]
-
 		// publishing historical messages with different group keys before subscribing
+		List<UnencryptedGroupKey> keys = [genKey()]
 		publisher.publish(stream, [test: 'clear text'], new Date(), null, keys[0])
+		keys.add(genKey())
 		publisher.publish(stream, [test: 'another clear text'], new Date(), null, keys[1])
 		Thread.sleep(3000)
 

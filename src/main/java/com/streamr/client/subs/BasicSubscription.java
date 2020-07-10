@@ -33,6 +33,7 @@ public abstract class BasicSubscription extends Subscription {
 
         public void offer(StreamMessage msg) {
             get(msg.getPublisherId()).offer(msg);
+            log.trace("Message added to encryption queue: {}", msg.getMessageRef());
         }
 
         public boolean isEmpty() {
@@ -89,7 +90,7 @@ public abstract class BasicSubscription extends Subscription {
                         if (nbGroupKeyRequestsCalls.get(publisherId) < MAX_NB_GROUP_KEY_REQUESTS) {
                             nbGroupKeyRequestsCalls.put(publisherId, nbGroupKeyRequestsCalls.get(publisherId) + 1);
                             groupKeyRequestFunction.apply(publisherId, start, end);
-                            log.info("Sent group key request to " + publisherId);
+                            log.info("Sent key request for stream {} to {}, range {} to {}", streamId, publisherId, start.getTime(), end.getTime());
                         } else {
                             log.warn("Failed to received group key response from "
                                     + publisherId + " after " + MAX_NB_GROUP_KEY_REQUESTS + " requests.");

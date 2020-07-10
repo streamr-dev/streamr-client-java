@@ -69,7 +69,8 @@ public class KeyExchangeUtil {
         GroupKeyRequest.Range range = request.getRange();
         ArrayList<UnencryptedGroupKey> keys;
         if (range != null) {
-            log.debug("Keys in storage for stream {} are {}. Querying between {} and {}", streamId, keyStorage, range.getStart(), range.getEnd());
+            log.debug("Querying keys for stream {} between {} and {}. Key storage content is {}",
+                    streamId, range.getStart(), range.getEnd(), keyStorage.getKeysBetween(streamId, 0, new Date().getTime()));
             keys = keyStorage.getKeysBetween(streamId, range.getStart(), range.getEnd());
         } else {
             keys = new ArrayList<>();

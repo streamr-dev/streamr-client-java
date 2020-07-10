@@ -170,7 +170,7 @@ public class StreamrClient extends StreamrRESTClient {
 
                 @Override
                 public void send(String text) throws NotYetConnectedException {
-                    log.debug(">> {} (client {})", text, getPublisherId());
+                    log.trace(">> {} (client {})", text, getPublisherId());
                     super.send(text);
                 }
             };
@@ -329,7 +329,7 @@ public class StreamrClient extends StreamrRESTClient {
 
     protected void handleMessage(String rawMessageAsString) {
         try {
-            log.debug("<< {} (client {})", rawMessageAsString, getPublisherId());
+            log.trace("<< {} (client {})", rawMessageAsString, getPublisherId());
 
             // Handle different message types
             ControlMessage message = ControlMessage.fromJson(rawMessageAsString);
@@ -372,8 +372,6 @@ public class StreamrClient extends StreamrRESTClient {
 
     private void handleMessage(StreamMessage message,
                                BiConsumer<Subscription, StreamMessage> subMsgHandler) throws SubscriptionNotFoundException {
-        log.debug(message.getStreamId() + ": " + message.getSerializedContent());
-
         streamMessageValidator.validate(message);
         Subscription sub = subs.get(message.getStreamId(), message.getStreamPartition());
 

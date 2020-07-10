@@ -31,4 +31,11 @@ public class UnencryptedGroupKey extends GroupKey {
     public SecretKey getSecretKey() {
         return secretKey;
     }
+
+    @Override
+    public String toString() {
+        return "UnencryptedGroupKey{" +
+                "start=" + start.getTime() +
+                '}';
+    }
 }
