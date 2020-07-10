@@ -5,8 +5,8 @@ import com.streamr.client.protocol.message_layer.GroupKeyRequest;
 import com.streamr.client.protocol.message_layer.GroupKeyReset;
 import com.streamr.client.protocol.message_layer.GroupKeyResponse;
 import com.streamr.client.protocol.message_layer.StreamMessage;
-import org.apache.logging.log4j.LogManager;
-import org.apache.logging.log4j.Logger;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import java.security.interfaces.RSAPublicKey;
 import java.time.Clock;
@@ -16,7 +16,7 @@ import java.util.*;
 import java.util.function.Consumer;
 
 public class KeyExchangeUtil {
-    private static final Logger log = LogManager.getLogger();
+    private static final Logger log = LoggerFactory.getLogger(KeyExchangeUtil.class);
     private final Clock clock;
     public static final int REVOCATION_THRESHOLD = 5;
     public static final int REVOCATION_DELAY = 10; // in minutes
@@ -69,6 +69,7 @@ public class KeyExchangeUtil {
         GroupKeyRequest.Range range = request.getRange();
         ArrayList<UnencryptedGroupKey> keys;
         if (range != null) {
+            log.debug("Keys in storage for stream {} are {}. Querying between {} and {}", streamId, keyStorage, range.getStart(), range.getEnd());
             keys = keyStorage.getKeysBetween(streamId, range.getStart(), range.getEnd());
         } else {
             keys = new ArrayList<>();

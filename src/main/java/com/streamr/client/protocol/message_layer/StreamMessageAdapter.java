@@ -6,14 +6,14 @@ import com.squareup.moshi.JsonReader;
 import com.squareup.moshi.JsonWriter;
 import com.streamr.client.exceptions.MalformedMessageException;
 import com.streamr.client.exceptions.UnsupportedMessageException;
-import org.apache.logging.log4j.LogManager;
-import org.apache.logging.log4j.Logger;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import java.io.IOException;
 
 public class StreamMessageAdapter extends JsonAdapter<StreamMessage> {
 
-    private static final Logger log = LogManager.getLogger();
+    private static final Logger log = LoggerFactory.getLogger(StreamMessageAdapter.class);
     private static final StreamMessageV30Adapter v30Adapter = new StreamMessageV30Adapter();
     private static final StreamMessageV31Adapter v31Adapter = new StreamMessageV31Adapter();
 
@@ -35,7 +35,7 @@ public class StreamMessageAdapter extends JsonAdapter<StreamMessage> {
             reader.endArray();
             return msg;
         } catch (JsonDataException e) {
-            log.error(e);
+            log.error("Failed to parse StreamMessage", e);
             throw new MalformedMessageException("Malformed message: " + reader.toString(), e);
         }
     }

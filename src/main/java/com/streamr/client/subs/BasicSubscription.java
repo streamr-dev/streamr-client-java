@@ -8,14 +8,14 @@ import com.streamr.client.protocol.message_layer.MessageRef;
 import com.streamr.client.protocol.message_layer.StreamMessage;
 import com.streamr.client.utils.OrderedMsgChain;
 import com.streamr.client.utils.OrderingUtil;
-import org.apache.logging.log4j.LogManager;
-import org.apache.logging.log4j.Logger;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import java.util.*;
 import java.util.concurrent.ConcurrentHashMap;
 
 public abstract class BasicSubscription extends Subscription {
-    protected static final Logger log = LogManager.getLogger();
+    protected static final Logger log = LoggerFactory.getLogger(BasicSubscription.class);
     public static final int MAX_NB_GROUP_KEY_REQUESTS = 10;
 
     protected OrderingUtil orderingUtil;

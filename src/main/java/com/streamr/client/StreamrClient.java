@@ -14,14 +14,14 @@ import com.streamr.client.subs.*;
 import com.streamr.client.utils.*;
 import org.apache.commons.codec.binary.Base64;
 import org.apache.commons.codec.digest.DigestUtils;
-import org.apache.logging.log4j.LogManager;
-import org.apache.logging.log4j.Logger;
 import org.java_websocket.client.WebSocketClient;
 import org.java_websocket.enums.ReadyState;
 import org.java_websocket.exceptions.WebsocketNotConnectedException;
 import org.java_websocket.handshake.ServerHandshake;
 import com.streamr.client.protocol.message_layer.StreamMessage;
 import com.streamr.client.rest.Stream;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import java.io.IOException;
 import java.net.URI;
@@ -39,7 +39,7 @@ import java.util.function.BiConsumer;
  */
 public class StreamrClient extends StreamrRESTClient {
 
-    private static final Logger log = LogManager.getLogger();
+    private static final Logger log = LoggerFactory.getLogger(StreamrClient.class);
 
     // Underlying websocket implementation
     private WebSocketClient websocket;
@@ -143,7 +143,7 @@ public class StreamrClient extends StreamrRESTClient {
                     try {
                         StreamrClient.this.subs.forEach(StreamrClient.this::resubscribe);
                     } catch (WebsocketNotConnectedException e) {
-                        log.error(e);
+                        log.error("Failed to resubscribe", e);
                     }
                 }
 
@@ -162,7 +162,7 @@ public class StreamrClient extends StreamrRESTClient {
 
                 @Override
                 public void onError(Exception ex) {
-                    log.error(ex);
+                    log.error("WebSocketClient#onError called", ex);
                     if (!(ex instanceof IOException)) {
                         StreamrClient.this.onError(ex);
                     }
@@ -170,7 +170,7 @@ public class StreamrClient extends StreamrRESTClient {
 
                 @Override
                 public void send(String text) throws NotYetConnectedException {
-                    log.info(">> " + text);
+                    log.debug(">> {} (client {})", text, getPublisherId());
                     super.send(text);
                 }
             };
@@ -329,7 +329,7 @@ public class StreamrClient extends StreamrRESTClient {
 
     protected void handleMessage(String rawMessageAsString) {
         try {
-            log.info(getPublisherId() + " << " + rawMessageAsString);
+            log.debug("<< {} (client {})", rawMessageAsString, getPublisherId());
 
             // Handle different message types
             ControlMessage message = ControlMessage.fromJson(rawMessageAsString);
