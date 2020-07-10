@@ -90,7 +90,8 @@ public abstract class BasicSubscription extends Subscription {
                         if (nbGroupKeyRequestsCalls.get(publisherId) < MAX_NB_GROUP_KEY_REQUESTS) {
                             nbGroupKeyRequestsCalls.put(publisherId, nbGroupKeyRequestsCalls.get(publisherId) + 1);
                             groupKeyRequestFunction.apply(publisherId, start, end);
-                            log.info("Sent key request for stream {} to {}, range {} to {}", streamId, publisherId, start.getTime(), end.getTime());
+                            log.info("Sent key request for stream {} to {}, range {} to {}",
+                                    streamId, publisherId, start != null ? start.getTime() : null, end != null ? end.getTime() : null);
                         } else {
                             log.warn("Failed to received group key response from "
                                     + publisherId + " after " + MAX_NB_GROUP_KEY_REQUESTS + " requests.");
