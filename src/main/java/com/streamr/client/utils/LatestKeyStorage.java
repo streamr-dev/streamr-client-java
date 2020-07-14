@@ -45,4 +45,9 @@ public class LatestKeyStorage implements KeyStorage {
     public void addKey(String streamId, UnencryptedGroupKey key) {
         latestGroupKeys.put(streamId, key);
     }
+
+    @Override
+    public String toString() {
+        return latestGroupKeys.toString();
+    }
 }

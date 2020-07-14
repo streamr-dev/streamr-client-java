@@ -505,6 +505,8 @@ class StreamrWebsocketSpec extends StreamrIntegrationSpecification {
 			@Override
 			void onMessage(Subscription s, StreamMessage message) {
 				receivedMessages++
+				// TODO: remove println
+				System.out.println("Subscriber received message ${message.getMessageRef()}")
 			}
 		}, new ResendLastOption(1000)) // resend all previous messages to make the counters match
 		Thread.sleep(3000) // Time to do the key exchanges etc.

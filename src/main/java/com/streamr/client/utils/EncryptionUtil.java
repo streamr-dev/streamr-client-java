@@ -179,9 +179,10 @@ public class EncryptionUtil {
             }
         } catch (Exception e) {
             if (groupKey == null) {
-                log.debug("No key to decrypt");
+                log.debug("No key given to decrypt stream {} msg {}", streamMessage.getStreamId(), streamMessage.getMessageRef());
             } else {
-                log.debug("Failed to decrypt with : " + Hex.encodeHexString(groupKey.getEncoded()));
+                log.debug("Failed to decrypt stream {} msg {} with key {} ",
+                        streamMessage.getStreamId(), streamMessage.getMessageRef(), Hex.encodeHexString(groupKey.getEncoded()));
             }
 
             streamMessage.setEncryptionType(encryptionType);

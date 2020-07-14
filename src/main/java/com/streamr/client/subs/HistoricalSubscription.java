@@ -10,6 +10,8 @@ import com.streamr.client.options.ResendRangeOption;
 import com.streamr.client.protocol.message_layer.StreamMessage;
 import com.streamr.client.utils.DecryptionKeySequence;
 import com.streamr.client.utils.UnencryptedGroupKey;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import java.util.ArrayList;
 import java.util.Date;
@@ -18,6 +20,9 @@ import java.util.Map;
 import java.util.function.Consumer;
 
 public class HistoricalSubscription extends BasicSubscription {
+
+    private static final Logger log = LoggerFactory.getLogger(HistoricalSubscription.class);
+
     private final ResendOption resendOption;
     private boolean resendDone = false;
     private final Consumer<StreamMessage> onRealTimeMsg;
@@ -160,5 +165,10 @@ public class HistoricalSubscription extends BasicSubscription {
         if (onRealTimeMsg != null) {
             onRealTimeMsg.accept(msg);
         }
+    }
+
+    @Override
+    public Logger getLogger() {
+        return log;
     }
 }

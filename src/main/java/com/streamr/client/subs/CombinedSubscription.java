@@ -6,12 +6,17 @@ import com.streamr.client.options.ResendOption;
 import com.streamr.client.protocol.message_layer.StreamMessage;
 import com.streamr.client.utils.OrderedMsgChain;
 import com.streamr.client.utils.UnencryptedGroupKey;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import java.util.ArrayDeque;
 import java.util.ArrayList;
 import java.util.Map;
 
 public class CombinedSubscription extends Subscription {
+
+    private static final Logger log = LoggerFactory.getLogger(CombinedSubscription.class);
+
     private BasicSubscription sub;
     private final ArrayDeque<StreamMessage> queue = new ArrayDeque<>();
     public CombinedSubscription(String streamId, int partition, MessageHandler handler, ResendOption resendOption,
@@ -26,6 +31,11 @@ public class CombinedSubscription extends Subscription {
             @Override
             public void done(Subscription s) {
                 handler.done(s);
+
+                log.debug("HistoricalSubscription for stream {} is done. Switching to RealtimeSubscription.", streamId);
+
+                // TODO: get group keys from historical subscription?
+
                 // once the initial resend is done, switch to real time
                 RealTimeSubscription realTime = new RealTimeSubscription(streamId, partition, handler, groupKeys,
                         groupKeyRequestFunction, propagationTimeout, resendTimeout, skipGapsOnFullQueue);

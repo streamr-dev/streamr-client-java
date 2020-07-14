@@ -7,6 +7,8 @@ import com.streamr.client.protocol.message_layer.StreamMessage;
 import com.streamr.client.utils.EncryptionUtil;
 import com.streamr.client.utils.OrderedMsgChain;
 import com.streamr.client.utils.UnencryptedGroupKey;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import javax.crypto.SecretKey;
 import javax.crypto.spec.SecretKeySpec;
@@ -17,6 +19,9 @@ import java.util.HashSet;
 import java.util.Map;
 
 public class RealTimeSubscription extends BasicSubscription {
+
+    private static final Logger log = LoggerFactory.getLogger(RealTimeSubscription.class);
+
     private boolean resending = false;
     private class KeyStorage {
         private final HashMap<String, SecretKey> groupKeys = new HashMap<>(); // publisherId --> groupKey
@@ -25,6 +30,10 @@ public class RealTimeSubscription extends BasicSubscription {
         }
         public SecretKey get(String publisherId) {
             return groupKeys.get(publisherId.toLowerCase());
+        }
+        @Override
+        public String toString() {
+            return groupKeys.keySet().toString();
         }
     }
     private final KeyStorage groupKeys = new KeyStorage();
@@ -62,10 +71,16 @@ public class RealTimeSubscription extends BasicSubscription {
 
     @Override
     public void setGroupKeys(String publisherId, ArrayList<UnencryptedGroupKey> groupKeys) throws UnableToSetKeysException {
+        log.debug("setGroupKeys called for stream {}, publisher {}, keys {}",
+                streamId, publisherId, groupKeys);
+
         if (groupKeys.size() != 1) {
             throw new UnableToSetKeysException("Received "+groupKeys.size()+ " group keys for a real time subscription. Expected one.");
         }
         this.groupKeys.put(publisherId, new SecretKeySpec(DatatypeConverter.parseHexBinary(groupKeys.get(0).getGroupKeyHex()), "AES"));
+
+        log.trace("setGroupKeys: after updating, content is now {}", groupKeys);
+
         // handle real time messages received while waiting for the group key
         handleInOrderQueue(publisherId);
     }
@@ -132,5 +147,10 @@ public class RealTimeSubscription extends BasicSubscription {
 
     public void setLastMessageRefs(ArrayList<OrderedMsgChain> chains) {
         orderingUtil.addChains(chains);
+    }
+
+    @Override
+    public Logger getLogger() {
+        return log;
     }
 }

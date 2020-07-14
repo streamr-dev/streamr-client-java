@@ -14,6 +14,7 @@ import java.time.Duration;
 import java.time.Instant;
 import java.util.*;
 import java.util.function.Consumer;
+import java.util.stream.Collectors;
 
 public class KeyExchangeUtil {
     private static final Logger log = LoggerFactory.getLogger(KeyExchangeUtil.class);
@@ -74,6 +75,8 @@ public class KeyExchangeUtil {
             keys = keyStorage.getKeysBetween(streamId, range.getStart(), range.getEnd());
         } else {
             keys = new ArrayList<>();
+            log.debug("Querying latest key for stream {}. Key storage content is {}",
+                    streamId, keyStorage.getKeysBetween(streamId, 0, new Date().getTime()));
             UnencryptedGroupKey latest = keyStorage.getLatestKey(streamId);
             if (latest != null) {
                 keys.add(latest);
@@ -122,6 +125,8 @@ public class KeyExchangeUtil {
             }
         }
         try {
+            log.debug("Received group key response for stream {}, keys {}",
+                    response.getStreamId(), decryptedKeys);
             setGroupKeysFunction.apply(response.getStreamId(), streamMessage.getPublisherId(), decryptedKeys);
         } catch (UnableToSetKeysException e) {
             throw new InvalidGroupKeyResponseException(e.getMessage());
