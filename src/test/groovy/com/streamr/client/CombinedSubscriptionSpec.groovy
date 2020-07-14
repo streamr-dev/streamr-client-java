@@ -13,7 +13,7 @@ import com.streamr.client.subs.CombinedSubscription
 class CombinedSubscriptionSpec extends Specification {
     StreamMessage createMessage(long timestamp, long sequenceNumber, Long previousTimestamp, Long previousSequenceNumber) {
         return new StreamMessageV31("stream-id", 0, timestamp, sequenceNumber, "publisherId", "msgChainId",
-                previousTimestamp, previousSequenceNumber, StreamMessage.ContentType.CONTENT_TYPE_JSON, StreamMessage.EncryptionType.NONE, "{}", StreamMessage.SignatureType.SIGNATURE_TYPE_NONE, null)
+                previousTimestamp, previousSequenceNumber, StreamMessage.MessageType.CONTENT_TYPE_JSON, StreamMessage.EncryptionType.NONE, "{}", StreamMessage.SignatureType.SIGNATURE_TYPE_NONE, null)
     }
     void "calls the gap handler if gap among real time messages queued during resend"() {
         StreamMessage msg1 = createMessage(1, 0, null, 0)

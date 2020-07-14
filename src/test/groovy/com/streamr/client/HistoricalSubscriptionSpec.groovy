@@ -26,7 +26,7 @@ import java.security.SecureRandom
 
 class HistoricalSubscriptionSpec extends Specification {
     StreamMessageV31 msg = new StreamMessageV31("stream-id", 0, (new Date()).getTime(), 0, "publisherId", "msgChainId",
-            null, 0, StreamMessage.ContentType.CONTENT_TYPE_JSON, StreamMessage.EncryptionType.NONE, "{}", StreamMessage.SignatureType.SIGNATURE_TYPE_NONE, null)
+            null, 0, StreamMessage.MessageType.CONTENT_TYPE_JSON, StreamMessage.EncryptionType.NONE, "{}", StreamMessage.SignatureType.SIGNATURE_TYPE_NONE, null)
 
     StreamMessage createMessage(long timestamp, long sequenceNumber, Long previousTimestamp, Long previousSequenceNumber) {
         return createMessage(timestamp, sequenceNumber, previousTimestamp, previousSequenceNumber, "publisherId")
@@ -34,7 +34,7 @@ class HistoricalSubscriptionSpec extends Specification {
 
     StreamMessage createMessage(long timestamp, long sequenceNumber, Long previousTimestamp, Long previousSequenceNumber, String publisherId) {
         return new StreamMessageV31("stream-id", 0, timestamp, sequenceNumber, publisherId, "msgChainId",
-                previousTimestamp, previousSequenceNumber, StreamMessage.ContentType.CONTENT_TYPE_JSON, StreamMessage.EncryptionType.NONE, "{}", StreamMessage.SignatureType.SIGNATURE_TYPE_NONE, null)
+                previousTimestamp, previousSequenceNumber, StreamMessage.MessageType.CONTENT_TYPE_JSON, StreamMessage.EncryptionType.NONE, "{}", StreamMessage.SignatureType.SIGNATURE_TYPE_NONE, null)
     }
 
     MessageHandler empty = new MessageHandler() {
@@ -63,7 +63,7 @@ class HistoricalSubscriptionSpec extends Specification {
         }, null)
         sub.handleResentMessage(msg)
         then:
-        received.toJson() == msg.toJson()
+        received.serialize() == msg.serialize()
     }
 
     void "calls the handler once for each message in order"() {
@@ -84,7 +84,7 @@ class HistoricalSubscriptionSpec extends Specification {
         }
         then:
         for (int i=0;i<5;i++) {
-            assert msgs.get(i).toJson() == received.get(i).toJson()
+            assert msgs.get(i).serialize() == received.get(i).serialize()
         }
     }
 
@@ -119,7 +119,7 @@ class HistoricalSubscriptionSpec extends Specification {
         sub.handleResentMessage(msg)
         sub.handleResentMessage(msg)
         then:
-        received.toJson() == msg.toJson()
+        received.serialize() == msg.serialize()
         noExceptionThrown()
     }
 
@@ -214,11 +214,11 @@ class HistoricalSubscriptionSpec extends Specification {
         String ciphertext = EncryptionUtil.encrypt(HttpUtils.mapAdapter.toJson(plaintext).getBytes(StandardCharsets.UTF_8), groupKey)
         Map received = null
         StreamMessageV31 msg1 = new StreamMessageV31("streamId", 0, 0, 0, "publisherId", "",
-                null, null, StreamMessage.ContentType.CONTENT_TYPE_JSON, StreamMessage.EncryptionType.AES, ciphertext, StreamMessage.SignatureType.SIGNATURE_TYPE_NONE, null)
+                null, null, StreamMessage.MessageType.CONTENT_TYPE_JSON, StreamMessage.EncryptionType.AES, ciphertext, StreamMessage.SignatureType.SIGNATURE_TYPE_NONE, null)
         HistoricalSubscription sub = new HistoricalSubscription("streamId", 0, new MessageHandler() {
             @Override
             void onMessage(Subscription sub, StreamMessage message) {
-                received = message.getContent()
+                received = message.getParsedContent()
             }
         }, null, ['publisherId': key])
         when:
@@ -234,7 +234,7 @@ class HistoricalSubscriptionSpec extends Specification {
         String ciphertext = EncryptionUtil.encrypt(HttpUtils.mapAdapter.toJson(plaintext).getBytes(StandardCharsets.UTF_8), groupKey)
         Map received = null
         StreamMessageV31 msg1 = new StreamMessageV31("streamId", 0, 0, 0, "publisherId", "",
-                null, null, StreamMessage.ContentType.CONTENT_TYPE_JSON, StreamMessage.EncryptionType.AES, ciphertext, StreamMessage.SignatureType.SIGNATURE_TYPE_NONE, null)
+                null, null, StreamMessage.MessageType.CONTENT_TYPE_JSON, StreamMessage.EncryptionType.AES, ciphertext, StreamMessage.SignatureType.SIGNATURE_TYPE_NONE, null)
         String receivedPublisherId = null
         Date receivedStart = null
         Date receivedEnd = null
@@ -243,7 +243,7 @@ class HistoricalSubscriptionSpec extends Specification {
         HistoricalSubscription sub = new HistoricalSubscription("streamId", 0, new MessageHandler() {
             @Override
             void onMessage(Subscription sub, StreamMessage message) {
-                received = message.getContent()
+                received = message.getParsedContent()
             }
         }, new ResendLastOption(1), null, new BasicSubscription.GroupKeyRequestFunction() {
             @Override
@@ -281,9 +281,9 @@ class HistoricalSubscriptionSpec extends Specification {
         SecretKey secretKey1 = new SecretKeySpec(DatatypeConverter.parseHexBinary(groupKey1.groupKeyHex), "AES")
         SecretKey secretKey2 = new SecretKeySpec(DatatypeConverter.parseHexBinary(groupKey2.groupKeyHex), "AES")
         StreamMessageV31 msg1 = new StreamMessageV31("streamId", 0, 1, 0, "publisherId", "",
-                null, null, StreamMessage.ContentType.CONTENT_TYPE_JSON, StreamMessage.EncryptionType.NONE, [foo: 'bar1'], StreamMessage.SignatureType.SIGNATURE_TYPE_NONE, null)
+                null, null, StreamMessage.MessageType.CONTENT_TYPE_JSON, StreamMessage.EncryptionType.NONE, [foo: 'bar1'], StreamMessage.SignatureType.SIGNATURE_TYPE_NONE, null)
         StreamMessageV31 msg2 = new StreamMessageV31("streamId", 0, 2, 0, "publisherId", "",
-                1, 0, StreamMessage.ContentType.CONTENT_TYPE_JSON, StreamMessage.EncryptionType.NONE, [foo: 'bar2'], StreamMessage.SignatureType.SIGNATURE_TYPE_NONE, null)
+                1, 0, StreamMessage.MessageType.CONTENT_TYPE_JSON, StreamMessage.EncryptionType.NONE, [foo: 'bar2'], StreamMessage.SignatureType.SIGNATURE_TYPE_NONE, null)
         EncryptionUtil.encryptStreamMessage(msg1, secretKey1)
         EncryptionUtil.encryptStreamMessage(msg2, secretKey2)
         int callCount = 0
@@ -323,8 +323,8 @@ class HistoricalSubscriptionSpec extends Specification {
         new PollingConditions().within(20) {
             callCount == 1
         }
-        received1.getContent() == [foo: 'bar1']
-        received2.getContent() == [foo: 'bar2']
+        received1.getParsedContent() == [foo: 'bar1']
+        received2.getParsedContent() == [foo: 'bar2']
         subDone
     }
 
@@ -336,13 +336,13 @@ class HistoricalSubscriptionSpec extends Specification {
         SecretKey secretKey2 = new SecretKeySpec(DatatypeConverter.parseHexBinary(groupKey2.groupKeyHex), "AES")
         SecretKey secretKey3 = new SecretKeySpec(DatatypeConverter.parseHexBinary(groupKey3.groupKeyHex), "AES")
         StreamMessageV31 msg1 = new StreamMessageV31("streamId", 0, 1, 0, "publisherId1", "",
-                null, null, StreamMessage.ContentType.CONTENT_TYPE_JSON, StreamMessage.EncryptionType.NONE, [foo: 'bar1'], StreamMessage.SignatureType.SIGNATURE_TYPE_NONE, null)
+                null, null, StreamMessage.MessageType.CONTENT_TYPE_JSON, StreamMessage.EncryptionType.NONE, [foo: 'bar1'], StreamMessage.SignatureType.SIGNATURE_TYPE_NONE, null)
         StreamMessageV31 msg2 = new StreamMessageV31("streamId", 0, 2, 0, "publisherId1", "",
-                1, 0, StreamMessage.ContentType.CONTENT_TYPE_JSON, StreamMessage.EncryptionType.NONE, [foo: 'bar2'], StreamMessage.SignatureType.SIGNATURE_TYPE_NONE, null)
+                1, 0, StreamMessage.MessageType.CONTENT_TYPE_JSON, StreamMessage.EncryptionType.NONE, [foo: 'bar2'], StreamMessage.SignatureType.SIGNATURE_TYPE_NONE, null)
         StreamMessageV31 msg3 = new StreamMessageV31("streamId", 0, 1, 0, "publisherId2", "",
-                null, null, StreamMessage.ContentType.CONTENT_TYPE_JSON, StreamMessage.EncryptionType.NONE, [foo: 'bar3'], StreamMessage.SignatureType.SIGNATURE_TYPE_NONE, null)
+                null, null, StreamMessage.MessageType.CONTENT_TYPE_JSON, StreamMessage.EncryptionType.NONE, [foo: 'bar3'], StreamMessage.SignatureType.SIGNATURE_TYPE_NONE, null)
         StreamMessageV31 msg4 = new StreamMessageV31("streamId", 0, 2, 0, "publisherId2", "",
-                1, 0, StreamMessage.ContentType.CONTENT_TYPE_JSON, StreamMessage.EncryptionType.NONE, [foo: 'bar4'], StreamMessage.SignatureType.SIGNATURE_TYPE_NONE, null)
+                1, 0, StreamMessage.MessageType.CONTENT_TYPE_JSON, StreamMessage.EncryptionType.NONE, [foo: 'bar4'], StreamMessage.SignatureType.SIGNATURE_TYPE_NONE, null)
         EncryptionUtil.encryptStreamMessage(msg1, secretKey1)
         EncryptionUtil.encryptStreamMessage(msg2, secretKey2)
         EncryptionUtil.encryptStreamMessage(msg3, secretKey3)
@@ -399,10 +399,10 @@ class HistoricalSubscriptionSpec extends Specification {
         sub.setGroupKeys(msg1.getPublisherId(), (ArrayList<GroupKey>)[groupKey1, groupKey2])
         sub.endResend()
         then:
-        received.get(0).getContent() == [foo: 'bar3']
-        received.get(1).getContent() == [foo: 'bar4']
-        received.get(2).getContent() == [foo: 'bar1']
-        received.get(3).getContent() == [foo: 'bar2']
+        received.get(0).getParsedContent() == [foo: 'bar3']
+        received.get(1).getParsedContent() == [foo: 'bar4']
+        received.get(2).getParsedContent() == [foo: 'bar1']
+        received.get(3).getParsedContent() == [foo: 'bar2']
         callCount == 2
         subDone
     }
@@ -416,11 +416,11 @@ class HistoricalSubscriptionSpec extends Specification {
         Map received = null
         boolean subDone = false
         StreamMessageV31 msg1 = new StreamMessageV31("streamId", 0, 0, 0, "publisherId", "",
-                null, null, StreamMessage.ContentType.CONTENT_TYPE_JSON, StreamMessage.EncryptionType.AES, ciphertext, StreamMessage.SignatureType.SIGNATURE_TYPE_NONE, null)
+                null, null, StreamMessage.MessageType.CONTENT_TYPE_JSON, StreamMessage.EncryptionType.AES, ciphertext, StreamMessage.SignatureType.SIGNATURE_TYPE_NONE, null)
         HistoricalSubscription sub = new HistoricalSubscription("streamId", 0, new MessageHandler() {
             @Override
             void onMessage(Subscription sub, StreamMessage message) {
-                received = message.getContent()
+                received = message.getParsedContent()
             }
             @Override
             void done(Subscription sub) {

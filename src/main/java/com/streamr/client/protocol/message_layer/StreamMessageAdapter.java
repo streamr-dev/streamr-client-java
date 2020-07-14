@@ -3,55 +3,58 @@ package com.streamr.client.protocol.message_layer;
 import com.squareup.moshi.JsonAdapter;
 import com.squareup.moshi.JsonDataException;
 import com.squareup.moshi.JsonReader;
-import com.squareup.moshi.JsonWriter;
 import com.streamr.client.exceptions.MalformedMessageException;
 import com.streamr.client.exceptions.UnsupportedMessageException;
+import okio.Buffer;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
 import java.io.IOException;
+import java.nio.charset.StandardCharsets;
+import java.util.HashMap;
+import java.util.Map;
 
-public class StreamMessageAdapter extends JsonAdapter<StreamMessage> {
+public class StreamMessageAdapter {
 
     private static final Logger log = LogManager.getLogger();
-    private static final StreamMessageV30Adapter v30Adapter = new StreamMessageV30Adapter();
-    private static final StreamMessageV31Adapter v31Adapter = new StreamMessageV31Adapter();
+    private static final Map<Integer, JsonAdapter<StreamMessage>> adapterByVersion = new HashMap<>();
 
-    @Override
-    public StreamMessage fromJson(JsonReader reader) throws IOException {
+    static {
+        adapterByVersion.put(30, new StreamMessageV30Adapter());
+        adapterByVersion.put(31, new StreamMessageV31Adapter());
+    }
+
+    public String serialize(StreamMessage msg, int version) {
+        JsonAdapter<StreamMessage> adapter = adapterByVersion.get(version);
+        if (adapter == null) {
+            throw new UnsupportedMessageException("Unrecognized stream message version: " + version);
+        }
+
+        return adapter.toJson(msg);
+    }
+
+    public static StreamMessage deserialize(String json) {
+        JsonReader reader = JsonReader.of(new Buffer().writeString(json, StandardCharsets.UTF_8));
+
+        // Read version, then delegate to correct adapter
         try {
             reader.beginArray();
 
             // Check version
             int version = reader.nextInt();
-            StreamMessage msg;
-            if (version == StreamMessageV30.VERSION) {
-                msg = v30Adapter.fromJson(reader);
-            } else if (version == StreamMessageV31.VERSION) {
-                msg = v31Adapter.fromJson(reader);
-            } else {
+
+            JsonAdapter<StreamMessage> adapter = adapterByVersion.get(version);
+            if (adapter == null) {
                 throw new UnsupportedMessageException("Unrecognized stream message version: " + version);
             }
+
+            StreamMessage msg = adapter.fromJson(reader);
             reader.endArray();
             return msg;
-        } catch (JsonDataException e) {
+        } catch (JsonDataException | IOException e) {
             log.error(e);
             throw new MalformedMessageException("Malformed message: " + reader.toString(), e);
         }
     }
 
-    @Override
-    public void toJson(JsonWriter writer, StreamMessage value) throws IOException {
-        writer.beginArray();
-        int version = value.getVersion();
-        writer.value(version);
-        if (version == StreamMessageV30.VERSION) {
-            v30Adapter.toJson(writer, (StreamMessageV30) value);
-        } else if (version == StreamMessageV31.VERSION) {
-            v31Adapter.toJson(writer, (StreamMessageV31) value);
-        } else {
-            throw new UnsupportedMessageException("Unrecognized stream message version: " + version);
-        }
-        writer.endArray();
-    }
 }

@@ -45,7 +45,7 @@ public class MessageCreationUtil {
 
         Pair<MessageID, MessageRef> pair = createMsgIdAndRef(stream.getId(), streamPartition, timestamp.getTime());
 
-        StreamMessage streamMessage = new StreamMessageV31(pair.getLeft(), pair.getRight(), StreamMessage.ContentType.CONTENT_TYPE_JSON,
+        StreamMessage streamMessage = new StreamMessageV31(pair.getLeft(), pair.getRight(), StreamMessage.MessageType.CONTENT_TYPE_JSON,
                 EncryptionType.NONE, payload, StreamMessage.SignatureType.SIGNATURE_TYPE_NONE, null
         );
 
@@ -79,7 +79,7 @@ public class MessageCreationUtil {
         String keyExchangeStreamId = KeyExchangeUtil.getKeyExchangeStreamId(publisherAddress);
         Pair<MessageID, MessageRef> pair = createDefaultMsgIdAndRef(keyExchangeStreamId);
         StreamMessage streamMessage = new StreamMessageV31(
-                pair.getLeft(), pair.getRight(), StreamMessage.ContentType.GROUP_KEY_REQUEST, EncryptionType.NONE, request.toMap(),
+                pair.getLeft(), pair.getRight(), StreamMessage.MessageType.GROUP_KEY_REQUEST, EncryptionType.NONE, request.toMap(),
                 StreamMessage.SignatureType.SIGNATURE_TYPE_NONE, null);
         signingUtil.signStreamMessage(streamMessage);
         return streamMessage;
@@ -101,7 +101,7 @@ public class MessageCreationUtil {
         String keyExchangeStreamId = KeyExchangeUtil.getKeyExchangeStreamId(subscriberAddress);
         Pair<MessageID, MessageRef> pair = createDefaultMsgIdAndRef(keyExchangeStreamId);
         StreamMessage streamMessage = new StreamMessageV31(
-                pair.getLeft(), pair.getRight(), StreamMessage.ContentType.GROUP_KEY_RESPONSE_SIMPLE, EncryptionType.RSA, response.toMap(),
+                pair.getLeft(), pair.getRight(), StreamMessage.MessageType.GROUP_KEY_RESPONSE_SIMPLE, EncryptionType.RSA, response.toMap(),
                 StreamMessage.SignatureType.SIGNATURE_TYPE_NONE, null);
         signingUtil.signStreamMessage(streamMessage);
         return streamMessage;
@@ -117,7 +117,7 @@ public class MessageCreationUtil {
         String keyExchangeStreamId = KeyExchangeUtil.getKeyExchangeStreamId(subscriberAddress);
         Pair<MessageID, MessageRef> pair = createDefaultMsgIdAndRef(keyExchangeStreamId);
         StreamMessage streamMessage = new StreamMessageV31(
-                pair.getLeft(), pair.getRight(), StreamMessage.ContentType.GROUP_KEY_RESET_SIMPLE, EncryptionType.RSA, reset.toMap(),
+                pair.getLeft(), pair.getRight(), StreamMessage.MessageType.GROUP_KEY_RESET_SIMPLE, EncryptionType.RSA, reset.toMap(),
                 StreamMessage.SignatureType.SIGNATURE_TYPE_NONE, null);
         signingUtil.signStreamMessage(streamMessage);
         return streamMessage;
@@ -138,7 +138,7 @@ public class MessageCreationUtil {
         String keyExchangeStreamId = KeyExchangeUtil.getKeyExchangeStreamId(destinationAddress);
         Pair<MessageID, MessageRef> pair = createDefaultMsgIdAndRef(keyExchangeStreamId);
         StreamMessage streamMessage = new StreamMessageV31(
-                pair.getLeft(), pair.getRight(), StreamMessage.ContentType.GROUP_KEY_RESPONSE_ERROR, EncryptionType.NONE, response.toMap(),
+                pair.getLeft(), pair.getRight(), StreamMessage.MessageType.GROUP_KEY_RESPONSE_ERROR, EncryptionType.NONE, response.toMap(),
                 StreamMessage.SignatureType.SIGNATURE_TYPE_NONE, null);
         signingUtil.signStreamMessage(streamMessage);
         return streamMessage;

@@ -16,7 +16,7 @@ public class ValidationException extends RuntimeException {
     }
 
     public ValidationException(StreamMessage streamMessage, Reason reason, String message) {
-        super("Message validation failed due to: " + message + ". StreamMessage was: " + (streamMessage == null ? "null" : streamMessage.toJson()));
+        super("Message validation failed due to: " + message + ". StreamMessage was: " + (streamMessage == null ? "null" : streamMessage.serialize()));
         this.reason = reason;
         this.streamMessage = streamMessage;
     }

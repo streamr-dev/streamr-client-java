@@ -16,8 +16,8 @@ public abstract class AbstractGroupKeyMessage {
         return streamId;
     }
 
-    public static AbstractGroupKeyMessage fromContent(Map<String, Object> content, StreamMessage.ContentType contentType) {
-        switch (contentType) {
+    public static AbstractGroupKeyMessage fromContent(Map<String, Object> content, StreamMessage.MessageType messageType) {
+        switch (messageType) {
             case GROUP_KEY_REQUEST:
                 return GroupKeyRequest.fromMap(content);
             case GROUP_KEY_RESPONSE_SIMPLE:
@@ -27,7 +27,7 @@ public abstract class AbstractGroupKeyMessage {
             case GROUP_KEY_RESPONSE_ERROR:
                 return GroupKeyErrorResponse.fromMap(content);
             default:
-                throw new RuntimeException("ContentType can not be converted to a group key message: " + contentType);
+                throw new RuntimeException("MessageType can not be converted to a group key message: " + messageType);
         }
     }
 }

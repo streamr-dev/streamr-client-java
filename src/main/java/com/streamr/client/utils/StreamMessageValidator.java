@@ -40,7 +40,7 @@ public class StreamMessageValidator {
             throw new IllegalArgumentException("StreamMessage was null!");
         }
 
-        switch (msg.getContentType()) {
+        switch (msg.getMessageType()) {
             case CONTENT_TYPE_JSON:
                 validateMessage(msg);
                 break;
@@ -121,7 +121,7 @@ public class StreamMessageValidator {
         // Signatures on key exchange messages are checked regardless of policy setting
         assertValidSignature(streamMessage);
 
-        AbstractGroupKeyMessage request = AbstractGroupKeyMessage.fromContent(streamMessage.getContent(), streamMessage.getContentType());
+        AbstractGroupKeyMessage request = AbstractGroupKeyMessage.fromContent(streamMessage.getParsedContent(), streamMessage.getMessageType());
         String sender = streamMessage.getPublisherId();
         String recipient = KeyExchangeUtil.getRecipientFromKeyExchangeStreamId(streamMessage.getStreamId());
 
@@ -146,7 +146,7 @@ public class StreamMessageValidator {
         // Signatures on key exchange messages are checked regardless of policy setting
         assertValidSignature(streamMessage);
 
-        AbstractGroupKeyMessage response = AbstractGroupKeyMessage.fromContent(streamMessage.getContent(), streamMessage.getContentType());
+        AbstractGroupKeyMessage response = AbstractGroupKeyMessage.fromContent(streamMessage.getParsedContent(), streamMessage.getMessageType());
         String sender = streamMessage.getPublisherId();
         String recipient = KeyExchangeUtil.getRecipientFromKeyExchangeStreamId(streamMessage.getStreamId());
 

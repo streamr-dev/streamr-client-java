@@ -22,7 +22,7 @@ import java.security.SecureRandom
 
 class RealTimeSubscriptionSpec extends Specification {
     StreamMessageV31 msg = new StreamMessageV31("stream-id", 0, (new Date()).getTime(), 0, "publisherId", "msgChainId",
-            null, 0, StreamMessage.ContentType.CONTENT_TYPE_JSON, StreamMessage.EncryptionType.NONE, "{}", StreamMessage.SignatureType.SIGNATURE_TYPE_NONE, null)
+            null, 0, StreamMessage.MessageType.CONTENT_TYPE_JSON, StreamMessage.EncryptionType.NONE, "{}", StreamMessage.SignatureType.SIGNATURE_TYPE_NONE, null)
 
     StreamMessage createMessage(long timestamp, long sequenceNumber, Long previousTimestamp, Long previousSequenceNumber) {
         return createMessage(timestamp, sequenceNumber, previousTimestamp, previousSequenceNumber, "publisherId")
@@ -30,7 +30,7 @@ class RealTimeSubscriptionSpec extends Specification {
 
     StreamMessage createMessage(long timestamp, long sequenceNumber, Long previousTimestamp, Long previousSequenceNumber, String publisherId) {
         return new StreamMessageV31("stream-id", 0, timestamp, sequenceNumber, publisherId, "msgChainId",
-                previousTimestamp, previousSequenceNumber, StreamMessage.ContentType.CONTENT_TYPE_JSON, StreamMessage.EncryptionType.NONE, "{}", StreamMessage.SignatureType.SIGNATURE_TYPE_NONE, null)
+                previousTimestamp, previousSequenceNumber, StreamMessage.MessageType.CONTENT_TYPE_JSON, StreamMessage.EncryptionType.NONE, "{}", StreamMessage.SignatureType.SIGNATURE_TYPE_NONE, null)
     }
 
     MessageHandler empty = new MessageHandler() {
@@ -59,7 +59,7 @@ class RealTimeSubscriptionSpec extends Specification {
         })
         sub.handleRealTimeMessage(msg)
         then:
-        received.toJson() == msg.toJson()
+        received.serialize() == msg.serialize()
     }
 
     void "calls the handler once for each message in order"() {
@@ -80,7 +80,7 @@ class RealTimeSubscriptionSpec extends Specification {
         }
         then:
         for (int i=0;i<5;i++) {
-            assert msgs.get(i).toJson() == received.get(i).toJson()
+            assert msgs.get(i).serialize() == received.get(i).serialize()
         }
     }
 
@@ -96,7 +96,7 @@ class RealTimeSubscriptionSpec extends Specification {
         sub.setResending(true)
         sub.handleResentMessage(msg)
         then:
-        received.toJson() == msg.toJson()
+        received.serialize() == msg.serialize()
     }
 
     void "ignores duplicate messages"() {
@@ -116,7 +116,7 @@ class RealTimeSubscriptionSpec extends Specification {
         sub.handleRealTimeMessage(msg)
         sub.handleRealTimeMessage(msg)
         then:
-        received.toJson() == msg.toJson()
+        received.serialize() == msg.serialize()
         noExceptionThrown()
     }
 
@@ -210,14 +210,14 @@ class RealTimeSubscriptionSpec extends Specification {
         Map plaintext = [foo: 'bar']
         Map received = null
         StreamMessageV31 msg1 = new StreamMessageV31("streamId", 0, 0, 0, "publisherId", "",
-                null, null, StreamMessage.ContentType.CONTENT_TYPE_JSON, StreamMessage.EncryptionType.NONE, plaintext, StreamMessage.SignatureType.SIGNATURE_TYPE_NONE, null)
+                null, null, StreamMessage.MessageType.CONTENT_TYPE_JSON, StreamMessage.EncryptionType.NONE, plaintext, StreamMessage.SignatureType.SIGNATURE_TYPE_NONE, null)
 
         EncryptionUtil.encryptStreamMessage(msg1, secretKey)
 
         RealTimeSubscription sub = new RealTimeSubscription("streamId", 0, new MessageHandler() {
             @Override
             void onMessage(Subscription sub, StreamMessage message) {
-                received = message.getContent()
+                received = message.getParsedContent()
             }
         }, ['publisherId': groupKey])
         when:
@@ -228,7 +228,7 @@ class RealTimeSubscriptionSpec extends Specification {
 
     void "calls key request function when cannot decrypt messages with wrong key (multiple times when no response)"() {
         StreamMessageV31 msg1 = new StreamMessageV31("streamId", 0, 0, 0, "publisherId", "",
-                null, null, StreamMessage.ContentType.CONTENT_TYPE_JSON, StreamMessage.EncryptionType.NONE, [foo: 'bar'], StreamMessage.SignatureType.SIGNATURE_TYPE_NONE, null)
+                null, null, StreamMessage.MessageType.CONTENT_TYPE_JSON, StreamMessage.EncryptionType.NONE, [foo: 'bar'], StreamMessage.SignatureType.SIGNATURE_TYPE_NONE, null)
 
         UnencryptedGroupKey groupKey = genKey()
         UnencryptedGroupKey wrongGroupKey = genKey()
@@ -268,7 +268,7 @@ class RealTimeSubscriptionSpec extends Specification {
 
     void "calls key request function MAX_NB_GROUP_KEY_REQUESTS times"() {
         StreamMessageV31 msg1 = new StreamMessageV31("streamId", 0, 0, 0, "publisherId", "",
-                null, null, StreamMessage.ContentType.CONTENT_TYPE_JSON, StreamMessage.EncryptionType.NONE, [foo: 'bar'], StreamMessage.SignatureType.SIGNATURE_TYPE_NONE, null)
+                null, null, StreamMessage.MessageType.CONTENT_TYPE_JSON, StreamMessage.EncryptionType.NONE, [foo: 'bar'], StreamMessage.SignatureType.SIGNATURE_TYPE_NONE, null)
 
         UnencryptedGroupKey groupKey = genKey()
         UnencryptedGroupKey wrongGroupKey = genKey()
@@ -297,9 +297,9 @@ class RealTimeSubscriptionSpec extends Specification {
 
     void "queues messages when not able to decrypt and handles them once the key is updated"() {
         StreamMessageV31 msg1 = new StreamMessageV31("streamId", 0, 1, 0, "publisherId", "",
-                null, null, StreamMessage.ContentType.CONTENT_TYPE_JSON, StreamMessage.EncryptionType.NONE, [foo: 'bar1'], StreamMessage.SignatureType.SIGNATURE_TYPE_NONE, null)
+                null, null, StreamMessage.MessageType.CONTENT_TYPE_JSON, StreamMessage.EncryptionType.NONE, [foo: 'bar1'], StreamMessage.SignatureType.SIGNATURE_TYPE_NONE, null)
         StreamMessageV31 msg2 = new StreamMessageV31("streamId", 0, 2, 0, "publisherId", "",
-                1, 0, StreamMessage.ContentType.CONTENT_TYPE_JSON, StreamMessage.EncryptionType.NONE, [foo: 'bar2'], StreamMessage.SignatureType.SIGNATURE_TYPE_NONE, null)
+                1, 0, StreamMessage.MessageType.CONTENT_TYPE_JSON, StreamMessage.EncryptionType.NONE, [foo: 'bar2'], StreamMessage.SignatureType.SIGNATURE_TYPE_NONE, null)
 
         UnencryptedGroupKey groupKey = genKey()
         UnencryptedGroupKey wrongGroupKey = genKey()
@@ -346,20 +346,20 @@ class RealTimeSubscriptionSpec extends Specification {
         sub.setGroupKeys(msg1.getPublisherId(), (ArrayList<UnencryptedGroupKey>)[groupKey])
 
         then:
-        received1.getContent() == [foo: 'bar1']
-        received2.getContent() == [foo: 'bar2']
+        received1.getParsedContent() == [foo: 'bar1']
+        received2.getParsedContent() == [foo: 'bar2']
         callCount == 1
     }
 
     void "queues messages when not able to decrypt and handles them once the key is updated (multiple publishers)"() {
         StreamMessageV31 msg1 = new StreamMessageV31("streamId", 0, 1, 0, "publisherId1", "",
-                null, null, StreamMessage.ContentType.CONTENT_TYPE_JSON, StreamMessage.EncryptionType.NONE, [foo: 'bar1'], StreamMessage.SignatureType.SIGNATURE_TYPE_NONE, null)
+                null, null, StreamMessage.MessageType.CONTENT_TYPE_JSON, StreamMessage.EncryptionType.NONE, [foo: 'bar1'], StreamMessage.SignatureType.SIGNATURE_TYPE_NONE, null)
         StreamMessageV31 msg2 = new StreamMessageV31("streamId", 0, 2, 0, "publisherId1", "",
-                1, 0, StreamMessage.ContentType.CONTENT_TYPE_JSON, StreamMessage.EncryptionType.NONE, [foo: 'bar2'], StreamMessage.SignatureType.SIGNATURE_TYPE_NONE, null)
+                1, 0, StreamMessage.MessageType.CONTENT_TYPE_JSON, StreamMessage.EncryptionType.NONE, [foo: 'bar2'], StreamMessage.SignatureType.SIGNATURE_TYPE_NONE, null)
         StreamMessageV31 msg3 = new StreamMessageV31("streamId", 0, 1, 0, "publisherId2", "",
-                null, null, StreamMessage.ContentType.CONTENT_TYPE_JSON, StreamMessage.EncryptionType.NONE, [foo: 'bar3'], StreamMessage.SignatureType.SIGNATURE_TYPE_NONE, null)
+                null, null, StreamMessage.MessageType.CONTENT_TYPE_JSON, StreamMessage.EncryptionType.NONE, [foo: 'bar3'], StreamMessage.SignatureType.SIGNATURE_TYPE_NONE, null)
         StreamMessageV31 msg4 = new StreamMessageV31("streamId", 0, 2, 0, "publisherId2", "",
-                1, 0, StreamMessage.ContentType.CONTENT_TYPE_JSON, StreamMessage.EncryptionType.NONE, [foo: 'bar4'], StreamMessage.SignatureType.SIGNATURE_TYPE_NONE, null)
+                1, 0, StreamMessage.MessageType.CONTENT_TYPE_JSON, StreamMessage.EncryptionType.NONE, [foo: 'bar4'], StreamMessage.SignatureType.SIGNATURE_TYPE_NONE, null)
 
         UnencryptedGroupKey groupKey1 = genKey()
         UnencryptedGroupKey wrongGroupKey = genKey()
@@ -418,10 +418,10 @@ class RealTimeSubscriptionSpec extends Specification {
         sub.setGroupKeys(msg1.getPublisherId(), (ArrayList<UnencryptedGroupKey>)[groupKey1])
         sub.setGroupKeys(msg3.getPublisherId(), (ArrayList<UnencryptedGroupKey>)[groupKey2])
         then:
-        received.get(0).getContent() == [foo: 'bar1']
-        received.get(1).getContent() == [foo: 'bar2']
-        received.get(2).getContent() == [foo: 'bar3']
-        received.get(3).getContent() == [foo: 'bar4']
+        received.get(0).getParsedContent() == [foo: 'bar1']
+        received.get(1).getParsedContent() == [foo: 'bar2']
+        received.get(2).getParsedContent() == [foo: 'bar3']
+        received.get(3).getParsedContent() == [foo: 'bar4']
         callCount == 2
     }
 
@@ -429,15 +429,15 @@ class RealTimeSubscriptionSpec extends Specification {
         String publisher1 = "publisherId1"
         String publisher2 = "publisherId2"
         StreamMessageV31 msg1Pub1 = new StreamMessageV31("streamId", 0, 1, 0, publisher1, "",
-                null, null, StreamMessage.ContentType.CONTENT_TYPE_JSON, StreamMessage.EncryptionType.NONE, [foo: 'bar1'], StreamMessage.SignatureType.SIGNATURE_TYPE_NONE, null)
+                null, null, StreamMessage.MessageType.CONTENT_TYPE_JSON, StreamMessage.EncryptionType.NONE, [foo: 'bar1'], StreamMessage.SignatureType.SIGNATURE_TYPE_NONE, null)
         StreamMessageV31 msg2Pub1 = new StreamMessageV31("streamId", 0, 2, 0, publisher1, "",
-                1, 0, StreamMessage.ContentType.CONTENT_TYPE_JSON, StreamMessage.EncryptionType.NONE, [foo: 'bar2'], StreamMessage.SignatureType.SIGNATURE_TYPE_NONE, null)
+                1, 0, StreamMessage.MessageType.CONTENT_TYPE_JSON, StreamMessage.EncryptionType.NONE, [foo: 'bar2'], StreamMessage.SignatureType.SIGNATURE_TYPE_NONE, null)
         StreamMessageV31 msg3Pub1 = new StreamMessageV31("streamId", 0, 3, 0, publisher1, "",
-                2, 0, StreamMessage.ContentType.CONTENT_TYPE_JSON, StreamMessage.EncryptionType.NONE, [foo: 'bar3'], StreamMessage.SignatureType.SIGNATURE_TYPE_NONE, null)
+                2, 0, StreamMessage.MessageType.CONTENT_TYPE_JSON, StreamMessage.EncryptionType.NONE, [foo: 'bar3'], StreamMessage.SignatureType.SIGNATURE_TYPE_NONE, null)
         StreamMessageV31 msg1Pub2 = new StreamMessageV31("streamId", 0, 1, 0, publisher2, "",
-                null, null, StreamMessage.ContentType.CONTENT_TYPE_JSON, StreamMessage.EncryptionType.NONE, [foo: 'bar4'], StreamMessage.SignatureType.SIGNATURE_TYPE_NONE, null)
+                null, null, StreamMessage.MessageType.CONTENT_TYPE_JSON, StreamMessage.EncryptionType.NONE, [foo: 'bar4'], StreamMessage.SignatureType.SIGNATURE_TYPE_NONE, null)
         StreamMessageV31 msg2Pub2 = new StreamMessageV31("streamId", 0, 2, 0, publisher2, "",
-                1, 0, StreamMessage.ContentType.CONTENT_TYPE_JSON, StreamMessage.EncryptionType.NONE, [foo: 'bar5'], StreamMessage.SignatureType.SIGNATURE_TYPE_NONE, null)
+                1, 0, StreamMessage.MessageType.CONTENT_TYPE_JSON, StreamMessage.EncryptionType.NONE, [foo: 'bar5'], StreamMessage.SignatureType.SIGNATURE_TYPE_NONE, null)
 
         UnencryptedGroupKey groupKey1 = genKey()
         UnencryptedGroupKey wrongGroupKey = genKey()
@@ -479,11 +479,11 @@ class RealTimeSubscriptionSpec extends Specification {
         sub.setGroupKeys(publisher2, (ArrayList<UnencryptedGroupKey>)[groupKey2])
 
         then:
-        received.get(0).getContent() == [foo: 'bar1']
-        received.get(1).getContent() == [foo: 'bar2']
-        received.get(2).getContent() == [foo: 'bar3']
-        received.get(3).getContent() == [foo: 'bar4']
-        received.get(4).getContent() == [foo: 'bar5']
+        received.get(0).getParsedContent() == [foo: 'bar1']
+        received.get(1).getParsedContent() == [foo: 'bar2']
+        received.get(2).getParsedContent() == [foo: 'bar3']
+        received.get(3).getParsedContent() == [foo: 'bar4']
+        received.get(4).getParsedContent() == [foo: 'bar5']
         callCount == 2
     }
 
@@ -493,7 +493,7 @@ class RealTimeSubscriptionSpec extends Specification {
         UnencryptedGroupKey otherWrongGroupKey = genKey()
         SecretKey secretKey = new SecretKeySpec(DatatypeConverter.parseHexBinary(groupKey.groupKeyHex), "AES")
         StreamMessageV31 msg1 = new StreamMessageV31("streamId", 0, 0, 0, "publisherId", "",
-                null, null, StreamMessage.ContentType.CONTENT_TYPE_JSON, StreamMessage.EncryptionType.NONE, [foo: 'bar'], StreamMessage.SignatureType.SIGNATURE_TYPE_NONE, null)
+                null, null, StreamMessage.MessageType.CONTENT_TYPE_JSON, StreamMessage.EncryptionType.NONE, [foo: 'bar'], StreamMessage.SignatureType.SIGNATURE_TYPE_NONE, null)
 
         EncryptionUtil.encryptStreamMessage(msg1, secretKey)
 
@@ -529,13 +529,13 @@ class RealTimeSubscriptionSpec extends Specification {
 
         Map content1 = [foo: 'bar']
         StreamMessageV31 msg1 = new StreamMessageV31("streamId", 0, 0, 0, "publisherId", "",
-                null, null, StreamMessage.ContentType.CONTENT_TYPE_JSON, StreamMessage.EncryptionType.NONE, [foo: 'bar'], StreamMessage.SignatureType.SIGNATURE_TYPE_NONE, null)
+                null, null, StreamMessage.MessageType.CONTENT_TYPE_JSON, StreamMessage.EncryptionType.NONE, [foo: 'bar'], StreamMessage.SignatureType.SIGNATURE_TYPE_NONE, null)
 
         EncryptionUtil.encryptStreamMessageAndNewKey(key2HexString, msg1, secretKey1)
 
         Map content2 = [hello: 'world']
         StreamMessageV31 msg2 = new StreamMessageV31("streamId", 0, 1, 0, "publisherId", "",
-                0, 0, StreamMessage.ContentType.CONTENT_TYPE_JSON, StreamMessage.EncryptionType.NONE, [hello: 'world'], StreamMessage.SignatureType.SIGNATURE_TYPE_NONE, null)
+                0, 0, StreamMessage.MessageType.CONTENT_TYPE_JSON, StreamMessage.EncryptionType.NONE, [hello: 'world'], StreamMessage.SignatureType.SIGNATURE_TYPE_NONE, null)
 
         EncryptionUtil.encryptStreamMessage(msg2, secretKey2)
 
@@ -546,9 +546,9 @@ class RealTimeSubscriptionSpec extends Specification {
             @Override
             void onMessage(Subscription sub, StreamMessage message) {
                 if (received1 == null) {
-                    received1 = message.getContent()
+                    received1 = message.getParsedContent()
                 } else {
-                    received2 = message.getContent()
+                    received2 = message.getParsedContent()
                 }
 
             }

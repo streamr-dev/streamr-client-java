@@ -5,22 +5,23 @@ import com.squareup.moshi.JsonDataException;
 import com.squareup.moshi.JsonReader;
 import com.squareup.moshi.JsonWriter;
 import com.streamr.client.exceptions.MalformedMessageException;
-import com.streamr.client.protocol.message_layer.StreamMessage.ContentType;
+import com.streamr.client.protocol.message_layer.StreamMessage.MessageType;
 import com.streamr.client.protocol.message_layer.StreamMessage.SignatureType;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
 import java.io.IOException;
 
-public class StreamMessageV30Adapter extends JsonAdapter<StreamMessageV30> {
+public class StreamMessageV30Adapter extends JsonAdapter<StreamMessage> {
 
     private static final Logger log = LogManager.getLogger();
     private static final MessageIDAdapter msgIdAdapter = new MessageIDAdapter();
     private static final MessageRefAdapter msgRefAdapter = new MessageRefAdapter();
 
     @Override
-    public StreamMessageV30 fromJson(JsonReader reader) throws IOException {
+    public StreamMessage fromJson(JsonReader reader) throws IOException {
         try {
+            // version field has already been read in StreamMessageAdapter
             MessageID messageID = msgIdAdapter.fromJson(reader);
             MessageRef previousMessageRef = null;
             // Peek at the previousMessageRef, as it can be null
@@ -29,7 +30,7 @@ public class StreamMessageV30Adapter extends JsonAdapter<StreamMessageV30> {
             } else {
                 previousMessageRef = msgRefAdapter.fromJson(reader);
             }
-            ContentType contentType = ContentType.fromId((byte)reader.nextInt());
+            MessageType messageType = MessageType.fromId((byte)reader.nextInt());
             String serializedContent = reader.nextString();
             SignatureType signatureType = SignatureType.fromId((byte)reader.nextInt());
             String signature = null;
@@ -39,7 +40,7 @@ public class StreamMessageV30Adapter extends JsonAdapter<StreamMessageV30> {
                 reader.nextNull();
             }
 
-            return new StreamMessageV30(messageID, previousMessageRef, contentType, serializedContent, signatureType, signature);
+            return new StreamMessage(messageID, previousMessageRef, messageType, serializedContent, StreamMessage.ContentType.JSON, StreamMessage.EncryptionType.NONE, null, signatureType, signature);
         } catch (JsonDataException e) {
             log.error(e);
             throw new MalformedMessageException("Malformed message: " + reader.toString(), e);
@@ -47,16 +48,16 @@ public class StreamMessageV30Adapter extends JsonAdapter<StreamMessageV30> {
     }
 
     @Override
-    public void toJson(JsonWriter writer, StreamMessageV30 value) throws IOException {
-        msgIdAdapter.toJson(writer, value.getMessageID());
-        if (value.getPreviousMessageRef() != null) {
-            msgRefAdapter.toJson(writer, value.getPreviousMessageRef());
+    public void toJson(JsonWriter writer, StreamMessage msg) throws IOException {
+        msgIdAdapter.toJson(writer, msg.getMessageID());
+        if (msg.getPreviousMessageRef() != null) {
+            msgRefAdapter.toJson(writer, msg.getPreviousMessageRef());
         }else {
             writer.value((String)null);
         }
-        writer.value(value.getContentType().getId());
-        writer.value(value.getSerializedContent());
-        writer.value(value.getSignatureType().getId());
-        writer.value(value.getSignature());
+        writer.value(msg.getContentType().getId());
+        writer.value(msg.getSerializedContent());
+        writer.value(msg.getSignatureType().getId());
+        writer.value(msg.getSignature());
     }
 }

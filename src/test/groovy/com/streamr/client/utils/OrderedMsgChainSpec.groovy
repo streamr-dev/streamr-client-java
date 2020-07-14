@@ -14,7 +14,7 @@ import java.util.stream.Collectors;
 class OrderedMsgChainSpec extends Specification {
     StreamMessage createMessage(long timestamp, Long previousTimestamp) {
         return new StreamMessageV31("stream-id", 0, timestamp, 0L, "publisherId", "msgChainId",
-                previousTimestamp, 0L, StreamMessage.ContentType.CONTENT_TYPE_JSON, StreamMessage.EncryptionType.NONE, "{}", StreamMessage.SignatureType.SIGNATURE_TYPE_NONE, null);
+                previousTimestamp, 0L, StreamMessage.MessageType.CONTENT_TYPE_JSON, StreamMessage.EncryptionType.NONE, "{}", StreamMessage.SignatureType.SIGNATURE_TYPE_NONE, null);
     }
     StreamMessage msg1 = createMessage(1, null)
     StreamMessage msg2 = createMessage(2, 1)

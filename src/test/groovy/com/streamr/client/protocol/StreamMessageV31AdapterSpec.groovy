@@ -3,9 +3,8 @@ package com.streamr.client.protocol
 import com.squareup.moshi.JsonReader
 import com.squareup.moshi.JsonWriter
 import com.streamr.client.exceptions.EncryptedContentNotParsableException
-import com.streamr.client.exceptions.MalformedMessageException
 import com.streamr.client.protocol.message_layer.*
-import com.streamr.client.protocol.message_layer.StreamMessage.ContentType
+import com.streamr.client.protocol.message_layer.StreamMessage.MessageType
 import com.streamr.client.protocol.message_layer.StreamMessage.EncryptionType
 import okio.Buffer
 import spock.lang.Specification
@@ -46,7 +45,7 @@ class StreamMessageV31AdapterSpec extends Specification {
 		String serializedContent = '{"desi":"2","dir":"1","oper":40,"veh":222,"tst":"2018-06-05T19:49:33Z","tsi":1528228173,"spd":3.6,"hdg":69,"lat":60.192258,"long":24.928701,"acc":-0.59,"dl":-248,"odo":5134,"drst":0,"oday":"2018-06-05","jrn":885,"line":30,"start":"22:23"}'
 		String expectedJson = "[31,[\"7wa7APtlTq6EC5iTCBy6dw\",0,1528228173462,0,\"publisherId\",\"1\"],[1528228170000,0],27,0,\"{\\\"desi\\\":\\\"2\\\",\\\"dir\\\":\\\"1\\\",\\\"oper\\\":40,\\\"veh\\\":222,\\\"tst\\\":\\\"2018-06-05T19:49:33Z\\\",\\\"tsi\\\":1528228173,\\\"spd\\\":3.6,\\\"hdg\\\":69,\\\"lat\\\":60.192258,\\\"long\\\":24.928701,\\\"acc\\\":-0.59,\\\"dl\\\":-248,\\\"odo\\\":5134,\\\"drst\\\":0,\\\"oday\\\":\\\"2018-06-05\\\",\\\"jrn\\\":885,\\\"line\\\":30,\\\"start\\\":\\\"22:23\\\"}\",2,\"signature\"]"
 		when:
-		StreamMessageV31 msg = new StreamMessageV31("7wa7APtlTq6EC5iTCBy6dw", 0, 1528228173462L, 0, "publisherId", "1", 1528228170000L, 0, ContentType.CONTENT_TYPE_JSON, EncryptionType.NONE, serializedContent, StreamMessage.SignatureType.SIGNATURE_TYPE_ETH, "signature")
+		StreamMessageV31 msg = new StreamMessageV31("7wa7APtlTq6EC5iTCBy6dw", 0, 1528228173462L, 0, "publisherId", "1", 1528228170000L, 0, StreamMessage.MessageType.CONTENT_TYPE_JSON, EncryptionType.NONE, serializedContent, StreamMessage.SignatureType.SIGNATURE_TYPE_ETH, "signature")
 
 		then:
 		msgToJson(adapter, msg) == expectedJson
@@ -56,7 +55,7 @@ class StreamMessageV31AdapterSpec extends Specification {
 		Map content = ["desi":"2","dir":"1","oper":40,"veh":222,"tst":"2018-06-05T19:49:33Z","tsi":1528228173,"spd":3.6,"hdg":69,"lat":60.192258,"long":24.928701,"acc":-0.59,"dl":-248,"odo":5134,"drst":0,"oday":"2018-06-05","jrn":885,"line":30,"start":"22:23"]
 		String expectedJson = "[31,[\"7wa7APtlTq6EC5iTCBy6dw\",0,1528228173462,0,\"publisherId\",\"1\"],[1528228170000,0],27,1,\"{\\\"desi\\\":\\\"2\\\",\\\"dir\\\":\\\"1\\\",\\\"oper\\\":40,\\\"veh\\\":222,\\\"tst\\\":\\\"2018-06-05T19:49:33Z\\\",\\\"tsi\\\":1528228173,\\\"spd\\\":3.6,\\\"hdg\\\":69,\\\"lat\\\":60.192258,\\\"long\\\":24.928701,\\\"acc\\\":-0.59,\\\"dl\\\":-248,\\\"odo\\\":5134,\\\"drst\\\":0,\\\"oday\\\":\\\"2018-06-05\\\",\\\"jrn\\\":885,\\\"line\\\":30,\\\"start\\\":\\\"22:23\\\"}\",2,\"signature\"]"
 		when:
-		StreamMessageV31 msg = new StreamMessageV31("7wa7APtlTq6EC5iTCBy6dw", 0, 1528228173462L, 0, "publisherId", "1", 1528228170000L, 0, ContentType.CONTENT_TYPE_JSON, EncryptionType.RSA, content, StreamMessage.SignatureType.SIGNATURE_TYPE_ETH, "signature")
+		StreamMessageV31 msg = new StreamMessageV31("7wa7APtlTq6EC5iTCBy6dw", 0, 1528228173462L, 0, "publisherId", "1", 1528228170000L, 0, StreamMessage.MessageType.CONTENT_TYPE_JSON, EncryptionType.RSA, content, StreamMessage.SignatureType.SIGNATURE_TYPE_ETH, "signature")
 
 		then:
 		msgToJson(adapter, msg) == expectedJson
@@ -67,7 +66,7 @@ class StreamMessageV31AdapterSpec extends Specification {
 		String expectedJson = "[31,[\"7wa7APtlTq6EC5iTCBy6dw\",0,1528228173462,0,\"publisherId\",\"1\"],[1528228170000,0],27,2,\"{\\\"desi\\\":\\\"2\\\",\\\"dir\\\":\\\"1\\\",\\\"oper\\\":40,\\\"veh\\\":222,\\\"tst\\\":\\\"2018-06-05T19:49:33Z\\\",\\\"tsi\\\":1528228173,\\\"spd\\\":3.6,\\\"hdg\\\":69,\\\"lat\\\":60.192258,\\\"long\\\":24.928701,\\\"acc\\\":-0.59,\\\"dl\\\":-248,\\\"odo\\\":5134,\\\"drst\\\":0,\\\"oday\\\":\\\"2018-06-05\\\",\\\"jrn\\\":885,\\\"line\\\":30,\\\"start\\\":\\\"22:23\\\"}\",0,null]"
 
 		when:
-		StreamMessageV31 msg = new StreamMessageV31("7wa7APtlTq6EC5iTCBy6dw", 0, 1528228173462L, 0, "publisherId", "1", 1528228170000L, 0, ContentType.CONTENT_TYPE_JSON, EncryptionType.AES, serializedContent, StreamMessage.SignatureType.SIGNATURE_TYPE_NONE, null)
+		StreamMessageV31 msg = new StreamMessageV31("7wa7APtlTq6EC5iTCBy6dw", 0, 1528228173462L, 0, "publisherId", "1", 1528228170000L, 0, StreamMessage.MessageType.CONTENT_TYPE_JSON, EncryptionType.AES, serializedContent, StreamMessage.SignatureType.SIGNATURE_TYPE_NONE, null)
 
 		then:
 		msgToJson(adapter, msg) == expectedJson
@@ -78,7 +77,7 @@ class StreamMessageV31AdapterSpec extends Specification {
 		String expectedJson = "[31,[\"7wa7APtlTq6EC5iTCBy6dw\",0,1528228173462,0,\"publisherId\",\"1\"],null,27,3,\"{\\\"desi\\\":\\\"2\\\",\\\"dir\\\":\\\"1\\\",\\\"oper\\\":40,\\\"veh\\\":222,\\\"tst\\\":\\\"2018-06-05T19:49:33Z\\\",\\\"tsi\\\":1528228173,\\\"spd\\\":3.6,\\\"hdg\\\":69,\\\"lat\\\":60.192258,\\\"long\\\":24.928701,\\\"acc\\\":-0.59,\\\"dl\\\":-248,\\\"odo\\\":5134,\\\"drst\\\":0,\\\"oday\\\":\\\"2018-06-05\\\",\\\"jrn\\\":885,\\\"line\\\":30,\\\"start\\\":\\\"22:23\\\"}\",0,null]"
 
 		when:
-		StreamMessageV31 msg = new StreamMessageV31("7wa7APtlTq6EC5iTCBy6dw", 0, 1528228173462L, 0, "publisherId", "1", (Long) null, 0, ContentType.CONTENT_TYPE_JSON, EncryptionType.NEW_KEY_AND_AES, serializedContent, StreamMessage.SignatureType.SIGNATURE_TYPE_NONE, null)
+		StreamMessageV31 msg = new StreamMessageV31("7wa7APtlTq6EC5iTCBy6dw", 0, 1528228173462L, 0, "publisherId", "1", (Long) null, 0, StreamMessage.MessageType.CONTENT_TYPE_JSON, EncryptionType.NEW_KEY_AND_AES, serializedContent, StreamMessage.SignatureType.SIGNATURE_TYPE_NONE, null)
 
 		then:
 		msgToJson(adapter, msg) == expectedJson
@@ -91,7 +90,7 @@ class StreamMessageV31AdapterSpec extends Specification {
 		when:
 		MessageID messageID = new MessageID("7wa7APtlTq6EC5iTCBy6dw", 0, 1528228173462L, 0, "publisherId","1")
 		MessageRef previousMessageRef = new MessageRef(1528228170000L, 0)
-		StreamMessageV31 msg = new StreamMessageV31(messageID, previousMessageRef, ContentType.CONTENT_TYPE_JSON, EncryptionType.NONE, serializedContent, StreamMessage.SignatureType.SIGNATURE_TYPE_NONE, null)
+		StreamMessageV31 msg = new StreamMessageV31(messageID, previousMessageRef, MessageType.CONTENT_TYPE_JSON, EncryptionType.NONE, serializedContent, StreamMessage.SignatureType.SIGNATURE_TYPE_NONE, null)
 
 		then:
 		msgToJson(adapter, msg) == expectedJson
@@ -114,10 +113,10 @@ class StreamMessageV31AdapterSpec extends Specification {
 		msg.getPreviousMessageRef().getTimestamp() == 1528228170000L
 		msg.getPreviousMessageRef().getTimestampAsDate() == new Date(1528228170000L)
 		msg.getPreviousMessageRef().getSequenceNumber() == 0
-		msg.getContentType() == ContentType.CONTENT_TYPE_JSON
+		msg.getContentType() == StreamMessage.MessageType.CONTENT_TYPE_JSON
 		msg.getEncryptionType() == EncryptionType.NONE
-		msg.getContent() instanceof Map
-		msg.getContent().desi == "2"
+		msg.getParsedContent() instanceof Map
+		msg.getParsedContent().desi == "2"
 		msg.getSignatureType() == StreamMessage.SignatureType.SIGNATURE_TYPE_ETH
 		msg.getSignature() == "signature"
 	}
@@ -138,10 +137,10 @@ class StreamMessageV31AdapterSpec extends Specification {
 		msg.getPublisherId() == "publisherId"
 		msg.getMsgChainId() == "1"
 		msg.getPreviousMessageRef() == null
-		msg.getContentType() == ContentType.CONTENT_TYPE_JSON
+		msg.getContentType() == StreamMessage.MessageType.CONTENT_TYPE_JSON
 		msg.getEncryptionType() == EncryptionType.NONE
-		msg.getContent() instanceof Map
-		msg.getContent().desi == "2"
+		msg.getParsedContent() instanceof Map
+		msg.getParsedContent().desi == "2"
 		msg.getSignatureType() == StreamMessage.SignatureType.SIGNATURE_TYPE_ETH
 		msg.getSignature() == "signature"
 	}
@@ -162,23 +161,23 @@ class StreamMessageV31AdapterSpec extends Specification {
 		msg.getPublisherId() == "publisherId"
 		msg.getMsgChainId() == "1"
 		msg.getPreviousMessageRef() == null
-		msg.getContentType() == ContentType.CONTENT_TYPE_JSON
+		msg.getContentType() == StreamMessage.MessageType.CONTENT_TYPE_JSON
 		msg.getEncryptionType() == EncryptionType.NONE
-		msg.getContent() instanceof Map
-		msg.getContent().desi == "2"
+		msg.getParsedContent() instanceof Map
+		msg.getParsedContent().desi == "2"
 		msg.getSignatureType() == StreamMessage.SignatureType.SIGNATURE_TYPE_NONE
 	}
 
 	void "getContent() throws if encrypted"() {
-		StreamMessageV31 msg2 = new StreamMessageV31("", 0, 0L, 0, "", "", 0L, 0, ContentType.CONTENT_TYPE_JSON, EncryptionType.AES, "encrypted content", StreamMessage.SignatureType.SIGNATURE_TYPE_NONE, null)
-		StreamMessageV31 msg3 = new StreamMessageV31("", 0, 0L, 0, "", "", 0L, 0, ContentType.CONTENT_TYPE_JSON, EncryptionType.NEW_KEY_AND_AES, "encrypted content", StreamMessage.SignatureType.SIGNATURE_TYPE_NONE, null)
+		StreamMessageV31 msg2 = new StreamMessageV31("", 0, 0L, 0, "", "", 0L, 0, MessageType.CONTENT_TYPE_JSON, EncryptionType.AES, "encrypted content", StreamMessage.SignatureType.SIGNATURE_TYPE_NONE, null)
+		StreamMessageV31 msg3 = new StreamMessageV31("", 0, 0L, 0, "", "", 0L, 0, StreamMessage.MessageType.CONTENT_TYPE_JSON, EncryptionType.NEW_KEY_AND_AES, "encrypted content", StreamMessage.SignatureType.SIGNATURE_TYPE_NONE, null)
 
 		when:
-		msg2.getContent()
+		msg2.getParsedContent()
 		then:
 		thrown EncryptedContentNotParsableException
 		when:
-		msg3.getContent()
+		msg3.getParsedContent()
 		then:
 		thrown EncryptedContentNotParsableException
 	}

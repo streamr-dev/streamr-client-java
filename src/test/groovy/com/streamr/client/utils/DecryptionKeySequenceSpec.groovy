@@ -17,7 +17,7 @@ class DecryptionKeySequenceSpec extends Specification {
 
     StreamMessage genMsg(HashMap<String, Object> content) {
         return new StreamMessageV31("stream-id", 0, 1L, 0L, "publisherId", "msgChainId",
-                0L, 0L, StreamMessage.ContentType.CONTENT_TYPE_JSON, StreamMessage.EncryptionType.NONE, content, StreamMessage.SignatureType.SIGNATURE_TYPE_NONE, null)
+                0L, 0L, StreamMessage.MessageType.CONTENT_TYPE_JSON, StreamMessage.EncryptionType.NONE, content, StreamMessage.SignatureType.SIGNATURE_TYPE_NONE, null)
     }
 
     void "decrypts sequence of StreamMessage using key sequence"() {
@@ -46,14 +46,14 @@ class DecryptionKeySequenceSpec extends Specification {
         }
         then:
         m1.encryptionType == StreamMessage.EncryptionType.NONE
-        m1.content == [m1: 'm1']
+        m1.parsedContent == [m1: 'm1']
         m2.encryptionType == StreamMessage.EncryptionType.NONE
-        m2.content == [m2: 'm2']
+        m2.parsedContent == [m2: 'm2']
         m3.encryptionType == StreamMessage.EncryptionType.NONE
-        m3.content == [m3: 'm3']
+        m3.parsedContent == [m3: 'm3']
         m4.encryptionType == StreamMessage.EncryptionType.NONE
-        m4.content == [m4: 'm4']
+        m4.parsedContent == [m4: 'm4']
         m6.encryptionType == StreamMessage.EncryptionType.NONE
-        m6.content == [m6: 'm6']
+        m6.parsedContent == [m6: 'm6']
     }
 }

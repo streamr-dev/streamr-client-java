@@ -81,7 +81,7 @@ class EncryptionUtilSpec extends Specification {
     void "StreamMessage gets encrypted"() {
         SecretKey key = genSecretKey()
         StreamMessage streamMessage = new StreamMessageV31("stream-id", 0, 1L, 0L, "publisherId", "msgChainId",
-                0L, 0L, StreamMessage.ContentType.CONTENT_TYPE_JSON, StreamMessage.EncryptionType.NONE, [foo: 'bar'], StreamMessage.SignatureType.SIGNATURE_TYPE_NONE, null)
+                0L, 0L, StreamMessage.MessageType.CONTENT_TYPE_JSON, StreamMessage.EncryptionType.NONE, [foo: 'bar'], StreamMessage.SignatureType.SIGNATURE_TYPE_NONE, null)
         when:
         EncryptionUtil.encryptStreamMessage(streamMessage, key)
         then:
@@ -91,7 +91,7 @@ class EncryptionUtilSpec extends Specification {
     void "StreamMessage decryption after encryption equals the initial StreamMessage"() {
         SecretKey key = genSecretKey()
         StreamMessage streamMessage = new StreamMessageV31("stream-id", 0, 1L, 0L, "publisherId", "msgChainId",
-                0L, 0L, StreamMessage.ContentType.CONTENT_TYPE_JSON, StreamMessage.EncryptionType.NONE, [foo: 'bar'], StreamMessage.SignatureType.SIGNATURE_TYPE_NONE, null)
+                0L, 0L, StreamMessage.MessageType.CONTENT_TYPE_JSON, StreamMessage.EncryptionType.NONE, [foo: 'bar'], StreamMessage.SignatureType.SIGNATURE_TYPE_NONE, null)
         when:
         EncryptionUtil.encryptStreamMessage(streamMessage, key)
         SecretKey newKey = EncryptionUtil.decryptStreamMessage(streamMessage, key)
@@ -103,7 +103,7 @@ class EncryptionUtilSpec extends Specification {
     void "StreamMessage gets encrypted with new key"() {
         SecretKey key = genSecretKey()
         StreamMessage streamMessage = new StreamMessageV31("stream-id", 0, 1L, 0L, "publisherId", "msgChainId",
-                0L, 0L, StreamMessage.ContentType.CONTENT_TYPE_JSON, StreamMessage.EncryptionType.NONE, [foo: 'bar'], StreamMessage.SignatureType.SIGNATURE_TYPE_NONE, null)
+                0L, 0L, StreamMessage.MessageType.CONTENT_TYPE_JSON, StreamMessage.EncryptionType.NONE, [foo: 'bar'], StreamMessage.SignatureType.SIGNATURE_TYPE_NONE, null)
         when:
         EncryptionUtil.encryptStreamMessageAndNewKey(genGroupKeyHex(), streamMessage, key)
         then:
@@ -113,7 +113,7 @@ class EncryptionUtilSpec extends Specification {
     void "StreamMessage decryption after encryption equals the initial StreamMessage (with new key)"() {
         SecretKey key = genSecretKey()
         StreamMessage streamMessage = new StreamMessageV31("stream-id", 0, 1L, 0L, "publisherId", "msgChainId",
-                0L, 0L, StreamMessage.ContentType.CONTENT_TYPE_JSON, StreamMessage.EncryptionType.NONE, [foo: 'bar'], StreamMessage.SignatureType.SIGNATURE_TYPE_NONE, null)
+                0L, 0L, StreamMessage.MessageType.CONTENT_TYPE_JSON, StreamMessage.EncryptionType.NONE, [foo: 'bar'], StreamMessage.SignatureType.SIGNATURE_TYPE_NONE, null)
         String newGroupKeyHex = genGroupKeyHex()
         when:
         EncryptionUtil.encryptStreamMessageAndNewKey(newGroupKeyHex, streamMessage, key)

@@ -110,7 +110,7 @@ class StreamrWebsocketSpec extends StreamrIntegrationSpecification {
 		// All messages have been received by subscriber
 		msgCount == 10
 		timeout > 0
-		latestMsg.content.i == 10
+		latestMsg.parsedContent.i == 10
 
 		when:
 		client.unsubscribe(sub)
@@ -172,7 +172,7 @@ class StreamrWebsocketSpec extends StreamrIntegrationSpecification {
 		Thread.sleep(2000)
 
 		then:
-		msg.getContent() == [test: 'clear text']
+		msg.getParsedContent() == [test: 'clear text']
 
 		when:
 		// publishing a second message with a new group key
@@ -182,7 +182,7 @@ class StreamrWebsocketSpec extends StreamrIntegrationSpecification {
 
 		then:
 		// no need to explicitly give the new group key to the subscriber
-		msg.getContent() == [test: 'another clear text']
+		msg.getParsedContent() == [test: 'another clear text']
 	}
 
 	void "subscriber can get the group key and decrypt encrypted messages using an RSA key pair"() {
@@ -217,7 +217,7 @@ class StreamrWebsocketSpec extends StreamrIntegrationSpecification {
 		conditions1.eventually {
 			assert msg1 != null
 			// the subscriber got the group key and can decrypt
-			assert msg1.getContent() == [test: 'clear text']
+			assert msg1.getParsedContent() == [test: 'clear text']
 		}
 
 		when:
@@ -228,7 +228,7 @@ class StreamrWebsocketSpec extends StreamrIntegrationSpecification {
 		conditions2.eventually {
 			assert msg2 != null
 			// no need to explicitly give the new group key to the subscriber
-			msg2.getContent() == [test: 'another clear text']
+			msg2.getParsedContent() == [test: 'another clear text']
 		}
 	}
 
@@ -264,7 +264,7 @@ class StreamrWebsocketSpec extends StreamrIntegrationSpecification {
 		conditions1.eventually {
 			assert msg1 != null
 			// the subscriber got the group key and can decrypt
-			assert msg1.getContent() == [test: 'clear text']
+			assert msg1.getParsedContent() == [test: 'clear text']
 		}
 
 		when:
@@ -276,7 +276,7 @@ class StreamrWebsocketSpec extends StreamrIntegrationSpecification {
 		conditions2.eventually {
 			assert msg2 != null
 			// no need to explicitly give the new group key to the subscriber
-			msg2.getContent() == [test: 'another clear text']
+			msg2.getParsedContent() == [test: 'another clear text']
 		}
 	}
 
@@ -302,7 +302,7 @@ class StreamrWebsocketSpec extends StreamrIntegrationSpecification {
 				} else if (msg2 == null) {
 					msg2 = message
 				} else {
-					throw new RuntimeException("Received unexpected message: " + message.toJson())
+					throw new RuntimeException("Received unexpected message: " + message.serialize())
 				}
 
 			}
@@ -312,8 +312,8 @@ class StreamrWebsocketSpec extends StreamrIntegrationSpecification {
 		conditions.eventually {
 			assert msg1 != null && msg2 != null
 			// the subscriber got the group keys and can decrypt the old messages
-			assert msg1.getContent() == [test: 'clear text']
-			assert msg2.getContent() == [test: 'another clear text']
+			assert msg1.getParsedContent() == [test: 'clear text']
+			assert msg2.getParsedContent() == [test: 'another clear text']
 		}
 	}
 
@@ -331,7 +331,7 @@ class StreamrWebsocketSpec extends StreamrIntegrationSpecification {
 		sub = client.subscribe(stream, 0, new MessageHandler() {
 			@Override
 			void onMessage(Subscription s, StreamMessage message) {
-				received = message.getContent() == [i: 1]
+				received = message.getParsedContent() == [i: 1]
 			}
 		}, new ResendLastOption(1))
 
@@ -359,7 +359,7 @@ class StreamrWebsocketSpec extends StreamrIntegrationSpecification {
         Subscription sub = client.subscribe(stream, 0, new MessageHandler() {
             @Override
             void onMessage(Subscription s, StreamMessage message) {
-                received = message.getContent() == [i: 1]
+                received = message.getParsedContent() == [i: 1]
             }
 			void done(Subscription sub) {
                 done = true
@@ -394,7 +394,7 @@ class StreamrWebsocketSpec extends StreamrIntegrationSpecification {
 		client.resend(stream, 0, new MessageHandler() {
 			@Override
 			void onMessage(Subscription s, StreamMessage message) {
-				receivedMsg.push(message.getContent())
+				receivedMsg.push(message.getParsedContent())
 			}
 			void done(Subscription sub) {
 				done = true
@@ -441,7 +441,7 @@ class StreamrWebsocketSpec extends StreamrIntegrationSpecification {
 		client.resend(stream, 0, new MessageHandler() {
 			@Override
 			void onMessage(Subscription s, StreamMessage message) {
-				receivedMsg.push(message.getContent())
+				receivedMsg.push(message.getParsedContent())
 			}
 			void done(Subscription sub) {
 				done = true
@@ -492,7 +492,7 @@ class StreamrWebsocketSpec extends StreamrIntegrationSpecification {
 		client.resend(stream, 0, new MessageHandler() {
 			@Override
 			void onMessage(Subscription s, StreamMessage message) {
-				receivedMsg.push(message.getContent())
+				receivedMsg.push(message.getParsedContent())
 			}
 			void done(Subscription sub) {
 				done = true

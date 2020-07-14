@@ -1,32 +1,61 @@
 package com.streamr.client.protocol.message_layer;
 
+import com.streamr.client.exceptions.EncryptedContentNotParsableException;
+import com.streamr.client.exceptions.UnsupportedMessageException;
+import com.streamr.client.utils.HttpUtils;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
+
 import java.io.IOException;
-import java.nio.charset.Charset;
 import java.nio.charset.StandardCharsets;
 import java.util.Date;
 import java.util.Map;
 
-import com.squareup.moshi.JsonReader;
-import com.squareup.moshi.JsonWriter;
-import com.streamr.client.exceptions.EncryptedContentNotParsableException;
-import com.streamr.client.utils.HttpUtils;
-import com.streamr.client.exceptions.UnsupportedMessageException;
-import okio.Buffer;
-import org.apache.logging.log4j.LogManager;
-import org.apache.logging.log4j.Logger;
+public class StreamMessage implements ITimestamped {
 
-public abstract class StreamMessage implements ITimestamped {
-
+    private StreamMessageAdapter adapter = new StreamMessageAdapter();
     private static final Logger log = LogManager.getLogger();
-    private static final StreamMessageAdapter adapter = new StreamMessageAdapter();
-    public static final int LATEST_VERSION = 31;
 
-    public enum ContentType {
-        CONTENT_TYPE_JSON ((byte) 27),
+    public static final int LATEST_VERSION = 32;
+
+    public enum MessageType {
+        STREAM_MESSAGE ((byte) 27),
         GROUP_KEY_REQUEST ((byte) 28),
         GROUP_KEY_RESPONSE_SIMPLE ((byte) 29),
         GROUP_KEY_RESET_SIMPLE ((byte) 30),
-        GROUP_KEY_RESPONSE_ERROR((byte) 31);
+        GROUP_KEY_RESPONSE_ERROR((byte) 31),
+        GROUP_KEY_ROTATE((byte) 32);
+
+        private final byte id;
+
+        MessageType(byte id) {
+            this.id = id;
+        }
+
+        public byte getId() {
+            return this.id;
+        }
+
+        public static MessageType fromId(byte id) {
+            if (id == STREAM_MESSAGE.id) {
+                return STREAM_MESSAGE;
+            } else if (id == GROUP_KEY_REQUEST.id) {
+                return GROUP_KEY_REQUEST;
+            } else if (id == GROUP_KEY_RESPONSE_SIMPLE.id) {
+                return GROUP_KEY_RESPONSE_SIMPLE;
+            } else if (id == GROUP_KEY_RESET_SIMPLE.id) {
+                return GROUP_KEY_RESET_SIMPLE;
+            } else if (id == GROUP_KEY_RESPONSE_ERROR.id) {
+                return GROUP_KEY_RESPONSE_ERROR;
+            } else if (id == GROUP_KEY_ROTATE.id) {
+                return GROUP_KEY_ROTATE;
+            }
+            throw new UnsupportedMessageException("Unrecognized content type: "+id);
+        }
+    }
+
+    public enum ContentType {
+        JSON ((byte) 0);
 
         private final byte id;
 
@@ -39,18 +68,10 @@ public abstract class StreamMessage implements ITimestamped {
         }
 
         public static ContentType fromId(byte id) {
-            if (id == CONTENT_TYPE_JSON.id) {
-                return CONTENT_TYPE_JSON;
-            } else if (id == GROUP_KEY_REQUEST.id) {
-                return GROUP_KEY_REQUEST;
-            } else if (id == GROUP_KEY_RESPONSE_SIMPLE.id) {
-                return GROUP_KEY_RESPONSE_SIMPLE;
-            } else if (id == GROUP_KEY_RESET_SIMPLE.id) {
-                return GROUP_KEY_RESET_SIMPLE;
-            } else if (id == GROUP_KEY_RESPONSE_ERROR.id) {
-                return GROUP_KEY_RESPONSE_ERROR;
+            if (id == JSON.id) {
+                return JSON;
             }
-            throw new UnsupportedMessageException("Unrecognized content type: "+id);
+            throw new UnsupportedMessageException("Unrecognized ContentType: "+id);
         }
     }
 
@@ -84,8 +105,7 @@ public abstract class StreamMessage implements ITimestamped {
     public enum EncryptionType {
         NONE ((byte) 0),
         RSA ((byte) 1),
-        AES ((byte) 2),
-        NEW_KEY_AND_AES ((byte) 3);
+        AES ((byte) 2);
 
         private final byte id;
 
@@ -104,89 +124,129 @@ public abstract class StreamMessage implements ITimestamped {
                 return RSA;
             } else if (id == AES.id) {
                 return AES;
-            } else if (id == NEW_KEY_AND_AES.id) {
-                return NEW_KEY_AND_AES;
             }
             throw new UnsupportedMessageException("Unrecognized encryption type: "+id);
         }
     }
+    private MessageID messageID;
+    private MessageRef previousMessageRef;
+    private SignatureType signatureType;
+    private String signature;
+    private MessageType messageType;
+    private ContentType contentType;
+    private EncryptionType encryptionType;
+    private String groupKeyId;
+    private Map<String, Object> parsedContent; // Might need to change to Object when non-JSON contentTypes are introduced
+    private String serializedContent;
 
-    private int version;
-    protected ContentType contentType;
-    protected EncryptionType encryptionType;
-    // Payload type might need to be changed to Object when new
-    // non-JSON payload types are introduced
-    protected Map<String, Object> content;
-    protected String serializedContent;
-
-    public StreamMessage(int version, ContentType contentType, EncryptionType encryptionType, String serializedContent) {
-        this.version = version;
-        this.contentType = contentType;
-        this.encryptionType = encryptionType;
+    public StreamMessage(
+            MessageID messageID,
+            MessageRef previousMessageRef,
+            MessageType messageType,
+            String serializedContent,
+            ContentType contentType,
+            EncryptionType encryptionType,
+            String groupKeyId,
+            SignatureType signatureType,
+            String signature
+    ) {
+        this.messageID = messageID;
+        this.previousMessageRef = previousMessageRef;
+        this.messageType = messageType;
         this.serializedContent = serializedContent;
-    }
-
-    public StreamMessage(int version, ContentType contentType, EncryptionType encryptionType, Map<String, Object> content){
-        this.version = version;
         this.contentType = contentType;
         this.encryptionType = encryptionType;
-        this.content = content;
-        validateContent(content, contentType);
-        this.serializedContent = HttpUtils.mapAdapter.toJson(content);
+        this.groupKeyId = groupKeyId;
+        this.signatureType = signatureType;
+        this.signature = signature;
     }
 
-    public int getVersion() {
-        return version;
+    public MessageID getMessageID() {
+        return messageID;
     }
 
-    public abstract String getStreamId();
+    public String getStreamId() {
+        return messageID.getStreamId();
+    }
 
-    public abstract int getStreamPartition();
+    public int getStreamPartition() {
+        return messageID.getStreamPartition();
+    }
 
-    public abstract long getTimestamp();
+    public long getTimestamp() {
+        return messageID.getTimestamp();
+    }
+
+    public long getSequenceNumber() {
+        return messageID.getSequenceNumber();
+    }
+
+    public String getPublisherId() {
+        return messageID.getPublisherId();
+    }
+
+    public String getMsgChainId() {
+        return messageID.getMsgChainId();
+    }
+
+    public MessageRef getPreviousMessageRef() {
+        return previousMessageRef;
+    }
+
+    public SignatureType getSignatureType() {
+        return signatureType;
+    }
+
+    public String getSignature() {
+        return signature;
+    }
+
+    public void setSignatureType(SignatureType signatureType) {
+        this.signatureType = signatureType;
+    }
+
+    public void setSignature(String signature) {
+        this.signature = signature;
+    }
 
     @Override
     public Date getTimestampAsDate() {
         return new Date(getTimestamp());
     }
 
-    public abstract long getSequenceNumber();
-
-    public abstract String getPublisherId();
-
-    public abstract String getMsgChainId();
-
-    public abstract MessageRef getPreviousMessageRef();
-
     public MessageRef getMessageRef() {
         return new MessageRef(getTimestamp(), getSequenceNumber());
+    }
+
+    public MessageType getMessageType() {
+        return messageType;
     }
 
     public ContentType getContentType() {
         return contentType;
     }
 
-    public void setContentType(ContentType contentType) {
-        this.contentType = contentType;
-    }
-
     public EncryptionType getEncryptionType() {
         return encryptionType;
     }
 
-    public Map<String, Object> getContent() {
-        if (content == null) {
-            if (encryptionType == EncryptionType.AES || encryptionType == EncryptionType.NEW_KEY_AND_AES) {
+    public Map<String, Object> getParsedContent() {
+        if (parsedContent == null) {
+            if (encryptionType != EncryptionType.NONE) {
                 throw new EncryptedContentNotParsableException(encryptionType);
             }
-            try {
-                this.content = HttpUtils.mapAdapter.fromJson(serializedContent);
-            } catch (IOException e) {
-                throw new RuntimeException("Failed to parse message content: " + serializedContent);
+            if (contentType == ContentType.JSON) {
+                try {
+                    this.parsedContent = HttpUtils.mapAdapter.fromJson(serializedContent);
+                } catch (IOException e) {
+                    throw new RuntimeException("Failed to parse message content: " + serializedContent);
+                }
+            } else {
+                throw new RuntimeException("Unknown contentType encountered: " + contentType);
             }
-            validateContent(content, contentType);
+            validateContent(parsedContent, messageType);
         }
-        return content;
+        return parsedContent;
     }
 
     public String getSerializedContent() {
@@ -201,12 +261,20 @@ public abstract class StreamMessage implements ITimestamped {
         this.encryptionType = encryptionType;
     }
 
+    public String getGroupKeyId() {
+        return groupKeyId;
+    }
+
+    public void setGroupKeyId(String groupKeyId) {
+        this.groupKeyId = groupKeyId;
+    }
+
     public void setSerializedContent(String serializedContent) throws IOException {
         if (this.encryptionType == EncryptionType.NONE) {
-            this.content = HttpUtils.mapAdapter.fromJson(serializedContent);
-            validateContent(content, contentType);
+            this.parsedContent = HttpUtils.mapAdapter.fromJson(serializedContent);
+            validateContent(parsedContent, messageType);
         } else {
-            this.content = null;
+            this.parsedContent = null;
         }
         this.serializedContent = serializedContent;
     }
@@ -215,61 +283,45 @@ public abstract class StreamMessage implements ITimestamped {
         setSerializedContent(new String(serializedContent, StandardCharsets.UTF_8));
     }
 
-    public void setContent(Map<String, Object> content) {
-        validateContent(content, contentType);
-        this.content = content;
-        this.serializedContent = HttpUtils.mapAdapter.toJson(content);
+    public void setParsedContent(Map<String, Object> parsedContent) {
+        validateContent(parsedContent, messageType);
+        this.parsedContent = parsedContent;
+        this.serializedContent = HttpUtils.mapAdapter.toJson(parsedContent);
     }
 
-    public abstract SignatureType getSignatureType();
+    public String serialize() {
+        return serialize(LATEST_VERSION);
+    }
 
-    public abstract String getSignature();
+    public String serialize(int version) {
+        return adapter.serialize(this, version);
+    }
 
-    public abstract void setSignatureType(SignatureType signatureType);
-
-    public abstract void setSignature(String signature);
-
-    public String toJson(){
-        try {
-            Buffer buffer = new Buffer();
-            JsonWriter writer = JsonWriter.of(buffer);
-            adapter.toJson(writer, this);
-            return buffer.readUtf8();
-        } catch (IOException e) {
-            log.error(e);
-            return null;
-        }
+    public static StreamMessage deserialize(String json) throws IOException {
+        return StreamMessageAdapter.deserialize(json);
     }
 
     public byte[] toBytes() {
-        return toJson().getBytes(StandardCharsets.UTF_8);
+        return serialize().getBytes(StandardCharsets.UTF_8);
     }
 
     public int sizeInBytes(){
         return toBytes().length;
     }
 
-    private static JsonReader toReader(String json) {
-        return JsonReader.of(new Buffer().writeString(json, Charset.forName("UTF-8")));
-    }
-
-    public static StreamMessage fromJson(String json) throws IOException {
-        return adapter.fromJson(toReader(json));
-    }
-
     public static StreamMessage fromBytes(byte[] bytes) throws IOException {
-        return StreamMessage.fromJson(new String(bytes, StandardCharsets.UTF_8));
+        return StreamMessage.deserialize(new String(bytes, StandardCharsets.UTF_8));
     }
 
-    private static void validateContent(Map<String, Object> content, ContentType contentType) {
-        if (contentType != ContentType.CONTENT_TYPE_JSON) {
+    private static void validateContent(Map<String, Object> content, MessageType messageType) {
+        if (messageType != MessageType.STREAM_MESSAGE) {
             // Throws if the content is not valid
-            AbstractGroupKeyMessage.fromContent(content, contentType);
+            AbstractGroupKeyMessage.fromContent(content, messageType);
         }
     }
 
     @Override
     public String toString() {
-        return this.getClass().getSimpleName() + ": " + this.toJson();
+        return this.getClass().getSimpleName() + ": " + this.serialize();
     }
 }

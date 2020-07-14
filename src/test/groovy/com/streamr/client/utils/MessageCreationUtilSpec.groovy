@@ -56,9 +56,9 @@ class MessageCreationUtilSpec extends Specification {
         msg.getPublisherId() == "publisherId"
         msg.getMsgChainId().length() == 20
         msg.previousMessageRef == null
-        msg.contentType == StreamMessage.ContentType.CONTENT_TYPE_JSON
+        msg.contentType == StreamMessage.MessageType.CONTENT_TYPE_JSON
         msg.encryptionType == StreamMessage.EncryptionType.NONE
-        msg.content == message
+        msg.parsedContent == message
         msg.signatureType == StreamMessage.SignatureType.SIGNATURE_TYPE_NONE
         msg.signature == null
     }
@@ -219,13 +219,13 @@ class MessageCreationUtilSpec extends Specification {
         then:
         msg.getStreamId() == KeyExchangeUtil.getKeyExchangeStreamId("publisherInboxAddress")
         msg.getPublisherId() == "subscriberId"
-        msg.getContentType() == StreamMessage.ContentType.GROUP_KEY_REQUEST
+        msg.getMessageType() == StreamMessage.MessageType.GROUP_KEY_REQUEST
         msg.getEncryptionType() == StreamMessage.EncryptionType.NONE
 
-        GroupKeyRequest.fromMap(msg.getContent()).getStreamId() == "streamId"
-        GroupKeyRequest.fromMap(msg.getContent()).getPublicKey() == "rsaPublicKey"
-        GroupKeyRequest.fromMap(msg.getContent()).getRange().getStart() == 123L
-        GroupKeyRequest.fromMap(msg.getContent()).getRange().getEnd() == 456
+        GroupKeyRequest.fromMap(msg.getParsedContent()).getStreamId() == "streamId"
+        GroupKeyRequest.fromMap(msg.getParsedContent()).getPublicKey() == "rsaPublicKey"
+        GroupKeyRequest.fromMap(msg.getParsedContent()).getRange().getStart() == 123L
+        GroupKeyRequest.fromMap(msg.getParsedContent()).getRange().getEnd() == 456
         msg.getSignature() != null
     }
 
@@ -255,11 +255,11 @@ class MessageCreationUtilSpec extends Specification {
 
         then:
         msg.getStreamId() == KeyExchangeUtil.getKeyExchangeStreamId("subscriberInboxAddress")
-        msg.getContentType() == StreamMessage.ContentType.GROUP_KEY_RESPONSE_SIMPLE
+        msg.getMessageType() == StreamMessage.MessageType.GROUP_KEY_RESPONSE_SIMPLE
         msg.getEncryptionType() == StreamMessage.EncryptionType.RSA
 
-        GroupKeyResponse.fromMap(msg.getContent()).getStreamId() == "streamId"
-        GroupKeyResponse.fromMap(msg.getContent()).getKeys() == [
+        GroupKeyResponse.fromMap(msg.getParsedContent()).getStreamId() == "streamId"
+        GroupKeyResponse.fromMap(msg.getParsedContent()).getKeys() == [
                 GroupKeyResponse.Key.fromGroupKey(k1),
                 GroupKeyResponse.Key.fromGroupKey(k2)
         ]
@@ -285,11 +285,11 @@ class MessageCreationUtilSpec extends Specification {
         StreamMessage msg = util.createGroupKeyReset("subscriberInboxAddress", "streamId", k)
         then:
         msg.getStreamId() == KeyExchangeUtil.getKeyExchangeStreamId("subscriberInboxAddress")
-        msg.getContentType() == StreamMessage.ContentType.GROUP_KEY_RESET_SIMPLE
+        msg.getMessageType() == StreamMessage.MessageType.GROUP_KEY_RESET_SIMPLE
         msg.getEncryptionType() == StreamMessage.EncryptionType.RSA
-        GroupKeyReset.fromMap(msg.getContent()).getStreamId() == "streamId"
-        GroupKeyReset.fromMap(msg.getContent()).getGroupKey() == k.groupKeyHex
-        GroupKeyReset.fromMap(msg.getContent()).getStart() == k.getStartTime()
+        GroupKeyReset.fromMap(msg.getParsedContent()).getStreamId() == "streamId"
+        GroupKeyReset.fromMap(msg.getParsedContent()).getGroupKey() == k.groupKeyHex
+        GroupKeyReset.fromMap(msg.getParsedContent()).getStart() == k.getStartTime()
         msg.getSignature() != null
     }
 
@@ -311,12 +311,12 @@ class MessageCreationUtilSpec extends Specification {
         StreamMessage msg = util.createGroupKeyErrorResponse("destinationAddress", new GroupKeyRequest("requestId", "streamId", "publicKey"), new InvalidGroupKeyRequestException("some error message"))
         then:
         msg.getStreamId() == KeyExchangeUtil.getKeyExchangeStreamId("destinationAddress")
-        msg.getContentType() == StreamMessage.ContentType.GROUP_KEY_RESPONSE_ERROR
+        msg.getMessageType() == StreamMessage.MessageType.GROUP_KEY_RESPONSE_ERROR
         msg.getEncryptionType() == StreamMessage.EncryptionType.NONE
-        GroupKeyErrorResponse.fromMap(msg.getContent()).getRequestId() == "requestId"
-        GroupKeyErrorResponse.fromMap(msg.getContent()).getStreamId() == "streamId"
-        GroupKeyErrorResponse.fromMap(msg.getContent()).getCode() == "INVALID_GROUP_KEY_REQUEST"
-        GroupKeyErrorResponse.fromMap(msg.getContent()).getMessage() == "some error message"
+        GroupKeyErrorResponse.fromMap(msg.getParsedContent()).getRequestId() == "requestId"
+        GroupKeyErrorResponse.fromMap(msg.getParsedContent()).getStreamId() == "streamId"
+        GroupKeyErrorResponse.fromMap(msg.getParsedContent()).getCode() == "INVALID_GROUP_KEY_REQUEST"
+        GroupKeyErrorResponse.fromMap(msg.getParsedContent()).getMessage() == "some error message"
         msg.getSignature() != null
     }
 }
