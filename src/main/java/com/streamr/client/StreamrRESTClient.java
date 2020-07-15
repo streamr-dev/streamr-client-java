@@ -157,7 +157,7 @@ public abstract class StreamrRESTClient extends AbstractStreamrClient {
     }
 
     public Permission grantPublic(Stream stream, Permission.Operation operation) throws IOException {
-        if (stream != null || operation != null) {
+        if (stream == null || operation == null) {
             throw new IllegalArgumentException("Must give stream and operation!");
         }
 
