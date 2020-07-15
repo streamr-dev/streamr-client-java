@@ -14,6 +14,7 @@ import java.io.IOException;
 
 public class StreamMessageV31Adapter extends JsonAdapter<StreamMessage> {
 
+    private static final int VERSION = 31;
     private static final Logger log = LogManager.getLogger();
     private static final MessageIDAdapter msgIdAdapter = new MessageIDAdapter();
     private static final MessageRefAdapter msgRefAdapter = new MessageRefAdapter();
@@ -35,7 +36,7 @@ public class StreamMessageV31Adapter extends JsonAdapter<StreamMessage> {
             String serializedContent = reader.nextString();
             SignatureType signatureType = SignatureType.fromId((byte)reader.nextInt());
             String signature = null;
-            if (signatureType != SignatureType.SIGNATURE_TYPE_NONE) {
+            if (signatureType != SignatureType.NONE) {
                 signature = reader.nextString();
             } else {
                 reader.nextNull();
@@ -50,16 +51,19 @@ public class StreamMessageV31Adapter extends JsonAdapter<StreamMessage> {
 
     @Override
     public void toJson(JsonWriter writer, StreamMessage value) throws IOException {
+        // Top-level array already written in StreamMessageAdapter
+        writer.value(VERSION);
         msgIdAdapter.toJson(writer, value.getMessageID());
         if (value.getPreviousMessageRef() != null) {
             msgRefAdapter.toJson(writer, value.getPreviousMessageRef());
         }else {
             writer.value((String)null);
         }
-        writer.value(value.getContentType().getId());
+        writer.value(value.getMessageType().getId());
         writer.value(value.getEncryptionType().getId());
         writer.value(value.getSerializedContent());
         writer.value(value.getSignatureType().getId());
         writer.value(value.getSignature());
+        // Top-level array will be closed in StreamMessageAdapter
     }
 }

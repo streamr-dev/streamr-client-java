@@ -22,12 +22,11 @@ public class SigningUtil {
 
     public void signStreamMessage(StreamMessage msg, StreamMessage.SignatureType signatureType) {
         String signature = sign(getPayloadToSignOrVerify(msg, signatureType), account);
-        msg.setSignatureType(signatureType);
-        msg.setSignature(signature);
+        msg.setSignatureFields(signature, signatureType);
     }
 
     public void signStreamMessage(StreamMessage msg) {
-        signStreamMessage(msg, StreamMessage.SignatureType.SIGNATURE_TYPE_ETH);
+        signStreamMessage(msg, StreamMessage.SignatureType.ETH);
     }
 
     public static String sign(String data, ECKey account){
@@ -51,14 +50,14 @@ public class SigningUtil {
     }
 
     private static String getPayloadToSignOrVerify(StreamMessage msg, StreamMessage.SignatureType signatureType) {
-        if (signatureType == StreamMessage.SignatureType.SIGNATURE_TYPE_ETH_LEGACY) {
+        if (signatureType == StreamMessage.SignatureType.ETH_LEGACY) {
             StringBuilder sb = new StringBuilder(msg.getStreamId());
             sb.append(msg.getStreamPartition());
             sb.append(msg.getTimestamp());
             sb.append(msg.getPublisherId().toLowerCase());
             sb.append(msg.getSerializedContent());
             return sb.toString();
-        } else if (signatureType == StreamMessage.SignatureType.SIGNATURE_TYPE_ETH) {
+        } else if (signatureType == StreamMessage.SignatureType.ETH) {
             StringBuilder sb = new StringBuilder(msg.getStreamId());
             sb.append(msg.getStreamPartition());
             sb.append(msg.getTimestamp());

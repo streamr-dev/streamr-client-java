@@ -59,7 +59,7 @@ class MessageCreationUtilSpec extends Specification {
         msg.contentType == StreamMessage.ContentType.JSON
         msg.encryptionType == StreamMessage.EncryptionType.NONE
         msg.parsedContent == message
-        msg.signatureType == StreamMessage.SignatureType.SIGNATURE_TYPE_NONE
+        msg.signatureType == StreamMessage.SignatureType.NONE
         msg.signature == null
     }
 

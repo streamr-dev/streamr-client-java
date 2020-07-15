@@ -1,28 +1,23 @@
 package com.streamr.client.utils
 
 import com.streamr.client.exceptions.GapFillFailedException
-import com.streamr.client.protocol.message_layer.MessageID
-import com.streamr.client.protocol.message_layer.MessageRef;
-import com.streamr.client.protocol.message_layer.StreamMessage;
-import spock.lang.Specification
+import com.streamr.client.protocol.StreamrSpec
+import com.streamr.client.protocol.message_layer.MessageRef
+import com.streamr.client.protocol.message_layer.StreamMessage
 import spock.util.concurrent.PollingConditions
 
 import java.util.function.Consumer
 import java.util.function.Function
-import java.util.stream.Collectors;
+import java.util.stream.Collectors
 
-class OrderedMsgChainSpec extends Specification {
-    StreamMessage createMessage(long timestamp, Long previousTimestamp) {
-        return new StreamMessage(
-                new MessageID("stream-id", 0, timestamp, 0L, "publisherId", "msgChainId"),
-                new MessageRef(previousTimestamp, 0L),
-                [:])
-    }
-    StreamMessage msg1 = createMessage(1, null)
-    StreamMessage msg2 = createMessage(2, 1)
-    StreamMessage msg3 = createMessage(3, 2)
-    StreamMessage msg4 = createMessage(4, 3)
-    StreamMessage msg5 = createMessage(5, 4)
+class OrderedMsgChainSpec extends StreamrSpec {
+
+    StreamMessage msg1 = createMessage(1, 0)
+    StreamMessage msg2 = createMessage(2, 0, 1, 0)
+    StreamMessage msg3 = createMessage(3, 0, 2, 0)
+    StreamMessage msg4 = createMessage(4, 0, 3, 0)
+    StreamMessage msg5 = createMessage(5, 0, 4, 0)
+
     void "handles ordered messages in order"() {
         ArrayList<StreamMessage> received = []
         OrderedMsgChain util = new OrderedMsgChain("publisherId", "msgChainId", new Consumer<StreamMessage>() {
@@ -79,9 +74,9 @@ class OrderedMsgChainSpec extends Specification {
         received == [msg1, msg2, msg3, msg4, msg5]
     }
     void "handles unchained messages in the order in which they arrive if they are newer"() {
-        StreamMessage m2 = createMessage(4, null)
-        StreamMessage m3 = createMessage(17, null)
-        StreamMessage m4 = createMessage(7, null)
+        StreamMessage m2 = createMessage(4)
+        StreamMessage m3 = createMessage(17)
+        StreamMessage m4 = createMessage(7)
         ArrayList<StreamMessage> received = []
         OrderedMsgChain util = new OrderedMsgChain("publisherId", "msgChainId",
                 new Consumer<StreamMessage>() {
@@ -168,7 +163,7 @@ class OrderedMsgChainSpec extends Specification {
         ArrayList<StreamMessage> expected = [msg1]
         ArrayList<StreamMessage> shuffled = []
         for (int i = 2; i <= 1000; i++) {
-            StreamMessage msg = createMessage(i, i - 1)
+            StreamMessage msg = createMessage(i, 0, i - 1, 0)
             expected.add(msg)
             shuffled.add(msg)
         }
@@ -223,10 +218,10 @@ class OrderedMsgChainSpec extends Specification {
         }, null, 5000L, 5000L, false)
 
         when:
-        util.add(createMessage(-1, null))
+        util.add(createMessage(-1))
         // there's a gap between the above and the below messages, so below messages are queued
         for (int i=1; i<=OrderedMsgChain.MAX_QUEUE_SIZE + 1; i++) {
-            util.add(createMessage(i, i-1))
+            util.add(createMessage(i, 0, i-1, 0))
         }
 
         then:
@@ -243,16 +238,16 @@ class OrderedMsgChainSpec extends Specification {
         }, null, 5000L, 5000L, true)
 
         when:
-        util.add(createMessage(-1, null))
+        util.add(createMessage(-1))
         // there's a gap between the above and the below messages, so below messages are queued
         for (int i=1; i <= OrderedMsgChain.MAX_QUEUE_SIZE; i++) {
-            util.add(createMessage(i, i-1))
+            util.add(createMessage(i, 0, i-1, 0))
         }
 
         assert util.isQueueFull()
 
         received = 0
-        util.add(createMessage(OrderedMsgChain.MAX_QUEUE_SIZE + 100, OrderedMsgChain.MAX_QUEUE_SIZE + 95))
+        util.add(createMessage(OrderedMsgChain.MAX_QUEUE_SIZE + 100, 0, OrderedMsgChain.MAX_QUEUE_SIZE + 95, 0))
 
         then:
         received == 1
@@ -272,7 +267,7 @@ class OrderedMsgChainSpec extends Specification {
         when:
         Closure produce = {
             for (int i=0; i<1000; i++) {
-                util.add(createMessage(i, (i == 0 ? null : i - 1)))
+                util.add(createMessage(i, 0, (i == 0 ? null : i - 1), 0))
             }
         }
         // Start 2 threads that produce the same messages in parallel

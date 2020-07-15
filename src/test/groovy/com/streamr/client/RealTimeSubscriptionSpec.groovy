@@ -2,7 +2,7 @@ package com.streamr.client
 
 import com.streamr.client.exceptions.GapDetectedException
 import com.streamr.client.exceptions.UnableToDecryptException
-import com.streamr.client.protocol.message_layer.MessageID
+import com.streamr.client.protocol.StreamrSpec
 import com.streamr.client.protocol.message_layer.MessageRef
 import com.streamr.client.protocol.message_layer.StreamMessage
 import com.streamr.client.subs.BasicSubscription
@@ -12,7 +12,6 @@ import com.streamr.client.utils.EncryptionUtil
 import com.streamr.client.utils.OrderedMsgChain
 import com.streamr.client.utils.UnencryptedGroupKey
 import org.apache.commons.codec.binary.Hex
-import spock.lang.Specification
 import spock.util.concurrent.PollingConditions
 
 import javax.crypto.SecretKey
@@ -20,28 +19,12 @@ import javax.crypto.spec.SecretKeySpec
 import javax.xml.bind.DatatypeConverter
 import java.security.SecureRandom
 
-class RealTimeSubscriptionSpec extends Specification {
+class RealTimeSubscriptionSpec extends StreamrSpec {
 
     StreamMessage msg
 
     def setup() {
         msg = createMessage()
-    }
-
-    StreamMessage createMessage(Map content) {
-        return createMessage(0, 0, 0, 0, "publisherId", content)
-    }
-
-    StreamMessage createMessage(long timestamp, Map content) {
-        return createMessage(timestamp, 0, 0, 0, "publisherId", content)
-    }
-
-    StreamMessage createMessage(long timestamp = 0, long sequenceNumber = 0, Long previousTimestamp = null, Long previousSequenceNumber = null, String publisherId = "publisherId", Map content = [:]) {
-        new StreamMessage(
-                new MessageID("streamId", 0, timestamp, sequenceNumber, "publisherId", "msgChainId"),
-                (previousTimestamp != null ? new MessageRef(previousTimestamp, previousSequenceNumber ?: 0) : null),
-                content
-        )
     }
 
     MessageHandler empty = new MessageHandler() {

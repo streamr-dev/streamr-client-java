@@ -1,23 +1,18 @@
 package com.streamr.client.utils
 
-import com.streamr.client.protocol.message_layer.MessageID
+import com.streamr.client.protocol.StreamrSpec
 import com.streamr.client.protocol.message_layer.MessageRef
 import com.streamr.client.protocol.message_layer.StreamMessage
-import spock.lang.Specification
 
 import java.util.function.Consumer
 
-class OrderingUtilSpec extends Specification {
-    StreamMessage createMessage(long timestamp, Long previousTimestamp) {
-        return new StreamMessage(
-                new MessageID("stream-id", 0, timestamp, 0L, "publisherId", "msgChainId"),
-                new MessageRef(previousTimestamp, 0L),
-                [:])
-    }
-    StreamMessage msg1 = createMessage(1, null)
-    StreamMessage msg2 = createMessage(2, 1)
-    StreamMessage msg3 = createMessage(3, 2)
-    StreamMessage msg4 = createMessage(4, 3)
+class OrderingUtilSpec extends StreamrSpec {
+
+    StreamMessage msg1 = createMessage(1, 0)
+    StreamMessage msg2 = createMessage(2, 0, 1, 0)
+    StreamMessage msg3 = createMessage(3, 0, 2, 0)
+    StreamMessage msg4 = createMessage(4, 0, 3, 0)
+
     void "calls the message handler when a message is received"() {
         StreamMessage received
         OrderingUtil util = new OrderingUtil("streamId", 0, new Consumer<StreamMessage>() {

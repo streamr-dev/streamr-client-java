@@ -2,22 +2,16 @@ package com.streamr.client
 
 import com.streamr.client.exceptions.GapDetectedException
 import com.streamr.client.options.ResendLastOption
-import com.streamr.client.protocol.message_layer.MessageID
+import com.streamr.client.protocol.StreamrSpec
 import com.streamr.client.protocol.message_layer.MessageRef
 import com.streamr.client.protocol.message_layer.StreamMessage
+import com.streamr.client.subs.CombinedSubscription
 import com.streamr.client.subs.Subscription
 import com.streamr.client.utils.OrderedMsgChain
 import com.streamr.client.utils.UnencryptedGroupKey
-import spock.lang.Specification
-import com.streamr.client.subs.CombinedSubscription
 
-class CombinedSubscriptionSpec extends Specification {
-    StreamMessage createMessage(long timestamp, long sequenceNumber, Long previousTimestamp, Long previousSequenceNumber) {
-        return new StreamMessage(
-                new MessageID("stream-id", 0, timestamp, sequenceNumber, "publisherId", "msgChainId"),
-                new MessageRef(previousTimestamp, previousSequenceNumber),
-                [:])
-    }
+class CombinedSubscriptionSpec extends StreamrSpec {
+
     void "calls the gap handler if gap among real time messages queued during resend"() {
         StreamMessage msg1 = createMessage(1, 0, null, 0)
         StreamMessage afterMsg1 = createMessage(1, 1, null, 0)

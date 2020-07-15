@@ -26,14 +26,14 @@ class StreamMessageValidatorSpec extends Specification {
 
     // The signature of this message is invalid but still in a correct format
     StreamMessage msgInvalid = new StreamMessage(msgId, null, StreamMessage.MessageType.STREAM_MESSAGE, [foo: 'bar'],
-            StreamMessage.EncryptionType.NONE, null, StreamMessage.SignatureType.SIGNATURE_TYPE_ETH, signature)
+            StreamMessage.EncryptionType.NONE, null, StreamMessage.SignatureType.ETH, signature)
 
     // By checking that this message is verified without throwing, we ensure that the SigningUtil is not called because the signature is not in the correct form
     StreamMessage msgWrongFormat = new StreamMessage(msgId, null, StreamMessage.MessageType.STREAM_MESSAGE, [foo: 'bar'],
-            StreamMessage.EncryptionType.NONE, null, StreamMessage.SignatureType.SIGNATURE_TYPE_ETH, "wrong-signature")
+            StreamMessage.EncryptionType.NONE, null, StreamMessage.SignatureType.ETH, "wrong-signature")
 
     StreamMessage msgUnsigned = new StreamMessage(msgId, null, StreamMessage.MessageType.STREAM_MESSAGE, [foo: 'bar'],
-            StreamMessage.EncryptionType.NONE, null, StreamMessage.SignatureType.SIGNATURE_TYPE_NONE, null)
+            StreamMessage.EncryptionType.NONE, null, StreamMessage.SignatureType.NONE, null)
 
     List<String> publishers
     List<String> subscribers
@@ -175,7 +175,7 @@ class StreamMessageValidatorSpec extends Specification {
 
     void "[GroupKeyRequest] rejects unsigned"() {
         groupKeyRequest.setSignature(null)
-        groupKeyRequest.setSignatureType(StreamMessage.SignatureType.SIGNATURE_TYPE_NONE)
+        groupKeyRequest.setSignatureType(StreamMessage.SignatureType.NONE)
 
         when:
         validator.validate(groupKeyRequest)
@@ -232,7 +232,7 @@ class StreamMessageValidatorSpec extends Specification {
 
     void "[GroupKeyResponse] rejects unsigned"() {
         groupKeyResponse.setSignature(null)
-        groupKeyResponse.setSignatureType(StreamMessage.SignatureType.SIGNATURE_TYPE_NONE)
+        groupKeyResponse.setSignatureType(StreamMessage.SignatureType.NONE)
 
         when:
         validator.validate(groupKeyResponse)
@@ -289,7 +289,7 @@ class StreamMessageValidatorSpec extends Specification {
 
     void "[GroupKeyReset] rejects unsigned"() {
         groupKeyReset.setSignature(null)
-        groupKeyReset.setSignatureType(StreamMessage.SignatureType.SIGNATURE_TYPE_NONE)
+        groupKeyReset.setSignatureType(StreamMessage.SignatureType.NONE)
 
         when:
         validator.validate(groupKeyReset)
@@ -346,7 +346,7 @@ class StreamMessageValidatorSpec extends Specification {
 
     void "[GroupKeyErrorResponse] rejects unsigned"() {
         groupKeyErrorResponse.setSignature(null)
-        groupKeyErrorResponse.setSignatureType(StreamMessage.SignatureType.SIGNATURE_TYPE_NONE)
+        groupKeyErrorResponse.setSignatureType(StreamMessage.SignatureType.NONE)
 
         when:
         validator.validate(groupKeyErrorResponse)

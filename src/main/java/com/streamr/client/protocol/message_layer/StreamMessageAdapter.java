@@ -14,6 +14,11 @@ import java.nio.charset.StandardCharsets;
 import java.util.HashMap;
 import java.util.Map;
 
+/**
+ * A JsonAdapter that is able to:
+ * - read all versions of Stream Layer protocol
+ * - write the latest version of Stream Layer protocol
+ */
 public class StreamMessageAdapter extends JsonAdapter<StreamMessage> {
 
     private static final Logger log = LogManager.getLogger();
@@ -25,13 +30,11 @@ public class StreamMessageAdapter extends JsonAdapter<StreamMessage> {
         adapterByVersion.put(31, new StreamMessageV31Adapter());
     }
 
-    public String serialize(StreamMessage msg, int version) {
-        JsonAdapter<StreamMessage> adapter = adapterByVersion.get(version);
-        if (adapter == null) {
-            throw new UnsupportedMessageException("Unrecognized stream message version: " + version);
-        }
-
-        return adapter.toJson(msg);
+    /**
+     * Serializes the message to the latest version
+     */
+    public static String serialize(StreamMessage msg) {
+        return staticAdapter.toJson(msg);
     }
 
     public static StreamMessage deserialize(String json) throws MalformedMessageException {
@@ -69,7 +72,9 @@ public class StreamMessageAdapter extends JsonAdapter<StreamMessage> {
      */
     @Override
     public void toJson(JsonWriter writer, StreamMessage value) throws IOException {
+        writer.beginArray();
         adapterByVersion.get(StreamMessage.LATEST_VERSION).toJson(writer, value);
+        writer.endArray();
     }
 
 }

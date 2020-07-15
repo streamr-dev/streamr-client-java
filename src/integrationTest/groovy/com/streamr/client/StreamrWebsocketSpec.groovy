@@ -143,7 +143,7 @@ class StreamrWebsocketSpec extends StreamrIntegrationSpecification {
 
 		then:
 		msg.getPublisherId() == client.getPublisherId()
-		msg.signatureType == StreamMessage.SignatureType.SIGNATURE_TYPE_ETH
+		msg.signatureType == StreamMessage.SignatureType.ETH
 		msg.signature != null
 	}
 

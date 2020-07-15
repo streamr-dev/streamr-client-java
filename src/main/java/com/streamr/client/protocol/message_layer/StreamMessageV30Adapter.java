@@ -34,7 +34,7 @@ public class StreamMessageV30Adapter extends JsonAdapter<StreamMessage> {
             String serializedContent = reader.nextString();
             SignatureType signatureType = SignatureType.fromId((byte)reader.nextInt());
             String signature = null;
-            if (signatureType != SignatureType.SIGNATURE_TYPE_NONE) {
+            if (signatureType != SignatureType.NONE) {
                 signature = reader.nextString();
             } else {
                 reader.nextNull();
@@ -49,15 +49,6 @@ public class StreamMessageV30Adapter extends JsonAdapter<StreamMessage> {
 
     @Override
     public void toJson(JsonWriter writer, StreamMessage msg) throws IOException {
-        msgIdAdapter.toJson(writer, msg.getMessageID());
-        if (msg.getPreviousMessageRef() != null) {
-            msgRefAdapter.toJson(writer, msg.getPreviousMessageRef());
-        }else {
-            writer.value((String)null);
-        }
-        writer.value(msg.getContentType().getId());
-        writer.value(msg.getSerializedContent());
-        writer.value(msg.getSignatureType().getId());
-        writer.value(msg.getSignature());
+        throw new RuntimeException("Serializing to old version is not supported");
     }
 }

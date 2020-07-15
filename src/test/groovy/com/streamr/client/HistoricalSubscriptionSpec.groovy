@@ -3,7 +3,7 @@ package com.streamr.client
 import com.streamr.client.exceptions.GapDetectedException
 import com.streamr.client.exceptions.UnableToDecryptException
 import com.streamr.client.options.ResendLastOption
-import com.streamr.client.protocol.message_layer.MessageID
+import com.streamr.client.protocol.StreamrSpec
 import com.streamr.client.protocol.message_layer.MessageRef
 import com.streamr.client.protocol.message_layer.StreamMessage
 import com.streamr.client.subs.BasicSubscription
@@ -11,40 +11,21 @@ import com.streamr.client.subs.HistoricalSubscription
 import com.streamr.client.subs.Subscription
 import com.streamr.client.utils.EncryptionUtil
 import com.streamr.client.utils.GroupKey
-import com.streamr.client.utils.HttpUtils
 import com.streamr.client.utils.OrderedMsgChain
 import com.streamr.client.utils.UnencryptedGroupKey
 import org.apache.commons.codec.binary.Hex
-import spock.lang.Specification
 import spock.util.concurrent.PollingConditions
 
 import javax.crypto.SecretKey
 import javax.crypto.spec.SecretKeySpec
 import javax.xml.bind.DatatypeConverter
-import java.nio.charset.StandardCharsets
 import java.security.SecureRandom
 
-class HistoricalSubscriptionSpec extends Specification {
+class HistoricalSubscriptionSpec extends StreamrSpec {
     StreamMessage msg
 
     def setup() {
         msg = createMessage([foo: 'bar'])
-    }
-
-    StreamMessage createMessage(Map content) {
-        return createMessage(0, 0, 0, 0, "publisherId", content)
-    }
-
-    StreamMessage createMessage(long timestamp, Map content) {
-        return createMessage(timestamp, 0, 0, 0, "publisherId", content)
-    }
-
-    StreamMessage createMessage(long timestamp = 0, long sequenceNumber = 0, Long previousTimestamp = null, Long previousSequenceNumber = null, String publisherId = "publisherId", Map content = [:]) {
-        new StreamMessage(
-                new MessageID("streamId", 0, timestamp, sequenceNumber, "publisherId", "msgChainId"),
-                (previousTimestamp != null ? new MessageRef(previousTimestamp, previousSequenceNumber ?: 0) : null),
-                content
-        )
     }
 
     MessageHandler empty = new MessageHandler() {
@@ -294,6 +275,7 @@ class HistoricalSubscriptionSpec extends Specification {
         StreamMessage received1 = null
         StreamMessage received2 = null
         boolean subDone = false
+
         HistoricalSubscription sub = new HistoricalSubscription(msg1.getStreamId(), 0, new MessageHandler() {
             @Override
             void onMessage(Subscription sub, StreamMessage message) {
@@ -313,6 +295,7 @@ class HistoricalSubscriptionSpec extends Specification {
                 callCount++
             }
         })
+
         when:
         // Cannot decrypt msg1, queues it and calls the handler
         sub.handleResentMessage(msg1)
@@ -351,6 +334,7 @@ class HistoricalSubscriptionSpec extends Specification {
         int callCount = 0
         ArrayList<StreamMessage> received = []
         boolean subDone = false
+
         HistoricalSubscription sub = new HistoricalSubscription(msg1pub1.getStreamId(), 0, new MessageHandler() {
             @Override
             void onMessage(Subscription sub, StreamMessage message) {
@@ -366,6 +350,7 @@ class HistoricalSubscriptionSpec extends Specification {
                 callCount++
             }
         })
+
         when:
         // Cannot decrypt msg1, queues it and calls the handler
         sub.handleResentMessage(msg1pub1)

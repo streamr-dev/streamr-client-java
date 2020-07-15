@@ -13,7 +13,6 @@ import java.util.Map;
 
 public class StreamMessage implements ITimestamped {
 
-    private StreamMessageAdapter adapter = new StreamMessageAdapter();
     private static final Logger log = LogManager.getLogger();
 
     public static final int LATEST_VERSION = 31;
@@ -76,9 +75,9 @@ public class StreamMessage implements ITimestamped {
     }
 
     public enum SignatureType {
-        SIGNATURE_TYPE_NONE ((byte) 0),
-        SIGNATURE_TYPE_ETH_LEGACY ((byte) 1),
-        SIGNATURE_TYPE_ETH ((byte) 2);
+        NONE((byte) 0),
+        ETH_LEGACY((byte) 1),
+        ETH((byte) 2);
 
         private final byte id;
 
@@ -91,12 +90,12 @@ public class StreamMessage implements ITimestamped {
         }
 
         public static SignatureType fromId(byte id) {
-            if (id == SIGNATURE_TYPE_NONE.id) {
-                return SIGNATURE_TYPE_NONE;
-            } else if (id == SIGNATURE_TYPE_ETH_LEGACY.id) {
-                return SIGNATURE_TYPE_ETH_LEGACY;
-            } else if (id == SIGNATURE_TYPE_ETH.id) {
-                return SIGNATURE_TYPE_ETH;
+            if (id == NONE.id) {
+                return NONE;
+            } else if (id == ETH_LEGACY.id) {
+                return ETH_LEGACY;
+            } else if (id == ETH.id) {
+                return ETH;
             }
             throw new UnsupportedMessageException("Unrecognized signature type: "+id);
         }
@@ -193,7 +192,7 @@ public class StreamMessage implements ITimestamped {
             MessageType messageType,
             Map<String, Object> content
     ) {
-        this(messageID, previousMessageRef, messageType, HttpUtils.mapAdapter.toJson(content), ContentType.JSON, EncryptionType.NONE, null, SignatureType.SIGNATURE_TYPE_NONE, null);
+        this(messageID, previousMessageRef, messageType, HttpUtils.mapAdapter.toJson(content), ContentType.JSON, EncryptionType.NONE, null, SignatureType.NONE, null);
     }
 
     /**
@@ -205,7 +204,7 @@ public class StreamMessage implements ITimestamped {
             MessageRef previousMessageRef,
             Map<String, Object> content
     ) {
-        this(messageID, previousMessageRef, MessageType.STREAM_MESSAGE, HttpUtils.mapAdapter.toJson(content), ContentType.JSON, EncryptionType.NONE, null, SignatureType.SIGNATURE_TYPE_NONE, null);
+        this(messageID, previousMessageRef, MessageType.STREAM_MESSAGE, HttpUtils.mapAdapter.toJson(content), ContentType.JSON, EncryptionType.NONE, null, SignatureType.NONE, null);
     }
 
     public MessageID getMessageID() {
@@ -252,12 +251,10 @@ public class StreamMessage implements ITimestamped {
         return signature;
     }
 
-    public void setSignatureType(SignatureType signatureType) {
-        this.signatureType = signatureType;
-    }
-
-    public void setSignature(String signature) {
+    public void setSignatureFields(String signature, SignatureType signatureType) {
+        // These go hand in hand
         this.signature = signature;
+        this.signatureType = signatureType;
     }
 
     @Override
@@ -341,11 +338,7 @@ public class StreamMessage implements ITimestamped {
     }
 
     public String serialize() {
-        return serialize(LATEST_VERSION);
-    }
-
-    public String serialize(int version) {
-        return adapter.serialize(this, version);
+        return StreamMessageAdapter.serialize(this);
     }
 
     public static StreamMessage deserialize(String json) throws IOException {
