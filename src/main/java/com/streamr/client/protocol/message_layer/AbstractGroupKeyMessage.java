@@ -30,4 +30,5 @@ public abstract class AbstractGroupKeyMessage {
                 throw new RuntimeException("MessageType can not be converted to a group key message: " + messageType);
         }
     }
+
 }

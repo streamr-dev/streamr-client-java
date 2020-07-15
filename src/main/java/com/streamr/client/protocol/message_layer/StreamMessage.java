@@ -16,7 +16,7 @@ public class StreamMessage implements ITimestamped {
     private StreamMessageAdapter adapter = new StreamMessageAdapter();
     private static final Logger log = LogManager.getLogger();
 
-    public static final int LATEST_VERSION = 32;
+    public static final int LATEST_VERSION = 31;
 
     public enum MessageType {
         STREAM_MESSAGE ((byte) 27),
@@ -105,7 +105,8 @@ public class StreamMessage implements ITimestamped {
     public enum EncryptionType {
         NONE ((byte) 0),
         RSA ((byte) 1),
-        AES ((byte) 2);
+        AES ((byte) 2),
+        NEW_KEY_AND_AES ((byte) 3);
 
         private final byte id;
 
@@ -124,21 +125,26 @@ public class StreamMessage implements ITimestamped {
                 return RSA;
             } else if (id == AES.id) {
                 return AES;
+            } else if (id == NEW_KEY_AND_AES.id) {
+                return NEW_KEY_AND_AES;
             }
             throw new UnsupportedMessageException("Unrecognized encryption type: "+id);
         }
     }
-    private MessageID messageID;
+    private final MessageID messageID;
     private MessageRef previousMessageRef;
-    private SignatureType signatureType;
-    private String signature;
-    private MessageType messageType;
-    private ContentType contentType;
-    private EncryptionType encryptionType;
-    private String groupKeyId;
+    private final MessageType messageType;
     private Map<String, Object> parsedContent; // Might need to change to Object when non-JSON contentTypes are introduced
     private String serializedContent;
+    private final ContentType contentType;
+    private EncryptionType encryptionType;
+    private String groupKeyId;
+    private SignatureType signatureType;
+    private String signature;
 
+    /**
+     * Full constructor, creates a StreamMessage with all fields directly set to the provided values.
+     */
     public StreamMessage(
             MessageID messageID,
             MessageRef previousMessageRef,
@@ -159,6 +165,47 @@ public class StreamMessage implements ITimestamped {
         this.groupKeyId = groupKeyId;
         this.signatureType = signatureType;
         this.signature = signature;
+    }
+
+    /**
+     * Convenience constructor. Serializes the provided Map to JSON and sets ContentType to JSON.
+     */
+    public StreamMessage(
+            MessageID messageID,
+            MessageRef previousMessageRef,
+            MessageType messageType,
+            Map<String, Object> content,
+            EncryptionType encryptionType,
+            String groupKeyId,
+            SignatureType signatureType,
+            String signature
+    ) {
+        this(messageID, previousMessageRef, messageType, HttpUtils.mapAdapter.toJson(content), ContentType.JSON, encryptionType, groupKeyId, signatureType, signature);
+    }
+
+    /**
+     * Convenience constructor. Serializes the provided Map to JSON and sets ContentType to JSON.
+     * Leaves the encryption and signature related fields at their default (empty/inactive) values.
+     */
+    public StreamMessage(
+            MessageID messageID,
+            MessageRef previousMessageRef,
+            MessageType messageType,
+            Map<String, Object> content
+    ) {
+        this(messageID, previousMessageRef, messageType, HttpUtils.mapAdapter.toJson(content), ContentType.JSON, EncryptionType.NONE, null, SignatureType.SIGNATURE_TYPE_NONE, null);
+    }
+
+    /**
+     * Convenience constructor. Serializes the provided Map to JSON, sets ContentType to JSON, and MessageType to STREAM_MESSAGE.
+     * Leaves the encryption and signature related fields at their default (empty/inactive) values.
+     */
+    public StreamMessage(
+            MessageID messageID,
+            MessageRef previousMessageRef,
+            Map<String, Object> content
+    ) {
+        this(messageID, previousMessageRef, MessageType.STREAM_MESSAGE, HttpUtils.mapAdapter.toJson(content), ContentType.JSON, EncryptionType.NONE, null, SignatureType.SIGNATURE_TYPE_NONE, null);
     }
 
     public MessageID getMessageID() {
@@ -191,6 +238,10 @@ public class StreamMessage implements ITimestamped {
 
     public MessageRef getPreviousMessageRef() {
         return previousMessageRef;
+    }
+
+    public void setPreviousMessageRef(MessageRef previousMessageRef) {
+        this.previousMessageRef = previousMessageRef;
     }
 
     public SignatureType getSignatureType() {

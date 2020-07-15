@@ -1,7 +1,6 @@
 package com.streamr.client.utils;
 
 import com.streamr.client.exceptions.SignatureFailedException;
-import com.streamr.client.exceptions.UnsupportedMessageException;
 import com.streamr.client.exceptions.UnsupportedSignatureTypeException;
 import com.streamr.client.protocol.message_layer.StreamMessage;
 import org.apache.commons.codec.DecoderException;
@@ -12,20 +11,16 @@ import org.ethereum.util.ByteUtil;
 
 import java.nio.charset.StandardCharsets;
 import java.security.SignatureException;
-import java.util.Set;
 
 public class SigningUtil {
     private static final String SIGN_MAGIC = "\u0019Ethereum Signed Message:\n";
-    private ECKey account;
+    private final ECKey account;
 
     public SigningUtil(ECKey account) {
         this.account = account;
     }
 
     public void signStreamMessage(StreamMessage msg, StreamMessage.SignatureType signatureType) {
-        if (msg.getVersion() < 30) {
-            throw new UnsupportedMessageException("Can only sign most recent StreamMessage versions (30 and 31).");
-        }
         String signature = sign(getPayloadToSignOrVerify(msg, signatureType), account);
         msg.setSignatureType(signatureType);
         msg.setSignature(signature);

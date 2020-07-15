@@ -1,8 +1,8 @@
 package com.streamr.client.protocol.message_layer;
 
 import com.squareup.moshi.JsonAdapter;
-import com.squareup.moshi.JsonDataException;
 import com.squareup.moshi.JsonReader;
+import com.squareup.moshi.JsonWriter;
 import com.streamr.client.exceptions.MalformedMessageException;
 import com.streamr.client.exceptions.UnsupportedMessageException;
 import okio.Buffer;
@@ -14,10 +14,11 @@ import java.nio.charset.StandardCharsets;
 import java.util.HashMap;
 import java.util.Map;
 
-public class StreamMessageAdapter {
+public class StreamMessageAdapter extends JsonAdapter<StreamMessage> {
 
     private static final Logger log = LogManager.getLogger();
     private static final Map<Integer, JsonAdapter<StreamMessage>> adapterByVersion = new HashMap<>();
+    private static final StreamMessageAdapter staticAdapter = new StreamMessageAdapter();
 
     static {
         adapterByVersion.put(30, new StreamMessageV30Adapter());
@@ -33,28 +34,42 @@ public class StreamMessageAdapter {
         return adapter.toJson(msg);
     }
 
-    public static StreamMessage deserialize(String json) {
+    public static StreamMessage deserialize(String json) throws MalformedMessageException {
         JsonReader reader = JsonReader.of(new Buffer().writeString(json, StandardCharsets.UTF_8));
-
-        // Read version, then delegate to correct adapter
         try {
-            reader.beginArray();
-
-            // Check version
-            int version = reader.nextInt();
-
-            JsonAdapter<StreamMessage> adapter = adapterByVersion.get(version);
-            if (adapter == null) {
-                throw new UnsupportedMessageException("Unrecognized stream message version: " + version);
-            }
-
-            StreamMessage msg = adapter.fromJson(reader);
-            reader.endArray();
-            return msg;
-        } catch (JsonDataException | IOException e) {
+            return staticAdapter.fromJson(reader);
+        } catch (Exception e) {
             log.error(e);
-            throw new MalformedMessageException("Malformed message: " + reader.toString(), e);
+            throw new MalformedMessageException("Unable to deserialize message: " + json, e);
         }
+    }
+
+    /**
+     * Used when serializing and deserializing Control Layer messages with inline StreamMessages
+     */
+    @Override
+    public StreamMessage fromJson(JsonReader reader) throws IOException, MalformedMessageException {
+        // Read version, then delegate to correct adapter
+        reader.beginArray();
+        int version = reader.nextInt();
+
+        JsonAdapter<StreamMessage> adapter = adapterByVersion.get(version);
+        if (adapter == null) {
+            throw new UnsupportedMessageException("Unrecognized stream message version: " + version);
+        }
+
+        StreamMessage msg = adapter.fromJson(reader);
+        reader.endArray();
+        return msg;
+    }
+
+    /**
+     * Used when serializing and deserializing Control Layer messages with inline StreamMessages.
+     * Note: serializes to StreamMessage.LATEST_VERSION.
+     */
+    @Override
+    public void toJson(JsonWriter writer, StreamMessage value) throws IOException {
+        adapterByVersion.get(StreamMessage.LATEST_VERSION).toJson(writer, value);
     }
 
 }

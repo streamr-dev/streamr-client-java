@@ -4,7 +4,6 @@ import com.streamr.client.options.ResendFromOption
 import com.streamr.client.options.ResendLastOption
 import com.streamr.client.options.ResendRangeOption
 import com.streamr.client.protocol.message_layer.StreamMessage
-import com.streamr.client.protocol.message_layer.StreamMessageV31
 import com.streamr.client.rest.Stream
 import com.streamr.client.subs.Subscription
 import com.streamr.client.utils.UnencryptedGroupKey
@@ -127,12 +126,12 @@ class StreamrWebsocketSpec extends StreamrIntegrationSpecification {
 
 		when:
 		// Subscribe to the stream
-		StreamMessageV31 msg
+		StreamMessage msg
 		client.subscribe(stream, new MessageHandler() {
 			@Override
 			void onMessage(Subscription s, StreamMessage message) {
 				//reaching this point ensures that the signature verification didn't throw
-				msg = (StreamMessageV31) message
+				msg = (StreamMessage) message
 			}
 		})
 
@@ -156,12 +155,12 @@ class StreamrWebsocketSpec extends StreamrIntegrationSpecification {
 
 		when:
 		// Subscribe to the stream
-		StreamMessageV31 msg
+		StreamMessage msg
 		client.subscribe(stream, 0, new MessageHandler() {
 			@Override
 			void onMessage(Subscription s, StreamMessage message) {
 				//reaching this point ensures that the signature verification and decryption didn't throw
-				msg = (StreamMessageV31) message
+				msg = (StreamMessage) message
 			}
 		}, null, keys)
 

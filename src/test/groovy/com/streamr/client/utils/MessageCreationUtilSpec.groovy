@@ -7,7 +7,6 @@ import com.streamr.client.protocol.message_layer.GroupKeyRequest
 import com.streamr.client.protocol.message_layer.GroupKeyReset
 import com.streamr.client.protocol.message_layer.GroupKeyResponse
 import com.streamr.client.protocol.message_layer.StreamMessage
-import com.streamr.client.protocol.message_layer.StreamMessageV31
 import com.streamr.client.rest.Stream
 import org.apache.commons.codec.binary.Hex
 import org.ethereum.crypto.ECKey
@@ -47,16 +46,17 @@ class MessageCreationUtilSpec extends Specification {
     void "fields are set. No encryption if no key is defined."() {
         Date timestamp = new Date()
         when:
-        StreamMessageV31 msg = (StreamMessageV31) msgCreationUtil.createStreamMessage(stream, message, timestamp, null)
+        StreamMessage msg = msgCreationUtil.createStreamMessage(stream, message, timestamp, null)
         then:
-        msg.getStreamId() == "stream-id"
+        msg.getStreamId() == stream.getId()
         msg.getStreamPartition() == 0
         msg.getTimestamp() == timestamp.getTime()
         msg.getSequenceNumber() == 0L
         msg.getPublisherId() == "publisherId"
         msg.getMsgChainId().length() == 20
         msg.previousMessageRef == null
-        msg.contentType == StreamMessage.MessageType.CONTENT_TYPE_JSON
+        msg.messageType == StreamMessage.MessageType.STREAM_MESSAGE
+        msg.contentType == StreamMessage.ContentType.JSON
         msg.encryptionType == StreamMessage.EncryptionType.NONE
         msg.parsedContent == message
         msg.signatureType == StreamMessage.SignatureType.SIGNATURE_TYPE_NONE
@@ -75,9 +75,9 @@ class MessageCreationUtilSpec extends Specification {
     void "publish with sequence numbers equal to 0"() {
         long timestamp = (new Date()).getTime()
         when:
-        StreamMessageV31 msg1 = (StreamMessageV31) msgCreationUtil.createStreamMessage(stream, message, new Date(timestamp), null)
-        StreamMessageV31 msg2 = (StreamMessageV31) msgCreationUtil.createStreamMessage(stream, message, new Date(timestamp + 100), null)
-        StreamMessageV31 msg3 = (StreamMessageV31) msgCreationUtil.createStreamMessage(stream, message, new Date(timestamp + 200), null)
+        StreamMessage msg1 = msgCreationUtil.createStreamMessage(stream, message, new Date(timestamp), null)
+        StreamMessage msg2 = msgCreationUtil.createStreamMessage(stream, message, new Date(timestamp + 100), null)
+        StreamMessage msg3 = msgCreationUtil.createStreamMessage(stream, message, new Date(timestamp + 200), null)
         then:
         msg1.getTimestamp() == timestamp
         msg1.getSequenceNumber() == 0L
@@ -97,9 +97,9 @@ class MessageCreationUtilSpec extends Specification {
     void "publish with increasing sequence numbers"() {
         Date timestamp = new Date()
         when:
-        StreamMessageV31 msg1 = (StreamMessageV31) msgCreationUtil.createStreamMessage(stream, message, timestamp, null)
-        StreamMessageV31 msg2 = (StreamMessageV31) msgCreationUtil.createStreamMessage(stream, message, timestamp, null)
-        StreamMessageV31 msg3 = (StreamMessageV31) msgCreationUtil.createStreamMessage(stream, message, timestamp, null)
+        StreamMessage msg1 = msgCreationUtil.createStreamMessage(stream, message, timestamp, null)
+        StreamMessage msg2 = msgCreationUtil.createStreamMessage(stream, message, timestamp, null)
+        StreamMessage msg3 = msgCreationUtil.createStreamMessage(stream, message, timestamp, null)
         then:
         assert msg1.getTimestamp() == timestamp.getTime()
         assert msg1.getSequenceNumber() == 0L
@@ -122,8 +122,8 @@ class MessageCreationUtilSpec extends Specification {
 
         when:
         // Messages should go to different partitions
-        StreamMessageV31 msg1 = (StreamMessageV31) msgCreationUtil.createStreamMessage(stream, message, timestamp, "partition-key-1")
-        StreamMessageV31 msg2 = (StreamMessageV31) msgCreationUtil.createStreamMessage(stream, message, timestamp, "partition-key-2")
+        StreamMessage msg1 = msgCreationUtil.createStreamMessage(stream, message, timestamp, "partition-key-1")
+        StreamMessage msg2 = msgCreationUtil.createStreamMessage(stream, message, timestamp, "partition-key-2")
 
         then:
         assert msg1.getStreamPartition() != msg2.getStreamPartition()
@@ -146,7 +146,7 @@ class MessageCreationUtilSpec extends Specification {
                             5, 3, 5, 0, 9, 4, 3, 9, 6, 7, 8, 6, 4, 6, 0, 1, 1, 5, 8, 3, 9, 7]
         then:
         for (int i = 0; i < 100; i++) {
-            StreamMessageV31 msg = (StreamMessageV31) msgCreationUtil.createStreamMessage(stream, message, new Date(), "key-"+i)
+            StreamMessage msg = msgCreationUtil.createStreamMessage(stream, message, new Date(), "key-"+i)
             assert msg.streamPartition == partitions[i]
         }
     }
@@ -156,7 +156,7 @@ class MessageCreationUtilSpec extends Specification {
         keyStorage.addKey(stream.id, key)
         MessageCreationUtil util = new MessageCreationUtil("publisherId", null, keyStorage)
         when:
-        StreamMessageV31 msg = (StreamMessageV31) util.createStreamMessage(stream, message, new Date(), null)
+        StreamMessage msg = util.createStreamMessage(stream, message, new Date(), null)
         then:
         assert msg.encryptionType == StreamMessage.EncryptionType.AES
         assert msg.getSerializedContent().length() == 58 // 16*2 + 13*2 (hex string made of IV + msg of 13 chars)
@@ -165,13 +165,13 @@ class MessageCreationUtilSpec extends Specification {
     void "creates encrypted messages when key defined in createStreamMessage() and use the same key later"() {
         UnencryptedGroupKey key = genUnencryptedKey(32)
         when:
-        StreamMessageV31 msg1 = (StreamMessageV31) msgCreationUtil.createStreamMessage(stream, message, new Date(), null, key)
+        StreamMessage msg1 = msgCreationUtil.createStreamMessage(stream, message, new Date(), null, key)
         then:
         assert keyStorage.getLatestKey(stream.id) == key
         assert msg1.encryptionType == StreamMessage.EncryptionType.AES
         assert msg1.getSerializedContent().length() == 58
         when:
-        StreamMessageV31 msg2 = (StreamMessageV31) msgCreationUtil.createStreamMessage(stream, message, new Date(), null)
+        StreamMessage msg2 = msgCreationUtil.createStreamMessage(stream, message, new Date(), null)
         then:
         assert msg2.encryptionType == StreamMessage.EncryptionType.AES
         assert msg2.getSerializedContent().length() == 58
@@ -185,13 +185,13 @@ class MessageCreationUtilSpec extends Specification {
         UnencryptedGroupKey key1 = genUnencryptedKey(32)
         UnencryptedGroupKey key2 = genUnencryptedKey(32)
         when:
-        StreamMessageV31 msg1 = (StreamMessageV31) msgCreationUtil.createStreamMessage(stream, message, new Date(), null, key1)
+        StreamMessage msg1 = msgCreationUtil.createStreamMessage(stream, message, new Date(), null, key1)
         then:
         keyStorage.getLatestKey(stream.id) == key1
         assert msg1.encryptionType == StreamMessage.EncryptionType.AES
         assert msg1.getSerializedContent().length() == 58
         when:
-        StreamMessageV31 msg2 = (StreamMessageV31) msgCreationUtil.createStreamMessage(stream, message, new Date(), null, key2)
+        StreamMessage msg2 = msgCreationUtil.createStreamMessage(stream, message, new Date(), null, key2)
         then:
         keyStorage.getLatestKey(stream.id) == key2
         assert msg2.encryptionType == StreamMessage.EncryptionType.NEW_KEY_AND_AES

@@ -1,7 +1,8 @@
 package com.streamr.client.utils
 
+import com.streamr.client.protocol.message_layer.MessageID
+import com.streamr.client.protocol.message_layer.MessageRef
 import com.streamr.client.protocol.message_layer.StreamMessage
-import com.streamr.client.protocol.message_layer.StreamMessageV31
 import org.apache.commons.codec.binary.Hex
 import spock.lang.Specification
 
@@ -16,8 +17,10 @@ class DecryptionKeySequenceSpec extends Specification {
     }
 
     StreamMessage genMsg(HashMap<String, Object> content) {
-        return new StreamMessageV31("stream-id", 0, 1L, 0L, "publisherId", "msgChainId",
-                0L, 0L, StreamMessage.MessageType.CONTENT_TYPE_JSON, StreamMessage.EncryptionType.NONE, content, StreamMessage.SignatureType.SIGNATURE_TYPE_NONE, null)
+        return new StreamMessage(
+                new MessageID("stream-id", 0, 1L, 0L, "publisherId", "msgChainId"),
+                new MessageRef(0L, 0L),
+                content)
     }
 
     void "decrypts sequence of StreamMessage using key sequence"() {

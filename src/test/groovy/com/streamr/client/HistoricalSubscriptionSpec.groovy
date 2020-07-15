@@ -3,9 +3,9 @@ package com.streamr.client
 import com.streamr.client.exceptions.GapDetectedException
 import com.streamr.client.exceptions.UnableToDecryptException
 import com.streamr.client.options.ResendLastOption
+import com.streamr.client.protocol.message_layer.MessageID
 import com.streamr.client.protocol.message_layer.MessageRef
 import com.streamr.client.protocol.message_layer.StreamMessage
-import com.streamr.client.protocol.message_layer.StreamMessageV31
 import com.streamr.client.subs.BasicSubscription
 import com.streamr.client.subs.HistoricalSubscription
 import com.streamr.client.subs.Subscription
@@ -25,16 +25,26 @@ import java.nio.charset.StandardCharsets
 import java.security.SecureRandom
 
 class HistoricalSubscriptionSpec extends Specification {
-    StreamMessageV31 msg = new StreamMessageV31("stream-id", 0, (new Date()).getTime(), 0, "publisherId", "msgChainId",
-            null, 0, StreamMessage.MessageType.CONTENT_TYPE_JSON, StreamMessage.EncryptionType.NONE, "{}", StreamMessage.SignatureType.SIGNATURE_TYPE_NONE, null)
+    StreamMessage msg
 
-    StreamMessage createMessage(long timestamp, long sequenceNumber, Long previousTimestamp, Long previousSequenceNumber) {
-        return createMessage(timestamp, sequenceNumber, previousTimestamp, previousSequenceNumber, "publisherId")
+    def setup() {
+        msg = createMessage([foo: 'bar'])
     }
 
-    StreamMessage createMessage(long timestamp, long sequenceNumber, Long previousTimestamp, Long previousSequenceNumber, String publisherId) {
-        return new StreamMessageV31("stream-id", 0, timestamp, sequenceNumber, publisherId, "msgChainId",
-                previousTimestamp, previousSequenceNumber, StreamMessage.MessageType.CONTENT_TYPE_JSON, StreamMessage.EncryptionType.NONE, "{}", StreamMessage.SignatureType.SIGNATURE_TYPE_NONE, null)
+    StreamMessage createMessage(Map content) {
+        return createMessage(0, 0, 0, 0, "publisherId", content)
+    }
+
+    StreamMessage createMessage(long timestamp, Map content) {
+        return createMessage(timestamp, 0, 0, 0, "publisherId", content)
+    }
+
+    StreamMessage createMessage(long timestamp = 0, long sequenceNumber = 0, Long previousTimestamp = null, Long previousSequenceNumber = null, String publisherId = "publisherId", Map content = [:]) {
+        new StreamMessage(
+                new MessageID("streamId", 0, timestamp, sequenceNumber, "publisherId", "msgChainId"),
+                (previousTimestamp != null ? new MessageRef(previousTimestamp, previousSequenceNumber ?: 0) : null),
+                content
+        )
     }
 
     MessageHandler empty = new MessageHandler() {
@@ -209,38 +219,34 @@ class HistoricalSubscriptionSpec extends Specification {
 
     void "decrypts encrypted messages with the correct key"() {
         UnencryptedGroupKey key = genKey()
-        SecretKey groupKey = new SecretKeySpec(DatatypeConverter.parseHexBinary(key.groupKeyHex), "AES")
-        Map plaintext = [foo: 'bar']
-        String ciphertext = EncryptionUtil.encrypt(HttpUtils.mapAdapter.toJson(plaintext).getBytes(StandardCharsets.UTF_8), groupKey)
+        Map plaintext = msg.getParsedContent()
+        EncryptionUtil.encryptStreamMessage(msg, key.getSecretKey())
         Map received = null
-        StreamMessageV31 msg1 = new StreamMessageV31("streamId", 0, 0, 0, "publisherId", "",
-                null, null, StreamMessage.MessageType.CONTENT_TYPE_JSON, StreamMessage.EncryptionType.AES, ciphertext, StreamMessage.SignatureType.SIGNATURE_TYPE_NONE, null)
-        HistoricalSubscription sub = new HistoricalSubscription("streamId", 0, new MessageHandler() {
+
+        HistoricalSubscription sub = new HistoricalSubscription(msg.getStreamId(), 0, new MessageHandler() {
             @Override
             void onMessage(Subscription sub, StreamMessage message) {
                 received = message.getParsedContent()
             }
         }, null, ['publisherId': key])
+
         when:
-        sub.handleResentMessage(msg1)
+        sub.handleResentMessage(msg)
         then:
         received == plaintext
     }
 
     void "calls key request function when no historical group keys are set (multiple times if no response)"() {
         UnencryptedGroupKey key = genKey()
-        SecretKey groupKey = new SecretKeySpec(DatatypeConverter.parseHexBinary(key.groupKeyHex), "AES")
-        Map plaintext = [foo: 'bar']
-        String ciphertext = EncryptionUtil.encrypt(HttpUtils.mapAdapter.toJson(plaintext).getBytes(StandardCharsets.UTF_8), groupKey)
+        EncryptionUtil.encryptStreamMessage(msg, key.getSecretKey())
         Map received = null
-        StreamMessageV31 msg1 = new StreamMessageV31("streamId", 0, 0, 0, "publisherId", "",
-                null, null, StreamMessage.MessageType.CONTENT_TYPE_JSON, StreamMessage.EncryptionType.AES, ciphertext, StreamMessage.SignatureType.SIGNATURE_TYPE_NONE, null)
         String receivedPublisherId = null
         Date receivedStart = null
         Date receivedEnd = null
         int nbCalls = 0
         int timeout = 3000
-        HistoricalSubscription sub = new HistoricalSubscription("streamId", 0, new MessageHandler() {
+
+        HistoricalSubscription sub = new HistoricalSubscription(msg.getStreamId(), 0, new MessageHandler() {
             @Override
             void onMessage(Subscription sub, StreamMessage message) {
                 received = message.getParsedContent()
@@ -257,7 +263,7 @@ class HistoricalSubscriptionSpec extends Specification {
 
         when:
         // First call to groupKeyRequestFunction
-        sub.handleResentMessage(msg1)
+        sub.handleResentMessage(msg)
         // Wait for 2 timeouts to happen
         Thread.sleep(timeout * 2 + 1500)
         then:
@@ -266,11 +272,11 @@ class HistoricalSubscriptionSpec extends Specification {
 
         when:
         // the group keys are set, no further calls should occur
-        sub.setGroupKeys(msg1.getPublisherId(), [key])
+        sub.setGroupKeys(msg.getPublisherId(), [key])
         Thread.sleep(timeout * 2)
         then:
-        receivedPublisherId == msg1.getPublisherId().toLowerCase()
-        receivedStart == msg1.getTimestampAsDate()
+        receivedPublisherId == msg.getPublisherId().toLowerCase()
+        receivedStart == msg.getTimestampAsDate()
         receivedEnd.after(receivedStart)
         nbCalls == 3
     }
@@ -280,17 +286,15 @@ class HistoricalSubscriptionSpec extends Specification {
         UnencryptedGroupKey groupKey2 = genKey()
         SecretKey secretKey1 = new SecretKeySpec(DatatypeConverter.parseHexBinary(groupKey1.groupKeyHex), "AES")
         SecretKey secretKey2 = new SecretKeySpec(DatatypeConverter.parseHexBinary(groupKey2.groupKeyHex), "AES")
-        StreamMessageV31 msg1 = new StreamMessageV31("streamId", 0, 1, 0, "publisherId", "",
-                null, null, StreamMessage.MessageType.CONTENT_TYPE_JSON, StreamMessage.EncryptionType.NONE, [foo: 'bar1'], StreamMessage.SignatureType.SIGNATURE_TYPE_NONE, null)
-        StreamMessageV31 msg2 = new StreamMessageV31("streamId", 0, 2, 0, "publisherId", "",
-                1, 0, StreamMessage.MessageType.CONTENT_TYPE_JSON, StreamMessage.EncryptionType.NONE, [foo: 'bar2'], StreamMessage.SignatureType.SIGNATURE_TYPE_NONE, null)
+        StreamMessage msg1 = createMessage(1, [foo: 'bar1'])
+        StreamMessage msg2 = createMessage(1, [foo: 'bar2'])
         EncryptionUtil.encryptStreamMessage(msg1, secretKey1)
         EncryptionUtil.encryptStreamMessage(msg2, secretKey2)
         int callCount = 0
         StreamMessage received1 = null
         StreamMessage received2 = null
         boolean subDone = false
-        HistoricalSubscription sub = new HistoricalSubscription("streamId", 0, new MessageHandler() {
+        HistoricalSubscription sub = new HistoricalSubscription(msg1.getStreamId(), 0, new MessageHandler() {
             @Override
             void onMessage(Subscription sub, StreamMessage message) {
                 if (received1 == null) {
@@ -335,22 +339,19 @@ class HistoricalSubscriptionSpec extends Specification {
         SecretKey secretKey1 = new SecretKeySpec(DatatypeConverter.parseHexBinary(groupKey1.groupKeyHex), "AES")
         SecretKey secretKey2 = new SecretKeySpec(DatatypeConverter.parseHexBinary(groupKey2.groupKeyHex), "AES")
         SecretKey secretKey3 = new SecretKeySpec(DatatypeConverter.parseHexBinary(groupKey3.groupKeyHex), "AES")
-        StreamMessageV31 msg1 = new StreamMessageV31("streamId", 0, 1, 0, "publisherId1", "",
-                null, null, StreamMessage.MessageType.CONTENT_TYPE_JSON, StreamMessage.EncryptionType.NONE, [foo: 'bar1'], StreamMessage.SignatureType.SIGNATURE_TYPE_NONE, null)
-        StreamMessageV31 msg2 = new StreamMessageV31("streamId", 0, 2, 0, "publisherId1", "",
-                1, 0, StreamMessage.MessageType.CONTENT_TYPE_JSON, StreamMessage.EncryptionType.NONE, [foo: 'bar2'], StreamMessage.SignatureType.SIGNATURE_TYPE_NONE, null)
-        StreamMessageV31 msg3 = new StreamMessageV31("streamId", 0, 1, 0, "publisherId2", "",
-                null, null, StreamMessage.MessageType.CONTENT_TYPE_JSON, StreamMessage.EncryptionType.NONE, [foo: 'bar3'], StreamMessage.SignatureType.SIGNATURE_TYPE_NONE, null)
-        StreamMessageV31 msg4 = new StreamMessageV31("streamId", 0, 2, 0, "publisherId2", "",
-                1, 0, StreamMessage.MessageType.CONTENT_TYPE_JSON, StreamMessage.EncryptionType.NONE, [foo: 'bar4'], StreamMessage.SignatureType.SIGNATURE_TYPE_NONE, null)
-        EncryptionUtil.encryptStreamMessage(msg1, secretKey1)
-        EncryptionUtil.encryptStreamMessage(msg2, secretKey2)
-        EncryptionUtil.encryptStreamMessage(msg3, secretKey3)
-        EncryptionUtil.encryptStreamMessage(msg4, secretKey3)
+        StreamMessage msg1pub1 = createMessage(1, 0, null, null, "publisherId1", [foo: 'bar1'])
+        StreamMessage msg2pub1 = createMessage(2, 0, null, null, "publisherId1", [foo: 'bar2'])
+        StreamMessage msg1pub2 = createMessage(1, 0, null, null, "publisherId2", [foo: 'bar3'])
+        StreamMessage msg2pub2 = createMessage(2, 0, null, null, "publisherId2", [foo: 'bar4'])
+        EncryptionUtil.encryptStreamMessage(msg1pub1, secretKey1)
+        EncryptionUtil.encryptStreamMessage(msg2pub1, secretKey2)
+        EncryptionUtil.encryptStreamMessage(msg1pub2, secretKey3)
+        EncryptionUtil.encryptStreamMessage(msg2pub2, secretKey3)
+
         int callCount = 0
         ArrayList<StreamMessage> received = []
         boolean subDone = false
-        HistoricalSubscription sub = new HistoricalSubscription("streamId", 0, new MessageHandler() {
+        HistoricalSubscription sub = new HistoricalSubscription(msg1pub1.getStreamId(), 0, new MessageHandler() {
             @Override
             void onMessage(Subscription sub, StreamMessage message) {
                 received.add(message)
@@ -367,7 +368,7 @@ class HistoricalSubscriptionSpec extends Specification {
         })
         when:
         // Cannot decrypt msg1, queues it and calls the handler
-        sub.handleResentMessage(msg1)
+        sub.handleResentMessage(msg1pub1)
         then:
         new PollingConditions().within(10) {
             callCount == 1
@@ -375,13 +376,13 @@ class HistoricalSubscriptionSpec extends Specification {
 
         when:
         // Cannot decrypt msg2, queues it.
-        sub.handleResentMessage(msg2)
+        sub.handleResentMessage(msg2pub1)
         then:
         callCount == 1
 
         when:
         // Cannot decrypt msg3, queues it and calls the handler
-        sub.handleResentMessage(msg3)
+        sub.handleResentMessage(msg1pub2)
         then:
         new PollingConditions().within(10) {
             callCount == 2
@@ -389,14 +390,14 @@ class HistoricalSubscriptionSpec extends Specification {
 
         when:
         // Cannot decrypt msg4, queues it.
-        sub.handleResentMessage(msg4)
+        sub.handleResentMessage(msg2pub2)
         then:
         callCount == 2
 
         when:
         // faking the reception of the group key response
-        sub.setGroupKeys(msg3.getPublisherId(), (ArrayList<GroupKey>)[groupKey3])
-        sub.setGroupKeys(msg1.getPublisherId(), (ArrayList<GroupKey>)[groupKey1, groupKey2])
+        sub.setGroupKeys(msg1pub2.getPublisherId(), (ArrayList<UnencryptedGroupKey>) [groupKey3])
+        sub.setGroupKeys(msg1pub1.getPublisherId(), (ArrayList<UnencryptedGroupKey>) [groupKey1, groupKey2])
         sub.endResend()
         then:
         received.get(0).getParsedContent() == [foo: 'bar3']
@@ -410,14 +411,11 @@ class HistoricalSubscriptionSpec extends Specification {
     void "throws when not able to decrypt with historical keys set"() {
         UnencryptedGroupKey key = genKey()
         UnencryptedGroupKey wrongKey = genKey()
-        SecretKey groupKey = new SecretKeySpec(DatatypeConverter.parseHexBinary(key.groupKeyHex), "AES")
-        Map plaintext = [foo: 'bar']
-        String ciphertext = EncryptionUtil.encrypt(HttpUtils.mapAdapter.toJson(plaintext).getBytes(StandardCharsets.UTF_8), groupKey)
+        EncryptionUtil.encryptStreamMessage(msg, key.getSecretKey())
         Map received = null
         boolean subDone = false
-        StreamMessageV31 msg1 = new StreamMessageV31("streamId", 0, 0, 0, "publisherId", "",
-                null, null, StreamMessage.MessageType.CONTENT_TYPE_JSON, StreamMessage.EncryptionType.AES, ciphertext, StreamMessage.SignatureType.SIGNATURE_TYPE_NONE, null)
-        HistoricalSubscription sub = new HistoricalSubscription("streamId", 0, new MessageHandler() {
+
+        HistoricalSubscription sub = new HistoricalSubscription(msg.getStreamId(), 0, new MessageHandler() {
             @Override
             void onMessage(Subscription sub, StreamMessage message) {
                 received = message.getParsedContent()
@@ -432,7 +430,7 @@ class HistoricalSubscriptionSpec extends Specification {
             }
         }, new ResendLastOption(1), ["publisherId": wrongKey], null)
         when:
-        sub.handleResentMessage(msg1)
+        sub.handleResentMessage(msg)
         then:
         thrown(UnableToDecryptException)
         !subDone

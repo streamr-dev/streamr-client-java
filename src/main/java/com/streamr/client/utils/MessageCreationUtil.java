@@ -5,7 +5,6 @@ import com.streamr.client.exceptions.InvalidGroupKeyResponseException;
 import com.streamr.client.exceptions.MalformedMessageException;
 import com.streamr.client.exceptions.SigningRequiredException;
 import com.streamr.client.protocol.message_layer.*;
-import com.streamr.client.protocol.message_layer.StreamMessage.EncryptionType;
 import com.streamr.client.rest.Stream;
 import org.apache.commons.lang3.RandomStringUtils;
 import org.apache.commons.lang3.tuple.Pair;
@@ -45,9 +44,7 @@ public class MessageCreationUtil {
 
         Pair<MessageID, MessageRef> pair = createMsgIdAndRef(stream.getId(), streamPartition, timestamp.getTime());
 
-        StreamMessage streamMessage = new StreamMessageV31(pair.getLeft(), pair.getRight(), StreamMessage.MessageType.CONTENT_TYPE_JSON,
-                EncryptionType.NONE, payload, StreamMessage.SignatureType.SIGNATURE_TYPE_NONE, null
-        );
+        StreamMessage streamMessage = new StreamMessage(pair.getLeft(), pair.getRight(), payload);
 
         if (keyStorage.hasKey(stream.getId()) && groupKeyHex != null) {
             EncryptionUtil.encryptStreamMessageAndNewKey(groupKeyHex, streamMessage, keyStorage.getLatestKey(stream.getId()).getSecretKey());
@@ -78,9 +75,7 @@ public class MessageCreationUtil {
 
         String keyExchangeStreamId = KeyExchangeUtil.getKeyExchangeStreamId(publisherAddress);
         Pair<MessageID, MessageRef> pair = createDefaultMsgIdAndRef(keyExchangeStreamId);
-        StreamMessage streamMessage = new StreamMessageV31(
-                pair.getLeft(), pair.getRight(), StreamMessage.MessageType.GROUP_KEY_REQUEST, EncryptionType.NONE, request.toMap(),
-                StreamMessage.SignatureType.SIGNATURE_TYPE_NONE, null);
+        StreamMessage streamMessage = new StreamMessage(pair.getLeft(), pair.getRight(), StreamMessage.MessageType.GROUP_KEY_REQUEST, request.toMap());
         signingUtil.signStreamMessage(streamMessage);
         return streamMessage;
     }
@@ -100,9 +95,7 @@ public class MessageCreationUtil {
 
         String keyExchangeStreamId = KeyExchangeUtil.getKeyExchangeStreamId(subscriberAddress);
         Pair<MessageID, MessageRef> pair = createDefaultMsgIdAndRef(keyExchangeStreamId);
-        StreamMessage streamMessage = new StreamMessageV31(
-                pair.getLeft(), pair.getRight(), StreamMessage.MessageType.GROUP_KEY_RESPONSE_SIMPLE, EncryptionType.RSA, response.toMap(),
-                StreamMessage.SignatureType.SIGNATURE_TYPE_NONE, null);
+        StreamMessage streamMessage = new StreamMessage(pair.getLeft(), pair.getRight(), StreamMessage.MessageType.GROUP_KEY_RESPONSE_SIMPLE, response.toMap());
         signingUtil.signStreamMessage(streamMessage);
         return streamMessage;
     }
@@ -116,9 +109,7 @@ public class MessageCreationUtil {
 
         String keyExchangeStreamId = KeyExchangeUtil.getKeyExchangeStreamId(subscriberAddress);
         Pair<MessageID, MessageRef> pair = createDefaultMsgIdAndRef(keyExchangeStreamId);
-        StreamMessage streamMessage = new StreamMessageV31(
-                pair.getLeft(), pair.getRight(), StreamMessage.MessageType.GROUP_KEY_RESET_SIMPLE, EncryptionType.RSA, reset.toMap(),
-                StreamMessage.SignatureType.SIGNATURE_TYPE_NONE, null);
+        StreamMessage streamMessage = new StreamMessage(pair.getLeft(), pair.getRight(), StreamMessage.MessageType.GROUP_KEY_RESET_SIMPLE, reset.toMap());
         signingUtil.signStreamMessage(streamMessage);
         return streamMessage;
     }
@@ -137,9 +128,7 @@ public class MessageCreationUtil {
 
         String keyExchangeStreamId = KeyExchangeUtil.getKeyExchangeStreamId(destinationAddress);
         Pair<MessageID, MessageRef> pair = createDefaultMsgIdAndRef(keyExchangeStreamId);
-        StreamMessage streamMessage = new StreamMessageV31(
-                pair.getLeft(), pair.getRight(), StreamMessage.MessageType.GROUP_KEY_RESPONSE_ERROR, EncryptionType.NONE, response.toMap(),
-                StreamMessage.SignatureType.SIGNATURE_TYPE_NONE, null);
+        StreamMessage streamMessage = new StreamMessage(pair.getLeft(), pair.getRight(), StreamMessage.MessageType.GROUP_KEY_RESPONSE_ERROR, response.toMap());
         signingUtil.signStreamMessage(streamMessage);
         return streamMessage;
     }

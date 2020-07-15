@@ -41,7 +41,7 @@ public class StreamMessageValidator {
         }
 
         switch (msg.getMessageType()) {
-            case CONTENT_TYPE_JSON:
+            case STREAM_MESSAGE:
                 validateMessage(msg);
                 break;
             case GROUP_KEY_REQUEST:
