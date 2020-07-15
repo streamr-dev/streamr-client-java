@@ -21,6 +21,7 @@ import java.security.interfaces.RSAPublicKey
 class EncryptionUtilSpec extends Specification {
 
     Map plaintextContent = [foo: 'bar']
+    String serializedPlaintextContent = "{\"foo\":\"bar\"}"
     StreamMessage streamMessage
 
     def setup() {
@@ -90,22 +91,23 @@ class EncryptionUtilSpec extends Specification {
         then:
         EncryptionUtil.decrypt(ciphertext, key) == plaintext
     }
-    void "StreamMessage gets encrypted"() {
+    void "encryptStreamMessage() encrypts the message"() {
         SecretKey key = genSecretKey()
 
         when:
         EncryptionUtil.encryptStreamMessage(streamMessage, key)
         then:
-        streamMessage.parsedContent != plaintextContent
+        streamMessage.serializedContent != serializedPlaintextContent
         streamMessage.encryptionType == StreamMessage.EncryptionType.AES
     }
-    void "StreamMessage decryption after encryption equals the initial StreamMessage"() {
+    void "encryptStreamMessage, then decryptStreamMessage() equals original message "() {
         SecretKey key = genSecretKey()
 
         when:
         EncryptionUtil.encryptStreamMessage(streamMessage, key)
         SecretKey newKey = EncryptionUtil.decryptStreamMessage(streamMessage, key)
         then:
+        streamMessage.serializedContent == serializedPlaintextContent
         streamMessage.parsedContent == plaintextContent
         streamMessage.encryptionType == StreamMessage.EncryptionType.NONE
         newKey == null
@@ -116,7 +118,7 @@ class EncryptionUtilSpec extends Specification {
         when:
         EncryptionUtil.encryptStreamMessageAndNewKey(genGroupKeyHex(), streamMessage, key)
         then:
-        streamMessage.parsedContent != plaintextContent
+        streamMessage.serializedContent != serializedPlaintextContent
         streamMessage.encryptionType == StreamMessage.EncryptionType.NEW_KEY_AND_AES
     }
     void "StreamMessage decryption after encryption equals the initial StreamMessage (with new key)"() {

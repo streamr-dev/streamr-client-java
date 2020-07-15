@@ -165,7 +165,7 @@ class KeyExchangeUtilSpec extends Specification {
         MessageID id = new MessageID("subscriberInbox", 0, 414, 0, "publisherId", "msgChainId")
 
         GroupKeyResponse response = new GroupKeyResponse("requestId", "streamId", new ArrayList<GroupKeyResponse.Key>());
-        StreamMessage streamMessage = new StreamMessage(id, null, StreamMessage.MessageType.GROUP_KEY_RESPONSE_SIMPLE, response.toMap(), StreamMessage.EncryptionType.NONE, null, StreamMessage.SignatureType.ETH, "signature")
+        StreamMessage streamMessage = new StreamMessage(id, null, StreamMessage.MessageType.GROUP_KEY_RESPONSE_SIMPLE, response.toMap())
 
         when:
         util.handleGroupKeyResponse(streamMessage)
@@ -223,7 +223,7 @@ class KeyExchangeUtilSpec extends Specification {
         MessageID id = new MessageID("subscriberInbox", 0, 414, 0, "publisherId", "msgChainId")
 
         GroupKeyReset reset = new GroupKeyReset("streamId", encryptedGroupKey.groupKeyHex, encryptedGroupKey.start.getTime())
-        StreamMessage streamMessage = new StreamMessage(id, null, StreamMessage.MessageType.GROUP_KEY_RESET_SIMPLE, reset.toMap(), StreamMessage.EncryptionType.NONE, null, StreamMessage.SignatureType.ETH, "signature")
+        StreamMessage streamMessage = new StreamMessage(id, null, StreamMessage.MessageType.GROUP_KEY_RESET_SIMPLE, reset.toMap())
 
         when:
         util.handleGroupKeyReset(streamMessage)

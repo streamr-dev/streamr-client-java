@@ -2,7 +2,7 @@ package com.streamr.client
 
 import com.streamr.client.exceptions.GapDetectedException
 import com.streamr.client.options.ResendLastOption
-import com.streamr.client.protocol.StreamrSpec
+import com.streamr.client.protocol.StreamrSpecification
 import com.streamr.client.protocol.message_layer.MessageRef
 import com.streamr.client.protocol.message_layer.StreamMessage
 import com.streamr.client.subs.CombinedSubscription
@@ -10,13 +10,13 @@ import com.streamr.client.subs.Subscription
 import com.streamr.client.utils.OrderedMsgChain
 import com.streamr.client.utils.UnencryptedGroupKey
 
-class CombinedSubscriptionSpec extends StreamrSpec {
+class CombinedSubscriptionSpec extends StreamrSpecification {
 
     void "calls the gap handler if gap among real time messages queued during resend"() {
         StreamMessage msg1 = createMessage(1, 0, null, 0)
         StreamMessage afterMsg1 = createMessage(1, 1, null, 0)
         StreamMessage msg4 = createMessage(4, 0, 3, 0)
-        CombinedSubscription sub = new CombinedSubscription("stream-id", 0, new MessageHandler() {
+        CombinedSubscription sub = new CombinedSubscription(msg1.getStreamId(), 0, new MessageHandler() {
             @Override
             void onMessage(Subscription sub, StreamMessage message) {
 

@@ -1,12 +1,12 @@
 package com.streamr.client.utils
 
-import com.streamr.client.protocol.StreamrSpec
+import com.streamr.client.protocol.StreamrSpecification
 import com.streamr.client.protocol.message_layer.MessageRef
 import com.streamr.client.protocol.message_layer.StreamMessage
 
 import java.util.function.Consumer
 
-class OrderingUtilSpec extends StreamrSpec {
+class OrderingUtilSpec extends StreamrSpecification {
 
     StreamMessage msg1 = createMessage(1, 0)
     StreamMessage msg2 = createMessage(2, 0, 1, 0)

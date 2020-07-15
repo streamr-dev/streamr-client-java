@@ -174,8 +174,7 @@ class StreamMessageValidatorSpec extends Specification {
     }
 
     void "[GroupKeyRequest] rejects unsigned"() {
-        groupKeyRequest.setSignature(null)
-        groupKeyRequest.setSignatureType(StreamMessage.SignatureType.NONE)
+        groupKeyRequest.setSignatureFields(null, StreamMessage.SignatureType.NONE)
 
         when:
         validator.validate(groupKeyRequest)
@@ -186,7 +185,7 @@ class StreamMessageValidatorSpec extends Specification {
     }
 
     void "[GroupKeyRequest] rejects invalid signatures"() {
-        groupKeyRequest.setSignature(groupKeyRequest.getSignature().replace('a', 'b'))
+        groupKeyRequest.setSignatureFields(groupKeyRequest.getSignature().replace('a', 'b'), StreamMessage.SignatureType.ETH)
 
         when:
         validator.validate(groupKeyRequest)
@@ -231,8 +230,7 @@ class StreamMessageValidatorSpec extends Specification {
     }
 
     void "[GroupKeyResponse] rejects unsigned"() {
-        groupKeyResponse.setSignature(null)
-        groupKeyResponse.setSignatureType(StreamMessage.SignatureType.NONE)
+        groupKeyResponse.setSignatureFields(null, StreamMessage.SignatureType.NONE)
 
         when:
         validator.validate(groupKeyResponse)
@@ -243,7 +241,7 @@ class StreamMessageValidatorSpec extends Specification {
     }
 
     void "[GroupKeyResponse] rejects invalid signatures"() {
-        groupKeyResponse.setSignature(groupKeyResponse.getSignature().replace('a', 'b'))
+        groupKeyResponse.setSignatureFields(groupKeyResponse.getSignature().replace('a', 'b'), StreamMessage.SignatureType.ETH)
 
         when:
         validator.validate(groupKeyResponse)
@@ -288,8 +286,7 @@ class StreamMessageValidatorSpec extends Specification {
     }
 
     void "[GroupKeyReset] rejects unsigned"() {
-        groupKeyReset.setSignature(null)
-        groupKeyReset.setSignatureType(StreamMessage.SignatureType.NONE)
+        groupKeyReset.setSignatureFields(null, StreamMessage.SignatureType.NONE)
 
         when:
         validator.validate(groupKeyReset)
@@ -300,7 +297,7 @@ class StreamMessageValidatorSpec extends Specification {
     }
 
     void "[GroupKeyReset] rejects invalid signatures"() {
-        groupKeyReset.setSignature(groupKeyReset.getSignature().replace('a', 'b'))
+        groupKeyReset.setSignatureFields(groupKeyReset.getSignature().replace('a', 'b'), StreamMessage.SignatureType.ETH)
 
         when:
         validator.validate(groupKeyReset)
@@ -345,8 +342,7 @@ class StreamMessageValidatorSpec extends Specification {
     }
 
     void "[GroupKeyErrorResponse] rejects unsigned"() {
-        groupKeyErrorResponse.setSignature(null)
-        groupKeyErrorResponse.setSignatureType(StreamMessage.SignatureType.NONE)
+        groupKeyErrorResponse.setSignatureFields(null, StreamMessage.SignatureType.NONE)
 
         when:
         validator.validate(groupKeyErrorResponse)
@@ -357,7 +353,7 @@ class StreamMessageValidatorSpec extends Specification {
     }
 
     void "[GroupKeyErrorResponse] rejects invalid signatures"() {
-        groupKeyErrorResponse.setSignature(groupKeyErrorResponse.getSignature().replace('a', 'b'))
+        groupKeyErrorResponse.setSignatureFields(groupKeyErrorResponse.getSignature().replace('a', 'b'), StreamMessage.SignatureType.ETH)
 
         when:
         validator.validate(groupKeyErrorResponse)

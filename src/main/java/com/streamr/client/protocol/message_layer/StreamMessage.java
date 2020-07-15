@@ -276,7 +276,10 @@ public class StreamMessage implements ITimestamped {
 
     public Map<String, Object> getParsedContent() {
         if (parsedContent == null) {
-            if (encryptionType != EncryptionType.NONE) {
+            // TODO: awkward condition due to the "partial" RSA encryption used in delivering group key responses and resets.
+            // Address in a subsequent PR so that the whole content is always either encrypted or not encrypted.
+            // Then change the below condition to: if (encryptionType != EncryptionType.NONE) {
+            if (encryptionType == EncryptionType.AES || encryptionType == EncryptionType.NEW_KEY_AND_AES) {
                 throw new EncryptedContentNotParsableException(encryptionType);
             }
             if (contentType == ContentType.JSON) {

@@ -96,6 +96,7 @@ public class MessageCreationUtil {
         String keyExchangeStreamId = KeyExchangeUtil.getKeyExchangeStreamId(subscriberAddress);
         Pair<MessageID, MessageRef> pair = createDefaultMsgIdAndRef(keyExchangeStreamId);
         StreamMessage streamMessage = new StreamMessage(pair.getLeft(), pair.getRight(), StreamMessage.MessageType.GROUP_KEY_RESPONSE_SIMPLE, response.toMap());
+        streamMessage.setEncryptionType(StreamMessage.EncryptionType.RSA); // TODO: would make more sense to encrypt the whole content. Address in a follow-up PR
         signingUtil.signStreamMessage(streamMessage);
         return streamMessage;
     }
@@ -110,6 +111,7 @@ public class MessageCreationUtil {
         String keyExchangeStreamId = KeyExchangeUtil.getKeyExchangeStreamId(subscriberAddress);
         Pair<MessageID, MessageRef> pair = createDefaultMsgIdAndRef(keyExchangeStreamId);
         StreamMessage streamMessage = new StreamMessage(pair.getLeft(), pair.getRight(), StreamMessage.MessageType.GROUP_KEY_RESET_SIMPLE, reset.toMap());
+        streamMessage.setEncryptionType(StreamMessage.EncryptionType.RSA); // TODO: would make more sense to encrypt the whole content. Address in a follow-up PR
         signingUtil.signStreamMessage(streamMessage);
         return streamMessage;
     }

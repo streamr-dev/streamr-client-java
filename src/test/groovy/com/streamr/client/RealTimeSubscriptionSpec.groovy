@@ -2,7 +2,7 @@ package com.streamr.client
 
 import com.streamr.client.exceptions.GapDetectedException
 import com.streamr.client.exceptions.UnableToDecryptException
-import com.streamr.client.protocol.StreamrSpec
+import com.streamr.client.protocol.StreamrSpecification
 import com.streamr.client.protocol.message_layer.MessageRef
 import com.streamr.client.protocol.message_layer.StreamMessage
 import com.streamr.client.subs.BasicSubscription
@@ -19,7 +19,7 @@ import javax.crypto.spec.SecretKeySpec
 import javax.xml.bind.DatatypeConverter
 import java.security.SecureRandom
 
-class RealTimeSubscriptionSpec extends StreamrSpec {
+class RealTimeSubscriptionSpec extends StreamrSpecification {
 
     StreamMessage msg
 
@@ -494,21 +494,17 @@ class RealTimeSubscriptionSpec extends StreamrSpec {
 
     void "decrypts first message, updates key, decrypts second message"() {
         UnencryptedGroupKey groupKey1 = genKey()
-        SecretKey secretKey1 = new SecretKeySpec(DatatypeConverter.parseHexBinary(groupKey1.groupKeyHex), "AES")
-        byte[] key2Bytes = new byte[32]
-        secureRandom.nextBytes(key2Bytes)
-        String key2HexString = Hex.encodeHexString(key2Bytes)
-        SecretKey secretKey2 = new SecretKeySpec(DatatypeConverter.parseHexBinary(key2HexString), "AES")
+        UnencryptedGroupKey groupKey2 = genKey()
 
         Map content1 = [foo: 'bar']
         StreamMessage msg1 = createMessage(content1)
 
-        EncryptionUtil.encryptStreamMessageAndNewKey(key2HexString, msg1, secretKey1)
+        EncryptionUtil.encryptStreamMessageAndNewKey(groupKey2.getGroupKeyHex(), msg1, groupKey1.getSecretKey())
 
         Map content2 = [hello: 'world']
         StreamMessage msg2 = createMessage(content2)
 
-        EncryptionUtil.encryptStreamMessage(msg2, secretKey2)
+        EncryptionUtil.encryptStreamMessage(msg2, groupKey2.getSecretKey())
 
         Map received1 = null
         Map received2 = null
