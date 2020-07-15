@@ -3,15 +3,15 @@ package com.streamr.client.utils;
 import com.streamr.client.exceptions.GapFillFailedException;
 import com.streamr.client.protocol.message_layer.MessageRef;
 import com.streamr.client.protocol.message_layer.StreamMessage;
-import org.apache.logging.log4j.LogManager;
-import org.apache.logging.log4j.Logger;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import java.util.*;
 import java.util.function.Consumer;
 import java.util.function.Function;
 
 public class OrderedMsgChain {
-    private static final Logger log = LogManager.getLogger();
+    private static final Logger log = LoggerFactory.getLogger(OrderedMsgChain.class);
     private static final int MAX_GAP_REQUESTS = 10;
 
     static final int MAX_QUEUE_SIZE = 10000;

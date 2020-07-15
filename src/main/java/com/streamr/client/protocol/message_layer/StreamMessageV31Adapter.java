@@ -7,15 +7,16 @@ import com.squareup.moshi.JsonWriter;
 import com.streamr.client.exceptions.MalformedMessageException;
 import com.streamr.client.protocol.message_layer.StreamMessage.EncryptionType;
 import com.streamr.client.protocol.message_layer.StreamMessage.SignatureType;
-import org.apache.logging.log4j.LogManager;
-import org.apache.logging.log4j.Logger;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import java.io.IOException;
 
 public class StreamMessageV31Adapter extends JsonAdapter<StreamMessage> {
 
+    private static final Logger log = LoggerFactory.getLogger(StreamMessageV31Adapter.class);
+
     private static final int VERSION = 31;
-    private static final Logger log = LogManager.getLogger();
     private static final MessageIDAdapter msgIdAdapter = new MessageIDAdapter();
     private static final MessageRefAdapter msgRefAdapter = new MessageRefAdapter();
 
@@ -44,7 +45,7 @@ public class StreamMessageV31Adapter extends JsonAdapter<StreamMessage> {
 
             return new StreamMessage(messageID, previousMessageRef, messageType, serializedContent, StreamMessage.ContentType.JSON, encryptionType, null, signatureType, signature);
         } catch (JsonDataException e) {
-            log.error(e);
+            log.error("Failed to parse StreamMessageV31", e);
             throw new MalformedMessageException("Malformed message: " + reader.toString(), e);
         }
     }

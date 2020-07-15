@@ -9,18 +9,18 @@ import com.streamr.client.rest.Stream;
 import com.streamr.client.utils.KeyHistoryStorage;
 import com.streamr.client.utils.MessageCreationUtil;
 import junit.framework.AssertionFailedError;
-import org.apache.logging.log4j.LogManager;
-import org.apache.logging.log4j.Logger;
 import org.java_websocket.WebSocket;
 import org.java_websocket.handshake.ClientHandshake;
 import org.java_websocket.server.WebSocketServer;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import java.io.IOException;
 import java.net.InetSocketAddress;
 import java.util.*;
 
 public class TestWebSocketServer extends WebSocketServer {
-    private static final Logger log = LogManager.getLogger();
+    private static final Logger log = LoggerFactory.getLogger(TestWebSocketServer.class);
     private final MessageCreationUtil msgCreationUtil = new MessageCreationUtil("publisherId", null, new KeyHistoryStorage());
     private LinkedList<ReceivedControlMessage> receivedControlMessages = new LinkedList<>();
     private String wsUrl;

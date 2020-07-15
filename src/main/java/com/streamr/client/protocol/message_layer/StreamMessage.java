@@ -3,8 +3,6 @@ package com.streamr.client.protocol.message_layer;
 import com.streamr.client.exceptions.EncryptedContentNotParsableException;
 import com.streamr.client.exceptions.UnsupportedMessageException;
 import com.streamr.client.utils.HttpUtils;
-import org.apache.logging.log4j.LogManager;
-import org.apache.logging.log4j.Logger;
 
 import java.io.IOException;
 import java.nio.charset.StandardCharsets;
@@ -12,8 +10,6 @@ import java.util.Date;
 import java.util.Map;
 
 public class StreamMessage implements ITimestamped {
-
-    private static final Logger log = LogManager.getLogger();
 
     public static final int LATEST_VERSION = 31;
 
@@ -341,7 +337,7 @@ public class StreamMessage implements ITimestamped {
         return StreamMessageAdapter.serialize(this);
     }
 
-    public static StreamMessage deserialize(String json) throws IOException {
+    public static StreamMessage deserialize(String json) {
         return StreamMessageAdapter.deserialize(json);
     }
 

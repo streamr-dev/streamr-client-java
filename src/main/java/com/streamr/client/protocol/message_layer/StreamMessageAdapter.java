@@ -6,8 +6,8 @@ import com.squareup.moshi.JsonWriter;
 import com.streamr.client.exceptions.MalformedMessageException;
 import com.streamr.client.exceptions.UnsupportedMessageException;
 import okio.Buffer;
-import org.apache.logging.log4j.LogManager;
-import org.apache.logging.log4j.Logger;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import java.io.IOException;
 import java.nio.charset.StandardCharsets;
@@ -21,7 +21,8 @@ import java.util.Map;
  */
 public class StreamMessageAdapter extends JsonAdapter<StreamMessage> {
 
-    private static final Logger log = LogManager.getLogger();
+    private static final Logger log = LoggerFactory.getLogger(StreamMessageAdapter.class);
+
     private static final Map<Integer, JsonAdapter<StreamMessage>> adapterByVersion = new HashMap<>();
     private static final StreamMessageAdapter staticAdapter = new StreamMessageAdapter();
 
@@ -42,7 +43,7 @@ public class StreamMessageAdapter extends JsonAdapter<StreamMessage> {
         try {
             return staticAdapter.fromJson(reader);
         } catch (Exception e) {
-            log.error(e);
+            log.error("Failed to parse StreamMessage", e);
             throw new MalformedMessageException("Unable to deserialize message: " + json, e);
         }
     }
