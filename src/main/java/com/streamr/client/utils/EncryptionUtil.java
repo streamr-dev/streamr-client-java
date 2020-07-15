@@ -6,8 +6,8 @@ import com.streamr.client.exceptions.UnableToDecryptException;
 import com.streamr.client.protocol.message_layer.StreamMessage;
 import org.apache.commons.codec.binary.Base64;
 import org.apache.commons.codec.binary.Hex;
-import org.apache.logging.log4j.LogManager;
-import org.apache.logging.log4j.Logger;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.spongycastle.util.io.pem.PemObject;
 import org.spongycastle.util.io.pem.PemWriter;
 
@@ -29,7 +29,7 @@ import java.util.Arrays;
 import java.util.Date;
 
 public class EncryptionUtil {
-    private static final Logger log = LogManager.getLogger();
+    private static final Logger log = LoggerFactory.getLogger(EncryptionUtil.class);
     private static final SecureRandom SRAND = new SecureRandom();
     private static final ThreadLocal<Cipher> aesCipher = ThreadLocal.withInitial(() -> getAESCipher());
     private static final ThreadLocal<Cipher> rsaCipher = ThreadLocal.withInitial(() -> getRSACipher());
@@ -80,7 +80,7 @@ public class EncryptionUtil {
             rsaCipher.get().init(Cipher.ENCRYPT_MODE, rsaPublicKey);
             return Hex.encodeHexString(rsaCipher.get().doFinal(plaintext));
         } catch (Exception e) {
-            log.error(e);
+            log.error("Failed to encrypt plaintext: " + plaintext, e);
             throw new RuntimeException(e);
         }
     }
@@ -115,7 +115,7 @@ public class EncryptionUtil {
             byte[] ciphertext = aesCipher.get().doFinal(plaintext);
             return Hex.encodeHexString(iv) + Hex.encodeHexString(ciphertext);
         } catch (Exception e) {
-            log.error(e);
+            log.error("Failed to encrypt with groupKey", e);
         }
         return null;
     }
@@ -136,7 +136,7 @@ public class EncryptionUtil {
         try {
             streamMessage.setSerializedContent(encrypt(streamMessage.getSerializedContentAsBytes(), groupKey));
         } catch (IOException e) {
-            log.error(e);
+            log.error("Failed to encrypt StreamMessage", e);
         }
     }
 
@@ -155,7 +155,7 @@ public class EncryptionUtil {
         try {
             streamMessage.setSerializedContent(encrypt(plaintext, groupKey));
         } catch (IOException e) {
-            log.error(e);
+            log.error("Failed to encrypt StreamMessage and new key", e);
         }
     }
 
@@ -179,9 +179,10 @@ public class EncryptionUtil {
             }
         } catch (Exception e) {
             if (groupKey == null) {
-                log.debug("No key to decrypt");
+                log.debug("No key given to decrypt stream {} msg {}", streamMessage.getStreamId(), streamMessage.getMessageRef());
             } else {
-                log.debug("Failed to decrypt with : " + Hex.encodeHexString(groupKey.getEncoded()));
+                log.debug("Failed to decrypt stream {} msg {} with key {} ",
+                        streamMessage.getStreamId(), streamMessage.getMessageRef(), Hex.encodeHexString(groupKey.getEncoded()));
             }
 
             streamMessage.setEncryptionType(encryptionType);
@@ -218,13 +219,13 @@ public class EncryptionUtil {
             pemWriter.writeObject(new PemObject((isPublic ? "PUBLIC" : "PRIVATE")  + " KEY", key.getEncoded()));
             pemWriter.flush();
         } catch (IOException e) {
-            log.error(e);
+            log.error("Failed to write key as PEM", e);
             throw new RuntimeException(e);
         } finally {
             try {
                 pemWriter.close();
             } catch (IOException e) {
-                log.error(e);
+                log.error("Failed to close PemWriter", e);
             }
         }
         return writer.toString();
@@ -234,7 +235,7 @@ public class EncryptionUtil {
         try {
             return Cipher.getInstance("AES/CTR/NoPadding");
         } catch (Exception e) {
-            log.error(e);
+            log.error("Failed to get AES cipher", e);
             throw new RuntimeException(e);
         }
     }
@@ -243,7 +244,7 @@ public class EncryptionUtil {
         try {
             return Cipher.getInstance("RSA/ECB/OAEPWithSHA1AndMGF1Padding");
         } catch (Exception e) {
-            log.error(e);
+            log.error("Failed to get RSA cipher", e);
             throw new RuntimeException(e);
         }
     }
@@ -256,7 +257,7 @@ public class EncryptionUtil {
             KeyFactory kf = KeyFactory.getInstance("RSA");
             return (RSAPublicKey) kf.generatePublic(new X509EncodedKeySpec(encoded));
         } catch (Exception e) {
-            log.error(e);
+            log.error("Failed to parse public key from string: " + publicKey, e);
             throw new RuntimeException(e);
         }
     }
@@ -270,7 +271,7 @@ public class EncryptionUtil {
             PKCS8EncodedKeySpec keySpec = new PKCS8EncodedKeySpec(encoded);
             return (RSAPrivateKey) kf.generatePrivate(keySpec);
         } catch (Exception e) {
-            log.error(e);
+            log.error("Failed to parse private key", e);
             throw new RuntimeException(e);
         }
     }
@@ -302,7 +303,6 @@ public class EncryptionUtil {
             generator.initialize(4096, new SecureRandom());
             return generator.generateKeyPair();
         } catch (NoSuchAlgorithmException e) {
-            log.error(e);
             throw new RuntimeException(e);
         }
     }

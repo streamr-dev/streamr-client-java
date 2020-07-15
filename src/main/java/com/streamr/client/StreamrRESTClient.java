@@ -7,10 +7,7 @@ import com.streamr.client.exceptions.AmbiguousResultsException;
 import com.streamr.client.exceptions.AuthenticationException;
 import com.streamr.client.exceptions.ResourceNotFoundException;
 import com.streamr.client.options.StreamrClientOptions;
-import com.streamr.client.rest.Publishers;
-import com.streamr.client.rest.Stream;
-import com.streamr.client.rest.Subscribers;
-import com.streamr.client.rest.UserInfo;
+import com.streamr.client.rest.*;
 import com.streamr.client.utils.HttpUtils;
 import okhttp3.*;
 
@@ -23,6 +20,7 @@ import java.util.List;
 public abstract class StreamrRESTClient extends AbstractStreamrClient {
 
     public static final JsonAdapter<Stream> streamJsonAdapter = MOSHI.adapter(Stream.class);
+    public static final JsonAdapter<Permission> permissionJsonAdapter = MOSHI.adapter(Permission.class);
     public static final JsonAdapter<UserInfo> userInfoJsonAdapter = MOSHI.adapter(UserInfo.class);
     public static final JsonAdapter<Publishers> publishersJsonAdapter = MOSHI.adapter(Publishers.class);
     public static final JsonAdapter<Subscribers> subscribersJsonAdapter = MOSHI.adapter(Subscribers.class);
@@ -145,6 +143,28 @@ public abstract class StreamrRESTClient extends AbstractStreamrClient {
 
         HttpUrl url = HttpUrl.parse(options.getRestApiUrl() + "/streams");
         return post(url, streamJsonAdapter.toJson(stream), streamJsonAdapter);
+    }
+
+    public Permission grant(Stream stream, Permission.Operation operation, String user) throws IOException {
+        if (stream == null || operation == null || user == null) {
+            throw new IllegalArgumentException("Must give all of stream, operation, and user!");
+        }
+
+        Permission permission = new Permission(operation, user);
+
+        HttpUrl url = HttpUrl.parse(options.getRestApiUrl() + "/streams/" + stream.getId() + "/permissions");
+        return post(url, permissionJsonAdapter.toJson(permission), permissionJsonAdapter);
+    }
+
+    public Permission grantPublic(Stream stream, Permission.Operation operation) throws IOException {
+        if (stream != null || operation != null) {
+            throw new IllegalArgumentException("Must give stream and operation!");
+        }
+
+        Permission permission = new Permission(operation);
+
+        HttpUrl url = HttpUrl.parse(options.getRestApiUrl() + "/streams/" + stream.getId() + "/permissions");
+        return post(url, permissionJsonAdapter.toJson(permission), permissionJsonAdapter);
     }
 
     public UserInfo getUserInfo() throws IOException {

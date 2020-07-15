@@ -48,4 +48,9 @@ public class KeyHistoryStorage implements KeyStorage {
         }
         histories.get(streamId).addKey(key);
     }
+
+    @Override
+    public String toString() {
+        return histories.toString();
+    }
 }

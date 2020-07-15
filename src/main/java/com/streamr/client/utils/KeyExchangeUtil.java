@@ -5,8 +5,8 @@ import com.streamr.client.protocol.message_layer.GroupKeyRequest;
 import com.streamr.client.protocol.message_layer.GroupKeyReset;
 import com.streamr.client.protocol.message_layer.GroupKeyResponse;
 import com.streamr.client.protocol.message_layer.StreamMessage;
-import org.apache.logging.log4j.LogManager;
-import org.apache.logging.log4j.Logger;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import java.security.interfaces.RSAPublicKey;
 import java.time.Clock;
@@ -14,9 +14,10 @@ import java.time.Duration;
 import java.time.Instant;
 import java.util.*;
 import java.util.function.Consumer;
+import java.util.stream.Collectors;
 
 public class KeyExchangeUtil {
-    private static final Logger log = LogManager.getLogger();
+    private static final Logger log = LoggerFactory.getLogger(KeyExchangeUtil.class);
     private final Clock clock;
     public static final int REVOCATION_THRESHOLD = 5;
     public static final int REVOCATION_DELAY = 10; // in minutes
@@ -69,9 +70,13 @@ public class KeyExchangeUtil {
         GroupKeyRequest.Range range = request.getRange();
         ArrayList<UnencryptedGroupKey> keys;
         if (range != null) {
+            log.debug("Querying keys for stream {} between {} and {}. Key storage content is {}",
+                    streamId, range.getStart(), range.getEnd(), keyStorage.getKeysBetween(streamId, 0, new Date().getTime()));
             keys = keyStorage.getKeysBetween(streamId, range.getStart(), range.getEnd());
         } else {
             keys = new ArrayList<>();
+            log.debug("Querying latest key for stream {}. Key storage content is {}",
+                    streamId, keyStorage.getKeysBetween(streamId, 0, new Date().getTime()));
             UnencryptedGroupKey latest = keyStorage.getLatestKey(streamId);
             if (latest != null) {
                 keys.add(latest);
@@ -120,6 +125,8 @@ public class KeyExchangeUtil {
             }
         }
         try {
+            log.debug("Received group key response for stream {}, keys {}",
+                    response.getStreamId(), decryptedKeys);
             setGroupKeysFunction.apply(response.getStreamId(), streamMessage.getPublisherId(), decryptedKeys);
         } catch (UnableToSetKeysException e) {
             throw new InvalidGroupKeyResponseException(e.getMessage());

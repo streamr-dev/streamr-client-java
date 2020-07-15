@@ -1,23 +1,23 @@
 package com.streamr.client.protocol.message_layer;
 
+import com.squareup.moshi.JsonReader;
+import com.squareup.moshi.JsonWriter;
+import com.streamr.client.exceptions.EncryptedContentNotParsableException;
+import com.streamr.client.exceptions.UnsupportedMessageException;
+import com.streamr.client.utils.HttpUtils;
+import okio.Buffer;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
 import java.io.IOException;
 import java.nio.charset.Charset;
 import java.nio.charset.StandardCharsets;
 import java.util.Date;
 import java.util.Map;
 
-import com.squareup.moshi.JsonReader;
-import com.squareup.moshi.JsonWriter;
-import com.streamr.client.exceptions.EncryptedContentNotParsableException;
-import com.streamr.client.utils.HttpUtils;
-import com.streamr.client.exceptions.UnsupportedMessageException;
-import okio.Buffer;
-import org.apache.logging.log4j.LogManager;
-import org.apache.logging.log4j.Logger;
-
 public abstract class StreamMessage implements ITimestamped {
 
-    private static final Logger log = LogManager.getLogger();
+    private static final Logger log = LoggerFactory.getLogger(StreamMessage.class);
     private static final StreamMessageAdapter adapter = new StreamMessageAdapter();
     public static final int LATEST_VERSION = 31;
 
@@ -236,7 +236,7 @@ public abstract class StreamMessage implements ITimestamped {
             adapter.toJson(writer, this);
             return buffer.readUtf8();
         } catch (IOException e) {
-            log.error(e);
+            log.error("Failed to serialize StreamMessage to JSON", e);
             return null;
         }
     }

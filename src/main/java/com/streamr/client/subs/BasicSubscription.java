@@ -8,14 +8,12 @@ import com.streamr.client.protocol.message_layer.MessageRef;
 import com.streamr.client.protocol.message_layer.StreamMessage;
 import com.streamr.client.utils.OrderedMsgChain;
 import com.streamr.client.utils.OrderingUtil;
-import org.apache.logging.log4j.LogManager;
-import org.apache.logging.log4j.Logger;
+import org.slf4j.Logger;
 
 import java.util.*;
 import java.util.concurrent.ConcurrentHashMap;
 
 public abstract class BasicSubscription extends Subscription {
-    protected static final Logger log = LogManager.getLogger();
     public static final int MAX_NB_GROUP_KEY_REQUESTS = 10;
 
     protected OrderingUtil orderingUtil;
@@ -33,6 +31,7 @@ public abstract class BasicSubscription extends Subscription {
 
         public void offer(StreamMessage msg) {
             get(msg.getPublisherId()).offer(msg);
+            getLogger().trace("Message added to encryption queue: {}", msg.getMessageRef());
         }
 
         public boolean isEmpty() {
@@ -55,7 +54,7 @@ public abstract class BasicSubscription extends Subscription {
             throw new GapDetectedException(streamId, partition, from, to, publisherId, msgChainId);
         }, this.propagationTimeout, this.resendTimeout, this.skipGapsOnFullQueue);
         this.groupKeyRequestFunction = groupKeyRequestFunction != null ? groupKeyRequestFunction
-                : ((publisherId, start, end) -> log.warn("Group key missing for stream " + streamId + " and publisher " + publisherId + " but no handler is set."));
+                : ((publisherId, start, end) -> getLogger().warn("Group key missing for stream " + streamId + " and publisher " + publisherId + " but no handler is set."));
     }
 
     @Override
@@ -78,7 +77,7 @@ public abstract class BasicSubscription extends Subscription {
     }
 
     protected void requestGroupKeyAndQueueMessage(StreamMessage msgToQueue, Date start, Date end) {
-        Timer t = new Timer(true);
+        Timer t = new Timer(String.format("GroupKeyTimer-%s-%s", msgToQueue.getStreamId(), msgToQueue.getMessageRef().toString()), true);
         String publisherId = msgToQueue.getPublisherId().toLowerCase();
         nbGroupKeyRequestsCalls.put(publisherId, 0);
         TimerTask request = new TimerTask() {
@@ -89,9 +88,10 @@ public abstract class BasicSubscription extends Subscription {
                         if (nbGroupKeyRequestsCalls.get(publisherId) < MAX_NB_GROUP_KEY_REQUESTS) {
                             nbGroupKeyRequestsCalls.put(publisherId, nbGroupKeyRequestsCalls.get(publisherId) + 1);
                             groupKeyRequestFunction.apply(publisherId, start, end);
-                            log.info("Sent group key request to " + publisherId);
+                            getLogger().info("Sent key request for stream {} to {}, range {} to {}",
+                                    streamId, publisherId, start != null ? start.getTime() : null, end != null ? end.getTime() : null);
                         } else {
-                            log.warn("Failed to received group key response from "
+                            getLogger().warn("Failed to received group key response from "
                                     + publisherId + " after " + MAX_NB_GROUP_KEY_REQUESTS + " requests.");
                             cancelGroupKeyRequest(publisherId);
                         }
@@ -142,14 +142,17 @@ public abstract class BasicSubscription extends Subscription {
             if (success) { // the message was successfully decrypted
                 handler.onMessage(this, msg);
             } else {
-                log.info("Failed to decrypt msg from " + msg.getPublisherId() +
-                        " . Going to request the correct decryption key(s) and try again.");
+                getLogger().info("Failed to decrypt msg {} from {}. Going to request the correct decryption key(s) and try again.",
+                        msg.getMessageRef(), msg.getPublisherId());
             }
         } catch (UnableToDecryptException e) { // failed to decrypt for the second time (after receiving the decryption key(s))
-            log.error("Failed to decrypt msg from " + msg.getPublisherId() + " even after receiving the decryption keys.");
+            getLogger().error("Failed to decrypt msg {} from {} even after receiving the decryption keys.",
+                    msg.getMessageRef(), msg.getPublisherId());
             handler.onUnableToDecrypt(e);
         }
     }
+
+    public abstract Logger getLogger();
 
     @FunctionalInterface
     public interface GroupKeyRequestFunction {

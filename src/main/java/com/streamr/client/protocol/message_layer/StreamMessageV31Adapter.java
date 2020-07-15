@@ -8,14 +8,14 @@ import com.streamr.client.exceptions.MalformedMessageException;
 import com.streamr.client.protocol.message_layer.StreamMessage.ContentType;
 import com.streamr.client.protocol.message_layer.StreamMessage.SignatureType;
 import com.streamr.client.protocol.message_layer.StreamMessage.EncryptionType;
-import org.apache.logging.log4j.LogManager;
-import org.apache.logging.log4j.Logger;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import java.io.IOException;
 
 public class StreamMessageV31Adapter extends JsonAdapter<StreamMessageV31> {
 
-    private static final Logger log = LogManager.getLogger();
+    private static final Logger log = LoggerFactory.getLogger(StreamMessageV31Adapter.class);
     private static final MessageIDAdapter msgIdAdapter = new MessageIDAdapter();
     private static final MessageRefAdapter msgRefAdapter = new MessageRefAdapter();
 
@@ -43,7 +43,7 @@ public class StreamMessageV31Adapter extends JsonAdapter<StreamMessageV31> {
 
             return new StreamMessageV31(messageID, previousMessageRef, contentType, encryptionType, serializedContent, signatureType, signature);
         } catch (JsonDataException e) {
-            log.error(e);
+            log.error("Failed to parse StreamMessageV31", e);
             throw new MalformedMessageException("Malformed message: " + reader.toString(), e);
         }
     }
