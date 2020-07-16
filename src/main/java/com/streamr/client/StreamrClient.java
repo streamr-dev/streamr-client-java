@@ -255,7 +255,7 @@ public class StreamrClient extends StreamrRESTClient {
                         } else if (message.getMessageType().equals(StreamMessage.MessageType.GROUP_KEY_RESET_SIMPLE)) {
                             keyExchangeUtil.handleGroupKeyReset(message);
                         } else if (message.getMessageType().equals(StreamMessage.MessageType.GROUP_KEY_RESPONSE_ERROR)) {
-                            handleInboxStreamErrorMessage(message);
+                            handleGroupKeyErrorResponse(message);
                         } else {
                             throw new MalformedMessageException("Cannot handle message with content type: " + message.getMessageType());
                         }
@@ -268,7 +268,7 @@ public class StreamrClient extends StreamrRESTClient {
         log.info("Connected to " + options.getWebsocketApiUrl());
     }
 
-    private void handleInboxStreamErrorMessage(StreamMessage message) throws IOException {
+    private void handleGroupKeyErrorResponse(StreamMessage message) throws IOException {
         Map<String, Object> content = message.getParsedContent();
         log.warn("Received error of type " + content.get("code") + " from " + message.getPublisherId() + ": " + content.get("message"));
     }
