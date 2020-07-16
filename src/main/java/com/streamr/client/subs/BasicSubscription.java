@@ -107,6 +107,7 @@ public abstract class BasicSubscription extends Subscription {
     protected void handleInOrderQueue(String publisherId) {
         cancelGroupKeyRequest(publisherId);
         ArrayDeque<StreamMessage> queue = encryptedMsgsQueues.get(publisherId);
+        getLogger().trace("Checking and handling encryption queue for publisher {}. Queue size: {}", publisherId, queue.size());
         while (!queue.isEmpty()) {
             decryptAndHandle(queue.poll());
         }
@@ -115,6 +116,7 @@ public abstract class BasicSubscription extends Subscription {
     private synchronized void cancelGroupKeyRequest(String publisherId) {
         publisherId = publisherId.toLowerCase();
         if (pendingGroupKeyRequests.containsKey(publisherId)) {
+            getLogger().trace("Pending group key request canceled for publisher {}", publisherId);
             Timer timer = pendingGroupKeyRequests.get(publisherId);
             timer.cancel();
             timer.purge();

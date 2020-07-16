@@ -59,7 +59,7 @@ public class KeyExchangeUtil {
             throw new InvalidGroupKeyRequestException("Received unsigned group key request (the public key must be signed to avoid MitM attacks).");
         }
 
-        GroupKeyRequest request = GroupKeyRequest.fromMap(streamMessage.getContent());
+        GroupKeyRequest request = GroupKeyRequest.fromMap(streamMessage.getParsedContent());
 
         String streamId = request.getStreamId();
         String sender = streamMessage.getPublisherId();
@@ -107,7 +107,7 @@ public class KeyExchangeUtil {
             throw new InvalidGroupKeyResponseException("Received unsigned group key response (it must be signed to avoid MitM attacks).");
         }
 
-        GroupKeyResponse response = GroupKeyResponse.fromMap(streamMessage.getContent());
+        GroupKeyResponse response = GroupKeyResponse.fromMap(streamMessage.getParsedContent());
 
         // A valid publisher of the client's inbox stream could send key responses for other streams to which
         // the publisher doesn't have write permissions. Thus the following additional check is necessary.
@@ -139,7 +139,7 @@ public class KeyExchangeUtil {
             throw new InvalidGroupKeyResetException("Received unsigned group key reset (it must be signed to avoid MitM attacks).");
         }
 
-        GroupKeyReset reset = GroupKeyReset.fromMap(streamMessage.getContent());
+        GroupKeyReset reset = GroupKeyReset.fromMap(streamMessage.getParsedContent());
         // A valid publisher of the client's inbox stream could send key resets for other streams to which
         // the publisher doesn't have write permissions. Thus the following additional check is necessary.
         if (!addressValidityUtil.isValidPublisher(reset.getStreamId(), streamMessage.getPublisherId())) {

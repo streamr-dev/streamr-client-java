@@ -10,10 +10,8 @@ import com.streamr.client.protocol.control_layer.*
 import com.streamr.client.protocol.message_layer.MessageID
 import com.streamr.client.protocol.message_layer.MessageRef
 import com.streamr.client.protocol.message_layer.StreamMessage
-import com.streamr.client.protocol.message_layer.StreamMessageV31
 import com.streamr.client.rest.Stream
 import com.streamr.client.subs.Subscription
-import groovy.transform.CompileStatic
 import spock.lang.Specification
 import spock.util.concurrent.PollingConditions
 
@@ -72,10 +70,10 @@ class StreamrClientSpec extends Specification {
         client.disconnect()
     }
 
-    StreamMessageV31 createMsg(String streamId, long timestamp, long sequenceNumber, Long prevTimestamp, Long prevSequenceNumber) {
+    StreamMessage createMsg(String streamId, long timestamp, long sequenceNumber, Long prevTimestamp, Long prevSequenceNumber) {
         MessageID msgId = new MessageID(streamId, 0, timestamp, sequenceNumber, "", "")
         MessageRef prev = prevTimestamp == null ? null : new MessageRef(prevTimestamp, prevSequenceNumber)
-        return new StreamMessageV31(msgId, prev, StreamMessage.ContentType.CONTENT_TYPE_JSON, StreamMessage.EncryptionType.NONE, [hello: "world"], StreamMessage.SignatureType.SIGNATURE_TYPE_NONE, null)
+        return new StreamMessage(msgId, prev, [hello: "world"])
     }
 
     void "subscribe() sends SubscribeRequest and 1 ResendLastRequest after SubscribeResponse if answer received"() {

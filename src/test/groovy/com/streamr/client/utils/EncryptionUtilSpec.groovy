@@ -2,8 +2,9 @@ package com.streamr.client.utils
 
 import com.streamr.client.exceptions.InvalidGroupKeyException
 import com.streamr.client.exceptions.InvalidRSAKeyException
+import com.streamr.client.protocol.message_layer.MessageID
+import com.streamr.client.protocol.message_layer.MessageRef
 import com.streamr.client.protocol.message_layer.StreamMessage
-import com.streamr.client.protocol.message_layer.StreamMessageV31
 import org.apache.commons.codec.binary.Hex
 import spock.lang.Specification
 
@@ -18,6 +19,18 @@ import java.security.interfaces.RSAPrivateKey
 import java.security.interfaces.RSAPublicKey
 
 class EncryptionUtilSpec extends Specification {
+
+    Map plaintextContent = [foo: 'bar']
+    String serializedPlaintextContent = "{\"foo\":\"bar\"}"
+    StreamMessage streamMessage
+
+    def setup() {
+        streamMessage = new StreamMessage(
+                new MessageID("stream-id", 0, 1L, 0L, "publisherId", "msgChainId"),
+                new MessageRef(0L, 0L),
+                plaintextContent)
+    }
+
     KeyPair genKeyPair() {
         try {
             KeyPairGenerator generator = KeyPairGenerator.getInstance("RSA")
@@ -78,48 +91,45 @@ class EncryptionUtilSpec extends Specification {
         then:
         EncryptionUtil.decrypt(ciphertext, key) == plaintext
     }
-    void "StreamMessage gets encrypted"() {
+    void "encryptStreamMessage() encrypts the message"() {
         SecretKey key = genSecretKey()
-        StreamMessage streamMessage = new StreamMessageV31("stream-id", 0, 1L, 0L, "publisherId", "msgChainId",
-                0L, 0L, StreamMessage.ContentType.CONTENT_TYPE_JSON, StreamMessage.EncryptionType.NONE, [foo: 'bar'], StreamMessage.SignatureType.SIGNATURE_TYPE_NONE, null)
+
         when:
         EncryptionUtil.encryptStreamMessage(streamMessage, key)
         then:
-        streamMessage.serializedContent != '{"foo":"bar"}'
+        streamMessage.serializedContent != serializedPlaintextContent
         streamMessage.encryptionType == StreamMessage.EncryptionType.AES
     }
-    void "StreamMessage decryption after encryption equals the initial StreamMessage"() {
+    void "encryptStreamMessage, then decryptStreamMessage() equals original message "() {
         SecretKey key = genSecretKey()
-        StreamMessage streamMessage = new StreamMessageV31("stream-id", 0, 1L, 0L, "publisherId", "msgChainId",
-                0L, 0L, StreamMessage.ContentType.CONTENT_TYPE_JSON, StreamMessage.EncryptionType.NONE, [foo: 'bar'], StreamMessage.SignatureType.SIGNATURE_TYPE_NONE, null)
+
         when:
         EncryptionUtil.encryptStreamMessage(streamMessage, key)
         SecretKey newKey = EncryptionUtil.decryptStreamMessage(streamMessage, key)
         then:
-        streamMessage.serializedContent == '{"foo":"bar"}'
+        streamMessage.serializedContent == serializedPlaintextContent
+        streamMessage.parsedContent == plaintextContent
         streamMessage.encryptionType == StreamMessage.EncryptionType.NONE
         newKey == null
     }
     void "StreamMessage gets encrypted with new key"() {
         SecretKey key = genSecretKey()
-        StreamMessage streamMessage = new StreamMessageV31("stream-id", 0, 1L, 0L, "publisherId", "msgChainId",
-                0L, 0L, StreamMessage.ContentType.CONTENT_TYPE_JSON, StreamMessage.EncryptionType.NONE, [foo: 'bar'], StreamMessage.SignatureType.SIGNATURE_TYPE_NONE, null)
+
         when:
         EncryptionUtil.encryptStreamMessageAndNewKey(genGroupKeyHex(), streamMessage, key)
         then:
-        streamMessage.serializedContent != '{"foo":"bar"}'
+        streamMessage.serializedContent != serializedPlaintextContent
         streamMessage.encryptionType == StreamMessage.EncryptionType.NEW_KEY_AND_AES
     }
     void "StreamMessage decryption after encryption equals the initial StreamMessage (with new key)"() {
         SecretKey key = genSecretKey()
-        StreamMessage streamMessage = new StreamMessageV31("stream-id", 0, 1L, 0L, "publisherId", "msgChainId",
-                0L, 0L, StreamMessage.ContentType.CONTENT_TYPE_JSON, StreamMessage.EncryptionType.NONE, [foo: 'bar'], StreamMessage.SignatureType.SIGNATURE_TYPE_NONE, null)
         String newGroupKeyHex = genGroupKeyHex()
+
         when:
         EncryptionUtil.encryptStreamMessageAndNewKey(newGroupKeyHex, streamMessage, key)
         SecretKey newKey = EncryptionUtil.decryptStreamMessage(streamMessage, key)
         then:
-        streamMessage.serializedContent == '{"foo":"bar"}'
+        streamMessage.parsedContent == plaintextContent
         streamMessage.encryptionType == StreamMessage.EncryptionType.NONE
         Hex.encodeHexString(newKey.getEncoded()) == newGroupKeyHex
     }

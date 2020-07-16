@@ -2,29 +2,26 @@ package com.streamr.client
 
 import com.streamr.client.exceptions.GapDetectedException
 import com.streamr.client.options.ResendLastOption
+import com.streamr.client.protocol.StreamrSpecification
 import com.streamr.client.protocol.message_layer.MessageRef
 import com.streamr.client.protocol.message_layer.StreamMessage
-import com.streamr.client.protocol.message_layer.StreamMessageV31
+import com.streamr.client.subs.CombinedSubscription
 import com.streamr.client.subs.Subscription
 import com.streamr.client.utils.OrderedMsgChain
-import spock.lang.Specification
-import com.streamr.client.subs.CombinedSubscription
+import com.streamr.client.utils.UnencryptedGroupKey
 
-class CombinedSubscriptionSpec extends Specification {
-    StreamMessage createMessage(long timestamp, long sequenceNumber, Long previousTimestamp, Long previousSequenceNumber) {
-        return new StreamMessageV31("stream-id", 0, timestamp, sequenceNumber, "publisherId", "msgChainId",
-                previousTimestamp, previousSequenceNumber, StreamMessage.ContentType.CONTENT_TYPE_JSON, StreamMessage.EncryptionType.NONE, "{}", StreamMessage.SignatureType.SIGNATURE_TYPE_NONE, null)
-    }
+class CombinedSubscriptionSpec extends StreamrSpecification {
+
     void "calls the gap handler if gap among real time messages queued during resend"() {
         StreamMessage msg1 = createMessage(1, 0, null, 0)
         StreamMessage afterMsg1 = createMessage(1, 1, null, 0)
         StreamMessage msg4 = createMessage(4, 0, 3, 0)
-        CombinedSubscription sub = new CombinedSubscription("stream-id", 0, new MessageHandler() {
+        CombinedSubscription sub = new CombinedSubscription(msg1.getStreamId(), 0, new MessageHandler() {
             @Override
             void onMessage(Subscription sub, StreamMessage message) {
 
             }
-        }, new ResendLastOption(10), new HashMap<String, String>(), null, 10L, 10L, false)
+        }, new ResendLastOption(10), new HashMap<String, UnencryptedGroupKey>(), null, 10L, 10L, false)
         GapDetectedException ex
         sub.setGapHandler(new OrderedMsgChain.GapHandlerFunction() {
             @Override
