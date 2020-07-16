@@ -7,12 +7,12 @@ import com.streamr.client.exceptions.*;
 import com.streamr.client.options.ResendOption;
 import com.streamr.client.options.StreamrClientOptions;
 import com.streamr.client.protocol.control_layer.*;
+import com.streamr.client.protocol.message_layer.AbstractGroupKeyMessage;
 import com.streamr.client.protocol.message_layer.GroupKeyRequest;
 import com.streamr.client.protocol.message_layer.MessageRef;
 import com.streamr.client.rest.UserInfo;
 import com.streamr.client.subs.*;
 import com.streamr.client.utils.*;
-import org.apache.commons.codec.binary.Base64;
 import org.apache.commons.codec.digest.DigestUtils;
 import org.java_websocket.client.WebSocketClient;
 import org.java_websocket.enums.ReadyState;
@@ -26,7 +26,6 @@ import org.slf4j.LoggerFactory;
 import java.io.IOException;
 import java.net.URI;
 import java.net.URISyntaxException;
-import java.nio.ByteBuffer;
 import java.nio.channels.NotYetConnectedException;
 import java.util.*;
 import java.util.concurrent.Executors;
@@ -119,7 +118,7 @@ public class StreamrClient extends StreamrRESTClient {
         if (options.getPublishSignedMsgs()) {
             signingUtil = new SigningUtil(((EthereumAuthenticationMethod) options.getAuthenticationMethod()).getAccount());
         }
-        HashMap<String, UnencryptedGroupKey> publisherKeys = options.getEncryptionOptions().getPublisherGroupKeys();
+        HashMap<String, GroupKey> publisherKeys = options.getEncryptionOptions().getPublisherGroupKeys();
         keyStorage = options.getEncryptionOptions().getPublisherStoreKeyHistory() ? new KeyHistoryStorage(publisherKeys)
                 : new LatestKeyStorage(publisherKeys);
         msgCreationUtil = new MessageCreationUtil(publisherId, signingUtil, keyStorage);
@@ -246,15 +245,15 @@ public class StreamrClient extends StreamrRESTClient {
                             try {
                                 keyExchangeUtil.handleGroupKeyRequest(message);
                             } catch (Exception e) {
-                                GroupKeyRequest groupKeyRequest = GroupKeyRequest.fromMap(message.getParsedContent());
+                                GroupKeyRequest groupKeyRequest = (GroupKeyRequest) AbstractGroupKeyMessage.fromStreamMessage(message);
                                 StreamMessage errorMessage = msgCreationUtil.createGroupKeyErrorResponse(message.getPublisherId(), groupKeyRequest, e);
                                 publish(errorMessage); //sending the error to the sender of 'message'
                             }
-                        } else if (message.getMessageType().equals(StreamMessage.MessageType.GROUP_KEY_RESPONSE_SIMPLE)) {
+                        } else if (message.getMessageType().equals(StreamMessage.MessageType.GROUP_KEY_RESPONSE)) {
                             keyExchangeUtil.handleGroupKeyResponse(message);
-                        } else if (message.getMessageType().equals(StreamMessage.MessageType.GROUP_KEY_RESET_SIMPLE)) {
+                        } else if (message.getMessageType().equals(StreamMessage.MessageType.GROUP_KEY_ANNOUNCE)) {
                             keyExchangeUtil.handleGroupKeyReset(message);
-                        } else if (message.getMessageType().equals(StreamMessage.MessageType.GROUP_KEY_RESPONSE_ERROR)) {
+                        } else if (message.getMessageType().equals(StreamMessage.MessageType.GROUP_KEY_ERROR_RESPONSE)) {
                             handleGroupKeyErrorResponse(message);
                         } else {
                             throw new MalformedMessageException("Cannot handle message with content type: " + message.getMessageType());
@@ -404,7 +403,7 @@ public class StreamrClient extends StreamrRESTClient {
         publish(stream, payload, timestamp, partitionKey, null);
     }
 
-    public void publish(Stream stream, Map<String, Object> payload, Date timestamp, String partitionKey, UnencryptedGroupKey newGroupKey) {
+    public void publish(Stream stream, Map<String, Object> payload, Date timestamp, String partitionKey, GroupKey newGroupKey) {
         // Convenience feature: allow user to call publish() without having had called connect() beforehand.
         connect();
         if (newGroupKey != null) {
@@ -449,17 +448,17 @@ public class StreamrClient extends StreamrRESTClient {
     }
 
     public Subscription subscribe(Stream stream, int partition, MessageHandler handler, ResendOption resendOption,
-                                  Map<String, UnencryptedGroupKey> groupKeys) {
+                                  Map<String, GroupKey> groupKeys) {
         return subscribe(stream, partition, handler, resendOption, groupKeys, false);
     }
 
     public Subscription subscribe(Stream stream, int partition, MessageHandler handler, ResendOption resendOption,
-                                  Map<String, UnencryptedGroupKey> groupKeys, boolean isExplicitResend) {
+                                  Map<String, GroupKey> groupKeys, boolean isExplicitResend) {
         if (!getState().equals(ReadyState.OPEN)) {
             connect();
         }
 
-        Map<String, UnencryptedGroupKey> keysPerPublisher = getKeysPerPublisher(stream.getId());
+        Map<String, GroupKey> keysPerPublisher = getKeysPerPublisher(stream.getId());
         if (groupKeys != null) {
             keysPerPublisher.putAll(groupKeys);
         }
@@ -577,16 +576,16 @@ public class StreamrClient extends StreamrRESTClient {
         sub.endResend();
     }
 
-    private HashMap<String, UnencryptedGroupKey> getKeysPerPublisher(String streamId) {
+    private HashMap<String, GroupKey> getKeysPerPublisher(String streamId) {
         if (!options.getEncryptionOptions().getSubscriberGroupKeys().containsKey(streamId)) {
             options.getEncryptionOptions().getSubscriberGroupKeys().put(streamId, new HashMap<>());
         }
         return options.getEncryptionOptions().getSubscriberGroupKeys().get(streamId);
     }
 
-    private void setGroupKeys(String streamId, String publisherId, ArrayList<UnencryptedGroupKey> keys) throws UnableToSetKeysException {
-        UnencryptedGroupKey current = getKeysPerPublisher(streamId).get(publisherId);
-        UnencryptedGroupKey last = keys.get(keys.size() - 1);
+    private void setGroupKeys(String streamId, String publisherId, ArrayList<GroupKey> keys) throws UnableToSetKeysException {
+        GroupKey current = getKeysPerPublisher(streamId).get(publisherId);
+        GroupKey last = keys.get(keys.size() - 1);
         if (current == null || current.getStartTime() < last.getStartTime()) {
             getKeysPerPublisher(streamId).put(publisherId, last);
         }
@@ -595,22 +594,15 @@ public class StreamrClient extends StreamrRESTClient {
         }
     }
 
-    private void sendGroupKeyRequest(String streamId, String publisherId, Date start, Date end) {
+    private void sendGroupKeyRequest(String streamId, String publisherId, List<String> groupKeyIds) {
         if (!getState().equals(ReadyState.OPEN)) {
             connect();
         }
-        StreamMessage request = msgCreationUtil.createGroupKeyRequest(publisherId, streamId, encryptionUtil.getPublicKeyAsPemString(), start, end);
+        StreamMessage request = msgCreationUtil.createGroupKeyRequest(publisherId, streamId, encryptionUtil.getPublicKeyAsPemString(), groupKeyIds);
         publish(request);
     }
 
     private String newRequestId(String prefix) {
-        UUID uuid = UUID.randomUUID();
-
-        byte[] bytes = new byte[16];
-        ByteBuffer bb = ByteBuffer.wrap(bytes);
-        bb.putLong(uuid.getMostSignificantBits());
-        bb.putLong(uuid.getLeastSignificantBits());
-
-        return String.format("%s.%s.%d", prefix, Base64.encodeBase64URLSafeString(bytes), requestCounter++);
+        return String.format("%s.%s.%d", prefix, IdGenerator.get(), requestCounter++);
     }
 }

@@ -3,7 +3,6 @@ package com.streamr.client.utils;
 import com.streamr.client.exceptions.InvalidGroupKeyRequestException;
 
 import java.util.ArrayList;
-import java.util.Date;
 import java.util.HashMap;
 
 /*
@@ -13,7 +12,7 @@ answer group key requests for historical keys.
 public class KeyHistoryStorage implements KeyStorage {
     private final HashMap<String, GroupKeyHistory> histories = new HashMap<>();
 
-    public KeyHistoryStorage(HashMap<String, UnencryptedGroupKey> publisherGroupKeys) {
+    public KeyHistoryStorage(HashMap<String, GroupKey> publisherGroupKeys) {
         super();
         for (String streamId: publisherGroupKeys.keySet()) {
             histories.put(streamId, new GroupKeyHistory(publisherGroupKeys.get(streamId)));
@@ -30,19 +29,19 @@ public class KeyHistoryStorage implements KeyStorage {
     }
 
     @Override
-    public UnencryptedGroupKey getLatestKey(String streamId) {
+    public GroupKey getLatestKey(String streamId) {
         GroupKeyHistory history = histories.get(streamId);
         return history == null ? null : history.getLatestKey();
     }
 
     @Override
-    public ArrayList<UnencryptedGroupKey> getKeysBetween(String streamId, long start, long end) throws InvalidGroupKeyRequestException {
+    public ArrayList<GroupKey> getKeysBetween(String streamId, long start, long end) throws InvalidGroupKeyRequestException {
         GroupKeyHistory history = histories.get(streamId);
         return history == null ? new ArrayList<>() : history.getKeysBetween(start, end);
     }
 
     @Override
-    public void addKey(String streamId, UnencryptedGroupKey key) {
+    public void addKey(String streamId, GroupKey key) {
         if (!histories.containsKey(streamId)) {
             histories.put(streamId, new GroupKeyHistory());
         }

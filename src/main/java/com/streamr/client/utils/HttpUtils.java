@@ -12,17 +12,22 @@ import java.io.IOException;
 import java.math.BigDecimal;
 import java.net.HttpURLConnection;
 import java.util.Date;
+import java.util.List;
 import java.util.Map;
+import java.util.concurrent.Callable;
+import java.util.function.Function;
 
 public class HttpUtils {
 
-    // Thread safe
-    public static final Moshi MOSHI = new Moshi.Builder()
+    static public Function<Moshi.Builder, Moshi.Builder> addDefaultAdapters = (builder) -> builder
             .add(Date.class, new StringOrMillisDateJsonAdapter().nullSafe())
-            .add(BigDecimal.class, new BigDecimalAdapter().nullSafe())
-            .build();
+            .add(BigDecimal.class, new BigDecimalAdapter().nullSafe());
+
+    // Thread safe
+    public static final Moshi MOSHI = addDefaultAdapters.apply(new Moshi.Builder()).build();
 
     public static final JsonAdapter<Map> mapAdapter = MOSHI.adapter(Map.class);
+    public static final JsonAdapter<List> listAdapter = MOSHI.adapter(List.class);
 
     public static final MediaType jsonType = MediaType.parse("application/json");
 

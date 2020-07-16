@@ -4,8 +4,8 @@ import com.streamr.client.MessageHandler;
 import com.streamr.client.exceptions.*;
 import com.streamr.client.options.ResendOption;
 import com.streamr.client.protocol.message_layer.StreamMessage;
+import com.streamr.client.utils.GroupKey;
 import com.streamr.client.utils.OrderedMsgChain;
-import com.streamr.client.utils.UnencryptedGroupKey;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -20,7 +20,7 @@ public class CombinedSubscription extends Subscription {
     private BasicSubscription sub;
     private final ArrayDeque<StreamMessage> queue = new ArrayDeque<>();
     public CombinedSubscription(String streamId, int partition, MessageHandler handler, ResendOption resendOption,
-                                Map<String, UnencryptedGroupKey> groupKeys, BasicSubscription.GroupKeyRequestFunction groupKeyRequestFunction,
+                                Map<String, GroupKey> groupKeys, BasicSubscription.GroupKeyRequestFunction groupKeyRequestFunction,
                                 long propagationTimeout, long resendTimeout, boolean skipGapsOnFullQueue) {
         super(streamId, partition, handler, propagationTimeout, resendTimeout, skipGapsOnFullQueue);
         MessageHandler wrapperHandler = new MessageHandler() {
@@ -65,7 +65,7 @@ public class CombinedSubscription extends Subscription {
     }
 
     @Override
-    public void setGroupKeys(String publisherId, ArrayList<UnencryptedGroupKey> groupKeys) throws UnableToSetKeysException {
+    public void setGroupKeys(String publisherId, ArrayList<GroupKey> groupKeys) throws UnableToSetKeysException {
         sub.setGroupKeys(publisherId, groupKeys);
     }
 

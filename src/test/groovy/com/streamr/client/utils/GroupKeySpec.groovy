@@ -38,7 +38,7 @@ class GroupKeySpec extends Specification {
         byte[] keyBytes = new byte[32]
         SecureRandom secureRandom = new SecureRandom()
         secureRandom.nextBytes(keyBytes)
-        UnencryptedGroupKey k1 = new UnencryptedGroupKey(Hex.encodeHexString(keyBytes))
+        GroupKey k1 = new GroupKey(Hex.encodeHexString(keyBytes))
 
         EncryptionUtil encryptionUtil = new EncryptionUtil()
         EncryptedGroupKey k2 = k1.getEncrypted(encryptionUtil.publicKeyAsPemString)
@@ -57,7 +57,7 @@ class GroupKeySpec extends Specification {
         String encryptedKeyString = EncryptionUtil.encryptWithPublicKey(keyBytes, encryptionUtil.getPublicKeyAsPemString())
         EncryptedGroupKey k1 = new EncryptedGroupKey(encryptedKeyString, new Date())
 
-        UnencryptedGroupKey k2 = k1.getDecrypted(encryptionUtil)
+        GroupKey k2 = k1.getDecrypted(encryptionUtil)
         then:
         k2.groupKeyHex != k1.groupKeyHex
         k2.groupKeyHex == Hex.encodeHexString(keyBytes)

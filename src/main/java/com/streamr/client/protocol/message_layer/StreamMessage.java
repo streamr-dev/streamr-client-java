@@ -16,10 +16,9 @@ public class StreamMessage implements ITimestamped {
     public enum MessageType {
         STREAM_MESSAGE ((byte) 27),
         GROUP_KEY_REQUEST ((byte) 28),
-        GROUP_KEY_RESPONSE_SIMPLE ((byte) 29),
-        GROUP_KEY_RESET_SIMPLE ((byte) 30),
-        GROUP_KEY_RESPONSE_ERROR((byte) 31),
-        GROUP_KEY_ROTATE((byte) 32);
+        GROUP_KEY_RESPONSE((byte) 29),
+        GROUP_KEY_ANNOUNCE((byte) 30),
+        GROUP_KEY_ERROR_RESPONSE((byte) 31);
 
         private final byte id;
 
@@ -36,14 +35,12 @@ public class StreamMessage implements ITimestamped {
                 return STREAM_MESSAGE;
             } else if (id == GROUP_KEY_REQUEST.id) {
                 return GROUP_KEY_REQUEST;
-            } else if (id == GROUP_KEY_RESPONSE_SIMPLE.id) {
-                return GROUP_KEY_RESPONSE_SIMPLE;
-            } else if (id == GROUP_KEY_RESET_SIMPLE.id) {
-                return GROUP_KEY_RESET_SIMPLE;
-            } else if (id == GROUP_KEY_RESPONSE_ERROR.id) {
-                return GROUP_KEY_RESPONSE_ERROR;
-            } else if (id == GROUP_KEY_ROTATE.id) {
-                return GROUP_KEY_ROTATE;
+            } else if (id == GROUP_KEY_RESPONSE.id) {
+                return GROUP_KEY_RESPONSE;
+            } else if (id == GROUP_KEY_ANNOUNCE.id) {
+                return GROUP_KEY_ANNOUNCE;
+            } else if (id == GROUP_KEY_ERROR_RESPONSE.id) {
+                return GROUP_KEY_ERROR_RESPONSE;
             }
             throw new UnsupportedMessageException("Unrecognized content type: "+id);
         }
@@ -291,7 +288,6 @@ public class StreamMessage implements ITimestamped {
             } else {
                 throw new RuntimeException("Unknown contentType encountered: " + contentType);
             }
-            validateContent(parsedContent, messageType);
         }
         return parsedContent;
     }
@@ -319,7 +315,6 @@ public class StreamMessage implements ITimestamped {
     public void setSerializedContent(String serializedContent) throws IOException {
         if (this.encryptionType == EncryptionType.NONE) {
             this.parsedContent = HttpUtils.mapAdapter.fromJson(serializedContent);
-            validateContent(parsedContent, messageType);
         } else {
             this.parsedContent = null;
         }
@@ -331,7 +326,6 @@ public class StreamMessage implements ITimestamped {
     }
 
     public void setParsedContent(Map<String, Object> parsedContent) {
-        validateContent(parsedContent, messageType);
         this.parsedContent = parsedContent;
         this.serializedContent = HttpUtils.mapAdapter.toJson(parsedContent);
     }
@@ -354,13 +348,6 @@ public class StreamMessage implements ITimestamped {
 
     public static StreamMessage fromBytes(byte[] bytes) throws IOException {
         return StreamMessage.deserialize(new String(bytes, StandardCharsets.UTF_8));
-    }
-
-    private static void validateContent(Map<String, Object> content, MessageType messageType) {
-        if (messageType != MessageType.STREAM_MESSAGE) {
-            // Throws if the content is not valid
-            AbstractGroupKeyMessage.fromContent(content, messageType);
-        }
     }
 
     @Override

@@ -8,7 +8,7 @@ import com.streamr.client.protocol.message_layer.StreamMessage
 import com.streamr.client.subs.CombinedSubscription
 import com.streamr.client.subs.Subscription
 import com.streamr.client.utils.OrderedMsgChain
-import com.streamr.client.utils.UnencryptedGroupKey
+import com.streamr.client.utils.GroupKey
 
 class CombinedSubscriptionSpec extends StreamrSpecification {
 
@@ -21,7 +21,7 @@ class CombinedSubscriptionSpec extends StreamrSpecification {
             void onMessage(Subscription sub, StreamMessage message) {
 
             }
-        }, new ResendLastOption(10), new HashMap<String, UnencryptedGroupKey>(), null, 10L, 10L, false)
+        }, new ResendLastOption(10), new HashMap<String, GroupKey>(), null, 10L, 10L, false)
         GapDetectedException ex
         sub.setGapHandler(new OrderedMsgChain.GapHandlerFunction() {
             @Override

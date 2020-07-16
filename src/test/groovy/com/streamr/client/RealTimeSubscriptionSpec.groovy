@@ -10,7 +10,7 @@ import com.streamr.client.subs.RealTimeSubscription
 import com.streamr.client.subs.Subscription
 import com.streamr.client.utils.EncryptionUtil
 import com.streamr.client.utils.OrderedMsgChain
-import com.streamr.client.utils.UnencryptedGroupKey
+import com.streamr.client.utils.GroupKey
 import org.apache.commons.codec.binary.Hex
 import spock.util.concurrent.PollingConditions
 
@@ -34,10 +34,10 @@ class RealTimeSubscriptionSpec extends StreamrSpecification {
         }
     }
 
-    UnencryptedGroupKey genKey() {
+    GroupKey genKey() {
         byte[] keyBytes = new byte[32]
         secureRandom.nextBytes(keyBytes)
-        return new UnencryptedGroupKey(Hex.encodeHexString(keyBytes))
+        return new GroupKey(Hex.encodeHexString(keyBytes))
     }
 
     SecureRandom secureRandom = new SecureRandom()
@@ -200,7 +200,7 @@ class RealTimeSubscriptionSpec extends StreamrSpecification {
     }
 
     void "decrypts encrypted messages with the correct key"() {
-        UnencryptedGroupKey groupKey = genKey()
+        GroupKey groupKey = genKey()
         SecretKey secretKey = new SecretKeySpec(DatatypeConverter.parseHexBinary(groupKey.groupKeyHex), "AES")
         Map plaintext = [foo: 'bar']
         Map received = null
@@ -221,8 +221,8 @@ class RealTimeSubscriptionSpec extends StreamrSpecification {
     }
 
     void "calls key request function when cannot decrypt messages with wrong key (multiple times when no response)"() {
-        UnencryptedGroupKey groupKey = genKey()
-        UnencryptedGroupKey wrongGroupKey = genKey()
+        GroupKey groupKey = genKey()
+        GroupKey wrongGroupKey = genKey()
         SecretKey secretKey = new SecretKeySpec(DatatypeConverter.parseHexBinary(groupKey.groupKeyHex), "AES")
         EncryptionUtil.encryptStreamMessage(msg, secretKey)
 
@@ -258,8 +258,8 @@ class RealTimeSubscriptionSpec extends StreamrSpecification {
     }
 
     void "calls key request function MAX_NB_GROUP_KEY_REQUESTS times"() {
-        UnencryptedGroupKey groupKey = genKey()
-        UnencryptedGroupKey wrongGroupKey = genKey()
+        GroupKey groupKey = genKey()
+        GroupKey wrongGroupKey = genKey()
         SecretKey secretKey = new SecretKeySpec(DatatypeConverter.parseHexBinary(groupKey.groupKeyHex), "AES")
         EncryptionUtil.encryptStreamMessage(msg, secretKey)
 
@@ -287,8 +287,8 @@ class RealTimeSubscriptionSpec extends StreamrSpecification {
         StreamMessage msg1 = createMessage(1, [foo: 'bar1'])
         StreamMessage msg2 = createMessage(2, [foo: 'bar2'])
 
-        UnencryptedGroupKey groupKey = genKey()
-        UnencryptedGroupKey wrongGroupKey = genKey()
+        GroupKey groupKey = genKey()
+        GroupKey wrongGroupKey = genKey()
         SecretKey secretKey = new SecretKeySpec(DatatypeConverter.parseHexBinary(groupKey.groupKeyHex), "AES")
         EncryptionUtil.encryptStreamMessage(msg1, secretKey)
         EncryptionUtil.encryptStreamMessage(msg2, secretKey)
@@ -329,7 +329,7 @@ class RealTimeSubscriptionSpec extends StreamrSpecification {
 
         // faking the reception of the group key response
         when:
-        sub.setGroupKeys(msg1.getPublisherId(), (ArrayList<UnencryptedGroupKey>)[groupKey])
+        sub.setGroupKeys(msg1.getPublisherId(), (ArrayList<GroupKey>)[groupKey])
 
         then:
         received1.getParsedContent() == [foo: 'bar1']
@@ -343,10 +343,10 @@ class RealTimeSubscriptionSpec extends StreamrSpecification {
         StreamMessage msg1pub2 = createMessage(1, 0, null, null, "publisherId2", [foo: 'bar3'])
         StreamMessage msg2pub2 = createMessage(2, 0, null, null, "publisherId2", [foo: 'bar4'])
 
-        UnencryptedGroupKey groupKey1 = genKey()
-        UnencryptedGroupKey wrongGroupKey = genKey()
+        GroupKey groupKey1 = genKey()
+        GroupKey wrongGroupKey = genKey()
         SecretKey secretKey1 = new SecretKeySpec(DatatypeConverter.parseHexBinary(groupKey1.groupKeyHex), "AES")
-        UnencryptedGroupKey groupKey2 = genKey()
+        GroupKey groupKey2 = genKey()
         SecretKey secretKey2 = new SecretKeySpec(DatatypeConverter.parseHexBinary(groupKey2.groupKeyHex), "AES")
 
         EncryptionUtil.encryptStreamMessage(msg1pub1, secretKey1)
@@ -397,8 +397,8 @@ class RealTimeSubscriptionSpec extends StreamrSpecification {
 
         when:
         // faking the reception of the group key response
-        sub.setGroupKeys(msg1pub1.getPublisherId(), (ArrayList<UnencryptedGroupKey>)[groupKey1])
-        sub.setGroupKeys(msg1pub2.getPublisherId(), (ArrayList<UnencryptedGroupKey>)[groupKey2])
+        sub.setGroupKeys(msg1pub1.getPublisherId(), (ArrayList<GroupKey>)[groupKey1])
+        sub.setGroupKeys(msg1pub2.getPublisherId(), (ArrayList<GroupKey>)[groupKey2])
         then:
         received.get(0).getParsedContent() == [foo: 'bar1']
         received.get(1).getParsedContent() == [foo: 'bar2']
@@ -414,10 +414,10 @@ class RealTimeSubscriptionSpec extends StreamrSpecification {
         StreamMessage msg1pub2 = createMessage(1, 0, null, null, "publisherId2", [foo: 'bar4'])
         StreamMessage msg2pub2 = createMessage(2, 0, null, null, "publisherId2", [foo: 'bar5'])
 
-        UnencryptedGroupKey groupKey1 = genKey()
-        UnencryptedGroupKey wrongGroupKey = genKey()
+        GroupKey groupKey1 = genKey()
+        GroupKey wrongGroupKey = genKey()
         SecretKey secretKey1 = new SecretKeySpec(DatatypeConverter.parseHexBinary(groupKey1.groupKeyHex), "AES")
-        UnencryptedGroupKey groupKey2 = genKey()
+        GroupKey groupKey2 = genKey()
         SecretKey secretKey2 = new SecretKeySpec(DatatypeConverter.parseHexBinary(groupKey2.groupKeyHex), "AES")
 
         EncryptionUtil.encryptStreamMessage(msg1pub1, secretKey1)
@@ -448,10 +448,10 @@ class RealTimeSubscriptionSpec extends StreamrSpecification {
 
         when:
         sub.handleRealTimeMessage(msg2pub1)
-        sub.setGroupKeys("publisherId1", (ArrayList<UnencryptedGroupKey>)[groupKey1])
+        sub.setGroupKeys("publisherId1", (ArrayList<GroupKey>)[groupKey1])
         sub.handleRealTimeMessage(msg3pub1)
         sub.handleRealTimeMessage(msg2pub2)
-        sub.setGroupKeys("publisherId2", (ArrayList<UnencryptedGroupKey>)[groupKey2])
+        sub.setGroupKeys("publisherId2", (ArrayList<GroupKey>)[groupKey2])
 
         then:
         received.get(0).getParsedContent() == [foo: 'bar1']
@@ -463,9 +463,9 @@ class RealTimeSubscriptionSpec extends StreamrSpecification {
     }
 
     void "throws when not able to decrypt for the second time"() {
-        UnencryptedGroupKey groupKey = genKey()
-        UnencryptedGroupKey wrongGroupKey = genKey()
-        UnencryptedGroupKey otherWrongGroupKey = genKey()
+        GroupKey groupKey = genKey()
+        GroupKey wrongGroupKey = genKey()
+        GroupKey otherWrongGroupKey = genKey()
         SecretKey secretKey = new SecretKeySpec(DatatypeConverter.parseHexBinary(groupKey.groupKeyHex), "AES")
 
         EncryptionUtil.encryptStreamMessage(msg, secretKey)
@@ -487,14 +487,14 @@ class RealTimeSubscriptionSpec extends StreamrSpecification {
         })
         when:
         sub.handleRealTimeMessage(msg)
-        sub.setGroupKeys(msg.getPublisherId(), (ArrayList<UnencryptedGroupKey>)[otherWrongGroupKey])
+        sub.setGroupKeys(msg.getPublisherId(), (ArrayList<GroupKey>)[otherWrongGroupKey])
         then:
         thrown(UnableToDecryptException)
     }
 
     void "decrypts first message, updates key, decrypts second message"() {
-        UnencryptedGroupKey groupKey1 = genKey()
-        UnencryptedGroupKey groupKey2 = genKey()
+        GroupKey groupKey1 = genKey()
+        GroupKey groupKey2 = genKey()
 
         Map content1 = [foo: 'bar']
         StreamMessage msg1 = createMessage(content1)

@@ -47,10 +47,18 @@ public class StreamMessageValidator {
             case GROUP_KEY_REQUEST:
                 validateGroupKeyRequest(msg);
                 break;
-            case GROUP_KEY_RESPONSE_SIMPLE:
-            case GROUP_KEY_RESET_SIMPLE:
-            case GROUP_KEY_RESPONSE_ERROR:
-                validateGroupKeyResponseOrReset(msg);
+            case GROUP_KEY_ANNOUNCE:
+                // Announce messages can appear in key exchange streams and normal streams and are validated differently
+                if (KeyExchangeUtil.isKeyExchangeStreamId(msg.getStreamId())) {
+                    // Validate like a key response
+                    validateGroupKeyResponse(msg);
+                } else {
+                    // Validate like a normal message
+                    validateMessage(msg);
+                }
+            case GROUP_KEY_RESPONSE:
+            case GROUP_KEY_ERROR_RESPONSE:
+                validateGroupKeyResponse(msg);
                 break;
             default:
                 throw new ValidationException(msg, ValidationException.Reason.INVALID_MESSAGE);
@@ -121,7 +129,7 @@ public class StreamMessageValidator {
         // Signatures on key exchange messages are checked regardless of policy setting
         assertValidSignature(streamMessage);
 
-        AbstractGroupKeyMessage request = AbstractGroupKeyMessage.fromContent(streamMessage.getParsedContent(), streamMessage.getMessageType());
+        AbstractGroupKeyMessage request = AbstractGroupKeyMessage.deserialize(streamMessage.getSerializedContent(), streamMessage.getMessageType());
         String sender = streamMessage.getPublisherId();
         String recipient = KeyExchangeUtil.getRecipientFromKeyExchangeStreamId(streamMessage.getStreamId());
 
@@ -136,7 +144,7 @@ public class StreamMessageValidator {
         }
     }
 
-    private void validateGroupKeyResponseOrReset(StreamMessage streamMessage) {
+    private void validateGroupKeyResponse(StreamMessage streamMessage) {
         if (streamMessage.getSignature() == null) {
             throw new ValidationException(streamMessage, ValidationException.Reason.UNSIGNED_NOT_ALLOWED, "Received unsigned group key response (it must be signed to avoid MitM attacks)");
         }
@@ -146,7 +154,7 @@ public class StreamMessageValidator {
         // Signatures on key exchange messages are checked regardless of policy setting
         assertValidSignature(streamMessage);
 
-        AbstractGroupKeyMessage response = AbstractGroupKeyMessage.fromContent(streamMessage.getParsedContent(), streamMessage.getMessageType());
+        AbstractGroupKeyMessage response = AbstractGroupKeyMessage.deserialize(streamMessage.getSerializedContent(), streamMessage.getMessageType());
         String sender = streamMessage.getPublisherId();
         String recipient = KeyExchangeUtil.getRecipientFromKeyExchangeStreamId(streamMessage.getStreamId());
 

@@ -37,7 +37,8 @@ public class MessageCreationUtil {
         return createStreamMessage(stream, payload, timestamp, partitionKey, null);
     }
 
-    public StreamMessage createStreamMessage(Stream stream, Map<String, Object> payload, Date timestamp, String partitionKey, UnencryptedGroupKey newGroupKey) {
+    // TODO: handle new group keys differently
+    public StreamMessage createStreamMessage(Stream stream, Map<String, Object> payload, Date timestamp, String partitionKey, GroupKey newGroupKey) {
         String groupKeyHex = newGroupKey == null ? null : newGroupKey.getGroupKeyHex();
 
         int streamPartition = getStreamPartition(stream.getPartitions(), partitionKey);
@@ -62,25 +63,22 @@ public class MessageCreationUtil {
         return streamMessage;
     }
 
-    public StreamMessage createGroupKeyRequest(String publisherAddress, String streamId, String rsaPublicKey, Date start, Date end) {
+    public StreamMessage createGroupKeyRequest(String publisherAddress, String streamId, String rsaPublicKey, List<String> groupKeyIds) {
         if (signingUtil == null) {
             throw new SigningRequiredException("Cannot create unsigned group key request. Must authenticate with an Ethereum account");
         }
 
-        GroupKeyRequest.Range range = null;
-        if (start != null && end != null) {
-            range = new GroupKeyRequest.Range(start.getTime(), end.getTime());
-        }
-        GroupKeyRequest request = new GroupKeyRequest(UUID.randomUUID().toString(), streamId, rsaPublicKey, range);
+        GroupKeyRequest request = new GroupKeyRequest(UUID.randomUUID().toString(), streamId, rsaPublicKey, groupKeyIds);
 
         String keyExchangeStreamId = KeyExchangeUtil.getKeyExchangeStreamId(publisherAddress);
         Pair<MessageID, MessageRef> pair = createDefaultMsgIdAndRef(keyExchangeStreamId);
-        StreamMessage streamMessage = new StreamMessage(pair.getLeft(), pair.getRight(), StreamMessage.MessageType.GROUP_KEY_REQUEST, request.toMap());
+
+        StreamMessage streamMessage = request.toStreamMessage(pair.getLeft(), pair.getRight());
         signingUtil.signStreamMessage(streamMessage);
         return streamMessage;
     }
 
-    public StreamMessage createGroupKeyResponse(String subscriberAddress, GroupKeyRequest request, List<EncryptedGroupKey> encryptedGroupKeys) {
+    public StreamMessage createGroupKeyResponse(String subscriberAddress, GroupKeyRequest request, List<GroupKey> groupKeys) {
         if (signingUtil == null) {
             throw new SigningRequiredException("Cannot create unsigned group key response. Must authenticate with an Ethereum account");
         }
@@ -88,30 +86,30 @@ public class MessageCreationUtil {
         GroupKeyResponse response = new GroupKeyResponse(
                 request.getRequestId(),
                 request.getStreamId(),
-                encryptedGroupKeys.stream()
-                        .map(GroupKeyResponse.Key::fromGroupKey)
-                        .collect(Collectors.toList())
+                groupKeys
         );
 
         String keyExchangeStreamId = KeyExchangeUtil.getKeyExchangeStreamId(subscriberAddress);
         Pair<MessageID, MessageRef> pair = createDefaultMsgIdAndRef(keyExchangeStreamId);
-        StreamMessage streamMessage = new StreamMessage(pair.getLeft(), pair.getRight(), StreamMessage.MessageType.GROUP_KEY_RESPONSE_SIMPLE, response.toMap());
-        streamMessage.setEncryptionType(StreamMessage.EncryptionType.RSA); // TODO: would make more sense to encrypt the whole content. Address in a follow-up PR
+        StreamMessage streamMessage = response.toStreamMessage(pair.getLeft(), pair.getRight());
+        streamMessage.setEncryptionType(StreamMessage.EncryptionType.RSA);
+        // TODO: encrypt
         signingUtil.signStreamMessage(streamMessage);
         return streamMessage;
     }
 
-    public StreamMessage createGroupKeyReset(String subscriberAddress, String streamId, EncryptedGroupKey encryptedGroupKey) {
+    public StreamMessage createGroupKeyAnnounce(String subscriberAddress, String streamId, List<GroupKey> groupKeys) {
         if (signingUtil == null) {
             throw new SigningRequiredException("Cannot create unsigned group key reset. Must authenticate with an Ethereum account");
         }
 
-        GroupKeyReset reset = new GroupKeyReset(streamId, encryptedGroupKey.getGroupKeyHex(), encryptedGroupKey.getStartTime());
+        GroupKeyAnnounce reset = new GroupKeyAnnounce(streamId, groupKeys);
 
         String keyExchangeStreamId = KeyExchangeUtil.getKeyExchangeStreamId(subscriberAddress);
         Pair<MessageID, MessageRef> pair = createDefaultMsgIdAndRef(keyExchangeStreamId);
-        StreamMessage streamMessage = new StreamMessage(pair.getLeft(), pair.getRight(), StreamMessage.MessageType.GROUP_KEY_RESET_SIMPLE, reset.toMap());
-        streamMessage.setEncryptionType(StreamMessage.EncryptionType.RSA); // TODO: would make more sense to encrypt the whole content. Address in a follow-up PR
+        StreamMessage streamMessage = reset.toStreamMessage(pair.getLeft(), pair.getRight());
+        streamMessage.setEncryptionType(StreamMessage.EncryptionType.RSA);
+        // TODO: encrypt
         signingUtil.signStreamMessage(streamMessage);
         return streamMessage;
     }
@@ -125,12 +123,13 @@ public class MessageCreationUtil {
                 request.getRequestId(),
                 request.getStreamId(),
                 getErrorCodeFromException(e),
-                e.getMessage()
+                e.getMessage(),
+                request.getGroupKeyIds()
         );
 
         String keyExchangeStreamId = KeyExchangeUtil.getKeyExchangeStreamId(destinationAddress);
         Pair<MessageID, MessageRef> pair = createDefaultMsgIdAndRef(keyExchangeStreamId);
-        StreamMessage streamMessage = new StreamMessage(pair.getLeft(), pair.getRight(), StreamMessage.MessageType.GROUP_KEY_RESPONSE_ERROR, response.toMap());
+        StreamMessage streamMessage = response.toStreamMessage(pair.getLeft(), pair.getRight());
         signingUtil.signStreamMessage(streamMessage);
         return streamMessage;
     }

@@ -1,10 +1,7 @@
 package com.streamr.client.utils;
 
 import com.streamr.client.exceptions.*;
-import com.streamr.client.protocol.message_layer.GroupKeyRequest;
-import com.streamr.client.protocol.message_layer.GroupKeyReset;
-import com.streamr.client.protocol.message_layer.GroupKeyResponse;
-import com.streamr.client.protocol.message_layer.StreamMessage;
+import com.streamr.client.protocol.message_layer.*;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -14,7 +11,6 @@ import java.time.Duration;
 import java.time.Instant;
 import java.util.*;
 import java.util.function.Consumer;
-import java.util.stream.Collectors;
 
 public class KeyExchangeUtil {
     private static final Logger log = LoggerFactory.getLogger(KeyExchangeUtil.class);
@@ -59,7 +55,7 @@ public class KeyExchangeUtil {
             throw new InvalidGroupKeyRequestException("Received unsigned group key request (the public key must be signed to avoid MitM attacks).");
         }
 
-        GroupKeyRequest request = GroupKeyRequest.fromMap(streamMessage.getParsedContent());
+        GroupKeyRequest request = (GroupKeyRequest) AbstractGroupKeyMessage.fromStreamMessage(streamMessage);
 
         String streamId = request.getStreamId();
         String sender = streamMessage.getPublisherId();
@@ -68,7 +64,7 @@ public class KeyExchangeUtil {
         }
 
         GroupKeyRequest.Range range = request.getRange();
-        ArrayList<UnencryptedGroupKey> keys;
+        ArrayList<GroupKey> keys;
         if (range != null) {
             log.debug("Querying keys for stream {} between {} and {}. Key storage content is {}",
                     streamId, range.getStart(), range.getEnd(), keyStorage.getKeysBetween(streamId, 0, new Date().getTime()));
@@ -77,7 +73,7 @@ public class KeyExchangeUtil {
             keys = new ArrayList<>();
             log.debug("Querying latest key for stream {}. Key storage content is {}",
                     streamId, keyStorage.getKeysBetween(streamId, 0, new Date().getTime()));
-            UnencryptedGroupKey latest = keyStorage.getLatestKey(streamId);
+            GroupKey latest = keyStorage.getLatestKey(streamId);
             if (latest != null) {
                 keys.add(latest);
             }
@@ -93,7 +89,7 @@ public class KeyExchangeUtil {
         } catch (Exception e) {
             throw new InvalidGroupKeyRequestException(e.getMessage());
         }
-        for (UnencryptedGroupKey key: keys) {
+        for (GroupKey key: keys) {
             encryptedGroupKeys.add(key.getEncrypted(publicKey));
         }
         publicKeys.put(sender, publicKey);
@@ -107,7 +103,7 @@ public class KeyExchangeUtil {
             throw new InvalidGroupKeyResponseException("Received unsigned group key response (it must be signed to avoid MitM attacks).");
         }
 
-        GroupKeyResponse response = GroupKeyResponse.fromMap(streamMessage.getParsedContent());
+        GroupKeyResponse response = (GroupKeyResponse) AbstractGroupKeyMessage.fromStreamMessage(streamMessage);
 
         // A valid publisher of the client's inbox stream could send key responses for other streams to which
         // the publisher doesn't have write permissions. Thus the following additional check is necessary.
@@ -115,10 +111,10 @@ public class KeyExchangeUtil {
             throw new InvalidGroupKeyResponseException("Received group key from an invalid publisher "
                     + streamMessage.getPublisherId() + " for stream " + response.getStreamId());
         }
-        ArrayList<UnencryptedGroupKey> decryptedKeys = new ArrayList<>();
+        ArrayList<GroupKey> decryptedKeys = new ArrayList<>();
         for (GroupKeyResponse.Key key : response.getKeys()) {
             try {
-                UnencryptedGroupKey decryptedKey = new EncryptedGroupKey(key.getGroupKey(), new Date(key.getStart())).getDecrypted(encryptionUtil);
+                GroupKey decryptedKey = new EncryptedGroupKey(key.getGroupKey(), new Date(key.getStart())).getDecrypted(encryptionUtil);
                 decryptedKeys.add(decryptedKey);
             } catch (UnableToDecryptException | InvalidGroupKeyException e) {
                 throw new InvalidGroupKeyResponseException(e.getMessage());
@@ -139,23 +135,23 @@ public class KeyExchangeUtil {
             throw new InvalidGroupKeyResetException("Received unsigned group key reset (it must be signed to avoid MitM attacks).");
         }
 
-        GroupKeyReset reset = GroupKeyReset.fromMap(streamMessage.getParsedContent());
+        GroupKeyAnnounce announce = (GroupKeyAnnounce) AbstractGroupKeyMessage.fromStreamMessage(streamMessage);
         // A valid publisher of the client's inbox stream could send key resets for other streams to which
         // the publisher doesn't have write permissions. Thus the following additional check is necessary.
-        if (!addressValidityUtil.isValidPublisher(reset.getStreamId(), streamMessage.getPublisherId())) {
+        if (!addressValidityUtil.isValidPublisher(announce.getStreamId(), streamMessage.getPublisherId())) {
             throw new InvalidGroupKeyResetException("Received group key reset from an invalid publisher "
-                    + streamMessage.getPublisherId() + " for stream " + reset.getStreamId());
+                    + streamMessage.getPublisherId() + " for stream " + announce.getStreamId());
         }
-        UnencryptedGroupKey newGroupKey;
+        GroupKey newGroupKey;
         try {
-            newGroupKey = new EncryptedGroupKey(reset.getGroupKey(), new Date(reset.getStart())).getDecrypted(encryptionUtil);
+            newGroupKey = new EncryptedGroupKey(announce.getGroupKey(), new Date(announce.getStart())).getDecrypted(encryptionUtil);
         } catch (UnableToDecryptException | InvalidGroupKeyException e) {
             throw new InvalidGroupKeyResetException(e.getMessage());
         }
-        ArrayList<UnencryptedGroupKey> keyWrapped = new ArrayList<>();
+        ArrayList<GroupKey> keyWrapped = new ArrayList<>();
         keyWrapped.add(newGroupKey);
         try {
-            setGroupKeysFunction.apply(reset.getStreamId(), streamMessage.getPublisherId(), keyWrapped);
+            setGroupKeysFunction.apply(announce.getStreamId(), streamMessage.getPublisherId(), keyWrapped);
         } catch (UnableToSetKeysException e) {
             throw new InvalidGroupKeyResetException(e.getMessage());
         }
@@ -172,13 +168,13 @@ public class KeyExchangeUtil {
     }
 
     public void rekey(String streamId, boolean getSubscribersLocally) {
-        UnencryptedGroupKey groupKeyReset = EncryptionUtil.genGroupKey();
+        GroupKey groupKeyReset = GroupKey.generate();
         Set<String> trueSubscribersSet = addressValidityUtil.getSubscribersSet(streamId, getSubscribersLocally);
         Set<String> revoked = new HashSet<>();
         for (String subscriberId: publicKeys.keySet() ) { // iterating over local cache of Ethereum address --> RSA public key
             if (trueSubscribersSet.contains(subscriberId)) { // if still valid subscriber, send the new key
                 EncryptedGroupKey encryptedGroupKey = groupKeyReset.getEncrypted(publicKeys.get(subscriberId));
-                StreamMessage groupKeyResetMsg = messageCreationUtil.createGroupKeyReset(subscriberId, streamId, encryptedGroupKey);
+                StreamMessage groupKeyResetMsg = messageCreationUtil.createGroupKeyAnnounce(subscriberId, streamId, encryptedGroupKey);
                 publishFunction.accept(groupKeyResetMsg);
             } else { // no longer a valid subscriber, to be removed from local cache
                 revoked.add(subscriberId);
@@ -202,6 +198,6 @@ public class KeyExchangeUtil {
 
     @FunctionalInterface
     public interface SetGroupKeysFunction {
-        void apply(String streamId, String publisherId, ArrayList<UnencryptedGroupKey> keys) throws UnableToSetKeysException;
+        void apply(String streamId, String publisherId, ArrayList<GroupKey> keys) throws UnableToSetKeysException;
     }
 }

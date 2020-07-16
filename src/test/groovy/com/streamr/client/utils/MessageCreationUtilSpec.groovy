@@ -4,7 +4,7 @@ import com.streamr.client.exceptions.InvalidGroupKeyRequestException
 import com.streamr.client.exceptions.SigningRequiredException
 import com.streamr.client.protocol.message_layer.GroupKeyErrorResponse
 import com.streamr.client.protocol.message_layer.GroupKeyRequest
-import com.streamr.client.protocol.message_layer.GroupKeyReset
+import com.streamr.client.protocol.message_layer.GroupKeyAnnounce
 import com.streamr.client.protocol.message_layer.GroupKeyResponse
 import com.streamr.client.protocol.message_layer.StreamMessage
 import com.streamr.client.rest.Stream
@@ -31,10 +31,10 @@ class MessageCreationUtilSpec extends Specification {
         message = [foo: "bar"]
     }
 
-    UnencryptedGroupKey genUnencryptedKey(int keyLength) {
+    GroupKey genUnencryptedKey(int keyLength) {
         byte[] keyBytes = new byte[keyLength]
         secureRandom.nextBytes(keyBytes)
-        return new UnencryptedGroupKey(Hex.encodeHexString(keyBytes), new Date())
+        return new GroupKey(Hex.encodeHexString(keyBytes), new Date())
     }
 
     EncryptedGroupKey genEncryptedKey(int keyLength, Date start) {
@@ -152,7 +152,7 @@ class MessageCreationUtilSpec extends Specification {
     }
 
     void "creates encrypted messages when key defined in constructor"() {
-        UnencryptedGroupKey key = genUnencryptedKey(32)
+        GroupKey key = genUnencryptedKey(32)
         keyStorage.addKey(stream.id, key)
         MessageCreationUtil util = new MessageCreationUtil("publisherId", null, keyStorage)
         when:
@@ -163,7 +163,7 @@ class MessageCreationUtilSpec extends Specification {
     }
 
     void "creates encrypted messages when key defined in createStreamMessage() and use the same key later"() {
-        UnencryptedGroupKey key = genUnencryptedKey(32)
+        GroupKey key = genUnencryptedKey(32)
         when:
         StreamMessage msg1 = msgCreationUtil.createStreamMessage(stream, message, new Date(), null, key)
         then:
@@ -182,8 +182,8 @@ class MessageCreationUtilSpec extends Specification {
     }
 
     void "should update the key when redefined"() {
-        UnencryptedGroupKey key1 = genUnencryptedKey(32)
-        UnencryptedGroupKey key2 = genUnencryptedKey(32)
+        GroupKey key1 = genUnencryptedKey(32)
+        GroupKey key2 = genUnencryptedKey(32)
         when:
         StreamMessage msg1 = msgCreationUtil.createStreamMessage(stream, message, new Date(), null, key1)
         then:
@@ -255,7 +255,7 @@ class MessageCreationUtilSpec extends Specification {
 
         then:
         msg.getStreamId() == KeyExchangeUtil.getKeyExchangeStreamId("subscriberInboxAddress")
-        msg.getMessageType() == StreamMessage.MessageType.GROUP_KEY_RESPONSE_SIMPLE
+        msg.getMessageType() == StreamMessage.MessageType.GROUP_KEY_RESPONSE
         msg.getEncryptionType() == StreamMessage.EncryptionType.RSA
 
         GroupKeyResponse.fromMap(msg.getParsedContent()).getStreamId() == "streamId"
@@ -269,7 +269,7 @@ class MessageCreationUtilSpec extends Specification {
     void "should not be able to create unsigned group key reset"() {
         when:
         // msgCreationUtil has null signingUtil
-        msgCreationUtil.createGroupKeyReset("", "", null)
+        msgCreationUtil.createGroupKeyAnnounce("", "", null)
         then:
         SigningRequiredException e = thrown SigningRequiredException
         e.message == "Cannot create unsigned group key reset. Must authenticate with an Ethereum account"
@@ -282,14 +282,14 @@ class MessageCreationUtilSpec extends Specification {
         MessageCreationUtil util = new MessageCreationUtil("publisherId", signingUtil, keyStorage)
         EncryptedGroupKey k = genEncryptedKey(32, new Date(123))
         when:
-        StreamMessage msg = util.createGroupKeyReset("subscriberInboxAddress", "streamId", k)
+        StreamMessage msg = util.createGroupKeyAnnounce("subscriberInboxAddress", "streamId", k)
         then:
         msg.getStreamId() == KeyExchangeUtil.getKeyExchangeStreamId("subscriberInboxAddress")
-        msg.getMessageType() == StreamMessage.MessageType.GROUP_KEY_RESET_SIMPLE
+        msg.getMessageType() == StreamMessage.MessageType.GROUP_KEY_ANNOUNCE
         msg.getEncryptionType() == StreamMessage.EncryptionType.RSA
-        GroupKeyReset.fromMap(msg.getParsedContent()).getStreamId() == "streamId"
-        GroupKeyReset.fromMap(msg.getParsedContent()).getGroupKey() == k.groupKeyHex
-        GroupKeyReset.fromMap(msg.getParsedContent()).getStart() == k.getStartTime()
+        GroupKeyAnnounce.fromMap(msg.getParsedContent()).getStreamId() == "streamId"
+        GroupKeyAnnounce.fromMap(msg.getParsedContent()).getGroupKey() == k.groupKeyHex
+        GroupKeyAnnounce.fromMap(msg.getParsedContent()).getStart() == k.getStartTime()
         msg.getSignature() != null
     }
 
@@ -311,7 +311,7 @@ class MessageCreationUtilSpec extends Specification {
         StreamMessage msg = util.createGroupKeyErrorResponse("destinationAddress", new GroupKeyRequest("requestId", "streamId", "publicKey"), new InvalidGroupKeyRequestException("some error message"))
         then:
         msg.getStreamId() == KeyExchangeUtil.getKeyExchangeStreamId("destinationAddress")
-        msg.getMessageType() == StreamMessage.MessageType.GROUP_KEY_RESPONSE_ERROR
+        msg.getMessageType() == StreamMessage.MessageType.GROUP_KEY_ERROR_RESPONSE
         msg.getEncryptionType() == StreamMessage.EncryptionType.NONE
         GroupKeyErrorResponse.fromMap(msg.getParsedContent()).getRequestId() == "requestId"
         GroupKeyErrorResponse.fromMap(msg.getParsedContent()).getStreamId() == "streamId"

@@ -3,7 +3,6 @@ package com.streamr.client.utils;
 import com.streamr.client.exceptions.InvalidGroupKeyRequestException;
 
 import java.util.ArrayList;
-import java.util.Date;
 import java.util.HashMap;
 
 /*
@@ -11,9 +10,9 @@ This key storage is used when the publisher only wants to store the latest key u
 not the previous ones. This will prevent the publisher to answer historical group key requests.
  */
 public class LatestKeyStorage implements KeyStorage {
-    private final HashMap<String, UnencryptedGroupKey> latestGroupKeys;
+    private final HashMap<String, GroupKey> latestGroupKeys;
 
-    public LatestKeyStorage(HashMap<String, UnencryptedGroupKey> publisherGroupKeys) {
+    public LatestKeyStorage(HashMap<String, GroupKey> publisherGroupKeys) {
         super();
         latestGroupKeys = publisherGroupKeys == null ? new HashMap<>() : publisherGroupKeys;
     }
@@ -28,7 +27,7 @@ public class LatestKeyStorage implements KeyStorage {
     }
 
     @Override
-    public UnencryptedGroupKey getLatestKey(String streamId) {
+    public GroupKey getLatestKey(String streamId) {
         return latestGroupKeys.get(streamId);
     }
 
@@ -36,13 +35,13 @@ public class LatestKeyStorage implements KeyStorage {
     @throws InvalidGroupKeyRequestException since only the latest key is stored. Use KeyHistoryStorage.getLatestKey() instead.
      */
     @Override
-    public ArrayList<UnencryptedGroupKey> getKeysBetween(String streamId, long start, long end) throws InvalidGroupKeyRequestException {
+    public ArrayList<GroupKey> getKeysBetween(String streamId, long start, long end) throws InvalidGroupKeyRequestException {
         throw new InvalidGroupKeyRequestException("Cannot retrieve historical keys for stream " + streamId
                 + " between " + start + " and " + end + " because only the latest key is stored.");
     }
 
     @Override
-    public void addKey(String streamId, UnencryptedGroupKey key) {
+    public void addKey(String streamId, GroupKey key) {
         latestGroupKeys.put(streamId, key);
     }
 

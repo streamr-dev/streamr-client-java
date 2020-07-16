@@ -7,7 +7,7 @@ import com.streamr.client.protocol.message_layer.StreamMessage
 import com.streamr.client.rest.Permission
 import com.streamr.client.rest.Stream
 import com.streamr.client.subs.Subscription
-import com.streamr.client.utils.UnencryptedGroupKey
+import com.streamr.client.utils.GroupKey
 import org.apache.commons.codec.binary.Hex
 import org.java_websocket.enums.ReadyState
 import spock.util.concurrent.PollingConditions
@@ -22,10 +22,10 @@ class StreamrWebsocketSpec extends StreamrIntegrationSpecification {
 	private Stream stream
 	PollingConditions within10sec = new PollingConditions(timeout: 10)
 
-	UnencryptedGroupKey genKey() {
+	GroupKey genKey() {
 		byte[] keyBytes = new byte[32]
 		secureRandom.nextBytes(keyBytes)
-		return new UnencryptedGroupKey(Hex.encodeHexString(keyBytes), new Date())
+		return new GroupKey(Hex.encodeHexString(keyBytes), new Date())
 	}
 
 	void setup() {
@@ -156,8 +156,8 @@ class StreamrWebsocketSpec extends StreamrIntegrationSpecification {
 	}
 
 	void "subscriber can decrypt messages when he knows the keys used to encrypt"() {
-		UnencryptedGroupKey key = genKey()
-		HashMap<String, UnencryptedGroupKey> keys = new HashMap<>()
+		GroupKey key = genKey()
+		HashMap<String, GroupKey> keys = new HashMap<>()
 		keys.put(publisher.getPublisherId(), key)
 
 		when:
@@ -191,7 +191,7 @@ class StreamrWebsocketSpec extends StreamrIntegrationSpecification {
 	}
 
 	void "subscriber can get the group key and decrypt encrypted messages using an RSA key pair"() {
-		UnencryptedGroupKey key = genKey()
+		GroupKey key = genKey()
 
 		when:
 		// Subscribe to the stream without knowing the group key
@@ -230,7 +230,7 @@ class StreamrWebsocketSpec extends StreamrIntegrationSpecification {
 	}
 
 	void "subscriber can get the new group key after reset and decrypt encrypted messages"() {
-		UnencryptedGroupKey key = genKey()
+		GroupKey key = genKey()
 
 		when:
 		// Subscribe to the stream without knowing the group key
@@ -271,7 +271,7 @@ class StreamrWebsocketSpec extends StreamrIntegrationSpecification {
 
 	void "subscriber can get the historical keys and decrypt old encrypted messages using an RSA key pair"() {
 		// publishing historical messages with different group keys before subscribing
-		List<UnencryptedGroupKey> keys = [genKey()]
+		List<GroupKey> keys = [genKey()]
 		publisher.publish(stream, [test: 'clear text'], new Date(), null, keys[0])
 		keys.add(genKey())
 		publisher.publish(stream, [test: 'another clear text'], new Date(), null, keys[1])
@@ -492,7 +492,7 @@ class StreamrWebsocketSpec extends StreamrIntegrationSpecification {
 			while (!stop) {
 				// The publisher generates a new key for every message
 				publishedMessages++
-				publisher.publish(stream, [i: i++], new Date(), "", UnencryptedGroupKey.generate())
+				publisher.publish(stream, [i: i++], new Date(), "", GroupKey.generate())
 				Thread.sleep(500)
 			}
 		}

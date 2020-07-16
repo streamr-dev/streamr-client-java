@@ -10,9 +10,8 @@ import com.streamr.client.subs.BasicSubscription
 import com.streamr.client.subs.HistoricalSubscription
 import com.streamr.client.subs.Subscription
 import com.streamr.client.utils.EncryptionUtil
-import com.streamr.client.utils.GroupKey
 import com.streamr.client.utils.OrderedMsgChain
-import com.streamr.client.utils.UnencryptedGroupKey
+import com.streamr.client.utils.GroupKey
 import org.apache.commons.codec.binary.Hex
 import spock.util.concurrent.PollingConditions
 
@@ -35,10 +34,10 @@ class HistoricalSubscriptionSpec extends StreamrSpecification {
         }
     }
 
-    UnencryptedGroupKey genKey() {
+    GroupKey genKey() {
         byte[] keyBytes = new byte[32]
         secureRandom.nextBytes(keyBytes)
-        return new UnencryptedGroupKey(Hex.encodeHexString(keyBytes))
+        return new GroupKey(Hex.encodeHexString(keyBytes))
     }
 
     SecureRandom secureRandom = new SecureRandom()
@@ -199,7 +198,7 @@ class HistoricalSubscriptionSpec extends StreamrSpecification {
     }
 
     void "decrypts encrypted messages with the correct key"() {
-        UnencryptedGroupKey key = genKey()
+        GroupKey key = genKey()
         Map plaintext = msg.getParsedContent()
         EncryptionUtil.encryptStreamMessage(msg, key.getSecretKey())
         Map received = null
@@ -218,7 +217,7 @@ class HistoricalSubscriptionSpec extends StreamrSpecification {
     }
 
     void "calls key request function when no historical group keys are set (multiple times if no response)"() {
-        UnencryptedGroupKey key = genKey()
+        GroupKey key = genKey()
         EncryptionUtil.encryptStreamMessage(msg, key.getSecretKey())
         Map received = null
         String receivedPublisherId = null
@@ -263,8 +262,8 @@ class HistoricalSubscriptionSpec extends StreamrSpecification {
     }
 
     void "queues messages when not able to decrypt and handles them once the keys are set"() {
-        UnencryptedGroupKey groupKey1 = genKey()
-        UnencryptedGroupKey groupKey2 = genKey()
+        GroupKey groupKey1 = genKey()
+        GroupKey groupKey2 = genKey()
         SecretKey secretKey1 = new SecretKeySpec(DatatypeConverter.parseHexBinary(groupKey1.groupKeyHex), "AES")
         SecretKey secretKey2 = new SecretKeySpec(DatatypeConverter.parseHexBinary(groupKey2.groupKeyHex), "AES")
         StreamMessage msg1 = createMessage(1, [foo: 'bar1'])
@@ -316,9 +315,9 @@ class HistoricalSubscriptionSpec extends StreamrSpecification {
     }
 
     void "queues messages when not able to decrypt and handles them once the keys are set (multiple publishers)"() {
-        UnencryptedGroupKey groupKey1 = genKey()
-        UnencryptedGroupKey groupKey2 = genKey()
-        UnencryptedGroupKey groupKey3 = genKey()
+        GroupKey groupKey1 = genKey()
+        GroupKey groupKey2 = genKey()
+        GroupKey groupKey3 = genKey()
         SecretKey secretKey1 = new SecretKeySpec(DatatypeConverter.parseHexBinary(groupKey1.groupKeyHex), "AES")
         SecretKey secretKey2 = new SecretKeySpec(DatatypeConverter.parseHexBinary(groupKey2.groupKeyHex), "AES")
         SecretKey secretKey3 = new SecretKeySpec(DatatypeConverter.parseHexBinary(groupKey3.groupKeyHex), "AES")
@@ -381,8 +380,8 @@ class HistoricalSubscriptionSpec extends StreamrSpecification {
 
         when:
         // faking the reception of the group key response
-        sub.setGroupKeys(msg1pub2.getPublisherId(), (ArrayList<UnencryptedGroupKey>) [groupKey3])
-        sub.setGroupKeys(msg1pub1.getPublisherId(), (ArrayList<UnencryptedGroupKey>) [groupKey1, groupKey2])
+        sub.setGroupKeys(msg1pub2.getPublisherId(), (ArrayList<GroupKey>) [groupKey3])
+        sub.setGroupKeys(msg1pub1.getPublisherId(), (ArrayList<GroupKey>) [groupKey1, groupKey2])
         sub.endResend()
         then:
         received.get(0).getParsedContent() == [foo: 'bar3']
@@ -394,8 +393,8 @@ class HistoricalSubscriptionSpec extends StreamrSpecification {
     }
 
     void "throws when not able to decrypt with historical keys set"() {
-        UnencryptedGroupKey key = genKey()
-        UnencryptedGroupKey wrongKey = genKey()
+        GroupKey key = genKey()
+        GroupKey wrongKey = genKey()
         EncryptionUtil.encryptStreamMessage(msg, key.getSecretKey())
         Map received = null
         boolean subDone = false

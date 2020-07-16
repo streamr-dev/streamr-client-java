@@ -9,11 +9,11 @@ import spock.lang.Specification
 import java.security.SecureRandom
 
 class DecryptionKeySequenceSpec extends Specification {
-    UnencryptedGroupKey genGroupKey() {
+    GroupKey genGroupKey() {
         byte[] keyBytes = new byte[32]
         SecureRandom secureRandom = new SecureRandom()
         secureRandom.nextBytes(keyBytes)
-        return new UnencryptedGroupKey(Hex.encodeHexString(keyBytes))
+        return new GroupKey(Hex.encodeHexString(keyBytes))
     }
 
     StreamMessage genMsg(HashMap<String, Object> content) {
@@ -24,9 +24,9 @@ class DecryptionKeySequenceSpec extends Specification {
     }
 
     void "decrypts sequence of StreamMessage using key sequence"() {
-        UnencryptedGroupKey k1 = genGroupKey()
-        UnencryptedGroupKey k2 = genGroupKey()
-        UnencryptedGroupKey k3 = genGroupKey()
+        GroupKey k1 = genGroupKey()
+        GroupKey k2 = genGroupKey()
+        GroupKey k3 = genGroupKey()
 
         StreamMessage m1 = genMsg([m1: 'm1'])
         EncryptionUtil.encryptStreamMessage(m1, k1.secretKey)
@@ -42,7 +42,7 @@ class DecryptionKeySequenceSpec extends Specification {
 
         ArrayList<StreamMessage> msgs = [m1, m2, m3, m4, m5, m6]
 
-        DecryptionKeySequence util = new DecryptionKeySequence((ArrayList<UnencryptedGroupKey>)[k1, k2, k3])
+        DecryptionKeySequence util = new DecryptionKeySequence((ArrayList<GroupKey>)[k1, k2, k3])
         when:
         for (StreamMessage m: msgs) {
             util.tryToDecryptResent(m)

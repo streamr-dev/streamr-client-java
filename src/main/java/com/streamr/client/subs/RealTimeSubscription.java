@@ -5,8 +5,8 @@ import com.streamr.client.exceptions.*;
 import com.streamr.client.options.ResendOption;
 import com.streamr.client.protocol.message_layer.StreamMessage;
 import com.streamr.client.utils.EncryptionUtil;
+import com.streamr.client.utils.GroupKey;
 import com.streamr.client.utils.OrderedMsgChain;
-import com.streamr.client.utils.UnencryptedGroupKey;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -41,7 +41,7 @@ public class RealTimeSubscription extends BasicSubscription {
     public RealTimeSubscription(String streamId,
                                 int partition,
                                 MessageHandler handler,
-                                Map<String, UnencryptedGroupKey> groupKeys,
+                                Map<String, GroupKey> groupKeys,
                                 GroupKeyRequestFunction groupKeyRequestFunction,
                                 long propagationTimeout,
                                 long resendTimeout,
@@ -55,13 +55,13 @@ public class RealTimeSubscription extends BasicSubscription {
         }
     }
 
-    public RealTimeSubscription(String streamId, int partition, MessageHandler handler, Map<String, UnencryptedGroupKey> groupKeys,
+    public RealTimeSubscription(String streamId, int partition, MessageHandler handler, Map<String, GroupKey> groupKeys,
                                 GroupKeyRequestFunction groupKeyRequestFunction) {
         this(streamId, partition, handler, groupKeys, groupKeyRequestFunction, Subscription.DEFAULT_PROPAGATION_TIMEOUT,
                 Subscription.DEFAULT_RESEND_TIMEOUT, Subscription.DEFAULT_SKIP_GAPS_ON_FULL_QUEUE);
     }
 
-    public RealTimeSubscription(String streamId, int partition, MessageHandler handler, Map<String, UnencryptedGroupKey> groupKeys) {
+    public RealTimeSubscription(String streamId, int partition, MessageHandler handler, Map<String, GroupKey> groupKeys) {
         this(streamId, partition, handler, groupKeys, null);
     }
 
@@ -70,7 +70,7 @@ public class RealTimeSubscription extends BasicSubscription {
     }
 
     @Override
-    public void setGroupKeys(String publisherId, ArrayList<UnencryptedGroupKey> groupKeys) throws UnableToSetKeysException {
+    public void setGroupKeys(String publisherId, ArrayList<GroupKey> groupKeys) throws UnableToSetKeysException {
         log.debug("setGroupKeys called for stream {}, publisher {}, keys {}",
                 streamId, publisherId, groupKeys);
 
