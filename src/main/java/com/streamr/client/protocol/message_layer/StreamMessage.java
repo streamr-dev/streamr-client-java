@@ -11,7 +11,7 @@ import java.util.Map;
 
 public class StreamMessage implements ITimestamped {
 
-    public static final int LATEST_VERSION = 31;
+    public static final int LATEST_VERSION = 32;
 
     public enum MessageType {
         STREAM_MESSAGE ((byte) 27),

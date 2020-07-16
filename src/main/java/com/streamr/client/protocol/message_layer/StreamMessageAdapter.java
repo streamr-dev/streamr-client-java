@@ -29,6 +29,7 @@ public class StreamMessageAdapter extends JsonAdapter<StreamMessage> {
     static {
         adapterByVersion.put(30, new StreamMessageV30Adapter());
         adapterByVersion.put(31, new StreamMessageV31Adapter());
+        adapterByVersion.put(32, new StreamMessageV32Adapter());
     }
 
     /**
