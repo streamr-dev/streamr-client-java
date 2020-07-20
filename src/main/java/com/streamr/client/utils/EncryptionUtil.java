@@ -139,24 +139,17 @@ public class EncryptionUtil {
         streamMessage.setGroupKeyId(groupKey.getGroupKeyId());
     }
 
-    /*
-    Decrypts the serialized content of 'streamMessage' with 'groupKey'. If the resulting plaintext is the concatenation
-    of a new group key and a message content, sets the content of 'streamMessage' with that message content and returns
-    the key. If the resulting plaintext is only a message content, sets the content of 'streamMessage' with that
-    message content and returns null.
+    /**
+     * Decrypts the serialized content of 'streamMessage' with 'groupKey'.
      */
-    public static SecretKey decryptStreamMessage(StreamMessage streamMessage, SecretKey groupKey) throws UnableToDecryptException {
-        StreamMessage.EncryptionType encryptionType = streamMessage.getEncryptionType();
+    public static void decryptStreamMessage(StreamMessage streamMessage, SecretKey groupKey) throws UnableToDecryptException {
+        if (streamMessage.getEncryptionType() != StreamMessage.EncryptionType.AES) {
+            throw new IllegalArgumentException("Given StreamMessage is not encrypted with AES!");
+        }
+
         try {
-            if (encryptionType == StreamMessage.EncryptionType.AES) {
-                streamMessage.setEncryptionType(StreamMessage.EncryptionType.NONE);
-                streamMessage.setSerializedContent(decrypt(streamMessage.getSerializedContent(), groupKey));
-            } else if (encryptionType == StreamMessage.EncryptionType.NEW_KEY_AND_AES) {
-                byte[] plaintext = EncryptionUtil.decrypt(streamMessage.getSerializedContent(), groupKey);
-                streamMessage.setEncryptionType(StreamMessage.EncryptionType.NONE);
-                streamMessage.setSerializedContent(Arrays.copyOfRange(plaintext, 32, plaintext.length));
-                return new SecretKeySpec(Arrays.copyOfRange(plaintext, 0, 32), "AES");
-            }
+            streamMessage.setSerializedContent(decrypt(streamMessage.getSerializedContent(), groupKey));
+            streamMessage.setEncryptionType(StreamMessage.EncryptionType.NONE);
         } catch (Exception e) {
             if (groupKey == null) {
                 log.debug("No key given to decrypt stream {} msg {}", streamMessage.getStreamId(), streamMessage.getMessageRef());
@@ -165,10 +158,8 @@ public class EncryptionUtil {
                         streamMessage.getStreamId(), streamMessage.getMessageRef(), Hex.encodeHexString(groupKey.getEncoded()));
             }
 
-            streamMessage.setEncryptionType(encryptionType);
             throw new UnableToDecryptException(streamMessage.getSerializedContent());
         }
-        return null;
     }
 
     public static void validateGroupKey(String groupKeyHex) throws InvalidGroupKeyException {

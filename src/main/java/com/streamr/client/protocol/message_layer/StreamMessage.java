@@ -97,8 +97,7 @@ public class StreamMessage implements ITimestamped {
     public enum EncryptionType {
         NONE ((byte) 0),
         RSA ((byte) 1),
-        AES ((byte) 2),
-        NEW_KEY_AND_AES ((byte) 3);
+        AES ((byte) 2);
 
         private final byte id;
 
@@ -117,8 +116,6 @@ public class StreamMessage implements ITimestamped {
                 return RSA;
             } else if (id == AES.id) {
                 return AES;
-            } else if (id == NEW_KEY_AND_AES.id) {
-                return NEW_KEY_AND_AES;
             }
             throw new UnsupportedMessageException("Unrecognized encryption type: "+id);
         }

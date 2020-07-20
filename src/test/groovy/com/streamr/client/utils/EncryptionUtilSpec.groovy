@@ -129,27 +129,6 @@ class EncryptionUtilSpec extends Specification {
         streamMessage.encryptionType == StreamMessage.EncryptionType.NONE
         newKey == null
     }
-    void "StreamMessage gets encrypted with new key"() {
-        SecretKey key = genSecretKey()
-
-        when:
-        EncryptionUtil.encryptStreamMessageAndNewKey(genGroupKeyHex(), streamMessage, key)
-        then:
-        streamMessage.serializedContent != serializedPlaintextContent
-        streamMessage.encryptionType == StreamMessage.EncryptionType.NEW_KEY_AND_AES
-    }
-    void "StreamMessage decryption after encryption equals the initial StreamMessage (with new key)"() {
-        SecretKey key = genSecretKey()
-        String newGroupKeyHex = genGroupKeyHex()
-
-        when:
-        EncryptionUtil.encryptStreamMessageAndNewKey(newGroupKeyHex, streamMessage, key)
-        SecretKey newKey = EncryptionUtil.decryptStreamMessage(streamMessage, key)
-        then:
-        streamMessage.parsedContent == plaintextContent
-        streamMessage.encryptionType == StreamMessage.EncryptionType.NONE
-        Hex.encodeHexString(newKey.getEncoded()) == newGroupKeyHex
-    }
     void "does not throw when valid keys passed to constructor"() {
         KeyPair keyPair = genKeyPair()
         when:
