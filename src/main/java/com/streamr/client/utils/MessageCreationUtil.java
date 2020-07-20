@@ -1,62 +1,59 @@
 package com.streamr.client.utils;
 
-import com.streamr.client.exceptions.InvalidGroupKeyRequestException;
-import com.streamr.client.exceptions.InvalidGroupKeyResponseException;
-import com.streamr.client.exceptions.MalformedMessageException;
-import com.streamr.client.exceptions.SigningRequiredException;
+import com.streamr.client.exceptions.*;
 import com.streamr.client.protocol.message_layer.*;
 import com.streamr.client.rest.Stream;
 import org.apache.commons.lang3.RandomStringUtils;
 import org.apache.commons.lang3.tuple.Pair;
 
+import javax.annotation.Nullable;
 import java.nio.ByteBuffer;
 import java.nio.charset.StandardCharsets;
 import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
 import java.util.*;
-import java.util.stream.Collectors;
 
+/**
+ * A stateful helper class to create StreamMessages, with the following responsibilities:
+ *
+ * - Maintains message chains by creating appropriate MessageIDs and MessageRefs
+ * - Encrypts created messages
+ * - Signs created messages
+ *
+ * Does NOT:
+ * - Manage encryption keys
+ */
 public class MessageCreationUtil {
     private final String publisherId;
     private final String msgChainId;
     private final SigningUtil signingUtil;
-    private final KeyStorage keyStorage;
 
     private final HashMap<String, MessageRef> refsPerStreamAndPartition = new HashMap<>();
 
     private final HashMap<String, Integer> cachedHashes = new HashMap<>();
 
-    public MessageCreationUtil(String publisherId, SigningUtil signingUtil, KeyStorage keyStorage) {
+    public MessageCreationUtil(String publisherId, SigningUtil signingUtil) {
         this.publisherId = publisherId;
         msgChainId = RandomStringUtils.randomAlphanumeric(20);
         this.signingUtil = signingUtil;
-        this.keyStorage = keyStorage;
     }
 
-    public StreamMessage createStreamMessage(Stream stream, Map<String, Object> payload, Date timestamp, String partitionKey) {
-        return createStreamMessage(stream, payload, timestamp, partitionKey, null);
-    }
-
-    // TODO: handle new group keys differently
-    public StreamMessage createStreamMessage(Stream stream, Map<String, Object> payload, Date timestamp, String partitionKey, GroupKey newGroupKey) {
-        String groupKeyHex = newGroupKey == null ? null : newGroupKey.getGroupKeyHex();
-
+    public StreamMessage createStreamMessage(Stream stream, Map<String, Object> payload, Date timestamp, @Nullable String partitionKey, @Nullable GroupKey groupKey) {
         int streamPartition = getStreamPartition(stream.getPartitions(), partitionKey);
 
         Pair<MessageID, MessageRef> pair = createMsgIdAndRef(stream.getId(), streamPartition, timestamp.getTime());
-
         StreamMessage streamMessage = new StreamMessage(pair.getLeft(), pair.getRight(), payload);
 
-        if (keyStorage.hasKey(stream.getId()) && groupKeyHex != null) {
-            EncryptionUtil.encryptStreamMessageAndNewKey(groupKeyHex, streamMessage, keyStorage.getLatestKey(stream.getId()).getSecretKey());
-            keyStorage.addKey(stream.getId(), newGroupKey);
-        } else if (keyStorage.hasKey(stream.getId()) || groupKeyHex != null) {
-            if (groupKeyHex != null) {
-                keyStorage.addKey(stream.getId(), newGroupKey);
+        // Encrypt if GroupKey provided
+        if (groupKey != null) {
+            try {
+                EncryptionUtil.encryptStreamMessage(streamMessage, groupKey);
+            } catch (InvalidGroupKeyException e) {
+                throw new RuntimeException(e);
             }
-            EncryptionUtil.encryptStreamMessage(streamMessage, keyStorage.getLatestKey(stream.getId()).getSecretKey());
         }
 
+        // Sign if signingUtil provided
         if (signingUtil != null) {
             signingUtil.signStreamMessage(streamMessage);
         }
@@ -72,8 +69,9 @@ public class MessageCreationUtil {
 
         String keyExchangeStreamId = KeyExchangeUtil.getKeyExchangeStreamId(publisherAddress);
         Pair<MessageID, MessageRef> pair = createDefaultMsgIdAndRef(keyExchangeStreamId);
-
         StreamMessage streamMessage = request.toStreamMessage(pair.getLeft(), pair.getRight());
+
+        // Never encrypt but always sign
         signingUtil.signStreamMessage(streamMessage);
         return streamMessage;
     }
@@ -92,24 +90,55 @@ public class MessageCreationUtil {
         String keyExchangeStreamId = KeyExchangeUtil.getKeyExchangeStreamId(subscriberAddress);
         Pair<MessageID, MessageRef> pair = createDefaultMsgIdAndRef(keyExchangeStreamId);
         StreamMessage streamMessage = response.toStreamMessage(pair.getLeft(), pair.getRight());
+
+        // Always encrypt
         streamMessage.setEncryptionType(StreamMessage.EncryptionType.RSA);
-        // TODO: encrypt
+        EncryptionUtil.encryptWithPublicKey(streamMessage, request.getPublicKey());
+
+        // Always sign
         signingUtil.signStreamMessage(streamMessage);
         return streamMessage;
     }
 
-    public StreamMessage createGroupKeyAnnounce(String subscriberAddress, String streamId, List<GroupKey> groupKeys) {
+    public StreamMessage createGroupKeyAnnounceForSubscriber(String subscriberAddress, String streamId, String publicKey, List<GroupKey> groupKeys) {
         if (signingUtil == null) {
-            throw new SigningRequiredException("Cannot create unsigned group key reset. Must authenticate with an Ethereum account");
+            throw new SigningRequiredException("Cannot create unsigned group key announce. Must authenticate with an Ethereum account");
         }
 
-        GroupKeyAnnounce reset = new GroupKeyAnnounce(streamId, groupKeys);
+        GroupKeyAnnounce announce = new GroupKeyAnnounce(streamId, groupKeys);
 
         String keyExchangeStreamId = KeyExchangeUtil.getKeyExchangeStreamId(subscriberAddress);
         Pair<MessageID, MessageRef> pair = createDefaultMsgIdAndRef(keyExchangeStreamId);
-        StreamMessage streamMessage = reset.toStreamMessage(pair.getLeft(), pair.getRight());
+        StreamMessage streamMessage = announce.toStreamMessage(pair.getLeft(), pair.getRight());
+
+        // Always encrypt
         streamMessage.setEncryptionType(StreamMessage.EncryptionType.RSA);
-        // TODO: encrypt
+        EncryptionUtil.encryptWithPublicKey(streamMessage, publicKey);
+
+        // Always sign
+        signingUtil.signStreamMessage(streamMessage);
+        return streamMessage;
+    }
+
+    public StreamMessage createGroupKeyAnnounceOnStream(String streamId, List<GroupKey> newGroupKeys, GroupKey previousGroupKey) {
+        if (signingUtil == null) {
+            throw new SigningRequiredException("Cannot create unsigned group key announce. Must authenticate with an Ethereum account");
+        }
+
+        GroupKeyAnnounce announce = new GroupKeyAnnounce(streamId, newGroupKeys);
+
+        Pair<MessageID, MessageRef> pair = createDefaultMsgIdAndRef(streamId);
+        StreamMessage streamMessage = announce.toStreamMessage(pair.getLeft(), pair.getRight());
+
+        // Always encrypt
+        streamMessage.setEncryptionType(StreamMessage.EncryptionType.AES);
+        try {
+            EncryptionUtil.encryptStreamMessage(streamMessage, previousGroupKey);
+        } catch (InvalidGroupKeyException e) {
+            throw new RuntimeException(e);
+        }
+
+        // Always sign
         signingUtil.signStreamMessage(streamMessage);
         return streamMessage;
     }
@@ -130,6 +159,8 @@ public class MessageCreationUtil {
         String keyExchangeStreamId = KeyExchangeUtil.getKeyExchangeStreamId(destinationAddress);
         Pair<MessageID, MessageRef> pair = createDefaultMsgIdAndRef(keyExchangeStreamId);
         StreamMessage streamMessage = response.toStreamMessage(pair.getLeft(), pair.getRight());
+
+        // Never encrypt but always sign
         signingUtil.signStreamMessage(streamMessage);
         return streamMessage;
     }
@@ -164,7 +195,7 @@ public class MessageCreationUtil {
 
     private int getStreamPartition(int nbPartitions, String partitionKey) {
         if (nbPartitions == 0) {
-            throw new Error("partitionCount is falsey!");
+            throw new Error("partitionCount is zero!");
         } else if (nbPartitions == 1) {
             return 0;
         } else if (partitionKey != null) {

@@ -1,13 +1,16 @@
 package com.streamr.client.subs;
 
 import com.streamr.client.MessageHandler;
-import com.streamr.client.exceptions.*;
+import com.streamr.client.exceptions.GapDetectedException;
+import com.streamr.client.exceptions.UnsupportedMessageException;
 import com.streamr.client.options.ResendOption;
 import com.streamr.client.protocol.message_layer.StreamMessage;
 import com.streamr.client.utils.GroupKey;
+import com.streamr.client.utils.GroupKeyStore;
 import com.streamr.client.utils.OrderedMsgChain;
 
-import java.util.*;
+import java.util.Collection;
+import java.util.UUID;
 
 public abstract class Subscription {
     public static final long DEFAULT_PROPAGATION_TIMEOUT = 5000L;
@@ -18,6 +21,7 @@ public abstract class Subscription {
     protected final int partition;
     private final String id;
     protected final MessageHandler handler;
+    protected final GroupKeyStore keyStore;
     protected final long propagationTimeout;
     protected final long resendTimeout;
     protected final boolean skipGapsOnFullQueue;
@@ -28,12 +32,13 @@ public abstract class Subscription {
         SUBSCRIBING, SUBSCRIBED, UNSUBSCRIBING, UNSUBSCRIBED
     }
 
-    public Subscription(String streamId, int partition, MessageHandler handler,
+    public Subscription(String streamId, int partition, MessageHandler handler, GroupKeyStore keyStore,
                         long propagationTimeout, long resendTimeout, boolean skipGapsOnFullQueue) {
         this.id = UUID.randomUUID().toString();
         this.streamId = streamId;
         this.partition = partition;
         this.handler = handler;
+        this.keyStore = keyStore;
         this.propagationTimeout = propagationTimeout;
         this.resendTimeout = resendTimeout;
         this.skipGapsOnFullQueue = skipGapsOnFullQueue;
@@ -81,7 +86,11 @@ public abstract class Subscription {
 
     public abstract void setGapHandler(OrderedMsgChain.GapHandlerFunction gapHandler);
 
-    public abstract void setGroupKeys(String publisherId, ArrayList<GroupKey> groupKeys) throws UnableToSetKeysException;
+    /**
+     * Method to be called whenever the client has new encryption keys available in the GroupKeyStore.
+     * The Subscriptions should check the messages in its encryption queue and attempt to decrypt them.
+     */
+    public abstract void onNewKeys(String publisherId, Collection<GroupKey> groupKeys);
 
     public abstract void clear();
 }

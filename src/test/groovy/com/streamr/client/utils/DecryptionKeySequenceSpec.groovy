@@ -29,16 +29,16 @@ class DecryptionKeySequenceSpec extends Specification {
         GroupKey k3 = genGroupKey()
 
         StreamMessage m1 = genMsg([m1: 'm1'])
-        EncryptionUtil.encryptStreamMessage(m1, k1.secretKey)
+        EncryptionUtil.encryptStreamMessage(m1, k1.toSecretKey)
         StreamMessage m2 = genMsg([m2: 'm2'])
-        EncryptionUtil.encryptStreamMessage(m2, k2.secretKey)
+        EncryptionUtil.encryptStreamMessage(m2, k2.toSecretKey)
         StreamMessage m3 = genMsg([m3: 'm3'])
-        EncryptionUtil.encryptStreamMessage(m3, k2.secretKey)
+        EncryptionUtil.encryptStreamMessage(m3, k2.toSecretKey)
         StreamMessage m4 = genMsg([m4: 'm4'])
-        EncryptionUtil.encryptStreamMessage(m4, k3.secretKey)
+        EncryptionUtil.encryptStreamMessage(m4, k3.toSecretKey)
         StreamMessage m5 = genMsg([m5: 'm5'])
         StreamMessage m6 = genMsg([m6: 'm6'])
-        EncryptionUtil.encryptStreamMessage(m6, k3.secretKey)
+        EncryptionUtil.encryptStreamMessage(m6, k3.toSecretKey)
 
         ArrayList<StreamMessage> msgs = [m1, m2, m3, m4, m5, m6]
 

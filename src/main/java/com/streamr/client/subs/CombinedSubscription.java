@@ -5,24 +5,25 @@ import com.streamr.client.exceptions.*;
 import com.streamr.client.options.ResendOption;
 import com.streamr.client.protocol.message_layer.StreamMessage;
 import com.streamr.client.utils.GroupKey;
+import com.streamr.client.utils.GroupKeyStore;
 import com.streamr.client.utils.OrderedMsgChain;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.util.ArrayDeque;
-import java.util.ArrayList;
-import java.util.Map;
+import java.util.Collection;
 
 public class CombinedSubscription extends Subscription {
 
-    private static final Logger log = LoggerFactory.getLogger(CombinedSubscription.class);
+    private BasicSubscription currentSub;
+    private final ArrayDeque<StreamMessage> queuedRealtimeMessages = new ArrayDeque<>();
 
-    private BasicSubscription sub;
-    private final ArrayDeque<StreamMessage> queue = new ArrayDeque<>();
-    public CombinedSubscription(String streamId, int partition, MessageHandler handler, ResendOption resendOption,
-                                Map<String, GroupKey> groupKeys, BasicSubscription.GroupKeyRequestFunction groupKeyRequestFunction,
+    public CombinedSubscription(String streamId, int partition, MessageHandler handler, GroupKeyStore keyStore, ResendOption resendOption,
+                                BasicSubscription.GroupKeyRequestFunction groupKeyRequestFunction,
                                 long propagationTimeout, long resendTimeout, boolean skipGapsOnFullQueue) {
-        super(streamId, partition, handler, propagationTimeout, resendTimeout, skipGapsOnFullQueue);
+
+        super(streamId, partition, handler, keyStore, propagationTimeout, resendTimeout, skipGapsOnFullQueue);
+
         MessageHandler wrapperHandler = new MessageHandler() {
             @Override
             public void onMessage(Subscription sub, StreamMessage message) {
@@ -34,20 +35,19 @@ public class CombinedSubscription extends Subscription {
 
                 log.debug("HistoricalSubscription for stream {} is done. Switching to RealtimeSubscription.", streamId);
 
-                // TODO: get group keys from historical subscription?
-
                 // once the initial resend is done, switch to real time
-                RealTimeSubscription realTime = new RealTimeSubscription(streamId, partition, handler, groupKeys,
+                RealTimeSubscription realTime = new RealTimeSubscription(streamId, partition, handler, keyStore,
                         groupKeyRequestFunction, propagationTimeout, resendTimeout, skipGapsOnFullQueue);
-                realTime.setGapHandler(sub.getGapHandler());
+
+                realTime.setGapHandler(currentSub.getGapHandler());
                 // set the last received references to the last references of the resent messages
-                realTime.setLastMessageRefs(sub.getChains());
+                realTime.setLastMessageRefs(currentSub.getChains());
                 // handle the real time messages received during the initial resend
-                while(!queue.isEmpty()) {
-                    StreamMessage msg = queue.poll();
+                while(!queuedRealtimeMessages.isEmpty()) {
+                    StreamMessage msg = queuedRealtimeMessages.poll();
                     realTime.handleRealTimeMessage(msg);
                 }
-                sub = realTime;
+                currentSub = realTime;
             }
             @Override
             public void onUnableToDecrypt(UnableToDecryptException e) {
@@ -55,62 +55,62 @@ public class CombinedSubscription extends Subscription {
             }
         };
         // starts to request the initial resend
-        sub = new HistoricalSubscription(streamId, partition, wrapperHandler, resendOption, groupKeys,
-                groupKeyRequestFunction, propagationTimeout, resendTimeout, skipGapsOnFullQueue, queue::push);
+        currentSub = new HistoricalSubscription(streamId, partition, wrapperHandler, keyStore, resendOption,
+                groupKeyRequestFunction, propagationTimeout, resendTimeout, skipGapsOnFullQueue, queuedRealtimeMessages::push);
     }
 
     @Override
     public void setGapHandler(OrderedMsgChain.GapHandlerFunction gapHandler) {
-        sub.setGapHandler(gapHandler);
+        currentSub.setGapHandler(gapHandler);
     }
 
     @Override
-    public void setGroupKeys(String publisherId, ArrayList<GroupKey> groupKeys) throws UnableToSetKeysException {
-        sub.setGroupKeys(publisherId, groupKeys);
+    public void onNewKeys(String publisherId, Collection<GroupKey> groupKeys) {
+        currentSub.onNewKeys(publisherId, groupKeys);
     }
 
     @Override
     public boolean isResending() {
-        return sub.isResending();
+        return currentSub.isResending();
     }
 
     @Override
     public void setResending(boolean resending) {
-        sub.setResending(resending);
+        currentSub.setResending(resending);
     }
 
     @Override
     public boolean hasResendOptions() {
-        return sub.hasResendOptions();
+        return currentSub.hasResendOptions();
     }
 
     @Override
     public ResendOption getResendOption() {
-        return sub.getResendOption();
+        return currentSub.getResendOption();
     }
 
     @Override
     public void startResend() {
-        sub.startResend();
+        currentSub.startResend();
     }
 
     @Override
     public void endResend() throws GapDetectedException {
-        sub.endResend();
+        currentSub.endResend();
     }
 
     @Override
     public void handleRealTimeMessage(StreamMessage msg) throws GapDetectedException, UnsupportedMessageException {
-        sub.handleRealTimeMessage(msg);
+        currentSub.handleRealTimeMessage(msg);
     }
 
     @Override
     public void handleResentMessage(StreamMessage msg) throws GapDetectedException, UnsupportedMessageException {
-        sub.handleResentMessage(msg);
+        currentSub.handleResentMessage(msg);
     }
 
     @Override
     public void clear() {
-        sub.clear();
+        currentSub.clear();
     }
 }

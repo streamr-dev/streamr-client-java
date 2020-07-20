@@ -200,7 +200,7 @@ class HistoricalSubscriptionSpec extends StreamrSpecification {
     void "decrypts encrypted messages with the correct key"() {
         GroupKey key = genKey()
         Map plaintext = msg.getParsedContent()
-        EncryptionUtil.encryptStreamMessage(msg, key.getSecretKey())
+        EncryptionUtil.encryptStreamMessage(msg, key.toSecretKey())
         Map received = null
 
         HistoricalSubscription sub = new HistoricalSubscription(msg.getStreamId(), 0, new MessageHandler() {
@@ -218,7 +218,7 @@ class HistoricalSubscriptionSpec extends StreamrSpecification {
 
     void "calls key request function when no historical group keys are set (multiple times if no response)"() {
         GroupKey key = genKey()
-        EncryptionUtil.encryptStreamMessage(msg, key.getSecretKey())
+        EncryptionUtil.encryptStreamMessage(msg, key.toSecretKey())
         Map received = null
         String receivedPublisherId = null
         Date receivedStart = null
@@ -252,7 +252,7 @@ class HistoricalSubscriptionSpec extends StreamrSpecification {
 
         when:
         // the group keys are set, no further calls should occur
-        sub.setGroupKeys(msg.getPublisherId(), [key])
+        sub.onNewKeys(msg.getPublisherId(), [key])
         Thread.sleep(timeout * 2)
         then:
         receivedPublisherId == msg.getPublisherId().toLowerCase()
@@ -302,7 +302,7 @@ class HistoricalSubscriptionSpec extends StreamrSpecification {
         sub.handleResentMessage(msg2)
         // faking the reception of the group key response
         Thread.sleep(100)
-        sub.setGroupKeys(msg1.getPublisherId(), (ArrayList<GroupKey>)[groupKey1, groupKey2])
+        sub.onNewKeys(msg1.getPublisherId(), (ArrayList<GroupKey>)[groupKey1, groupKey2])
         sub.endResend()
 
         then:
@@ -380,8 +380,8 @@ class HistoricalSubscriptionSpec extends StreamrSpecification {
 
         when:
         // faking the reception of the group key response
-        sub.setGroupKeys(msg1pub2.getPublisherId(), (ArrayList<GroupKey>) [groupKey3])
-        sub.setGroupKeys(msg1pub1.getPublisherId(), (ArrayList<GroupKey>) [groupKey1, groupKey2])
+        sub.onNewKeys(msg1pub2.getPublisherId(), (ArrayList<GroupKey>) [groupKey3])
+        sub.onNewKeys(msg1pub1.getPublisherId(), (ArrayList<GroupKey>) [groupKey1, groupKey2])
         sub.endResend()
         then:
         received.get(0).getParsedContent() == [foo: 'bar3']
@@ -395,7 +395,7 @@ class HistoricalSubscriptionSpec extends StreamrSpecification {
     void "throws when not able to decrypt with historical keys set"() {
         GroupKey key = genKey()
         GroupKey wrongKey = genKey()
-        EncryptionUtil.encryptStreamMessage(msg, key.getSecretKey())
+        EncryptionUtil.encryptStreamMessage(msg, key.toSecretKey())
         Map received = null
         boolean subDone = false
 

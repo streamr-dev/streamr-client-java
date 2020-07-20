@@ -23,6 +23,7 @@ class EncryptionUtilSpec extends Specification {
     Map plaintextContent = [foo: 'bar']
     String serializedPlaintextContent = "{\"foo\":\"bar\"}"
     StreamMessage streamMessage
+    EncryptionUtil util
 
     def setup() {
         streamMessage = new StreamMessage(
@@ -50,21 +51,37 @@ class EncryptionUtilSpec extends Specification {
         return EncryptionUtil.getSecretKeyFromHexString(genGroupKeyHex())
     }
     void "rsa decryption after encryption equals the initial plaintext"() {
-        EncryptionUtil util = new EncryptionUtil()
         byte[] plaintext = "some random text".getBytes(StandardCharsets.UTF_8)
+
         when:
         String ciphertext = EncryptionUtil.encryptWithPublicKey(plaintext, util.getPublicKeyAsPemString())
         then:
         util.decryptWithPrivateKey(ciphertext) == plaintext
     }
+
     void "rsa decryption after encryption equals the initial plaintext (hex string)"() {
-        EncryptionUtil util = new EncryptionUtil()
         byte[] plaintext = "some random text".getBytes(StandardCharsets.UTF_8)
         when:
         String ciphertext = EncryptionUtil.encryptWithPublicKey(Hex.encodeHexString(plaintext), util.getPublicKeyAsPemString())
         then:
         util.decryptWithPrivateKey(ciphertext) == plaintext
     }
+
+    void "rsa decryption after encryption equals the initial plaintext (StreamMessage)"() {
+        when:
+        EncryptionUtil.encryptWithPublicKey(streamMessage, util.getPublicKeyAsPemString())
+        then:
+        streamMessage.getSerializedContent() != serializedPlaintextContent
+        streamMessage.getEncryptionType() == StreamMessage.EncryptionType.RSA
+
+        when:
+        util.decryptWithPrivateKey(streamMessage)
+        then:
+        streamMessage.getSerializedContent() == serializedPlaintextContent
+        streamMessage.getParsedContent() == plaintextContent
+        streamMessage.getEncryptionType() == StreamMessage.EncryptionType.NONE
+    }
+
     void "aes encryption preserves size (plus iv)"() {
         SecretKey key = genSecretKey()
         byte[] plaintext = "some random text".getBytes(StandardCharsets.UTF_8)

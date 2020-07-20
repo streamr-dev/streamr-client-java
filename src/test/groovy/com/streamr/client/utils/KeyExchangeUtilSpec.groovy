@@ -1,7 +1,7 @@
 package com.streamr.client.utils
 
 import com.streamr.client.exceptions.InvalidGroupKeyRequestException
-import com.streamr.client.exceptions.InvalidGroupKeyResetException
+import com.streamr.client.exceptions.InvalidGroupKeyAnnounceException
 import com.streamr.client.exceptions.InvalidGroupKeyResponseException
 import com.streamr.client.protocol.message_layer.GroupKeyRequest
 import com.streamr.client.protocol.message_layer.GroupKeyAnnounce
@@ -31,10 +31,10 @@ class KeyExchangeUtilSpec extends Specification {
         return new GroupKey(Hex.encodeHexString(keyBytes), start)
     }
     KeyExchangeUtil util
-    KeyStorage storage
+    GroupKeyStore storage
     MessageCreationUtil messageCreationUtil
     Consumer<StreamMessage> publish
-    KeyExchangeUtil.SetGroupKeysFunction setGroupKeysFunction
+    KeyExchangeUtil.OnNewKeysFunction setGroupKeysFunction
     ArrayList<StreamMessage> published
     StreamMessage response = new StreamMessage(
             new MessageID("subscriberId", 0, 5145, 0, "publisherId", ""),
@@ -53,7 +53,7 @@ class KeyExchangeUtilSpec extends Specification {
     GroupKey received
 
     void setup() {
-        storage = Mock(KeyStorage)
+        storage = Mock(GroupKeyStore)
         messageCreationUtil = Mock(MessageCreationUtil)
         published = new ArrayList<>()
         publish = new Consumer<StreamMessage>() {
@@ -62,7 +62,7 @@ class KeyExchangeUtilSpec extends Specification {
                 published.add(streamMessage)
             }
         }
-        setGroupKeysFunction = new KeyExchangeUtil.SetGroupKeysFunction() {
+        setGroupKeysFunction = new KeyExchangeUtil.OnNewKeysFunction() {
             @Override
             void apply(String streamId, String publisherId, ArrayList<GroupKey> keys) {
                 assert streamId == "streamId"
@@ -226,9 +226,9 @@ class KeyExchangeUtilSpec extends Specification {
         StreamMessage streamMessage = new StreamMessage(id, null, StreamMessage.MessageType.GROUP_KEY_ANNOUNCE, reset.toMap())
 
         when:
-        util.handleGroupKeyReset(streamMessage)
+        util.handleGroupKeyAnnounce(streamMessage)
         then:
-        InvalidGroupKeyResetException e = thrown(InvalidGroupKeyResetException)
+        InvalidGroupKeyAnnounceException e = thrown(InvalidGroupKeyAnnounceException)
         e.message == "Received unsigned group key reset (it must be signed to avoid MitM attacks)."
     }
 
@@ -245,9 +245,9 @@ class KeyExchangeUtilSpec extends Specification {
         StreamMessage streamMessage = new StreamMessage(id, null, StreamMessage.MessageType.GROUP_KEY_ANNOUNCE, reset.toMap(), StreamMessage.EncryptionType.NONE, null, StreamMessage.SignatureType.ETH, "signature")
 
         when:
-        util.handleGroupKeyReset(streamMessage)
+        util.handleGroupKeyAnnounce(streamMessage)
         then:
-        InvalidGroupKeyResetException e = thrown(InvalidGroupKeyResetException)
+        InvalidGroupKeyAnnounceException e = thrown(InvalidGroupKeyAnnounceException)
         e.message == "Group key must be 256 bits long, but got a key length of 128 bits."
     }
 
@@ -260,7 +260,7 @@ class KeyExchangeUtilSpec extends Specification {
         GroupKeyAnnounce reset = new GroupKeyAnnounce("streamId", encryptedGroupKey.groupKeyHex, 123L)
         StreamMessage streamMessage = new StreamMessage(id, null, StreamMessage.MessageType.GROUP_KEY_ANNOUNCE, reset.toMap(), StreamMessage.EncryptionType.NONE, null, StreamMessage.SignatureType.ETH, "signature")
         when:
-        util.handleGroupKeyReset(streamMessage)
+        util.handleGroupKeyAnnounce(streamMessage)
         then:
         received.groupKeyHex == newGroupKey.groupKeyHex
         received.startTime == 123L
@@ -364,7 +364,7 @@ class KeyExchangeUtilSpec extends Specification {
         1 * addressValidityUtil2.isValidSubscriber("streamId", "subscriberId3") >> true
         3 * storage.getKeysBetween("streamId", 123L, 456L) >> [genKey(32, new Date(123))]
         1 * addressValidityUtil2.getSubscribersSet("streamId", true) >> ["subscriberId1", "subscriberId3"]
-        2 * messageCreationUtil.createGroupKeyAnnounce(*_) >> { arguments ->
+        2 * messageCreationUtil.createGroupKeyAnnounceForSubscriber(*_) >> { arguments ->
             if (arguments[0] == "subscriberId1") {
                 assert arguments[1] == "streamId"
                 EncryptedGroupKey key = arguments[2]

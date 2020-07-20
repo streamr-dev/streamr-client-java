@@ -20,21 +20,21 @@ class LatestKeyStorageSpec extends Specification {
     void "hasKey() returns true iff there is a GroupKey for the stream"() {
         GroupKey key = genKey(32)
         when:
-        KeyStorage util = new LatestKeyStorage(["streamId": key])
+        GroupKeyStore util = new LatestKeyStorage(["streamId": key])
         then:
         util.hasKey("streamId")
         !util.hasKey("wrong-streamId")
     }
     void "getLatestKey() returns null when there is no GroupKey for the stream"() {
         when:
-        KeyStorage util = new LatestKeyStorage(new HashMap<String, GroupKey>())
+        GroupKeyStore util = new LatestKeyStorage(new HashMap<String, GroupKey>())
         then:
         util.getLatestKey("streamId") == null
     }
     void "getLatestKey() returns key passed in constructor"() {
         GroupKey key = genKey(32)
         when:
-        KeyStorage util = new LatestKeyStorage(["streamId": key])
+        GroupKeyStore util = new LatestKeyStorage(["streamId": key])
         then:
         util.getLatestKey("streamId") == key
     }
@@ -42,7 +42,7 @@ class LatestKeyStorageSpec extends Specification {
         GroupKey key1 = genKey(32)
         GroupKey key2 = genKey(32)
         when:
-        KeyStorage util = new LatestKeyStorage(new HashMap<String, GroupKey>())
+        GroupKeyStore util = new LatestKeyStorage(new HashMap<String, GroupKey>())
         util.addKey("streamId", key1)
         util.addKey("streamId", key2)
         then:
@@ -50,7 +50,7 @@ class LatestKeyStorageSpec extends Specification {
     }
     void "getKeysBetween() throws an exception"() {
         when:
-        KeyStorage util = new LatestKeyStorage(new HashMap<String, GroupKey>())
+        GroupKeyStore util = new LatestKeyStorage(new HashMap<String, GroupKey>())
         util.getKeysBetween("wrong-streamId", 0, 1)
         then:
         thrown(InvalidGroupKeyRequestException)

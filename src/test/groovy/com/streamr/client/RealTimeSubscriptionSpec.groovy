@@ -250,7 +250,7 @@ class RealTimeSubscriptionSpec extends StreamrSpecification {
         nbCalls == 3
 
         when:
-        sub.setGroupKeys(msg.getPublisherId(), [groupKey])
+        sub.onNewKeys(msg.getPublisherId(), [groupKey])
         Thread.sleep(timeout * 2)
         then:
         receivedPublisherId == msg.getPublisherId().toLowerCase()
@@ -329,7 +329,7 @@ class RealTimeSubscriptionSpec extends StreamrSpecification {
 
         // faking the reception of the group key response
         when:
-        sub.setGroupKeys(msg1.getPublisherId(), (ArrayList<GroupKey>)[groupKey])
+        sub.onNewKeys(msg1.getPublisherId(), (ArrayList<GroupKey>)[groupKey])
 
         then:
         received1.getParsedContent() == [foo: 'bar1']
@@ -397,8 +397,8 @@ class RealTimeSubscriptionSpec extends StreamrSpecification {
 
         when:
         // faking the reception of the group key response
-        sub.setGroupKeys(msg1pub1.getPublisherId(), (ArrayList<GroupKey>)[groupKey1])
-        sub.setGroupKeys(msg1pub2.getPublisherId(), (ArrayList<GroupKey>)[groupKey2])
+        sub.onNewKeys(msg1pub1.getPublisherId(), (ArrayList<GroupKey>)[groupKey1])
+        sub.onNewKeys(msg1pub2.getPublisherId(), (ArrayList<GroupKey>)[groupKey2])
         then:
         received.get(0).getParsedContent() == [foo: 'bar1']
         received.get(1).getParsedContent() == [foo: 'bar2']
@@ -448,10 +448,10 @@ class RealTimeSubscriptionSpec extends StreamrSpecification {
 
         when:
         sub.handleRealTimeMessage(msg2pub1)
-        sub.setGroupKeys("publisherId1", (ArrayList<GroupKey>)[groupKey1])
+        sub.onNewKeys("publisherId1", (ArrayList<GroupKey>)[groupKey1])
         sub.handleRealTimeMessage(msg3pub1)
         sub.handleRealTimeMessage(msg2pub2)
-        sub.setGroupKeys("publisherId2", (ArrayList<GroupKey>)[groupKey2])
+        sub.onNewKeys("publisherId2", (ArrayList<GroupKey>)[groupKey2])
 
         then:
         received.get(0).getParsedContent() == [foo: 'bar1']
@@ -487,7 +487,7 @@ class RealTimeSubscriptionSpec extends StreamrSpecification {
         })
         when:
         sub.handleRealTimeMessage(msg)
-        sub.setGroupKeys(msg.getPublisherId(), (ArrayList<GroupKey>)[otherWrongGroupKey])
+        sub.onNewKeys(msg.getPublisherId(), (ArrayList<GroupKey>)[otherWrongGroupKey])
         then:
         thrown(UnableToDecryptException)
     }
@@ -499,12 +499,12 @@ class RealTimeSubscriptionSpec extends StreamrSpecification {
         Map content1 = [foo: 'bar']
         StreamMessage msg1 = createMessage(content1)
 
-        EncryptionUtil.encryptStreamMessageAndNewKey(groupKey2.getGroupKeyHex(), msg1, groupKey1.getSecretKey())
+        EncryptionUtil.encryptStreamMessageAndNewKey(groupKey2.getGroupKeyHex(), msg1, groupKey1.toSecretKey())
 
         Map content2 = [hello: 'world']
         StreamMessage msg2 = createMessage(content2)
 
-        EncryptionUtil.encryptStreamMessage(msg2, groupKey2.getSecretKey())
+        EncryptionUtil.encryptStreamMessage(msg2, groupKey2.toSecretKey())
 
         Map received1 = null
         Map received2 = null

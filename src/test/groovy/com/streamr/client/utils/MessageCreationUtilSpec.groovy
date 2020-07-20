@@ -15,7 +15,7 @@ import spock.lang.Specification
 import java.security.SecureRandom
 
 class MessageCreationUtilSpec extends Specification {
-    KeyStorage keyStorage
+    GroupKeyStore keyStorage
     MessageCreationUtil msgCreationUtil
     Stream stream
     SecureRandom secureRandom
@@ -269,7 +269,7 @@ class MessageCreationUtilSpec extends Specification {
     void "should not be able to create unsigned group key reset"() {
         when:
         // msgCreationUtil has null signingUtil
-        msgCreationUtil.createGroupKeyAnnounce("", "", null)
+        msgCreationUtil.createGroupKeyAnnounceForSubscriber("", "", null)
         then:
         SigningRequiredException e = thrown SigningRequiredException
         e.message == "Cannot create unsigned group key reset. Must authenticate with an Ethereum account"
@@ -282,7 +282,7 @@ class MessageCreationUtilSpec extends Specification {
         MessageCreationUtil util = new MessageCreationUtil("publisherId", signingUtil, keyStorage)
         EncryptedGroupKey k = genEncryptedKey(32, new Date(123))
         when:
-        StreamMessage msg = util.createGroupKeyAnnounce("subscriberInboxAddress", "streamId", k)
+        StreamMessage msg = util.createGroupKeyAnnounceForSubscriber("subscriberInboxAddress", "streamId", k)
         then:
         msg.getStreamId() == KeyExchangeUtil.getKeyExchangeStreamId("subscriberInboxAddress")
         msg.getMessageType() == StreamMessage.MessageType.GROUP_KEY_ANNOUNCE

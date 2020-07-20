@@ -29,7 +29,7 @@ public class GroupKey {
         return groupKeyHex;
     }
 
-    public SecretKey getSecretKey() {
+    public SecretKey toSecretKey() {
         return secretKey;
     }
 

@@ -33,8 +33,8 @@ public class EncryptionUtil {
     private static final ThreadLocal<Cipher> aesCipher = ThreadLocal.withInitial(() -> getAESCipher());
     private static final ThreadLocal<Cipher> rsaCipher = ThreadLocal.withInitial(() -> getRSACipher());
 
-    private RSAPublicKey publicKey;
-    private RSAPrivateKey privateKey;
+    private final RSAPublicKey publicKey;
+    private final RSAPrivateKey privateKey;
 
     public EncryptionUtil(RSAPublicKey rsaPublicKey, RSAPrivateKey rsaPrivateKey) {
         if (rsaPublicKey == null && rsaPrivateKey == null) {
@@ -61,12 +61,26 @@ public class EncryptionUtil {
         }
     }
 
+    public void decryptWithPrivateKey(StreamMessage msg) throws UnableToDecryptException {
+        if (msg.getEncryptionType() != StreamMessage.EncryptionType.RSA) {
+            throw new IllegalArgumentException("Given StreamMessage is not encrypted with RSA!");
+        }
+        msg.setEncryptionType(StreamMessage.EncryptionType.NONE);
+        msg.setSerializedContent(decryptWithPrivateKey(msg.getSerializedContent()));
+    }
+
     public RSAPublicKey getPublicKey() {
         return this.publicKey;
     }
 
     public String getPublicKeyAsPemString() {
         return exportKeyAsPemString(this.publicKey, true);
+    }
+
+    public static void encryptWithPublicKey(StreamMessage msg, String publicKey) {
+        msg.setEncryptionType(StreamMessage.EncryptionType.RSA);
+        msg.setGroupKeyId(publicKey);
+        msg.setSerializedContent(encryptWithPublicKey(msg.getSerializedContentAsBytes(), publicKey));
     }
 
     public static String encryptWithPublicKey(byte[] plaintext, String publicKey) {
@@ -116,16 +130,13 @@ public class EncryptionUtil {
         return aesCipher.get().doFinal(DatatypeConverter.parseHexBinary(ciphertext.substring(32)));
     }
 
-    /*
-    Sets the content of 'streamMessage' with the encryption result of the old content with 'groupKey'.
+    /**
+     * Sets the content of 'streamMessage' with the encryption result of the old content with 'groupKey'.
      */
-    public static void encryptStreamMessage(StreamMessage streamMessage, SecretKey groupKey) {
+    public static void encryptStreamMessage(StreamMessage streamMessage, GroupKey groupKey) throws InvalidGroupKeyException {
+        SecretKey secretKey = getSecretKeyFromHexString(groupKey.getGroupKeyHex());
         streamMessage.setEncryptionType(StreamMessage.EncryptionType.AES);
-        try {
-            streamMessage.setSerializedContent(encrypt(streamMessage.getSerializedContentAsBytes(), groupKey));
-        } catch (IOException e) {
-            log.error("Failed to encrypt StreamMessage", e);
-        }
+        streamMessage.setSerializedContent(encrypt(streamMessage.getSerializedContentAsBytes(), secretKey));
     }
 
     /*
@@ -140,11 +151,7 @@ public class EncryptionUtil {
         byte[] plaintext = new byte[groupKeyBytes.length + payloadBytes.length];
         System.arraycopy(groupKeyBytes, 0, plaintext, 0, groupKeyBytes.length);
         System.arraycopy(payloadBytes, 0, plaintext, groupKeyBytes.length, payloadBytes.length);
-        try {
-            streamMessage.setSerializedContent(encrypt(plaintext, groupKey));
-        } catch (IOException e) {
-            log.error("Failed to encrypt StreamMessage and new key", e);
-        }
+        streamMessage.setSerializedContent(encrypt(plaintext, groupKey));
     }
 
     /*

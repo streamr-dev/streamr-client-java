@@ -19,7 +19,7 @@ class KeyHistoryStorageSpec extends Specification {
     void "hasKey() returns true iff there is a GroupKeyHistory for the stream"() {
         GroupKey key = genKey(32)
         when:
-        KeyStorage util = new KeyHistoryStorage(["streamId": key])
+        GroupKeyStore util = new KeyHistoryStorage(["streamId": key])
         then:
         util.hasKey("streamId")
         !util.hasKey("wrong-streamId")
@@ -27,7 +27,7 @@ class KeyHistoryStorageSpec extends Specification {
     void "addKey() throws if key added is older than latest key"() {
         GroupKey key10 = genKey(32, new Date(10))
         GroupKey key5 = genKey(32, new Date(5))
-        KeyStorage util = new KeyHistoryStorage(["streamId": key10])
+        GroupKeyStore util = new KeyHistoryStorage(["streamId": key10])
         when:
         util.addKey("streamId", key5)
         then:
@@ -35,14 +35,14 @@ class KeyHistoryStorageSpec extends Specification {
     }
     void "getLatestKey() returns null when there is no GroupKeyHistory for the stream"() {
         when:
-        KeyStorage util = new KeyHistoryStorage(new HashMap<String, GroupKey>())
+        GroupKeyStore util = new KeyHistoryStorage(new HashMap<String, GroupKey>())
         then:
         util.getLatestKey("streamId") == null
     }
     void "getLatestKey() returns key passed in constructor"() {
         GroupKey key = genKey(32)
         when:
-        KeyStorage util = new KeyHistoryStorage(["streamId": key])
+        GroupKeyStore util = new KeyHistoryStorage(["streamId": key])
         then:
         util.getLatestKey("streamId") == key
     }
@@ -50,7 +50,7 @@ class KeyHistoryStorageSpec extends Specification {
         GroupKey key1 = genKey(32)
         GroupKey key2 = genKey(32)
         when:
-        KeyStorage util = new KeyHistoryStorage(new HashMap<String, GroupKey>())
+        GroupKeyStore util = new KeyHistoryStorage(new HashMap<String, GroupKey>())
         util.addKey("streamId", key1)
         util.addKey("streamId", key2)
         then:
@@ -58,20 +58,20 @@ class KeyHistoryStorageSpec extends Specification {
     }
     void "getKeysBetween() returns empty array for wrong streamId"() {
         when:
-        KeyStorage util = new KeyHistoryStorage(new HashMap<String, GroupKey>())
+        GroupKeyStore util = new KeyHistoryStorage(new HashMap<String, GroupKey>())
         then:
         util.getKeysBetween("wrong-streamId", 0, 1) == []
     }
     void "getKeysBetween() returns empty array when end time is before start of first key"() {
         when:
-        KeyStorage util = new KeyHistoryStorage(new HashMap<String, GroupKey>())
+        GroupKeyStore util = new KeyHistoryStorage(new HashMap<String, GroupKey>())
         util.addKey("streamId", genKey(32, new Date(10)))
         then:
         util.getKeysBetween("streamId", 1, 9) == []
     }
     void "returns only the latest key when start time is after last key"() {
         when:
-        KeyStorage util = new KeyHistoryStorage(new HashMap<String, GroupKey>())
+        GroupKeyStore util = new KeyHistoryStorage(new HashMap<String, GroupKey>())
         util.addKey("streamId", genKey(32, new Date(5)))
         GroupKey latest = genKey(32, new Date(10))
         util.addKey("streamId", latest)
@@ -79,7 +79,7 @@ class KeyHistoryStorageSpec extends Specification {
         util.getKeysBetween("streamId", 15, 200) == [latest]
     }
     void "returns keys in interval start-end"() {
-        KeyStorage util = new KeyHistoryStorage(new HashMap<String, GroupKey>())
+        GroupKeyStore util = new KeyHistoryStorage(new HashMap<String, GroupKey>())
         GroupKey key1 = genKey(32, new Date(10))
         GroupKey key2 = genKey(32, new Date(20))
         GroupKey key3 = genKey(32, new Date(30))
