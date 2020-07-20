@@ -229,7 +229,7 @@ class BasicSubscriptionSpec extends StreamrSpecification {
         nbCalls == 3
 
         when:
-        sub.onNewKeys(msg.getPublisherId(), [groupKey])
+        sub.onNewKeysAdded(msg.getPublisherId(), [groupKey])
         Thread.sleep(timeout * 2)
         then:
         receivedPublisherId == msg.getPublisherId().toLowerCase()
@@ -284,7 +284,7 @@ class BasicSubscriptionSpec extends StreamrSpecification {
 
         // faking the reception of the group key response
         when:
-        sub.onNewKeys(msg1.getPublisherId(), [groupKey])
+        sub.onNewKeysAdded(msg1.getPublisherId(), [groupKey])
 
         then:
         received.size() == 2
@@ -337,8 +337,8 @@ class BasicSubscriptionSpec extends StreamrSpecification {
 
         when:
         // faking the reception of the group key response
-        sub.onNewKeys(msg1pub1.getPublisherId(), [groupKey1])
-        sub.onNewKeys(msg1pub2.getPublisherId(), [groupKey2])
+        sub.onNewKeysAdded(msg1pub1.getPublisherId(), [groupKey1])
+        sub.onNewKeysAdded(msg1pub2.getPublisherId(), [groupKey2])
         then:
         received.get(0).getParsedContent() == [foo: 'bar1']
         received.get(1).getParsedContent() == [foo: 'bar2']
@@ -372,10 +372,10 @@ class BasicSubscriptionSpec extends StreamrSpecification {
 
         when:
         sub.handleRealTimeMessage(msg2pub1)
-        sub.onNewKeys("publisherId1", [groupKey1])
+        sub.onNewKeysAdded("publisherId1", [groupKey1])
         sub.handleRealTimeMessage(msg3pub1)
         sub.handleRealTimeMessage(msg2pub2)
-        sub.onNewKeys("publisherId2", [groupKey2])
+        sub.onNewKeysAdded("publisherId2", [groupKey2])
 
         then:
         received.get(0).getParsedContent() == [foo: 'bar1']
@@ -394,7 +394,7 @@ class BasicSubscriptionSpec extends StreamrSpecification {
 
         when:
         sub.handleRealTimeMessage(msg) // queues message
-        sub.onNewKeys(msg.getPublisherId(), [incorrectGroupKeyWithCorrectId])
+        sub.onNewKeysAdded(msg.getPublisherId(), [incorrectGroupKeyWithCorrectId])
 
         then:
         thrown(UnableToDecryptException)
@@ -409,7 +409,7 @@ class BasicSubscriptionSpec extends StreamrSpecification {
 
         when:
         sub.handleRealTimeMessage(msg) // queues message
-        sub.onNewKeys(msg.getPublisherId(), [otherKey]) // other key added (not waiting for this key)
+        sub.onNewKeysAdded(msg.getPublisherId(), [otherKey]) // other key added (not waiting for this key)
 
         then:
         noExceptionThrown()

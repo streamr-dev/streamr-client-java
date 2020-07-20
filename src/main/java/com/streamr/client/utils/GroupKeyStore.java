@@ -1,11 +1,15 @@
 package com.streamr.client.utils;
 
 import com.streamr.client.exceptions.KeyAlreadyExistsException;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import java.util.HashMap;
 import java.util.Map;
 
 public abstract class GroupKeyStore {
+
+    private static final Logger log = LoggerFactory.getLogger(GroupKeyStore.class);
 
     private final Map<String, GroupKey> currentKey = new HashMap<>();
 
@@ -35,6 +39,8 @@ public abstract class GroupKeyStore {
      * is added twice, a KeyAlreadyExistsException is thrown.
      */
     public void add(String streamId, GroupKey key) throws KeyAlreadyExistsException {
+        log.trace("Adding keyId {} to stream {}", key.getGroupKeyId(), streamId);
+
         // Check that the group key has not already been added to this store.
         if (contains(key.getGroupKeyId())) {
             throw new KeyAlreadyExistsException(key);

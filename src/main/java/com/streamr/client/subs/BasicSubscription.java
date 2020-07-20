@@ -110,7 +110,7 @@ public abstract class BasicSubscription extends Subscription {
         encryptedMsgsQueues.offer(msgToQueue);
     }
 
-    protected void handleInOrderQueue(String publisherId) {
+    protected void handleEncryptionQueue(String publisherId) {
         cancelGroupKeyRequest(publisherId);
         ArrayDeque<StreamMessage> queue = encryptedMsgsQueues.get(publisherId);
         getLogger().trace("Checking and handling encryption queue for publisher {}. Queue size: {}", publisherId, queue.size());
@@ -190,9 +190,9 @@ public abstract class BasicSubscription extends Subscription {
     }
 
     @Override
-    public void onNewKeys(String publisherId, Collection<GroupKey> groupKeys) {
+    public void onNewKeysAdded(String publisherId, Collection<GroupKey> groupKeys) {
         // handle real time messages received while waiting for the group key
-        handleInOrderQueue(publisherId);
+        handleEncryptionQueue(publisherId);
     }
 
     public abstract Logger getLogger();

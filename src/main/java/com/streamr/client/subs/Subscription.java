@@ -90,7 +90,7 @@ public abstract class Subscription {
      * Method to be called whenever the client has new encryption keys available in the GroupKeyStore.
      * The Subscriptions should check the messages in its encryption queue and attempt to decrypt them.
      */
-    public abstract void onNewKeys(String publisherId, Collection<GroupKey> groupKeys);
+    public abstract void onNewKeysAdded(String publisherId, Collection<GroupKey> groupKeys);
 
     public abstract void clear();
 }

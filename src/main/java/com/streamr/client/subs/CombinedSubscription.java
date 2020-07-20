@@ -7,8 +7,6 @@ import com.streamr.client.protocol.message_layer.StreamMessage;
 import com.streamr.client.utils.GroupKey;
 import com.streamr.client.utils.GroupKeyStore;
 import com.streamr.client.utils.OrderedMsgChain;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 
 import java.util.ArrayDeque;
 import java.util.Collection;
@@ -65,8 +63,8 @@ public class CombinedSubscription extends Subscription {
     }
 
     @Override
-    public void onNewKeys(String publisherId, Collection<GroupKey> groupKeys) {
-        currentSub.onNewKeys(publisherId, groupKeys);
+    public void onNewKeysAdded(String publisherId, Collection<GroupKey> groupKeys) {
+        currentSub.onNewKeysAdded(publisherId, groupKeys);
     }
 
     @Override

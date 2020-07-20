@@ -136,7 +136,7 @@ public class StreamrClient extends StreamrRESTClient {
                 // On new keys, let the Subscriptions know
                 (streamId, publisherId, keys) -> {
                     for (Subscription sub: subs.getAllForStreamId(streamId)) {
-                        sub.onNewKeys(publisherId, keys);
+                        sub.onNewKeysAdded(publisherId, keys);
                     }
                 });
     }

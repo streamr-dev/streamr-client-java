@@ -134,9 +134,9 @@ public class EncryptionUtil {
      * Sets the content of 'streamMessage' with the encryption result of the old content with 'groupKey'.
      */
     public static void encryptStreamMessage(StreamMessage streamMessage, GroupKey groupKey) throws InvalidGroupKeyException {
-        SecretKey secretKey = getSecretKeyFromHexString(groupKey.getGroupKeyHex());
+        streamMessage.setSerializedContent(encrypt(streamMessage.getSerializedContentAsBytes(), groupKey.toSecretKey()));
         streamMessage.setEncryptionType(StreamMessage.EncryptionType.AES);
-        streamMessage.setSerializedContent(encrypt(streamMessage.getSerializedContentAsBytes(), secretKey));
+        streamMessage.setGroupKeyId(groupKey.getGroupKeyId());
     }
 
     /*

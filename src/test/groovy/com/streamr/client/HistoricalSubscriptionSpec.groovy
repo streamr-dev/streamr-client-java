@@ -68,9 +68,6 @@ class HistoricalSubscriptionSpec extends StreamrSpecification {
 
     void "calls the done handler only when the encryption queue is empty"() {
         GroupKey key = GroupKey.generate()
-
-        HistoricalSubscription sub = createSub()
-
         EncryptionUtil.encryptStreamMessage(msg, key)
 
         when:
@@ -88,9 +85,10 @@ class HistoricalSubscriptionSpec extends StreamrSpecification {
         !doneHandlerCalled
 
         when:
-        sub.onNewKeys(msg.getPublisherId(), [key])
+        sub.onNewKeysAdded(msg.getPublisherId(), [key])
 
         then:
+        1 * keyStore.get(msg.getStreamId(), key.getGroupKeyId()) >> key
         received.size() == 1
         doneHandlerCalled
     }
