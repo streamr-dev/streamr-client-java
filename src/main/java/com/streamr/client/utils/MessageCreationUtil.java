@@ -38,6 +38,14 @@ public class MessageCreationUtil {
         this.signingUtil = signingUtil;
     }
 
+    public StreamMessage createStreamMessage(Stream stream, Map<String, Object> payload, Date timestamp) {
+        return createStreamMessage(stream, payload, timestamp, null, null);
+    }
+
+    public StreamMessage createStreamMessage(Stream stream, Map<String, Object> payload, Date timestamp, String partitionKey) {
+        return createStreamMessage(stream, payload, timestamp, partitionKey, null);
+    }
+
     public StreamMessage createStreamMessage(Stream stream, Map<String, Object> payload, Date timestamp, @Nullable String partitionKey, @Nullable GroupKey groupKey) {
         int streamPartition = getStreamPartition(stream.getPartitions(), partitionKey);
 

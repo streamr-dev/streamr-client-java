@@ -81,12 +81,12 @@ public class KeyExchangeUtil {
         StreamMessage response = messageCreationUtil.createGroupKeyResponse(sender, request, foundKeys);
 
         // For re-keys, remember the public key for this subscriber
-        publicKeys.put(sender, request.getPublicKey());
+        publicKeys.put(sender.toLowerCase(), request.getPublicKey());
 
         publishFunction.accept(response);
     }
 
-    public void handleGroupKeyResponse(StreamMessage streamMessage) throws InvalidGroupKeyResponseException {
+    public void handleGroupKeyResponse(StreamMessage streamMessage) {
         GroupKeyResponse response = (GroupKeyResponse) AbstractGroupKeyMessage.fromStreamMessage(streamMessage);
 
         log.debug("Received group key response from publisher {} for stream {}, keys {}",
@@ -95,7 +95,7 @@ public class KeyExchangeUtil {
         handleNewKeys(response.getStreamId(), streamMessage.getPublisherId(), response.getKeys());
     }
 
-    public void handleGroupKeyAnnounce(StreamMessage streamMessage) throws InvalidGroupKeyAnnounceException {
+    public void handleGroupKeyAnnounce(StreamMessage streamMessage) {
         GroupKeyAnnounce announce = (GroupKeyAnnounce) AbstractGroupKeyMessage.fromStreamMessage(streamMessage);
 
         log.debug("Received group key announce from publisher {} for stream {}, keys {}",
@@ -159,6 +159,10 @@ public class KeyExchangeUtil {
 
     public static String getRecipientFromKeyExchangeStreamId(String keyExchangeStreamId) {
         return keyExchangeStreamId.substring(KEY_EXCHANGE_STREAM_PREFIX.length());
+    }
+
+    public HashMap<String, String> getKnownPublicKeysByPublisher() {
+        return publicKeys;
     }
 
     @FunctionalInterface

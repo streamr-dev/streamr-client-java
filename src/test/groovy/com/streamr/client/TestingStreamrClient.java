@@ -8,10 +8,12 @@ import com.streamr.client.protocol.message_layer.StreamMessage;
 import com.streamr.client.rest.Stream;
 import com.streamr.client.rest.UserInfo;
 import com.streamr.client.subs.Subscription;
-import com.streamr.client.utils.GroupKey;
 
 import java.io.IOException;
-import java.util.*;
+import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.LinkedHashMap;
+import java.util.List;
 
 public class TestingStreamrClient extends StreamrClient {
 
@@ -23,13 +25,13 @@ public class TestingStreamrClient extends StreamrClient {
     }
 
     @Override
-    public Subscription subscribe(Stream stream, int partition, MessageHandler handler, ResendOption resendOption, Map<String, GroupKey> groupKeys, boolean isExplicitResend) {
+    public Subscription subscribe(Stream stream, int partition, MessageHandler handler, ResendOption resendOption, boolean isExplicitResend) {
         // Capture received StreamMessages
         MessageHandler loggingHandler = (sub, message) -> {
             receivedStreamMessages.add(message);
             handler.onMessage(sub, message);
         };
-        return super.subscribe(stream, partition, loggingHandler, resendOption, groupKeys, isExplicitResend);
+        return super.subscribe(stream, partition, loggingHandler, resendOption, isExplicitResend);
     }
 
     @Override

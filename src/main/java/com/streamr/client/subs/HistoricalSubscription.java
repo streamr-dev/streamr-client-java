@@ -103,6 +103,7 @@ public class HistoricalSubscription extends BasicSubscription {
 
     @Override
     public void endResend() throws GapDetectedException {
+        // Don't call the done handler until all encrypted messages have been handled (see onNewKeys)
         if (encryptedMsgsQueues.isEmpty()) {
             this.handler.done(this);
         } else { // received all historical messages but not yet the keys to decrypt them

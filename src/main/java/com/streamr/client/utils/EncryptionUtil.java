@@ -140,21 +140,6 @@ public class EncryptionUtil {
     }
 
     /*
-    Sets the content of 'streamMessage' with the encryption result of a plaintext with 'groupKey'. The
-    plaintext is the concatenation of 'newGroupKeyHex' and the old serialized content of 'streamMessage'.
-     */
-    public static void encryptStreamMessageAndNewKey(String newGroupKeyHex, StreamMessage streamMessage, SecretKey groupKey) {
-        log.debug("Encrypting a new key: " + newGroupKeyHex + " with an old key: " + Hex.encodeHexString(groupKey.getEncoded()));
-        streamMessage.setEncryptionType(StreamMessage.EncryptionType.NEW_KEY_AND_AES);
-        byte[] groupKeyBytes = DatatypeConverter.parseHexBinary(newGroupKeyHex);
-        byte[] payloadBytes = streamMessage.getSerializedContentAsBytes();
-        byte[] plaintext = new byte[groupKeyBytes.length + payloadBytes.length];
-        System.arraycopy(groupKeyBytes, 0, plaintext, 0, groupKeyBytes.length);
-        System.arraycopy(payloadBytes, 0, plaintext, groupKeyBytes.length, payloadBytes.length);
-        streamMessage.setSerializedContent(encrypt(plaintext, groupKey));
-    }
-
-    /*
     Decrypts the serialized content of 'streamMessage' with 'groupKey'. If the resulting plaintext is the concatenation
     of a new group key and a message content, sets the content of 'streamMessage' with that message content and returns
     the key. If the resulting plaintext is only a message content, sets the content of 'streamMessage' with that
@@ -292,10 +277,10 @@ public class EncryptionUtil {
         return new SecretKeySpec(DatatypeConverter.parseHexBinary(groupKeyHex), "AES");
     }
 
-    private static KeyPair generateKeyPair() {
+    public static KeyPair generateKeyPair() {
         try {
             KeyPairGenerator generator = KeyPairGenerator.getInstance("RSA");
-            generator.initialize(4096, new SecureRandom());
+            generator.initialize(4096, SRAND);
             return generator.generateKeyPair();
         } catch (NoSuchAlgorithmException e) {
             throw new RuntimeException(e);

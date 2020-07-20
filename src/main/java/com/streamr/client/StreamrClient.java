@@ -331,6 +331,10 @@ public class StreamrClient extends StreamrRESTClient {
         return publisherId;
     }
 
+    public GroupKeyStore getKeyStore() {
+        return keyStore;
+    }
+
     /*
      * Message handling
      */
@@ -460,7 +464,7 @@ public class StreamrClient extends StreamrRESTClient {
         return subscribe(stream, partition, handler, resendOption, false);
     }
 
-    private Subscription subscribe(Stream stream, int partition, MessageHandler handler, ResendOption resendOption, boolean isExplicitResend) {
+    protected Subscription subscribe(Stream stream, int partition, MessageHandler handler, ResendOption resendOption, boolean isExplicitResend) {
         if (!getState().equals(ReadyState.OPEN)) {
             connect();
         }
