@@ -24,7 +24,7 @@ import java.util.*;
  * - Manage encryption keys
  */
 public class MessageCreationUtil {
-    private final String publisherId;
+    private final Address publisherId;
     private final String msgChainId;
     private final SigningUtil signingUtil;
 
@@ -32,7 +32,7 @@ public class MessageCreationUtil {
 
     private final HashMap<String, Integer> cachedHashes = new HashMap<>();
 
-    public MessageCreationUtil(String publisherId, SigningUtil signingUtil) {
+    public MessageCreationUtil(Address publisherId, SigningUtil signingUtil) {
         this.publisherId = publisherId;
         msgChainId = RandomStringUtils.randomAlphanumeric(20);
         this.signingUtil = signingUtil;
@@ -68,7 +68,7 @@ public class MessageCreationUtil {
         return streamMessage;
     }
 
-    public StreamMessage createGroupKeyRequest(String publisherAddress, String streamId, String rsaPublicKey, List<String> groupKeyIds) {
+    public StreamMessage createGroupKeyRequest(Address publisherAddress, String streamId, String rsaPublicKey, List<String> groupKeyIds) {
         if (signingUtil == null) {
             throw new SigningRequiredException("Cannot create unsigned group key request. Must authenticate with an Ethereum account");
         }
@@ -84,7 +84,7 @@ public class MessageCreationUtil {
         return streamMessage;
     }
 
-    public StreamMessage createGroupKeyResponse(String subscriberAddress, GroupKeyRequest request, List<GroupKey> groupKeys) {
+    public StreamMessage createGroupKeyResponse(Address subscriberAddress, GroupKeyRequest request, List<GroupKey> groupKeys) {
         if (signingUtil == null) {
             throw new SigningRequiredException("Cannot create unsigned group key response. Must authenticate with an Ethereum account");
         }
@@ -108,7 +108,7 @@ public class MessageCreationUtil {
         return streamMessage;
     }
 
-    public StreamMessage createGroupKeyAnnounceForSubscriber(String subscriberAddress, String streamId, String publicKey, List<GroupKey> groupKeys) {
+    public StreamMessage createGroupKeyAnnounceForSubscriber(Address subscriberAddress, String streamId, String publicKey, List<GroupKey> groupKeys) {
         if (signingUtil == null) {
             throw new SigningRequiredException("Cannot create unsigned group key announce. Must authenticate with an Ethereum account");
         }
@@ -151,7 +151,7 @@ public class MessageCreationUtil {
         return streamMessage;
     }
 
-    public StreamMessage createGroupKeyErrorResponse(String destinationAddress, GroupKeyRequest request, Exception e) {
+    public StreamMessage createGroupKeyErrorResponse(Address destinationAddress, GroupKeyRequest request, Exception e) {
         if (signingUtil == null) {
             throw new SigningRequiredException("Cannot create unsigned error message. Must authenticate with an Ethereum account");
         }
@@ -217,7 +217,7 @@ public class MessageCreationUtil {
     private Pair<MessageID, MessageRef> createMsgIdAndRef(String streamId, int streamPartition, long timestamp) {
         String key = streamId + streamPartition;
         long sequenceNumber = getNextSequenceNumber(key, timestamp);
-        MessageID msgId = new MessageID(streamId, streamPartition, timestamp, sequenceNumber, publisherId, msgChainId);
+        MessageID msgId = new MessageID(streamId, streamPartition, timestamp, sequenceNumber, publisherId.toString(), msgChainId);
         MessageRef prevMsgRef = refsPerStreamAndPartition.get(key);
         Pair<MessageID, MessageRef> p = Pair.of(msgId, prevMsgRef);
         refsPerStreamAndPartition.put(key, new MessageRef(timestamp, sequenceNumber));

@@ -3,10 +3,7 @@ package com.streamr.client.utils;
 import org.cache2k.Cache;
 import org.cache2k.Cache2kBuilder;
 
-import java.util.HashMap;
-import java.util.HashSet;
-import java.util.List;
-import java.util.Set;
+import java.util.*;
 import java.util.concurrent.TimeUnit;
 import java.util.function.BiFunction;
 import java.util.function.Function;
@@ -18,15 +15,17 @@ It also contains methods to get the number of subscribers to revoke for a stream
  */
 public class AddressValidityUtil {
     private static final int CACHE_EXPIRATION = 30; // in minutes
-    private final HashMap<String, HashSet<String>> localSubscribersSets = new HashMap<>();
-    private final Cache<String, HashMap<String, Boolean>> subscribersPerStreamId = new Cache2kBuilder<String, HashMap<String, Boolean>>() {}
+
+    private final HashMap<String, HashSet<Address>> localSubscribersSets = new HashMap<>();
+    private final Cache<String, HashMap<Address, Boolean>> subscribersPerStreamId = new Cache2kBuilder<String, HashMap<Address, Boolean>>() {}
             .expireAfterWrite(CACHE_EXPIRATION, TimeUnit.MINUTES).build();
-    private final Function<String, List<String>> getSubscribersFunction;
-    private final BiFunction<String, String, Boolean> isSubscriberFunction;
-    private final Cache<String, HashMap<String, Boolean>> publishersPerStreamId = new Cache2kBuilder<String, HashMap<String, Boolean>>() {}
+    private final Function<String, List<Address>> getSubscribersFunction;
+    private final BiFunction<String, Address, Boolean> isSubscriberFunction;
+
+    private final Cache<String, HashMap<Address, Boolean>> publishersPerStreamId = new Cache2kBuilder<String, HashMap<Address, Boolean>>() {}
             .expireAfterWrite(CACHE_EXPIRATION, TimeUnit.MINUTES).build();
-    private final Function<String, List<String>> getPublishersFunction;
-    private final BiFunction<String, String, Boolean> isPublisherFunction;
+    private final Function<String, List<Address>> getPublishersFunction;
+    private final BiFunction<String, Address, Boolean> isPublisherFunction;
 
     /**
      *
@@ -35,8 +34,8 @@ public class AddressValidityUtil {
      * @param getPublishersFunction (streamId)
      * @param isPublisherFunction (streamId, address)
      */
-    public AddressValidityUtil(Function<String, List<String>> getSubscribersFunction, BiFunction<String, String, Boolean> isSubscriberFunction,
-                               Function<String, List<String>> getPublishersFunction, BiFunction<String, String, Boolean> isPublisherFunction) {
+    public AddressValidityUtil(Function<String, List<Address>> getSubscribersFunction, BiFunction<String, Address, Boolean> isSubscriberFunction,
+                               Function<String, List<Address>> getPublishersFunction, BiFunction<String, Address, Boolean> isPublisherFunction) {
         this.getSubscribersFunction = getSubscribersFunction;
         this.isSubscriberFunction = isSubscriberFunction;
         this.getPublishersFunction = getPublishersFunction;
@@ -44,9 +43,9 @@ public class AddressValidityUtil {
     }
 
     public int nbSubscribersToRevoke(String streamId) {
-        HashSet<String> realSubscribersSet = new HashSet<>(getSubscribersFunction.apply(streamId));
+        HashSet<Address> realSubscribersSet = new HashSet<>(getSubscribersFunction.apply(streamId));
         int counter = 0;
-        for (String subscriberId: localSubscribersSets.getOrDefault(streamId, new HashSet<>())) {
+        for (Address subscriberId: localSubscribersSets.getOrDefault(streamId, new HashSet<>())) {
             if (!realSubscribersSet.contains(subscriberId)) {
                 counter++;
             }
@@ -55,15 +54,15 @@ public class AddressValidityUtil {
         return counter;
     }
 
-    public HashSet<String> getSubscribersSet(String streamId, boolean locally) {
+    public Set<Address> getSubscribersSet(String streamId, boolean locally) {
         return locally ? localSubscribersSets.get(streamId) : new HashSet<>(getSubscribersFunction.apply(streamId));
     }
 
-    public boolean isValidSubscriber(String streamId, String subscriberId) {
+    public boolean isValidSubscriber(String streamId, Address subscriberId) {
         return isValid(streamId, subscriberId, this::getSubscribers, isSubscriberFunction);
     }
 
-    public boolean isValidPublisher(String streamId, String publisherId) {
+    public boolean isValidPublisher(String streamId, Address publisherId) {
         return isValid(streamId, publisherId, this::getPublishers, isPublisherFunction);
     }
 
@@ -72,8 +71,8 @@ public class AddressValidityUtil {
         publishersPerStreamId.clearAndClose();
     }
 
-    private static boolean isValid(String streamId, String address, Function<String, HashMap<String, Boolean>> getAddresses,
-                            BiFunction<String, String, Boolean> isFunction) {
+    private static boolean isValid(String streamId, Address address, Function<String, HashMap<Address, Boolean>> getAddresses,
+                            BiFunction<String, Address, Boolean> isFunction) {
         // check the local cache
         Boolean valid = getAddresses.apply(streamId).get(address);
         if (valid == null) { // cache miss
@@ -84,20 +83,20 @@ public class AddressValidityUtil {
         return valid;
     }
 
-    private HashMap<String, Boolean> getSubscribers(String streamId) {
+    private HashMap<Address, Boolean> getSubscribers(String streamId) {
         return getAddresses(streamId, subscribersPerStreamId, getSubscribersFunction);
     }
 
-    private HashMap<String, Boolean> getPublishers(String streamId) {
+    private HashMap<Address, Boolean> getPublishers(String streamId) {
         return getAddresses(streamId, publishersPerStreamId, getPublishersFunction);
     }
 
-    private HashMap<String, Boolean> getAddresses(String streamId, Cache<String, HashMap<String, Boolean>> cache,
-                                                  Function<String, List<String>> getFunction) {
-        HashMap<String, Boolean> addresses = safeGetCache(cache).get(streamId);
+    private HashMap<Address, Boolean> getAddresses(String streamId, Cache<String, HashMap<Address, Boolean>> cache,
+                                                  Function<String, List<Address>> getFunction) {
+        HashMap<Address, Boolean> addresses = safeGetCache(cache).get(streamId);
         if (addresses == null) {
             addresses = new HashMap<>();
-            for (String address: getFunction.apply(streamId)) {
+            for (Address address: getFunction.apply(streamId)) {
                 addresses.put(address, true);
             }
             safeGetCache(cache).put(streamId, addresses);
@@ -105,9 +104,9 @@ public class AddressValidityUtil {
         return addresses;
     }
 
-    private static Cache<String, HashMap<String, Boolean>> safeGetCache(Cache<String, HashMap<String, Boolean>> cache) {
+    private static Cache<String, HashMap<Address, Boolean>> safeGetCache(Cache<String, HashMap<Address, Boolean>> cache) {
         if (cache.isClosed()) {
-            cache = new Cache2kBuilder<String, HashMap<String, Boolean>>() {}
+            cache = new Cache2kBuilder<String, HashMap<Address, Boolean>>() {}
                     .expireAfterWrite(CACHE_EXPIRATION, TimeUnit.MINUTES).build();
         }
         return cache;

@@ -16,21 +16,21 @@ public class OrderedMsgChain {
 
     static final int MAX_QUEUE_SIZE = 10000;
 
-    private String publisherId;
-    private String msgChainId;
-    private Consumer<StreamMessage> inOrderHandler;
-    private GapHandlerFunction gapHandler;
-    private Function<GapFillFailedException, Void> gapFillFailedHandler;
-    private long propagationTimeout;
-    private long resendTimeout;
-    private PriorityQueue<StreamMessage> queue;
+    private final Address publisherId;
+    private final String msgChainId;
+    private final Consumer<StreamMessage> inOrderHandler;
+    private final GapHandlerFunction gapHandler;
+    private final Function<GapFillFailedException, Void> gapFillFailedHandler;
+    private final long propagationTimeout;
+    private final long resendTimeout;
+    private final PriorityQueue<StreamMessage> queue;
     private MessageRef lastReceived = null;
     private Timer gap = null;
     private int gapRequestCount = 0;
-    private boolean skipGapsOnFullQueue;
-    private GapFillFailedException gapException = null;
+    private final boolean skipGapsOnFullQueue;
+    private final GapFillFailedException gapException = null;
 
-    public OrderedMsgChain(String publisherId,
+    public OrderedMsgChain(Address publisherId,
                            String msgChainId,
                            Consumer<StreamMessage> inOrderHandler,
                            GapHandlerFunction gapHandler,
@@ -53,7 +53,7 @@ public class OrderedMsgChain {
             }
         });
     }
-    public OrderedMsgChain(String publisherId,
+    public OrderedMsgChain(Address publisherId,
                            String msgChainId,
                            Consumer<StreamMessage> inOrderHandler,
                            GapHandlerFunction gapHandler,
@@ -122,7 +122,7 @@ public class OrderedMsgChain {
         return gap != null;
     }
 
-    public String getPublisherId() {
+    public Address getPublisherId() {
         return publisherId;
     }
 
@@ -235,6 +235,6 @@ public class OrderedMsgChain {
 
     @FunctionalInterface
     public interface GapHandlerFunction {
-        void apply(MessageRef from, MessageRef to, String publisherId, String msgChainId);
+        void apply(MessageRef from, MessageRef to, Address publisherId, String msgChainId);
     }
 }

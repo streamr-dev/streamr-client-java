@@ -4,6 +4,7 @@ import com.streamr.client.MessageHandler;
 import com.streamr.client.exceptions.*;
 import com.streamr.client.options.ResendOption;
 import com.streamr.client.protocol.message_layer.StreamMessage;
+import com.streamr.client.utils.Address;
 import com.streamr.client.utils.GroupKey;
 import com.streamr.client.utils.GroupKeyStore;
 import com.streamr.client.utils.OrderedMsgChain;
@@ -63,7 +64,7 @@ public class CombinedSubscription extends Subscription {
     }
 
     @Override
-    public void onNewKeysAdded(String publisherId, Collection<GroupKey> groupKeys) {
+    public void onNewKeysAdded(Address publisherId, Collection<GroupKey> groupKeys) {
         currentSub.onNewKeysAdded(publisherId, groupKeys);
     }
 

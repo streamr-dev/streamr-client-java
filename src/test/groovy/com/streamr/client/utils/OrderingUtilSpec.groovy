@@ -29,7 +29,7 @@ class OrderingUtilSpec extends StreamrSpecification {
     void "calls the gap handler when a gap is detected"() {
         MessageRef fromReceived
         MessageRef toReceived
-        String publisherIdReceived
+        Address publisherIdReceived
         String msgChainIdReceived
 
         OrderingUtil util = new OrderingUtil("streamId", 0, new Consumer<StreamMessage>() {
@@ -39,7 +39,7 @@ class OrderingUtilSpec extends StreamrSpecification {
             }
         }, new OrderedMsgChain.GapHandlerFunction() {
             @Override
-            void apply(MessageRef from, MessageRef to, String publisherId, String msgChainId) {
+            void apply(MessageRef from, MessageRef to, Address publisherId, String msgChainId) {
                 fromReceived = from
                 toReceived = to
                 publisherIdReceived = publisherId
@@ -70,7 +70,7 @@ class OrderingUtilSpec extends StreamrSpecification {
             }
         }, new OrderedMsgChain.GapHandlerFunction() {
             @Override
-            void apply(MessageRef from, MessageRef to, String publisherId, String msgChainId) {
+            void apply(MessageRef from, MessageRef to, Address publisherId, String msgChainId) {
                 called = true
             }
         }, 1000L, 1000L, false)

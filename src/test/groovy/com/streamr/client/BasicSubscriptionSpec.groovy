@@ -9,6 +9,7 @@ import com.streamr.client.subs.BasicSubscription
 import com.streamr.client.subs.BasicSubscription.GroupKeyRequestFunction
 import com.streamr.client.subs.RealTimeSubscription
 import com.streamr.client.subs.Subscription
+import com.streamr.client.utils.Address
 import com.streamr.client.utils.EncryptionUtil
 import com.streamr.client.utils.GroupKey
 import com.streamr.client.utils.GroupKeyStore
@@ -44,7 +45,7 @@ class BasicSubscriptionSpec extends StreamrSpecification {
     int groupKeyFunctionCallCount
     GroupKeyRequestFunction defaultGroupKeyRequestFunction = new BasicSubscription.GroupKeyRequestFunction() {
         @Override
-        void apply(String publisherId, List<String> groupKeyIds) {
+        void apply(Address publisherId, List<String> groupKeyIds) {
             groupKeyFunctionCallCount++
         }
     }
@@ -103,7 +104,7 @@ class BasicSubscriptionSpec extends StreamrSpecification {
         GapDetectedException ex
         sub.setGapHandler(new OrderedMsgChain.GapHandlerFunction() {
             @Override
-            void apply(MessageRef from, MessageRef to, String publisherId, String msgChainId) {
+            void apply(MessageRef from, MessageRef to, Address publisherId, String msgChainId) {
                 ex = new GapDetectedException(sub.getStreamId(), sub.getPartition(), from, to, publisherId, msgChainId)
             }
         })
@@ -146,7 +147,7 @@ class BasicSubscriptionSpec extends StreamrSpecification {
         GapDetectedException ex
         sub.setGapHandler(new OrderedMsgChain.GapHandlerFunction() {
             @Override
-            void apply(MessageRef from, MessageRef to, String publisherId, String msgChainId) {
+            void apply(MessageRef from, MessageRef to, Address publisherId, String msgChainId) {
                 ex = new GapDetectedException(sub.getStreamId(), sub.getPartition(), from, to, publisherId, msgChainId)
             }
         })
@@ -214,7 +215,7 @@ class BasicSubscriptionSpec extends StreamrSpecification {
         RealTimeSubscription sub = new RealTimeSubscription(msg.getStreamId(), 0, defaultHandler, keyStore,
             new GroupKeyRequestFunction() {
                 @Override
-                void apply(String publisherId, List<String> groupKeyIds) {
+                void apply(Address publisherId, List<String> groupKeyIds) {
                     receivedPublisherId = publisherId
                     nbCalls++
                 }
@@ -245,7 +246,7 @@ class BasicSubscriptionSpec extends StreamrSpecification {
         RealTimeSubscription sub = new RealTimeSubscription(msg.getStreamId(), 0, defaultHandler, keyStore,
                 new GroupKeyRequestFunction() {
                     @Override
-                    void apply(String publisherId, List<String> groupKeyIds) {
+                    void apply(Address publisherId, List<String> groupKeyIds) {
                         nbCalls++
                     }
                 }, timeout, 5000, false)

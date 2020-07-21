@@ -83,7 +83,7 @@ public class StreamMessageValidator {
 
         // Check publisher. Note that this can only be checked on signed messages.
         if (msg.getSignature() != null) {
-            String sender = msg.getPublisherId();
+            Address sender = msg.getPublisherId();
 
             // Check that the sender of the message is a valid publisher of the stream
             if (!addressValidityUtil.isValidPublisher(msg.getStreamId(), sender)) {
@@ -130,8 +130,8 @@ public class StreamMessageValidator {
         assertValidSignature(streamMessage);
 
         AbstractGroupKeyMessage request = AbstractGroupKeyMessage.deserialize(streamMessage.getSerializedContent(), streamMessage.getMessageType());
-        String sender = streamMessage.getPublisherId();
-        String recipient = KeyExchangeUtil.getRecipientFromKeyExchangeStreamId(streamMessage.getStreamId());
+        Address sender = streamMessage.getPublisherId();
+        Address recipient = KeyExchangeUtil.getRecipientFromKeyExchangeStreamId(streamMessage.getStreamId());
 
         // Check that the recipient of the request is a valid publisher of the stream
         if (!addressValidityUtil.isValidPublisher(request.getStreamId(), recipient)) {
@@ -155,8 +155,8 @@ public class StreamMessageValidator {
         assertValidSignature(streamMessage);
 
         AbstractGroupKeyMessage response = AbstractGroupKeyMessage.deserialize(streamMessage.getSerializedContent(), streamMessage.getMessageType());
-        String sender = streamMessage.getPublisherId();
-        String recipient = KeyExchangeUtil.getRecipientFromKeyExchangeStreamId(streamMessage.getStreamId());
+        Address sender = streamMessage.getPublisherId();
+        Address recipient = KeyExchangeUtil.getRecipientFromKeyExchangeStreamId(streamMessage.getStreamId());
 
         // Check that the sender of the request is a valid publisher of the stream
         if (!addressValidityUtil.isValidPublisher(response.getStreamId(), sender)) {

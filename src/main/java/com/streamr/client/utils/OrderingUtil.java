@@ -62,7 +62,7 @@ public class OrderingUtil {
         }
     }
 
-    private synchronized OrderedMsgChain getChain(String publisherId, String msgChainId) {
+    private synchronized OrderedMsgChain getChain(Address publisherId, String msgChainId) {
         String key = publisherId + msgChainId;
         if (!chains.containsKey(key)) {
             chains.put(key, new OrderedMsgChain(publisherId, msgChainId, inOrderHandler,

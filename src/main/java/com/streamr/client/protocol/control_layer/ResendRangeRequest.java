@@ -1,6 +1,7 @@
 package com.streamr.client.protocol.control_layer;
 
 import com.streamr.client.protocol.message_layer.MessageRef;
+import com.streamr.client.utils.Address;
 
 public class ResendRangeRequest extends ControlMessage {
     public static final int TYPE = 13;
@@ -9,7 +10,7 @@ public class ResendRangeRequest extends ControlMessage {
     private final int streamPartition;
     private final MessageRef fromMsgRef;
     private final MessageRef toMsgRef;
-    private final String publisherId;
+    private final Address publisherId;
     private final String msgChainId;
     private final String sessionToken;
 
@@ -19,7 +20,7 @@ public class ResendRangeRequest extends ControlMessage {
     }
 
     public ResendRangeRequest(String requestId, String streamId, int streamPartition, MessageRef fromMsgRef,
-                              MessageRef toMsgRef, String publisherId, String msgChainId, String sessionToken) {
+                              MessageRef toMsgRef, Address publisherId, String msgChainId, String sessionToken) {
         super(TYPE, requestId);
         this.streamId = streamId;
         this.streamPartition = streamPartition;
@@ -50,7 +51,7 @@ public class ResendRangeRequest extends ControlMessage {
         return toMsgRef;
     }
 
-    public String getPublisherId() {
+    public Address getPublisherId() {
         return publisherId;
     }
 

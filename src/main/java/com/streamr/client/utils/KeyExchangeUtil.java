@@ -30,7 +30,7 @@ public class KeyExchangeUtil {
     private final Consumer<StreamMessage> publishFunction;
     private final OnNewKeysFunction onNewKeysFunction;
     private Instant lastCallToCheckRevocation = Instant.MIN;
-    private final HashMap<String, String> publicKeys = new HashMap<>();
+    private final HashMap<Address, String> publicKeys = new HashMap<>();
 
     public static final String KEY_EXCHANGE_STREAM_PREFIX = "SYSTEM/keyexchange/";
 
@@ -57,7 +57,7 @@ public class KeyExchangeUtil {
         GroupKeyRequest request = (GroupKeyRequest) AbstractGroupKeyMessage.fromStreamMessage(streamMessage);
 
         String streamId = request.getStreamId();
-        String sender = streamMessage.getPublisherId();
+        Address sender = streamMessage.getPublisherId();
 
         log.debug("Subscriber {} is querying group keys for stream {}: {}. Key storage content is {}",
                 streamMessage.getPublisherId(), streamId, request.getGroupKeyIds(), keyStore);
@@ -81,7 +81,7 @@ public class KeyExchangeUtil {
         StreamMessage response = messageCreationUtil.createGroupKeyResponse(sender, request, foundKeys);
 
         // For re-keys, remember the public key for this subscriber
-        publicKeys.put(sender.toLowerCase(), request.getPublicKey());
+        publicKeys.put(sender, request.getPublicKey());
 
         publishFunction.accept(response);
     }
@@ -133,14 +133,13 @@ public class KeyExchangeUtil {
         GroupKey newKey = GroupKey.generate();
         keyStore.add(streamId, newKey);
 
-        Set<String> trueSubscribersSet = addressValidityUtil.getSubscribersSet(streamId, getSubscribersLocally);
-        Set<String> revoked = new HashSet<>();
+        Set<Address> trueSubscribersSet = addressValidityUtil.getSubscribersSet(streamId, getSubscribersLocally);
+        Set<Address> revoked = new HashSet<>();
 
-        for (String subscriberId: publicKeys.keySet() ) { // iterating over local cache of Ethereum address --> RSA public key
+        for (Address subscriberId: publicKeys.keySet() ) { // iterating over local cache of Ethereum address --> RSA public key
             if (trueSubscribersSet.contains(subscriberId)) { // if still valid subscriber, send the new key
                 String publicKey = publicKeys.get(subscriberId);
                 StreamMessage announce = messageCreationUtil.createGroupKeyAnnounceForSubscriber(subscriberId, streamId, publicKey, Collections.singletonList(newKey));
-                EncryptionUtil.encryptWithPublicKey(announce, publicKey);
                 publishFunction.accept(announce);
             } else { // no longer a valid subscriber, to be removed from local cache
                 revoked.add(subscriberId);
@@ -149,28 +148,28 @@ public class KeyExchangeUtil {
         revoked.forEach(publicKeys::remove); // remove all revoked (Ethereum address --> RSA public key) from local cache
     }
 
-    public static String getKeyExchangeStreamId(String recipientAddress) {
-        return KEY_EXCHANGE_STREAM_PREFIX + recipientAddress.toLowerCase();
+    public static String getKeyExchangeStreamId(Address recipientAddress) {
+        return KEY_EXCHANGE_STREAM_PREFIX + recipientAddress;
     }
 
     public static boolean isKeyExchangeStreamId(String streamId) {
         return streamId.startsWith(KEY_EXCHANGE_STREAM_PREFIX);
     }
 
-    public static String getRecipientFromKeyExchangeStreamId(String keyExchangeStreamId) {
-        return keyExchangeStreamId.substring(KEY_EXCHANGE_STREAM_PREFIX.length());
+    public static Address getRecipientFromKeyExchangeStreamId(String keyExchangeStreamId) {
+        return new Address(keyExchangeStreamId.substring(KEY_EXCHANGE_STREAM_PREFIX.length()));
     }
 
-    public HashMap<String, String> getKnownPublicKeysByPublisher() {
+    public HashMap<Address, String> getKnownPublicKeysByPublisher() {
         return publicKeys;
     }
 
     @FunctionalInterface
     public interface OnNewKeysFunction {
-        void apply(String streamId, String publisherId, Collection<GroupKey> keys);
+        void apply(String streamId, Address publisherId, Collection<GroupKey> keys);
     }
 
-    private void handleNewKeys(String streamId, String publisherId, List<GroupKey> newKeys) {
+    private void handleNewKeys(String streamId, Address publisherId, List<GroupKey> newKeys) {
         for (GroupKey key : newKeys) {
             try {
                 keyStore.add(streamId, key);

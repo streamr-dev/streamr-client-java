@@ -7,6 +7,7 @@ import com.streamr.client.protocol.message_layer.StreamMessage
 import com.streamr.client.subs.BasicSubscription
 import com.streamr.client.subs.HistoricalSubscription
 import com.streamr.client.subs.Subscription
+import com.streamr.client.utils.Address
 import com.streamr.client.utils.EncryptionUtil
 import com.streamr.client.utils.GroupKey
 import com.streamr.client.utils.GroupKeyStore
@@ -48,7 +49,7 @@ class HistoricalSubscriptionSpec extends StreamrSpecification {
     int groupKeyFunctionCallCount
     BasicSubscription.GroupKeyRequestFunction defaultGroupKeyRequestFunction = new BasicSubscription.GroupKeyRequestFunction() {
         @Override
-        void apply(String publisherId, List<String> groupKeyIds) {
+        void apply(Address publisherId, List<String> groupKeyIds) {
             groupKeyFunctionCallCount++
         }
     }

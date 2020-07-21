@@ -1,11 +1,12 @@
 package com.streamr.client.utils
 
-import spock.lang.Specification
+import com.streamr.client.protocol.StreamrSpecification
 
 import java.util.function.BiFunction
 import java.util.function.Function
 
-class AddressValidityUtilSpec extends Specification {
+class AddressValidityUtilSpec extends StreamrSpecification {
+
     void "isValidSubscriber()"() {
         int getSubscribersFunctionCallCount = 0
         Function<String, List<String>> getSubscribersFunction = new Function<String, List<String>>() {
@@ -16,29 +17,29 @@ class AddressValidityUtilSpec extends Specification {
             }
         }
         int isSubscriberFunctionCallCount = 0
-        BiFunction<String, String, Boolean> isSubscriberFunction = new BiFunction<String, String, Boolean>() {
+        BiFunction<String, Address, Boolean> isSubscriberFunction = new BiFunction<String, Address, Boolean>() {
             @Override
-            Boolean apply(String streamId, String subscriber) {
+            Boolean apply(String streamId, Address subscriber) {
                 isSubscriberFunctionCallCount++;
-                return streamId == "streamId" && subscriber == "subscriberId3"
+                return streamId == "streamId" && subscriber == subscriberId3
             }
         }
         AddressValidityUtil util = new AddressValidityUtil(getSubscribersFunction, isSubscriberFunction, null, null)
         when:
         // cache miss --> getting all addresses
-        boolean res1 = util.isValidSubscriber("streamId", "subscriberId1")
+        boolean res1 = util.isValidSubscriber("streamId", subscriberId1)
         // cache hit
-        boolean res2 = util.isValidSubscriber("streamId", "subscriberId2")
+        boolean res2 = util.isValidSubscriber("streamId", subscriberId2)
         // cache miss --> get only this address
-        boolean res3 = util.isValidSubscriber("streamId", "subscriberId3")
+        boolean res3 = util.isValidSubscriber("streamId", subscriberId3)
         // cache miss --> get only this address
-        boolean res4 = util.isValidSubscriber("streamId", "subscriberId4")
+        boolean res4 = util.isValidSubscriber("streamId", subscriberId4)
         // cache hit
-        boolean res5 = util.isValidSubscriber("streamId", "subscriberId1")
+        boolean res5 = util.isValidSubscriber("streamId", subscriberId1)
         // cache hit
-        boolean res6 = util.isValidSubscriber("streamId", "subscriberId3")
+        boolean res6 = util.isValidSubscriber("streamId", subscriberId3)
         // cache hit
-        boolean res7 = util.isValidSubscriber("streamId", "subscriberId4")
+        boolean res7 = util.isValidSubscriber("streamId", subscriberId4)
         then:
         getSubscribersFunctionCallCount == 1
         isSubscriberFunctionCallCount == 2
@@ -60,29 +61,29 @@ class AddressValidityUtilSpec extends Specification {
             }
         }
         int isPublisherFunctionCallCount = 0
-        BiFunction<String, String, Boolean> isPublisherFunction = new BiFunction<String, String, Boolean>() {
+        BiFunction<String, Address, Boolean> isPublisherFunction = new BiFunction<String, Address, Boolean>() {
             @Override
-            Boolean apply(String streamId, String publisher) {
+            Boolean apply(String streamId, Address publisher) {
                 isPublisherFunctionCallCount++;
-                return streamId == "streamId" && publisher == "publisherId3"
+                return streamId == "streamId" && publisher == publisherId3
             }
         }
         AddressValidityUtil util = new AddressValidityUtil(null, null, getPublishersFunction, isPublisherFunction)
         when:
         // cache miss --> getting all addresses
-        boolean res1 = util.isValidPublisher("streamId", "publisherId1")
+        boolean res1 = util.isValidPublisher("streamId", publisherId1)
         // cache hit
-        boolean res2 = util.isValidPublisher("streamId", "publisherId2")
+        boolean res2 = util.isValidPublisher("streamId", publisherId2)
         // cache miss --> get only this address
-        boolean res3 = util.isValidPublisher("streamId", "publisherId3")
+        boolean res3 = util.isValidPublisher("streamId", publisherId3)
         // cache miss --> get only this address
-        boolean res4 = util.isValidPublisher("streamId", "publisherId4")
+        boolean res4 = util.isValidPublisher("streamId", publisherId4)
         // cache hit
-        boolean res5 = util.isValidPublisher("streamId", "publisherId1")
+        boolean res5 = util.isValidPublisher("streamId", publisherId1)
         // cache hit
-        boolean res6 = util.isValidPublisher("streamId", "publisherId3")
+        boolean res6 = util.isValidPublisher("streamId", publisherId3)
         // cache hit
-        boolean res7 = util.isValidPublisher("streamId", "publisherId4")
+        boolean res7 = util.isValidPublisher("streamId", publisherId4)
         then:
         getPublishersFunctionCallCount == 1
         isPublisherFunctionCallCount == 2

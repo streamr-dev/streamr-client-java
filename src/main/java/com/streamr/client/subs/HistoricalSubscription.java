@@ -5,6 +5,7 @@ import com.streamr.client.exceptions.GapDetectedException;
 import com.streamr.client.exceptions.UnsupportedMessageException;
 import com.streamr.client.options.ResendOption;
 import com.streamr.client.protocol.message_layer.StreamMessage;
+import com.streamr.client.utils.Address;
 import com.streamr.client.utils.GroupKey;
 import com.streamr.client.utils.GroupKeyStore;
 import org.slf4j.Logger;
@@ -66,7 +67,7 @@ public class HistoricalSubscription extends BasicSubscription {
     }
 
     @Override
-    public void onNewKeysAdded(String publisherId, Collection<GroupKey> groupKeys) {
+    public void onNewKeysAdded(Address publisherId, Collection<GroupKey> groupKeys) {
         super.onNewKeysAdded(publisherId, groupKeys);
         if (resendDone && encryptedMsgsQueues.isEmpty()) { // the messages in the queue were the last ones to handle
             this.handler.done(this);

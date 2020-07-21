@@ -54,7 +54,7 @@ public class SigningUtil {
             StringBuilder sb = new StringBuilder(msg.getStreamId());
             sb.append(msg.getStreamPartition());
             sb.append(msg.getTimestamp());
-            sb.append(msg.getPublisherId().toLowerCase());
+            sb.append(msg.getPublisherId());
             sb.append(msg.getSerializedContent());
             return sb.toString();
         } else if (signatureType == StreamMessage.SignatureType.ETH) {
@@ -62,7 +62,7 @@ public class SigningUtil {
             sb.append(msg.getStreamPartition());
             sb.append(msg.getTimestamp());
             sb.append(msg.getSequenceNumber());
-            sb.append(msg.getPublisherId().toLowerCase());
+            sb.append(msg.getPublisherId());
             sb.append(msg.getMsgChainId());
             if (msg.getPreviousMessageRef() != null) {
                 sb.append(msg.getPreviousMessageRef().getTimestamp());
@@ -81,11 +81,11 @@ public class SigningUtil {
         return HashUtil.sha3(toHash);
     }
 
-    private static boolean verify(String data, String signature, String address) throws SignatureException, DecoderException {
-        return recoverAddress(calculateMessageHash(data), signature).toLowerCase().equals(address.toLowerCase());
+    private static boolean verify(String data, String signature, Address address) throws SignatureException, DecoderException {
+        return recoverAddress(calculateMessageHash(data), signature).equals(address);
     }
 
-    private static String recoverAddress(byte[] messageHash, String signatureHex) throws SignatureException, DecoderException {
+    private static Address recoverAddress(byte[] messageHash, String signatureHex) throws SignatureException, DecoderException {
         byte[] signature = Hex.decodeHex(signatureHex.replace("0x", "").toCharArray());
 
         byte[] r = new byte[32];
@@ -95,6 +95,6 @@ public class SigningUtil {
         System.arraycopy(signature, 32, s, 0, s.length);
 
         ECKey.ECDSASignature signatureObj = ECKey.ECDSASignature.fromComponents(r, s, v);
-        return "0x" + Hex.encodeHexString(ECKey.signatureToKey(messageHash, signatureObj.toBase64()).getAddress());
+        return new Address(ECKey.signatureToKey(messageHash, signatureObj.toBase64()).getAddress());
     }
 }

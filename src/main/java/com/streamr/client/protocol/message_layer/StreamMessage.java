@@ -2,6 +2,7 @@ package com.streamr.client.protocol.message_layer;
 
 import com.streamr.client.exceptions.EncryptedContentNotParsableException;
 import com.streamr.client.exceptions.UnsupportedMessageException;
+import com.streamr.client.utils.Address;
 import com.streamr.client.utils.HttpUtils;
 
 import java.io.IOException;
@@ -217,8 +218,8 @@ public class StreamMessage implements ITimestamped {
         return messageID.getSequenceNumber();
     }
 
-    public String getPublisherId() {
-        return messageID.getPublisherId();
+    public Address getPublisherId() {
+        return new Address(messageID.getPublisherId());
     }
 
     public String getMsgChainId() {
@@ -343,4 +344,14 @@ public class StreamMessage implements ITimestamped {
     public String toString() {
         return this.getClass().getSimpleName() + ": " + this.serialize();
     }
+
+    @Override
+    public boolean equals(Object o) {
+        if (this == o) return true;
+        if (o == null || getClass() != o.getClass()) return false;
+
+        StreamMessage that = (StreamMessage) o;
+        return this.serialize().equals(that.serialize());
+    }
+
 }

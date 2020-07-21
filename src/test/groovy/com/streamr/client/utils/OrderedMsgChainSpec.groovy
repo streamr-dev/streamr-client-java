@@ -12,15 +12,17 @@ import java.util.stream.Collectors
 
 class OrderedMsgChainSpec extends StreamrSpecification {
 
-    StreamMessage msg1 = createMessage(1, 0)
-    StreamMessage msg2 = createMessage(2, 0, 1, 0)
-    StreamMessage msg3 = createMessage(3, 0, 2, 0)
-    StreamMessage msg4 = createMessage(4, 0, 3, 0)
-    StreamMessage msg5 = createMessage(5, 0, 4, 0)
+    final StreamMessage msg1 = createMessage(1, 0)
+    final StreamMessage msg2 = createMessage(2, 0, 1, 0)
+    final StreamMessage msg3 = createMessage(3, 0, 2, 0)
+    final StreamMessage msg4 = createMessage(4, 0, 3, 0)
+    final StreamMessage msg5 = createMessage(5, 0, 4, 0)
+
+    final Address publisherId = new Address("0x12345")
 
     void "handles ordered messages in order"() {
         ArrayList<StreamMessage> received = []
-        OrderedMsgChain util = new OrderedMsgChain("publisherId", "msgChainId", new Consumer<StreamMessage>() {
+        OrderedMsgChain util = new OrderedMsgChain(publisherId, "msgChainId", new Consumer<StreamMessage>() {
             @Override
             void accept(StreamMessage streamMessage) {
                 received.add(streamMessage)
@@ -35,7 +37,7 @@ class OrderedMsgChainSpec extends StreamrSpecification {
     }
     void "drops duplicates"() {
         ArrayList<StreamMessage> received = []
-        OrderedMsgChain util = new OrderedMsgChain("publisherId", "msgChainId",
+        OrderedMsgChain util = new OrderedMsgChain(publisherId, "msgChainId",
                 new Consumer<StreamMessage>() {
                     @Override
                     void accept(StreamMessage streamMessage) {
@@ -52,7 +54,7 @@ class OrderedMsgChainSpec extends StreamrSpecification {
     }
     void "handles unordered messages in order"() {
         ArrayList<StreamMessage> received = []
-        OrderedMsgChain util = new OrderedMsgChain("publisherId", "msgChainId",
+        OrderedMsgChain util = new OrderedMsgChain(publisherId, "msgChainId",
                 new Consumer<StreamMessage>() {
                     @Override
                     void accept(StreamMessage streamMessage) {
@@ -60,7 +62,7 @@ class OrderedMsgChainSpec extends StreamrSpecification {
                     }
                 }, new OrderedMsgChain.GapHandlerFunction() {
             @Override
-            void apply(MessageRef from, MessageRef to, String publisherId, String msgChainId) {
+            void apply(MessageRef from, MessageRef to, Address publisherId, String msgChainId) {
 
             }
         }, 5000L, 5000L, false)
@@ -78,7 +80,7 @@ class OrderedMsgChainSpec extends StreamrSpecification {
         StreamMessage m3 = createMessage(17)
         StreamMessage m4 = createMessage(7)
         ArrayList<StreamMessage> received = []
-        OrderedMsgChain util = new OrderedMsgChain("publisherId", "msgChainId",
+        OrderedMsgChain util = new OrderedMsgChain(publisherId, "msgChainId",
                 new Consumer<StreamMessage>() {
                     @Override
                     void accept(StreamMessage streamMessage) {
@@ -96,7 +98,7 @@ class OrderedMsgChainSpec extends StreamrSpecification {
     void "does not call the gap handler (scheduled but resolved before timeout)"() {
         ArrayList<StreamMessage> received = []
         RuntimeException unexpected
-        OrderedMsgChain util = new OrderedMsgChain("publisherId", "msgChainId",
+        OrderedMsgChain util = new OrderedMsgChain(publisherId, "msgChainId",
                 new Consumer<StreamMessage>() {
                     @Override
                     void accept(StreamMessage streamMessage) {
@@ -104,7 +106,7 @@ class OrderedMsgChainSpec extends StreamrSpecification {
                     }
                 }, new OrderedMsgChain.GapHandlerFunction() {
             @Override
-            void apply(MessageRef from, MessageRef to, String publisherId, String msgChainId) {
+            void apply(MessageRef from, MessageRef to, Address publisherId, String msgChainId) {
                 unexpected = new RuntimeException("Unexpected gap fill request")
             }
         }, 300L, 300L, false)
@@ -125,7 +127,7 @@ class OrderedMsgChainSpec extends StreamrSpecification {
         OrderedMsgChain util
         GapFillFailedException expected
         try {
-            util = new OrderedMsgChain("publisherId", "msgChainId",
+            util = new OrderedMsgChain(publisherId, "msgChainId",
                     new Consumer<StreamMessage>() {
                         @Override
                         void accept(StreamMessage streamMessage) {
@@ -133,7 +135,7 @@ class OrderedMsgChainSpec extends StreamrSpecification {
                         }
                     }, new OrderedMsgChain.GapHandlerFunction() {
                 @Override
-                void apply(MessageRef from, MessageRef to, String publisherId, String msgChainId) {
+                void apply(MessageRef from, MessageRef to, Address publisherId, String msgChainId) {
                     gapHandlerCount++
                 }
             }, new Function<GapFillFailedException, Void>() {
@@ -169,7 +171,7 @@ class OrderedMsgChainSpec extends StreamrSpecification {
         }
         Collections.shuffle(shuffled)
         ArrayList<StreamMessage> received = []
-        OrderedMsgChain util = new OrderedMsgChain("publisherId", "msgChainId",
+        OrderedMsgChain util = new OrderedMsgChain(publisherId, "msgChainId",
                 new Consumer<StreamMessage>() {
                     @Override
                     void accept(StreamMessage streamMessage) {
@@ -177,7 +179,7 @@ class OrderedMsgChainSpec extends StreamrSpecification {
                     }
                 }, new OrderedMsgChain.GapHandlerFunction() {
             @Override
-            void apply(MessageRef from, MessageRef to, String publisherId, String msgChainId) {
+            void apply(MessageRef from, MessageRef to, Address publisherId, String msgChainId) {
 
             }
         }, 5000L, 5000L, false)
@@ -210,7 +212,7 @@ class OrderedMsgChainSpec extends StreamrSpecification {
 
     void "throws if the queue is full if skipGapsOnFullQueue is false"() {
         final int received = 0;
-        OrderedMsgChain util = new OrderedMsgChain("publisherId", "msgChainId", new Consumer<StreamMessage>() {
+        OrderedMsgChain util = new OrderedMsgChain(publisherId, "msgChainId", new Consumer<StreamMessage>() {
             @Override
             void accept(StreamMessage streamMessage) {
                 received++;
@@ -230,7 +232,7 @@ class OrderedMsgChainSpec extends StreamrSpecification {
 
     void "empties the queue if full if skipGapsOnFullQueue is true"() {
         int received = 0
-        OrderedMsgChain util = new OrderedMsgChain("publisherId", "msgChainId", new Consumer<StreamMessage>() {
+        OrderedMsgChain util = new OrderedMsgChain(publisherId, "msgChainId", new Consumer<StreamMessage>() {
             @Override
             void accept(StreamMessage streamMessage) {
                 received++
@@ -258,7 +260,7 @@ class OrderedMsgChainSpec extends StreamrSpecification {
     void "handles input from multiple threads correctly"() {
         int received = 0
         OrderedMsgChain.GapHandlerFunction gapHandler = Mock(OrderedMsgChain.GapHandlerFunction)
-        OrderedMsgChain util = new OrderedMsgChain("publisherId", "msgChainId", new Consumer<StreamMessage>() {
+        OrderedMsgChain util = new OrderedMsgChain(publisherId, "msgChainId", new Consumer<StreamMessage>() {
             @Override
             void accept(StreamMessage streamMessage) {
                 received++

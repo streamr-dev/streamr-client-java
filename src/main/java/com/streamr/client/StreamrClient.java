@@ -38,6 +38,7 @@ import java.util.concurrent.Executors;
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.TimeUnit;
 import java.util.function.BiConsumer;
+import java.util.stream.Collectors;
 
 /**
  * Extends the StreamrRESTClient with methods for using the websocket protocol.
@@ -73,25 +74,25 @@ public class StreamrClient extends StreamrRESTClient {
         super(options);
         AddressValidityUtil addressValidityUtil = new AddressValidityUtil(streamId -> {
             try {
-                return getSubscribers(streamId);
+                return getSubscribers(streamId).stream().map(address -> new Address(address)).collect(Collectors.toList());
             } catch (IOException e) {
                 throw new RuntimeException(e);
             }
         }, (streamId, subscriberAddress) -> {
             try {
-                return isSubscriber(streamId, subscriberAddress);
+                return isSubscriber(streamId, subscriberAddress.toString());
             } catch (IOException e) {
                 throw new RuntimeException(e);
             }
         }, streamId -> {
             try {
-                return getPublishers(streamId);
+                return getPublishers(streamId).stream().map(address -> new Address(address)).collect(Collectors.toList());
             } catch (IOException e) {
                 throw new RuntimeException(e);
             }
         }, (streamId, publisherAddress) -> {
             try {
-                return isPublisher(streamId, publisherAddress);
+                return isPublisher(streamId, publisherAddress.toString());
             } catch (IOException e) {
                 throw new RuntimeException(e);
             }
@@ -117,7 +118,7 @@ public class StreamrClient extends StreamrRESTClient {
             // The key exchange stream is a system stream.
             // It doesn't explicitly exist, but as per spec, we can subscribe to it anyway.
             keyExchangeStream = new Stream("Key exchange stream for " + publisherId, "");
-            keyExchangeStream.setId(KeyExchangeUtil.getKeyExchangeStreamId(publisherId));
+            keyExchangeStream.setId(KeyExchangeUtil.getKeyExchangeStreamId(new Address(publisherId)));
             keyExchangeStream.setPartitions(1);
         }
         SigningUtil signingUtil = null;
@@ -128,7 +129,7 @@ public class StreamrClient extends StreamrRESTClient {
         // Create key storage
         keyStore = options.getEncryptionOptions().getKeyStore();
 
-        msgCreationUtil = new MessageCreationUtil(publisherId, signingUtil);
+        msgCreationUtil = new MessageCreationUtil(new Address(publisherId), signingUtil);
         encryptionUtil = new EncryptionUtil(options.getEncryptionOptions().getRsaPublicKey(),
                 options.getEncryptionOptions().getRsaPrivateKey());
         keyExchangeUtil = new KeyExchangeUtil(keyStore, msgCreationUtil, addressValidityUtil,
@@ -485,7 +486,7 @@ public class StreamrClient extends StreamrRESTClient {
             sub = new CombinedSubscription(stream.getId(), partition, handler, keyStore, resendOption, requestFunction,
                     options.getPropagationTimeout(), options.getResendTimeout(), options.getSkipGapsOnFullQueue());
         }
-        sub.setGapHandler((MessageRef from, MessageRef to, String publisherId, String msgChainId) -> {
+        sub.setGapHandler((MessageRef from, MessageRef to, Address publisherId, String msgChainId) -> {
             ResendRangeRequest req = new ResendRangeRequest(
                     newRequestId("resend"),
                     stream.getId(),
@@ -575,7 +576,7 @@ public class StreamrClient extends StreamrRESTClient {
         sub.endResend();
     }
 
-    private void sendGroupKeyRequest(String streamId, String publisherId, List<String> groupKeyIds) {
+    private void sendGroupKeyRequest(String streamId, Address publisherId, List<String> groupKeyIds) {
         if (!getState().equals(ReadyState.OPEN)) {
             connect();
         }

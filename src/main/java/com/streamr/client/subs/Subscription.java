@@ -5,6 +5,7 @@ import com.streamr.client.exceptions.GapDetectedException;
 import com.streamr.client.exceptions.UnsupportedMessageException;
 import com.streamr.client.options.ResendOption;
 import com.streamr.client.protocol.message_layer.StreamMessage;
+import com.streamr.client.utils.Address;
 import com.streamr.client.utils.GroupKey;
 import com.streamr.client.utils.GroupKeyStore;
 import com.streamr.client.utils.OrderedMsgChain;
@@ -90,7 +91,7 @@ public abstract class Subscription {
      * Method to be called whenever the client has new encryption keys available in the GroupKeyStore.
      * The Subscriptions should check the messages in its encryption queue and attempt to decrypt them.
      */
-    public abstract void onNewKeysAdded(String publisherId, Collection<GroupKey> groupKeys);
+    public abstract void onNewKeysAdded(Address publisherId, Collection<GroupKey> groupKeys);
 
     public abstract void clear();
 }

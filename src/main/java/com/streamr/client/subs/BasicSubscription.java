@@ -16,17 +16,17 @@ public abstract class BasicSubscription extends Subscription {
     public static final int MAX_NB_GROUP_KEY_REQUESTS = 10;
 
     protected OrderingUtil orderingUtil;
-    private final ConcurrentHashMap<String, Timer> pendingGroupKeyRequests = new ConcurrentHashMap<>();
-    private final ConcurrentHashMap<String, Integer> nbGroupKeyRequestsCalls = new ConcurrentHashMap<>();
-    private final HashSet<String> alreadyFailedToDecrypt = new HashSet<>();
+    private final ConcurrentHashMap<Address, Timer> pendingGroupKeyRequests = new ConcurrentHashMap<>();
+    private final ConcurrentHashMap<Address, Integer> nbGroupKeyRequestsCalls = new ConcurrentHashMap<>();
+    private final HashSet<Address> alreadyFailedToDecrypt = new HashSet<>();
     protected class MsgQueues {
-        private final HashMap<String, ArrayDeque<StreamMessage>> queues = new HashMap<>();
+        private final HashMap<Address, ArrayDeque<StreamMessage>> queues = new HashMap<>();
 
-        public ArrayDeque<StreamMessage> get(String publisherId) {
-            if (!queues.containsKey(publisherId.toLowerCase())) {
-                queues.put(publisherId.toLowerCase(), new ArrayDeque<>());
+        public ArrayDeque<StreamMessage> get(Address publisherId) {
+            if (!queues.containsKey(publisherId)) {
+                queues.put(publisherId, new ArrayDeque<>());
             }
-            return queues.get(publisherId.toLowerCase());
+            return queues.get(publisherId);
         }
 
         public void offer(StreamMessage msg) {
@@ -53,7 +53,7 @@ public abstract class BasicSubscription extends Subscription {
         orderingUtil = new OrderingUtil(
                 streamId, partition,
                 this::handleInOrder,
-                (MessageRef from, MessageRef to, String publisherId, String msgChainId) -> {
+                (MessageRef from, MessageRef to, Address publisherId, String msgChainId) -> {
                     throw new GapDetectedException(streamId, partition, from, to, publisherId, msgChainId);
                 },
                 this.propagationTimeout, this.resendTimeout, this.skipGapsOnFullQueue
@@ -84,7 +84,7 @@ public abstract class BasicSubscription extends Subscription {
 
     protected void requestGroupKeyAndQueueMessage(StreamMessage msgToQueue) {
         Timer t = new Timer(String.format("GroupKeyTimer-%s-%s", msgToQueue.getStreamId(), msgToQueue.getMessageRef().toString()), true);
-        String publisherId = msgToQueue.getPublisherId().toLowerCase();
+        Address publisherId = msgToQueue.getPublisherId();
         nbGroupKeyRequestsCalls.put(publisherId, 0);
         TimerTask request = new TimerTask() {
             @Override
@@ -110,7 +110,7 @@ public abstract class BasicSubscription extends Subscription {
         encryptedMsgsQueues.offer(msgToQueue);
     }
 
-    protected void handleEncryptionQueue(String publisherId) {
+    protected void handleEncryptionQueue(Address publisherId) {
         cancelGroupKeyRequest(publisherId);
         ArrayDeque<StreamMessage> queue = encryptedMsgsQueues.get(publisherId);
         getLogger().trace("Checking and handling encryption queue for publisher {}. Queue size: {}", publisherId, queue.size());
@@ -119,8 +119,7 @@ public abstract class BasicSubscription extends Subscription {
         }
     }
 
-    private synchronized void cancelGroupKeyRequest(String publisherId) {
-        publisherId = publisherId.toLowerCase();
+    private synchronized void cancelGroupKeyRequest(Address publisherId) {
         if (pendingGroupKeyRequests.containsKey(publisherId)) {
             getLogger().trace("Pending group key request canceled for publisher {}", publisherId);
             Timer timer = pendingGroupKeyRequests.get(publisherId);
@@ -166,7 +165,7 @@ public abstract class BasicSubscription extends Subscription {
     }
 
     private void handleInOrder(StreamMessage msg) {
-        if (!pendingGroupKeyRequests.containsKey(msg.getPublisherId().toLowerCase())) {
+        if (!pendingGroupKeyRequests.containsKey(msg.getPublisherId())) {
             decryptAndHandle(msg);
         } else {
             encryptedMsgsQueues.offer(msg);
@@ -190,7 +189,7 @@ public abstract class BasicSubscription extends Subscription {
     }
 
     @Override
-    public void onNewKeysAdded(String publisherId, Collection<GroupKey> groupKeys) {
+    public void onNewKeysAdded(Address publisherId, Collection<GroupKey> groupKeys) {
         // handle real time messages received while waiting for the group key
         handleEncryptionQueue(publisherId);
     }
@@ -199,6 +198,6 @@ public abstract class BasicSubscription extends Subscription {
 
     @FunctionalInterface
     public interface GroupKeyRequestFunction {
-        void apply(String publisherId, List<String> groupKeyIds);
+        void apply(Address publisherId, List<String> groupKeyIds);
     }
 }

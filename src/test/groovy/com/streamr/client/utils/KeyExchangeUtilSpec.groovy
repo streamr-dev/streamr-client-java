@@ -1,8 +1,7 @@
 package com.streamr.client.utils
 
-
+import com.streamr.client.protocol.StreamrSpecification
 import com.streamr.client.protocol.message_layer.*
-import spock.lang.Specification
 
 import java.time.Clock
 import java.time.Duration
@@ -10,7 +9,7 @@ import java.time.Instant
 import java.util.function.Consumer
 import java.util.function.Function
 
-class KeyExchangeUtilSpec extends Specification {
+class KeyExchangeUtilSpec extends StreamrSpecification {
     KeyExchangeUtil util
     GroupKeyStore keyStore
     MessageCreationUtil messageCreationUtil
@@ -46,7 +45,7 @@ class KeyExchangeUtilSpec extends Specification {
         keysReportedToOnNewKeys = []
         onNewKeysFunction = new KeyExchangeUtil.OnNewKeysFunction() {
             @Override
-            void apply(String streamId, String publisherId, Collection<GroupKey> keys) {
+            void apply(String streamId, Address publisherId, Collection<GroupKey> keys) {
                 keysReportedToOnNewKeys.addAll(keys)
             }
         }
@@ -54,7 +53,7 @@ class KeyExchangeUtilSpec extends Specification {
     }
 
     void "handleGroupKeyRequest() should send group key response for the requested keys"() {
-        MessageID id = new MessageID("publisherInbox", 0, 414, 0, "subscriberId", "msgChainId")
+        MessageID id = new MessageID("publisherInbox", 0, 414, 0, subscriberId.toString(), "msgChainId")
         GroupKey key1 = GroupKey.generate()
         GroupKey key2 = GroupKey.generate()
 
@@ -68,8 +67,8 @@ class KeyExchangeUtilSpec extends Specification {
         then:
         1 * keyStore.get("streamId", key1.groupKeyId) >> key1
         1 * keyStore.get("streamId", key2.groupKeyId) >> key2
-        1 * messageCreationUtil.createGroupKeyResponse(_, _, _) >> { String subscriberId, GroupKeyRequest req, List<GroupKey> keys ->
-            assert subscriberId == "subscriberId"
+        1 * messageCreationUtil.createGroupKeyResponse(_, _, _) >> { Address subId, GroupKeyRequest req, List<GroupKey> keys ->
+            assert subId == subscriberId
             assert req == request
             assert keys == [key1, key2]
             return response
@@ -79,7 +78,7 @@ class KeyExchangeUtilSpec extends Specification {
 
         then:
         // Remember the public key of the subscriber
-        util.getKnownPublicKeysByPublisher().get("subscriberId") == encryptionUtil.publicKeyAsPemString
+        util.getKnownPublicKeysByPublisher().get(subscriberId) == encryptionUtil.publicKeyAsPemString
     }
 
     void "handleGroupKeyResponse() should add keys to keyStore and call onNewKeys function"() {
@@ -91,7 +90,7 @@ class KeyExchangeUtilSpec extends Specification {
         util.handleGroupKeyResponse(response.toStreamMessage(id, null))
 
         then:
-        keyStore.get("streamId", "publisherId") == key
+        1 * keyStore.add("streamId", key)
         keysReportedToOnNewKeys == [key]
     }
 
@@ -104,7 +103,7 @@ class KeyExchangeUtilSpec extends Specification {
         util.handleGroupKeyAnnounce(response.toStreamMessage(id, null))
 
         then:
-        keyStore.get("streamId", "publisherId") == key
+        1 * keyStore.add("streamId", key)
         keysReportedToOnNewKeys == [key]
     }
 
@@ -164,13 +163,13 @@ class KeyExchangeUtilSpec extends Specification {
     }
 
     void "should rekey by sending group key announce messages to key exchange streams"() {
-        // Set some public keys for subscribers
-        util.getKnownPublicKeysByPublisher().put("subscriberId1", new EncryptionUtil().publicKeyAsPemString)
-        util.getKnownPublicKeysByPublisher().put("subscriberId2", new EncryptionUtil().publicKeyAsPemString)
-        util.getKnownPublicKeysByPublisher().put("subscriberId3", new EncryptionUtil().publicKeyAsPemString)
-
         AddressValidityUtil addressValidityUtil2 = Mock(AddressValidityUtil)
         util = new KeyExchangeUtil(keyStore, messageCreationUtil, addressValidityUtil2, publish, onNewKeysFunction)
+
+        // Set some public keys for subscribers
+        util.getKnownPublicKeysByPublisher().put(subscriberId1, new EncryptionUtil().publicKeyAsPemString)
+        util.getKnownPublicKeysByPublisher().put(subscriberId2, new EncryptionUtil().publicKeyAsPemString)
+        util.getKnownPublicKeysByPublisher().put(subscriberId3, new EncryptionUtil().publicKeyAsPemString)
 
         StreamMessage announce1 = new GroupKeyAnnounce("streamId", []).toStreamMessage(new MessageID(
                 "keyexchange-sub1", 0, 0, 0,"publisherId", "msgChainId"
@@ -184,14 +183,15 @@ class KeyExchangeUtilSpec extends Specification {
 
         then:
         // Should check current subscribers with AddressValidityUtil, which responds that subscribers 1 and 3 are still active
-        1 * addressValidityUtil2.getSubscribersSet("streamId", true) >> ["subscriberId1", "subscriberId3"]
+        1 * addressValidityUtil2.getSubscribersSet("streamId", true) >> [subscriberId1, subscriberId3].toSet()
         // Add new key to keystore
         1 * keyStore.add("streamId", _)
-        1 * messageCreationUtil.createGroupKeyAnnounceForSubscriber("subscriberId1", "streamId", _, _) >> announce1
-        0 * messageCreationUtil.createGroupKeyAnnounceForSubscriber("subscriberId2", "streamId", _, _) // don't call for subscriber 2
-        1 * messageCreationUtil.createGroupKeyAnnounceForSubscriber("subscriberId3", "streamId", _, _) >> announce3
+        1 * messageCreationUtil.createGroupKeyAnnounceForSubscriber(subscriberId1, "streamId", _, _) >> announce1
+        0 * messageCreationUtil.createGroupKeyAnnounceForSubscriber(subscriberId2, "streamId", _, _) // don't call for subscriber 2
+        1 * messageCreationUtil.createGroupKeyAnnounceForSubscriber(subscriberId3, "streamId", _, _) >> announce3
 
         published.size() == 2
-        published[0] == announce1 && published[1] == announce3
+        published[0] == announce1
+        published[1] == announce3
     }
 }
