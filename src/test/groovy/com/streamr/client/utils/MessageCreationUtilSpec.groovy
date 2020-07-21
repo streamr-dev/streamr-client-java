@@ -155,9 +155,10 @@ class MessageCreationUtilSpec extends Specification {
     }
 
     void "createGroupKeyRequest() should throw if SigningUtil is not set"() {
+        msgCreationUtil = new MessageCreationUtil("subscriberId", null)
+
         when:
-        // msgCreationUtil has null signingUtil
-        msgCreationUtil.createGroupKeyRequest("", "", "", [])
+        msgCreationUtil.createGroupKeyRequest("publisherAddress", "streamId", "", ["keyId1"])
         then:
         thrown SigningRequiredException
     }
@@ -182,11 +183,12 @@ class MessageCreationUtilSpec extends Specification {
     }
 
     void "createGroupKeyResponse() should throw if SigningUtil is not set"() {
-        GroupKeyRequest request = new GroupKeyRequest("requestId", "streamId", "publicKey", ["keyId1"])
+        msgCreationUtil = new MessageCreationUtil("publisherId", null)
+        GroupKey key = GroupKey.generate()
+        GroupKeyRequest request = new GroupKeyRequest("requestId", "streamId", "publicKey", [key.getGroupKeyId()])
 
         when:
-        // msgCreationUtil has null signingUtil
-        msgCreationUtil.createGroupKeyResponse("", request, null)
+        msgCreationUtil.createGroupKeyResponse("", request, [key])
 
         then:
         thrown SigningRequiredException
@@ -207,7 +209,7 @@ class MessageCreationUtilSpec extends Specification {
 
         when:
         encryptionUtil.decryptWithPrivateKey(msg)
-        GroupKeyResponse response = (GroupKeyResponse) AbstractGroupKeyMessage.deserialize(msg.getSerializedContent(), StreamMessage.MessageType.GROUP_KEY_REQUEST)
+        GroupKeyResponse response = (GroupKeyResponse) AbstractGroupKeyMessage.deserialize(msg.getSerializedContent(), StreamMessage.MessageType.GROUP_KEY_RESPONSE)
 
         then:
         response.getStreamId() == "streamId"
@@ -215,9 +217,11 @@ class MessageCreationUtilSpec extends Specification {
     }
 
     void "createGroupKeyAnnounceForSubscriber() should throw if SigningUtil is not set"() {
+        msgCreationUtil = new MessageCreationUtil("publisherId", null)
+        GroupKey key = GroupKey.generate()
+
         when:
-        // msgCreationUtil has null signingUtil
-        msgCreationUtil.createGroupKeyAnnounceForSubscriber("", "", "publicKey", [])
+        msgCreationUtil.createGroupKeyAnnounceForSubscriber("subscriberAddress", "streamId", "publicKey", [key])
         then:
         thrown SigningRequiredException
     }
@@ -244,8 +248,9 @@ class MessageCreationUtilSpec extends Specification {
     }
 
     void "createGroupKeyAnnounceOnStream() should throw if SigningUtil is not set"() {
+        msgCreationUtil = new MessageCreationUtil("publisherId", null)
+
         when:
-        // msgCreationUtil has null signingUtil
         msgCreationUtil.createGroupKeyAnnounceOnStream("streamId", [GroupKey.generate()], GroupKey.generate())
         then:
         thrown SigningRequiredException
@@ -265,7 +270,7 @@ class MessageCreationUtilSpec extends Specification {
         msg.getSignature() != null
 
         when:
-        EncryptionUtil.decryptStreamMessage(msg, oldGroupKey.toSecretKey())
+        EncryptionUtil.decryptStreamMessage(msg, oldGroupKey)
         GroupKeyAnnounce announce = (GroupKeyAnnounce) AbstractGroupKeyMessage.deserialize(msg.getSerializedContent(), StreamMessage.MessageType.GROUP_KEY_ANNOUNCE)
 
         then:
@@ -274,12 +279,13 @@ class MessageCreationUtilSpec extends Specification {
     }
 
     void "createGroupKeyErrorResponse() should throw if SigningUtil is not set"() {
+        msgCreationUtil = new MessageCreationUtil("publisherId", null)
+
         when:
-        // msgCreationUtil has null signingUtil
         msgCreationUtil.createGroupKeyErrorResponse("", new GroupKeyRequest("requestId", "streamId", "rsaPublicKey" ,["keyId1"]), new Exception())
 
         then:
-        SigningRequiredException e = thrown SigningRequiredException
+        thrown SigningRequiredException
     }
 
     void "createGroupKeyErrorResponse() creates the correct error message"() {
