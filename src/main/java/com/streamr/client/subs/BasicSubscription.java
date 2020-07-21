@@ -145,7 +145,7 @@ public abstract class BasicSubscription extends Subscription {
                 throw new UnableToDecryptException(msg.getSerializedContent());
             }
 
-            EncryptionUtil.decryptStreamMessage(msg, groupKey.toSecretKey());
+            EncryptionUtil.decryptStreamMessage(msg, groupKey);
             alreadyFailedToDecrypt.remove(msg.getPublisherId());
             return true;
         } catch (UnableToDecryptException e) {

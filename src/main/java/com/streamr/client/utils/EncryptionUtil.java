@@ -108,12 +108,12 @@ public class EncryptionUtil {
         return encryptWithPublicKey(plaintext, publicKey);
     }
 
-    public static String encrypt(byte[] plaintext, SecretKey groupKey) {
+    public static String encrypt(byte[] plaintext, GroupKey groupKey) {
         try {
             byte[] iv = new byte[16];
             SRAND.nextBytes(iv);
             IvParameterSpec ivspec = new IvParameterSpec(iv);
-            aesCipher.get().init(Cipher.ENCRYPT_MODE, groupKey, ivspec);
+            aesCipher.get().init(Cipher.ENCRYPT_MODE, groupKey.toSecretKey(), ivspec);
             byte[] ciphertext = aesCipher.get().doFinal(plaintext);
             return Hex.encodeHexString(iv) + Hex.encodeHexString(ciphertext);
         } catch (Exception e) {
@@ -122,11 +122,11 @@ public class EncryptionUtil {
         return null;
     }
 
-    public static byte[] decrypt(String ciphertext, SecretKey groupKey) throws Exception {
+    public static byte[] decrypt(String ciphertext, GroupKey groupKey) throws Exception {
         if (groupKey == null) throw new InvalidGroupKeyException(0);
         byte[] iv = DatatypeConverter.parseHexBinary(ciphertext.substring(0, 32));
         IvParameterSpec ivParameterSpec = new IvParameterSpec(iv);
-        aesCipher.get().init(Cipher.DECRYPT_MODE, groupKey, ivParameterSpec);
+        aesCipher.get().init(Cipher.DECRYPT_MODE, groupKey.toSecretKey(), ivParameterSpec);
         return aesCipher.get().doFinal(DatatypeConverter.parseHexBinary(ciphertext.substring(32)));
     }
 
@@ -134,7 +134,7 @@ public class EncryptionUtil {
      * Sets the content of 'streamMessage' with the encryption result of the old content with 'groupKey'.
      */
     public static void encryptStreamMessage(StreamMessage streamMessage, GroupKey groupKey) throws InvalidGroupKeyException {
-        streamMessage.setSerializedContent(encrypt(streamMessage.getSerializedContentAsBytes(), groupKey.toSecretKey()));
+        streamMessage.setSerializedContent(encrypt(streamMessage.getSerializedContentAsBytes(), groupKey));
         streamMessage.setEncryptionType(StreamMessage.EncryptionType.AES);
         streamMessage.setGroupKeyId(groupKey.getGroupKeyId());
     }
@@ -142,7 +142,7 @@ public class EncryptionUtil {
     /**
      * Decrypts the serialized content of 'streamMessage' with 'groupKey'.
      */
-    public static void decryptStreamMessage(StreamMessage streamMessage, SecretKey groupKey) throws UnableToDecryptException {
+    public static void decryptStreamMessage(StreamMessage streamMessage, GroupKey groupKey) throws UnableToDecryptException {
         if (streamMessage.getEncryptionType() != StreamMessage.EncryptionType.AES) {
             throw new IllegalArgumentException("Given StreamMessage is not encrypted with AES!");
         }
@@ -155,7 +155,7 @@ public class EncryptionUtil {
                 log.debug("No key given to decrypt stream {} msg {}", streamMessage.getStreamId(), streamMessage.getMessageRef());
             } else {
                 log.debug("Failed to decrypt stream {} msg {} with key {} ",
-                        streamMessage.getStreamId(), streamMessage.getMessageRef(), Hex.encodeHexString(groupKey.getEncoded()));
+                        streamMessage.getStreamId(), streamMessage.getMessageRef(), groupKey.getGroupKeyId());
             }
 
             throw new UnableToDecryptException(streamMessage.getSerializedContent());

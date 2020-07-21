@@ -48,16 +48,21 @@ public class GroupKey {
     }
 
     public static GroupKey generate() {
-        return GroupKey.generate(defaultSecureRandom);
+        return GroupKey.generate(IdGenerator.get(), defaultSecureRandom);
     }
 
-    public static GroupKey generate(SecureRandom secureRandom) {
+    public static GroupKey generate(String id) {
+        return GroupKey.generate(id, defaultSecureRandom);
+    }
+
+    public static GroupKey generate(String id, SecureRandom secureRandom) {
         byte[] keyBytes = new byte[32];
         secureRandom.nextBytes(keyBytes);
         try {
-            return new GroupKey(IdGenerator.get(), Hex.encodeHexString(keyBytes));
+            return new GroupKey(id, Hex.encodeHexString(keyBytes));
         } catch (InvalidGroupKeyException e) {
             throw new RuntimeException(e);
         }
     }
+
 }
