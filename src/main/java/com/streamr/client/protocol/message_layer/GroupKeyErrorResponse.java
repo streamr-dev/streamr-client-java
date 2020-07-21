@@ -44,4 +44,18 @@ public class GroupKeyErrorResponse extends AbstractGroupKeyMessage {
     protected StreamMessage.MessageType getMessageType() {
         return StreamMessage.MessageType.GROUP_KEY_ERROR_RESPONSE;
     }
+
+    @Override
+    public boolean equals(Object o) {
+        if (this == o) return true;
+        if (o == null || getClass() != o.getClass()) return false;
+
+        GroupKeyErrorResponse that = (GroupKeyErrorResponse) o;
+
+        if (!streamId.equals(that.streamId)) return false;
+        if (!requestId.equals(that.requestId)) return false;
+        if (!code.equals(that.code)) return false;
+        if (!message.equals(that.message)) return false;
+        return groupKeyIds.equals(that.groupKeyIds);
+    }
 }

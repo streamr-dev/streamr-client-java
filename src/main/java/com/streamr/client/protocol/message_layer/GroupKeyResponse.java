@@ -32,4 +32,16 @@ public class GroupKeyResponse extends AbstractGroupKeyMessage {
     protected StreamMessage.MessageType getMessageType() {
         return StreamMessage.MessageType.GROUP_KEY_RESPONSE;
     }
+
+    @Override
+    public boolean equals(Object o) {
+        if (this == o) return true;
+        if (o == null || getClass() != o.getClass()) return false;
+
+        GroupKeyResponse that = (GroupKeyResponse) o;
+
+        if (!requestId.equals(that.requestId)) return false;
+        if (!streamId.equals(that.streamId)) return false;
+        return keys.equals(that.keys);
+    }
 }

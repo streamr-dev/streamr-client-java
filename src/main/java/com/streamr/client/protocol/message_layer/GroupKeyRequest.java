@@ -8,8 +8,8 @@ import java.util.List;
 import java.util.Map;
 
 public class GroupKeyRequest extends AbstractGroupKeyMessage {
-    private String requestId;
-    private String publicKey;
+    private final String requestId;
+    private final String publicKey;
     private final List<String> groupKeyIds;
 
     public GroupKeyRequest(String requestId, String streamId, String rsaPublicKey, List<String> groupKeyIds) {
@@ -39,5 +39,18 @@ public class GroupKeyRequest extends AbstractGroupKeyMessage {
     @Override
     protected StreamMessage.MessageType getMessageType() {
         return StreamMessage.MessageType.GROUP_KEY_REQUEST;
+    }
+
+    @Override
+    public boolean equals(Object o) {
+        if (this == o) return true;
+        if (o == null || getClass() != o.getClass()) return false;
+
+        GroupKeyRequest that = (GroupKeyRequest) o;
+
+        if (!requestId.equals(that.requestId)) return false;
+        if (!streamId.equals(that.streamId)) return false;
+        if (!publicKey.equals(that.publicKey)) return false;
+        return groupKeyIds.equals(that.groupKeyIds);
     }
 }
