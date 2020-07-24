@@ -134,6 +134,12 @@ public abstract class BasicSubscription extends Subscription {
     }
 
     private boolean decryptOrRequestGroupKey(StreamMessage msg) throws UnableToDecryptException {
+        // Key exchange messages are handled in a special way in KeyExchangeUtil
+        if (msg.getMessageType() != StreamMessage.MessageType.STREAM_MESSAGE) {
+            return true;
+        }
+
+        // Nothing needs to be done here if the message is not encrypted
         if (msg.getEncryptionType() == StreamMessage.EncryptionType.NONE) {
             return true;
         }

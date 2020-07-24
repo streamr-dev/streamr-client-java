@@ -1,6 +1,6 @@
 package com.streamr.client.utils;
 
-import com.streamr.client.exceptions.*;
+import com.streamr.client.exceptions.KeyAlreadyExistsException;
 import com.streamr.client.protocol.message_layer.*;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -10,6 +10,7 @@ import java.time.Duration;
 import java.time.Instant;
 import java.util.*;
 import java.util.function.Consumer;
+import java.util.stream.Collectors;
 
 /**
  * This is a helper class for key exchange.
@@ -26,6 +27,7 @@ public class KeyExchangeUtil {
 
     private final GroupKeyStore keyStore;
     private final MessageCreationUtil messageCreationUtil;
+    private final EncryptionUtil encryptionUtil;
     private final AddressValidityUtil addressValidityUtil;
     private final Consumer<StreamMessage> publishFunction;
     private final OnNewKeysFunction onNewKeysFunction;
@@ -34,19 +36,20 @@ public class KeyExchangeUtil {
 
     public static final String KEY_EXCHANGE_STREAM_PREFIX = "SYSTEM/keyexchange/";
 
-    public KeyExchangeUtil(GroupKeyStore keyStore, MessageCreationUtil messageCreationUtil,
+    public KeyExchangeUtil(GroupKeyStore keyStore, MessageCreationUtil messageCreationUtil, EncryptionUtil encryptionUtil,
                            AddressValidityUtil addressValidityUtil, Consumer<StreamMessage> publishFunction,
                            OnNewKeysFunction onNewKeysFunction) {
-        this(keyStore, messageCreationUtil, addressValidityUtil, publishFunction,
+        this(keyStore, messageCreationUtil, encryptionUtil, addressValidityUtil, publishFunction,
                 onNewKeysFunction, Clock.systemDefaultZone());
     }
 
     // constructor used for testing in KeyExchangeUtilSpec
-    public KeyExchangeUtil(GroupKeyStore keyStore, MessageCreationUtil messageCreationUtil,
+    public KeyExchangeUtil(GroupKeyStore keyStore, MessageCreationUtil messageCreationUtil, EncryptionUtil encryptionUtil,
                            AddressValidityUtil addressValidityUtil, Consumer<StreamMessage> publishFunction,
                            OnNewKeysFunction onNewKeysFunction, Clock clock) {
         this.keyStore = keyStore;
         this.messageCreationUtil = messageCreationUtil;
+        this.encryptionUtil = encryptionUtil;
         this.addressValidityUtil = addressValidityUtil;
         this.publishFunction = publishFunction;
         this.onNewKeysFunction = onNewKeysFunction;
@@ -92,16 +95,64 @@ public class KeyExchangeUtil {
         log.debug("Received group key response from publisher {} for stream {}, keys {}",
                 streamMessage.getPublisherId(), response.getStreamId(), response.getKeys());
 
-        handleNewKeys(response.getStreamId(), streamMessage.getPublisherId(), response.getKeys());
+        List<GroupKey> keys;
+        if (streamMessage.getEncryptionType() == StreamMessage.EncryptionType.RSA) {
+            keys = decryptGroupKeysRSA(response.getKeys(), response);
+        } else {
+            throw new RuntimeException("Unexpected EncryptionType: " + streamMessage.getEncryptionType());
+        }
+
+        handleNewKeys(response.getStreamId(), streamMessage.getPublisherId(), keys);
+    }
+
+    private List<GroupKey> decryptGroupKeysRSA(List<EncryptedGroupKey> encryptedKeys, AbstractGroupKeyMessage groupKeyMessage) {
+        return encryptedKeys.stream()
+                .map(encryptedKey -> {
+                    try {
+                        return encryptionUtil.decryptWithPrivateKey(encryptedKey);
+                    } catch (Exception e) {
+                        log.error("Unable to decrypt group key {} for stream {}", encryptedKey.getGroupKeyId(), groupKeyMessage.getStreamId(), e);
+                        return null;
+                    }
+                })
+                .filter(Objects::nonNull)
+                .collect(Collectors.toList());
+    }
+
+    private List<GroupKey> decryptGroupKeysAES(List<EncryptedGroupKey> encryptedKeys, AbstractGroupKeyMessage groupKeyMessage, String groupKeyId) {
+        return encryptedKeys.stream()
+                .map(encryptedKey -> {
+                    try {
+                        GroupKey keyToDecryptWith = keyStore.get(groupKeyMessage.getStreamId(), groupKeyId);
+                        if (keyToDecryptWith == null) {
+                            throw new Exception(String.format("Key %s for stream %s was not found in keyStore", groupKeyId, groupKeyMessage.getStreamId()));
+                        }
+                        return EncryptionUtil.decryptGroupKey(encryptedKey, keyToDecryptWith);
+                    } catch (Exception e) {
+                        log.error("Unable to decrypt group key {} for stream {}", encryptedKey.getGroupKeyId(), groupKeyMessage.getStreamId(), e);
+                        return null;
+                    }
+                })
+                .filter(Objects::nonNull)
+                .collect(Collectors.toList());
     }
 
     public void handleGroupKeyAnnounce(StreamMessage streamMessage) {
         GroupKeyAnnounce announce = (GroupKeyAnnounce) AbstractGroupKeyMessage.fromStreamMessage(streamMessage);
 
         log.debug("Received group key announce from publisher {} for stream {}, keys {}",
-                streamMessage.getPublisherId(), announce.getStreamId(), announce.getGroupKeys());
+                streamMessage.getPublisherId(), announce.getStreamId(), announce.getKeys());
 
-        handleNewKeys(announce.getStreamId(), streamMessage.getPublisherId(), announce.getGroupKeys());
+        List<GroupKey> keys;
+        if (streamMessage.getEncryptionType() == StreamMessage.EncryptionType.RSA) {
+            keys = decryptGroupKeysRSA(announce.getKeys(), announce);
+        } else if (streamMessage.getEncryptionType() == StreamMessage.EncryptionType.AES) {
+            keys = decryptGroupKeysAES(announce.getKeys(), announce, streamMessage.getGroupKeyId());
+        } else {
+            throw new RuntimeException("Unexpected EncryptionType: " + streamMessage.getEncryptionType());
+        }
+
+        handleNewKeys(announce.getStreamId(), streamMessage.getPublisherId(), keys);
     }
 
     public boolean keyRevocationNeeded(String streamId) {

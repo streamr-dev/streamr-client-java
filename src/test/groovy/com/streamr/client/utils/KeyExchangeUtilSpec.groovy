@@ -49,7 +49,7 @@ class KeyExchangeUtilSpec extends StreamrSpecification {
                 keysReportedToOnNewKeys.addAll(keys)
             }
         }
-        util = new KeyExchangeUtil(keyStore, messageCreationUtil, addressValidityUtil, publish, onNewKeysFunction)
+        util = new KeyExchangeUtil(keyStore, messageCreationUtil, encryptionUtil, addressValidityUtil, publish, onNewKeysFunction)
     }
 
     void "handleGroupKeyRequest() should send group key response for the requested keys"() {
@@ -81,30 +81,58 @@ class KeyExchangeUtilSpec extends StreamrSpecification {
         util.getKnownPublicKeysByPublisher().get(subscriberId) == encryptionUtil.publicKeyAsPemString
     }
 
-    void "handleGroupKeyResponse() should add keys to keyStore and call onNewKeys function"() {
+    void "handleGroupKeyResponse() should decrypt keys, add keys to keyStore, and call onNewKeys function"() {
         MessageID id = new MessageID("subscriberInbox", 0, 414, 0, "publisherId", "msgChainId")
         GroupKey key = GroupKey.generate()
-        GroupKeyResponse response = new GroupKeyResponse("requestId", "streamId", [key])
+        EncryptedGroupKey encryptedKey = EncryptionUtil.encryptWithPublicKey(key, encryptionUtil.publicKey)
+
+        GroupKeyResponse response = new GroupKeyResponse("requestId", "streamId", [encryptedKey])
+        StreamMessage streamMessage = response.toStreamMessage(id, null)
+        streamMessage.setEncryptionType(StreamMessage.EncryptionType.RSA)
 
         when:
-        util.handleGroupKeyResponse(response.toStreamMessage(id, null))
+        util.handleGroupKeyResponse(streamMessage)
 
         then:
         1 * keyStore.add("streamId", key)
         keysReportedToOnNewKeys == [key]
     }
 
-    void "handleGroupKeyAnnounce() should add keys to keyStore and call onNewKeys function"() {
+    void "handleGroupKeyAnnounce() should RSA decrypt keys, add them to keyStore, and call onNewKeys function"() {
         MessageID id = new MessageID("subscriberInbox", 0, 414, 0, "publisherId", "msgChainId")
         GroupKey key = GroupKey.generate()
-        GroupKeyAnnounce response = new GroupKeyAnnounce("streamId", [key])
+        EncryptedGroupKey encryptedKey = EncryptionUtil.encryptWithPublicKey(key, encryptionUtil.publicKey)
+
+        GroupKeyAnnounce announce = new GroupKeyAnnounce("streamId", [encryptedKey])
+        StreamMessage streamMessage = announce.toStreamMessage(id, null)
+        streamMessage.setEncryptionType(StreamMessage.EncryptionType.RSA)
 
         when:
-        util.handleGroupKeyAnnounce(response.toStreamMessage(id, null))
+        util.handleGroupKeyAnnounce(streamMessage)
 
         then:
         1 * keyStore.add("streamId", key)
         keysReportedToOnNewKeys == [key]
+    }
+
+    void "handleGroupKeyAnnounce() should AES decrypt keys, add them to keyStore, and call onNewKeys function"() {
+        MessageID id = new MessageID("subscriberInbox", 0, 414, 0, "publisherId", "msgChainId")
+        GroupKey keyToEncrypt = GroupKey.generate()
+        GroupKey keyToEncryptWith = GroupKey.generate()
+        EncryptedGroupKey encryptedKey = EncryptionUtil.encryptGroupKey(keyToEncrypt, keyToEncryptWith)
+
+        GroupKeyAnnounce announce = new GroupKeyAnnounce("streamId", [encryptedKey])
+        StreamMessage streamMessage = announce.toStreamMessage(id, null)
+        streamMessage.setGroupKeyId(keyToEncryptWith.getGroupKeyId())
+        streamMessage.setEncryptionType(StreamMessage.EncryptionType.AES)
+
+        when:
+        util.handleGroupKeyAnnounce(streamMessage)
+
+        then:
+        1 * keyStore.get(announce.getStreamId(), keyToEncryptWith.getGroupKeyId()) >> keyToEncryptWith
+        1 * keyStore.add(announce.getStreamId(), keyToEncrypt)
+        keysReportedToOnNewKeys == [keyToEncrypt]
     }
 
     void "keyRevocationNeeded() should not revoke if checked recently"() {
@@ -118,7 +146,7 @@ class KeyExchangeUtilSpec extends StreamrSpecification {
                 return new ArrayList<>()
             }
         }, null,null, null)
-        util = new KeyExchangeUtil(keyStore, messageCreationUtil, addressValidityUtil2, publish, onNewKeysFunction)
+        util = new KeyExchangeUtil(keyStore, messageCreationUtil, encryptionUtil, addressValidityUtil2, publish, onNewKeysFunction)
 
         when:
         boolean res = util.keyRevocationNeeded("streamId")
@@ -137,7 +165,7 @@ class KeyExchangeUtilSpec extends StreamrSpecification {
         Clock clock = Mock(Clock)
         Instant now = Instant.now()
         clock.instant() >> now
-        util = new KeyExchangeUtil(keyStore, messageCreationUtil, addressValidityUtil2, publish, onNewKeysFunction, clock)
+        util = new KeyExchangeUtil(keyStore, messageCreationUtil, encryptionUtil, addressValidityUtil2, publish, onNewKeysFunction, clock)
 
         when:
         boolean res = util.keyRevocationNeeded("streamId")
@@ -154,7 +182,7 @@ class KeyExchangeUtilSpec extends StreamrSpecification {
 
     void "should revoke if threshold reached"() {
         AddressValidityUtil addressValidityUtil2 = Mock(AddressValidityUtil)
-        util = new KeyExchangeUtil(keyStore, messageCreationUtil, addressValidityUtil2, publish, onNewKeysFunction)
+        util = new KeyExchangeUtil(keyStore, messageCreationUtil, encryptionUtil, addressValidityUtil2, publish, onNewKeysFunction)
         when:
         boolean res = util.keyRevocationNeeded("streamId")
         then:
@@ -164,7 +192,7 @@ class KeyExchangeUtilSpec extends StreamrSpecification {
 
     void "should rekey by sending group key announce messages to key exchange streams"() {
         AddressValidityUtil addressValidityUtil2 = Mock(AddressValidityUtil)
-        util = new KeyExchangeUtil(keyStore, messageCreationUtil, addressValidityUtil2, publish, onNewKeysFunction)
+        util = new KeyExchangeUtil(keyStore, messageCreationUtil, encryptionUtil, addressValidityUtil2, publish, onNewKeysFunction)
 
         // Set some public keys for subscribers
         util.getKnownPublicKeysByPublisher().put(subscriberId1, new EncryptionUtil().publicKeyAsPemString)

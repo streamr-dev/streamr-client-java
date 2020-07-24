@@ -132,7 +132,7 @@ public class StreamrClient extends StreamrRESTClient {
         msgCreationUtil = new MessageCreationUtil(new Address(publisherId), signingUtil);
         encryptionUtil = new EncryptionUtil(options.getEncryptionOptions().getRsaPublicKey(),
                 options.getEncryptionOptions().getRsaPrivateKey());
-        keyExchangeUtil = new KeyExchangeUtil(keyStore, msgCreationUtil, addressValidityUtil,
+        keyExchangeUtil = new KeyExchangeUtil(keyStore, msgCreationUtil, encryptionUtil, addressValidityUtil,
                 this::publish,
                 // On new keys, let the Subscriptions know
                 (streamId, publisherId, keys) -> {

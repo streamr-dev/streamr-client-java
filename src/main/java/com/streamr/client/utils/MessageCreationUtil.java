@@ -11,7 +11,9 @@ import java.nio.ByteBuffer;
 import java.nio.charset.StandardCharsets;
 import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
+import java.security.interfaces.RSAPublicKey;
 import java.util.*;
+import java.util.stream.Collectors;
 
 /**
  * A stateful helper class to create StreamMessages, with the following responsibilities:
@@ -89,19 +91,23 @@ public class MessageCreationUtil {
             throw new SigningRequiredException("Cannot create unsigned group key response. Must authenticate with an Ethereum account");
         }
 
+        // Encrypt the group keys
+        List<EncryptedGroupKey> encryptedGroupKeys = groupKeys.stream().map(key -> {
+                RSAPublicKey publicKey = EncryptionUtil.getPublicKeyFromString(request.getPublicKey());
+                return EncryptionUtil.encryptWithPublicKey(key, publicKey);
+            }
+        ).collect(Collectors.toList());
+
         GroupKeyResponse response = new GroupKeyResponse(
                 request.getRequestId(),
                 request.getStreamId(),
-                groupKeys
+                encryptedGroupKeys
         );
 
         String keyExchangeStreamId = KeyExchangeUtil.getKeyExchangeStreamId(subscriberAddress);
         Pair<MessageID, MessageRef> pair = createDefaultMsgIdAndRef(keyExchangeStreamId);
         StreamMessage streamMessage = response.toStreamMessage(pair.getLeft(), pair.getRight());
-
-        // Always encrypt
         streamMessage.setEncryptionType(StreamMessage.EncryptionType.RSA);
-        EncryptionUtil.encryptWithPublicKey(streamMessage, request.getPublicKey());
 
         // Always sign
         signingUtil.signStreamMessage(streamMessage);
@@ -113,15 +119,19 @@ public class MessageCreationUtil {
             throw new SigningRequiredException("Cannot create unsigned group key announce. Must authenticate with an Ethereum account");
         }
 
-        GroupKeyAnnounce announce = new GroupKeyAnnounce(streamId, groupKeys);
+        // Encrypt the group keys
+        List<EncryptedGroupKey> encryptedGroupKeys = groupKeys.stream().map(key -> {
+                    RSAPublicKey rsaPublicKey = EncryptionUtil.getPublicKeyFromString(publicKey);
+                    return EncryptionUtil.encryptWithPublicKey(key, rsaPublicKey);
+                }
+        ).collect(Collectors.toList());
+
+        GroupKeyAnnounce announce = new GroupKeyAnnounce(streamId, encryptedGroupKeys);
 
         String keyExchangeStreamId = KeyExchangeUtil.getKeyExchangeStreamId(subscriberAddress);
         Pair<MessageID, MessageRef> pair = createDefaultMsgIdAndRef(keyExchangeStreamId);
         StreamMessage streamMessage = announce.toStreamMessage(pair.getLeft(), pair.getRight());
-
-        // Always encrypt
         streamMessage.setEncryptionType(StreamMessage.EncryptionType.RSA);
-        EncryptionUtil.encryptWithPublicKey(streamMessage, publicKey);
 
         // Always sign
         signingUtil.signStreamMessage(streamMessage);
@@ -133,18 +143,16 @@ public class MessageCreationUtil {
             throw new SigningRequiredException("Cannot create unsigned group key announce. Must authenticate with an Ethereum account");
         }
 
-        GroupKeyAnnounce announce = new GroupKeyAnnounce(streamId, newGroupKeys);
+        // Encrypt the group keys
+        List<EncryptedGroupKey> encryptedGroupKeys = newGroupKeys.stream().map(
+                key -> EncryptionUtil.encryptGroupKey(key, previousGroupKey)
+        ).collect(Collectors.toList());
+
+        GroupKeyAnnounce announce = new GroupKeyAnnounce(streamId, encryptedGroupKeys);
 
         Pair<MessageID, MessageRef> pair = createDefaultMsgIdAndRef(streamId);
         StreamMessage streamMessage = announce.toStreamMessage(pair.getLeft(), pair.getRight());
-
-        // Always encrypt
         streamMessage.setEncryptionType(StreamMessage.EncryptionType.AES);
-        try {
-            EncryptionUtil.encryptStreamMessage(streamMessage, previousGroupKey);
-        } catch (InvalidGroupKeyException e) {
-            throw new RuntimeException(e);
-        }
 
         // Always sign
         signingUtil.signStreamMessage(streamMessage);

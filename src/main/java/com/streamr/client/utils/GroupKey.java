@@ -12,13 +12,12 @@ public class GroupKey {
 
     protected final String groupKeyId;
     protected final String groupKeyHex;
-
-    private final SecretKey secretKey;
+    private SecretKey cachedSecretKey;
 
     public GroupKey(String groupKeyId, String groupKeyHex) throws InvalidGroupKeyException {
         this.groupKeyId = groupKeyId;
         this.groupKeyHex = groupKeyHex;
-        secretKey = EncryptionUtil.getSecretKeyFromHexString(groupKeyHex);
+        cachedSecretKey = EncryptionUtil.getSecretKeyFromHexString(groupKeyHex);
     }
 
     public String getGroupKeyId() {
@@ -30,7 +29,7 @@ public class GroupKey {
     }
 
     public SecretKey toSecretKey() {
-        return secretKey;
+        return cachedSecretKey;
     }
 
     @Override

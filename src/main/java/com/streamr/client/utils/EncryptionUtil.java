@@ -51,13 +51,13 @@ public class EncryptionUtil {
         this(null, null);
     }
 
-    public byte[] decryptWithPrivateKey(String ciphertext) throws UnableToDecryptException {
-        byte[] encryptedBytes = DatatypeConverter.parseHexBinary(ciphertext);
+    public byte[] decryptWithPrivateKey(String ciphertextHex) throws UnableToDecryptException {
+        byte[] encryptedBytes = DatatypeConverter.parseHexBinary(ciphertextHex);
         try {
             rsaCipher.get().init(Cipher.DECRYPT_MODE, this.privateKey);
             return rsaCipher.get().doFinal(encryptedBytes);
         } catch (Exception e) {
-            throw new UnableToDecryptException(ciphertext);
+            throw new UnableToDecryptException(ciphertextHex);
         }
     }
 
@@ -128,6 +128,45 @@ public class EncryptionUtil {
         IvParameterSpec ivParameterSpec = new IvParameterSpec(iv);
         aesCipher.get().init(Cipher.DECRYPT_MODE, groupKey.toSecretKey(), ivParameterSpec);
         return aesCipher.get().doFinal(DatatypeConverter.parseHexBinary(ciphertext.substring(32)));
+    }
+
+    public static EncryptedGroupKey encryptGroupKey(GroupKey keyToEncrypt, GroupKey keyToEncryptWith) {
+        return new EncryptedGroupKey(
+                keyToEncrypt.getGroupKeyId(),
+                encrypt(
+                        DatatypeConverter.parseHexBinary(keyToEncrypt.getGroupKeyHex()),
+                        keyToEncryptWith
+                )
+        );
+    }
+
+    public static GroupKey decryptGroupKey(EncryptedGroupKey keyToDecrypt, GroupKey keyToDecryptWith) throws Exception {
+        return new GroupKey(
+                keyToDecrypt.getGroupKeyId(),
+                Hex.encodeHexString(decrypt(
+                        keyToDecrypt.getEncryptedGroupKeyHex(),
+                        keyToDecryptWith
+                ))
+        );
+    }
+
+    public static EncryptedGroupKey encryptWithPublicKey(GroupKey keyToEncrypt, RSAPublicKey keyToEncryptWith) {
+        return new EncryptedGroupKey(
+                keyToEncrypt.getGroupKeyId(),
+                encryptWithPublicKey(
+                        keyToEncrypt.getGroupKeyHex(),
+                        keyToEncryptWith
+                )
+        );
+    }
+
+    public GroupKey decryptWithPrivateKey(EncryptedGroupKey keyToDecrypt) throws UnableToDecryptException, InvalidGroupKeyException {
+        return new GroupKey(
+                keyToDecrypt.getGroupKeyId(),
+                Hex.encodeHexString(decryptWithPrivateKey(
+                        keyToDecrypt.getEncryptedGroupKeyHex()
+                ))
+        );
     }
 
     /**

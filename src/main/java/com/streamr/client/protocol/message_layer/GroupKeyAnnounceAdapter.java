@@ -1,7 +1,7 @@
 package com.streamr.client.protocol.message_layer;
 
 import com.squareup.moshi.*;
-import com.streamr.client.utils.GroupKey;
+import com.streamr.client.utils.EncryptedGroupKey;
 import com.streamr.client.utils.HttpUtils;
 
 import javax.annotation.Nullable;
@@ -11,17 +11,17 @@ import java.util.List;
 public class GroupKeyAnnounceAdapter extends AbstractGroupKeyMessageAdapter<GroupKeyAnnounce> {
 
     private static final Moshi MOSHI = HttpUtils.addDefaultAdapters.apply(new Moshi.Builder())
-            .add(GroupKey.class, new GroupKeyAdapter())
+            .add(EncryptedGroupKey.class, new EncryptedGroupKeyAdapter())
             .build();
 
-    JsonAdapter<List<GroupKey>> keyListAdapter = MOSHI.adapter(Types.newParameterizedType(List.class, GroupKey.class));
+    JsonAdapter<List<EncryptedGroupKey>> keyListAdapter = MOSHI.adapter(Types.newParameterizedType(List.class, EncryptedGroupKey.class));
 
     @Nullable
     @Override
     public GroupKeyAnnounce fromJson(JsonReader reader) throws IOException {
         reader.beginArray();
         String streamId = reader.nextString();
-        List<GroupKey> keys = keyListAdapter.fromJson(reader);
+        List<EncryptedGroupKey> keys = keyListAdapter.fromJson(reader);
         reader.endArray();
 
         return new GroupKeyAnnounce(streamId, keys);
@@ -31,7 +31,7 @@ public class GroupKeyAnnounceAdapter extends AbstractGroupKeyMessageAdapter<Grou
     public void toJson(JsonWriter writer, @Nullable GroupKeyAnnounce message) throws IOException {
         writer.beginArray();
         writer.value(message.getStreamId());
-        keyListAdapter.toJson(writer, message.getGroupKeys());
+        keyListAdapter.toJson(writer, message.getKeys());
         writer.endArray();
     }
 

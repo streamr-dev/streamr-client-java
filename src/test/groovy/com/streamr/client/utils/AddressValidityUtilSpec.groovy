@@ -9,11 +9,11 @@ class AddressValidityUtilSpec extends StreamrSpecification {
 
     void "isValidSubscriber()"() {
         int getSubscribersFunctionCallCount = 0
-        Function<String, List<String>> getSubscribersFunction = new Function<String, List<String>>() {
+        Function<String, List<Address>> getSubscribersFunction = new Function<String, List<Address>>() {
             @Override
-            List<String> apply(String streamId) {
+            List<Address> apply(String streamId) {
                 getSubscribersFunctionCallCount++
-                return streamId == "streamId" ? ["subscriberId1", "subscriberId2"] : null
+                return streamId == "streamId" ? [subscriberId1, subscriberId2] : null
             }
         }
         int isSubscriberFunctionCallCount = 0

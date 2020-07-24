@@ -63,6 +63,19 @@ class EncryptionUtilSpec extends Specification {
         streamMessage.getEncryptionType() == StreamMessage.EncryptionType.NONE
     }
 
+    void "rsa decryption after encryption equals the initial plaintext (GroupKey)"() {
+        when:
+        EncryptedGroupKey encryptedKey = EncryptionUtil.encryptWithPublicKey(key, util.getPublicKey())
+        then:
+        encryptedKey.getGroupKeyId() == key.getGroupKeyId()
+        encryptedKey.getEncryptedGroupKeyHex() != key.getGroupKeyHex()
+
+        when:
+        GroupKey original = util.decryptWithPrivateKey(encryptedKey)
+        then:
+        original == key
+    }
+
     void "aes encryption preserves size (plus iv)"() {
         when:
         byte[] ciphertext = DatatypeConverter.parseHexBinary(EncryptionUtil.encrypt(plaintextBytes, key))
@@ -104,6 +117,23 @@ class EncryptionUtilSpec extends Specification {
         streamMessage.parsedContent == plaintextContent
         streamMessage.encryptionType == StreamMessage.EncryptionType.NONE
     }
+    void "encryptGroupKey() encrypts the GroupKey"() {
+        GroupKey keyToEncrypt = GroupKey.generate()
+        GroupKey keyToEncryptWith = key
+
+        when:
+        EncryptedGroupKey encryptedKey = EncryptionUtil.encryptGroupKey(keyToEncrypt, keyToEncryptWith)
+        then:
+        encryptedKey.getGroupKeyId() == keyToEncrypt.getGroupKeyId()
+        encryptedKey.getEncryptedGroupKeyHex() != keyToEncrypt.getGroupKeyHex()
+        encryptedKey.getEncryptedGroupKeyHex() != keyToEncryptWith.getGroupKeyHex()
+
+        when:
+        GroupKey original = EncryptionUtil.decryptGroupKey(encryptedKey, keyToEncryptWith)
+        then:
+        original == keyToEncrypt
+    }
+
     void "does not throw when valid keys passed to constructor"() {
         KeyPair keyPair = EncryptionUtil.generateKeyPair()
 

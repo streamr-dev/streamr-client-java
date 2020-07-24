@@ -1,5 +1,6 @@
 package com.streamr.client.protocol.message_layer;
 
+import com.streamr.client.utils.EncryptedGroupKey;
 import com.streamr.client.utils.GroupKey;
 import com.streamr.client.utils.ValidationUtil;
 
@@ -7,9 +8,9 @@ import java.util.List;
 
 public class GroupKeyResponse extends AbstractGroupKeyMessage {
     private final String requestId;
-    private final List<GroupKey> keys;
+    private final List<EncryptedGroupKey> keys;
 
-    public GroupKeyResponse(String requestId, String streamId, List<GroupKey> keys) {
+    public GroupKeyResponse(String requestId, String streamId, List<EncryptedGroupKey> keys) {
         super(streamId);
 
         ValidationUtil.checkNotNull(requestId, "requestId");
@@ -24,7 +25,7 @@ public class GroupKeyResponse extends AbstractGroupKeyMessage {
         return requestId;
     }
 
-    public List<GroupKey> getKeys() {
+    public List<EncryptedGroupKey> getKeys() {
         return keys;
     }
 

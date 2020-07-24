@@ -244,7 +244,7 @@ class MessageCreationUtilSpec extends StreamrSpecification {
 
         then:
         announce.getStreamId() == "streamId"
-        announce.getGroupKeys() == [groupKey]
+        announce.getKeys() == [groupKey]
     }
 
     void "createGroupKeyAnnounceOnStream() should throw if SigningUtil is not set"() {
@@ -275,7 +275,7 @@ class MessageCreationUtilSpec extends StreamrSpecification {
 
         then:
         announce.getStreamId() == "streamId"
-        announce.getGroupKeys() == [newGroupKey]
+        announce.getKeys() == [newGroupKey]
     }
 
     void "createGroupKeyErrorResponse() should throw if SigningUtil is not set"() {
