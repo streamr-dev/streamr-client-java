@@ -35,6 +35,9 @@ public class StreamMessageValidator {
         return streamsPerStreamId;
     }
 
+    /**
+     * Validates the message using the protocol rules and throws if the message fails validation.
+     */
     public void validate(StreamMessage msg) throws ValidationException {
         if (msg == null) {
             throw new IllegalArgumentException("StreamMessage was null!");
@@ -42,20 +45,14 @@ public class StreamMessageValidator {
 
         switch (msg.getMessageType()) {
             case STREAM_MESSAGE:
-                validateMessage(msg);
+                validateStreamMessage(msg);
                 break;
             case GROUP_KEY_REQUEST:
                 validateGroupKeyRequest(msg);
                 break;
             case GROUP_KEY_ANNOUNCE:
-                // Announce messages can appear in key exchange streams and normal streams and are validated differently
-                if (KeyExchangeUtil.isKeyExchangeStreamId(msg.getStreamId())) {
-                    // Validate like a key response
-                    validateGroupKeyResponse(msg);
-                } else {
-                    // Validate like a normal message
-                    validateMessage(msg);
-                }
+                validateGroupKeyAnnounce(msg);
+                break;
             case GROUP_KEY_RESPONSE:
             case GROUP_KEY_ERROR_RESPONSE:
                 validateGroupKeyResponse(msg);
@@ -65,7 +62,7 @@ public class StreamMessageValidator {
         }
     }
 
-    private void validateMessage(StreamMessage msg) {
+    private void validateStreamMessage(StreamMessage msg) {
         Stream stream = getStream(msg.getStreamId());
 
         // Checks against stream metadata
@@ -167,6 +164,21 @@ public class StreamMessageValidator {
         if (!addressValidityUtil.isValidSubscriber(response.getStreamId(), recipient)) {
             throw new ValidationException(streamMessage, ValidationException.Reason.PERMISSION_VIOLATION, recipient + " is not a subscriber on stream " + response.getStreamId());
         }
+    }
+
+    private void validateGroupKeyAnnounce(StreamMessage streamMessage) {
+        // Announce messages can appear in key exchange streams and normal streams and are validated differently
+        if (KeyExchangeUtil.isKeyExchangeStreamId(streamMessage.getStreamId())) {
+            // Validate using the same logic as GroupKeyResponse
+            validateGroupKeyResponse(streamMessage);
+        } else {
+            // Validate like a StreamMessage (except always reject unsigned)
+            if (streamMessage.getSignature() == null) {
+                throw new ValidationException(streamMessage, ValidationException.Reason.UNSIGNED_NOT_ALLOWED, "Received unsigned group key response (it must be signed to avoid MitM attacks)");
+            }
+            validateStreamMessage(streamMessage);
+        }
+
     }
 
     private static void assertKeyExchangeStream(StreamMessage streamMessage) {

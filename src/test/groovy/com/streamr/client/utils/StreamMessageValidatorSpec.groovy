@@ -3,12 +3,12 @@ package com.streamr.client.utils
 import com.streamr.client.exceptions.ValidationException
 import com.streamr.client.options.SigningOptions.SignatureVerificationPolicy
 import com.streamr.client.protocol.StreamrSpecification
+import com.streamr.client.protocol.message_layer.AbstractGroupKeyMessage
 import com.streamr.client.protocol.message_layer.GroupKeyRequest
 import com.streamr.client.protocol.message_layer.MessageID
 import com.streamr.client.protocol.message_layer.StreamMessage
 import com.streamr.client.rest.Stream
 import org.ethereum.crypto.ECKey
-import spock.lang.Specification
 
 import java.security.KeyPair
 
@@ -20,9 +20,9 @@ class StreamMessageValidatorSpec extends StreamrSpecification {
     final String subscriberPrivateKey = "81fe39ed83c4ab997f64564d0c5a630e34c621ad9bbe51ad2754fac575fc0c46"
     final Address subscriber = new Address("0xbe0ab87a1f5b09afe9101b09e3c86fd8f4162527")
 
-    final KeyPair publisherRSAKeyPair = EncryptionUtil.generateKeyPair()
-    final KeyPair subscriberRSAKeyPair = EncryptionUtil.generateKeyPair()
     final GroupKey groupKey = GroupKey.generate()
+    final GroupKey previousGroupKey = GroupKey.generate()
+    final EncryptionUtil encryptionUtil = new EncryptionUtil()
 
     final MessageCreationUtil publisherMsgCreationUtil = new MessageCreationUtil(publisher, new SigningUtil(ECKey.fromPrivate(new BigInteger(publisherPrivateKey, 16))))
     final MessageCreationUtil subscriberMsgCreationUtil = new MessageCreationUtil(subscriber, new SigningUtil(ECKey.fromPrivate(new BigInteger(subscriberPrivateKey, 16))))
@@ -30,7 +30,8 @@ class StreamMessageValidatorSpec extends StreamrSpecification {
     StreamMessage msgSigned
     StreamMessage groupKeyRequest
     StreamMessage groupKeyResponse
-    StreamMessage groupKeyReset
+    StreamMessage groupKeyAnnounceRotate
+    StreamMessage groupKeyAnnounceRekey
     StreamMessage groupKeyErrorResponse
 
     String signature = "0x787cd72924153c88350e808de68b68c88030cbc34d053a5c696a5893d5e6fec1687c1b6205ec99aeb3375a81bf5cb8857ae39c1b55a41b32ed6399ae8da456a61b"
@@ -63,16 +64,18 @@ class StreamMessageValidatorSpec extends StreamrSpecification {
 
     void setup() {
         stream = new Stream("test-stream", "")
+        stream.setId("streamId")
         stream.setPartitions(1)
         stream.setRequireSignedData(false)
         stream.setRequireEncryptedData(false)
 
         msgSigned = StreamMessage.deserialize('[31,["tagHE6nTQ9SJV2wPoCxBFw",0,1587141844396,0,"0x6807295093ac5da6fb2a10f7dedc5edd620804fb","k000EDTMtqOTLM8sirFj"],[1587141844312,0],27,0,"{\\"eventType\\":\\"trade\\",\\"eventTime\\":1587141844398,\\"symbol\\":\\"ETHBTC\\",\\"tradeId\\":172530352,\\"price\\":0.02415,\\"quantity\\":0.296,\\"buyerOrderId\\":687544144,\\"sellerOrderId\\":687544104,\\"time\\":1587141844396,\\"maker\\":false,\\"ignored\\":true}",2,"0x6ad42041804c34902aaf7f07780b3e468ec2faec84eda2ff504d5fc26377d5556481d133d7f3f112c63cd48ee9081172013fb0ae1a61b45ee9ca89e057b099591b"]')
 
-        groupKeyRequest = StreamMessage.deserialize('[31,["SYSTEM/keyexchange/0x6807295093ac5da6fb2a10f7dedc5edd620804fb",0,1587143350864,0,"0xbe0ab87a1f5b09afe9101b09e3c86fd8f4162527","2AC1lJgGTPhVzNCr4lyT"],null,28,0,"{\\"requestId\\":\\"groupKeyRequestId\\",\\"streamId\\":\\"tagHE6nTQ9SJV2wPoCxBFw\\",\\"publicKey\\":\\"rsaPublicKey\\",\\"range\\":{\\"start\\":1354155,\\"end\\":2344155}}",2,"0xa442e08c54257f3245abeb9a64c9381b2459029c6f9d88ff3b4839e67843519736b5f469b3d36a5d659f7eb47fb5c4af165445aa176ad01e6134e0901e0f5fd01c"]')
-        groupKeyResponse = StreamMessage.deserialize('[31,["SYSTEM/keyexchange/0xbe0ab87a1f5b09afe9101b09e3c86fd8f4162527",0,1587143432683,0,"0x6807295093ac5da6fb2a10f7dedc5edd620804fb","2hmxXpkhmaLcJipCDVDm"],null,29,1,"{\\"requestId\\":\\"groupKeyRequestId\\",\\"streamId\\":\\"tagHE6nTQ9SJV2wPoCxBFw\\",\\"keys\\":[{\\"groupKey\\":\\"encrypted-group-key\\",\\"start\\":34524}]}",2,"0xe633ef60a4ad8c80e6d58010614e08376912711261d9136b3debf4c5a602b8e27e7235d58667c470791373e9fa2757575d02f539cf9556a6724661ef28c055871c"]')
-        groupKeyReset = StreamMessage.deserialize('[31,["SYSTEM/keyexchange/0xbe0ab87a1f5b09afe9101b09e3c86fd8f4162527",0,1587143432683,0,"0x6807295093ac5da6fb2a10f7dedc5edd620804fb","2hmxXpkhmaLcJipCDVDm"],null,30,1,"{\\"streamId\\":\\"tagHE6nTQ9SJV2wPoCxBFw\\",\\"groupKey\\":\\"encrypted-group-key\\",\\"start\\":34524}",2,"0xfcc1b55818ed8949e3d94e423c320ae6fdc732f6956cabec87b0e8e1674a29de0f483aeed14914496ea572d81cfd5eaf232a7d1ccb3cb8b0c0ed9cc6874b880b1b"]')
-        groupKeyErrorResponse = StreamMessage.deserialize('[31,["SYSTEM/keyexchange/0xbe0ab87a1f5b09afe9101b09e3c86fd8f4162527",0,1587143432683,0,"0x6807295093ac5da6fb2a10f7dedc5edd620804fb","2hmxXpkhmaLcJipCDVDm"],null,31,1,"{\\"requestId\\":\\"groupKeyRequestId\\",\\"streamId\\":\\"tagHE6nTQ9SJV2wPoCxBFw\\",\\"code\\":\\"TEST_ERROR\\",\\"message\\":\\"Test error message\\"}",2,"0x74301e65c0cb8f553b7aa2e0eeac61aaff918726f6f7699bd05e9201e591cf0c304b5812c28dd2903b394c57dde1c23dae787ec0005d6e2bc1c03edeb7cdbfc41c"]')
+        groupKeyRequest = subscriberMsgCreationUtil.createGroupKeyRequest(publisher, stream.getId(), encryptionUtil.publicKeyAsPemString, [groupKey.getGroupKeyId()])
+        groupKeyResponse = publisherMsgCreationUtil.createGroupKeyResponse(subscriber, (GroupKeyRequest) AbstractGroupKeyMessage.fromStreamMessage(groupKeyRequest), [groupKey])
+        groupKeyAnnounceRotate = publisherMsgCreationUtil.createGroupKeyAnnounceOnStream(stream.getId(), [groupKey], previousGroupKey)
+        groupKeyAnnounceRekey = publisherMsgCreationUtil.createGroupKeyAnnounceForSubscriber(subscriber, stream.getId(), encryptionUtil.publicKeyAsPemString, [groupKey])
+        groupKeyErrorResponse = publisherMsgCreationUtil.createGroupKeyErrorResponse(subscriber, (GroupKeyRequest) AbstractGroupKeyMessage.fromStreamMessage(groupKeyRequest), new Exception("Test exception"))
 
         validator = getValidator(SignatureVerificationPolicy.ALWAYS)
         publishers = [publisherId, publisher]
@@ -287,55 +290,100 @@ class StreamMessageValidatorSpec extends StreamrSpecification {
     }
 
     /**
-     * Validating GroupKeyResets
+     * Validating GroupKeyAnnounce, rotate
      */
 
-    void "[GroupKeyReset] accepts valid"() {
+    void "[GroupKeyAnnounce, rotate] accepts valid"() {
         when:
-        validator.validate(groupKeyReset)
+        validator.validate(groupKeyAnnounceRotate)
 
         then:
         notThrown(Exception)
     }
 
-    void "[GroupKeyReset] rejects unsigned"() {
-        groupKeyReset.setSignatureFields(null, StreamMessage.SignatureType.NONE)
+    void "[GroupKeyAnnounce, rotate] rejects unsigned"() {
+        groupKeyAnnounceRotate.setSignatureFields(null, StreamMessage.SignatureType.NONE)
 
         when:
-        validator.validate(groupKeyReset)
+        validator.validate(groupKeyAnnounceRotate)
 
         then:
         ValidationException e = thrown(ValidationException)
         e.getReason() == ValidationException.Reason.UNSIGNED_NOT_ALLOWED
     }
 
-    void "[GroupKeyReset] rejects invalid signatures"() {
-        groupKeyReset.setSignatureFields(groupKeyReset.getSignature().replace('a', 'b'), StreamMessage.SignatureType.ETH)
+    void "[GroupKeyAnnounce, rotate] rejects invalid signatures"() {
+        groupKeyAnnounceRotate.setSignatureFields(groupKeyAnnounceRotate.getSignature().replace('a', 'b'), StreamMessage.SignatureType.ETH)
 
         when:
-        validator.validate(groupKeyReset)
+        validator.validate(groupKeyAnnounceRotate)
 
         then:
         ValidationException e = thrown(ValidationException)
         e.getReason() == ValidationException.Reason.INVALID_SIGNATURE
     }
 
-    void "[GroupKeyReset] rejects messages from invalid publishers"() {
+    void "[GroupKeyAnnounce, rotate] rejects messages from invalid publishers"() {
         publishers.remove(publisher)
 
         when:
-        validator.validate(groupKeyReset)
+        validator.validate(groupKeyAnnounceRotate)
 
         then:
         ValidationException e = thrown(ValidationException)
         e.getReason() == ValidationException.Reason.PERMISSION_VIOLATION
     }
 
-    void "[GroupKeyReset] rejects messages to unpermitted subscribers"() {
+    /**
+     * Validating GroupKeyAnnounce, rekey
+     */
+
+    void "[GroupKeyAnnounce, rekey] accepts valid"() {
+        when:
+        validator.validate(groupKeyAnnounceRekey)
+
+        then:
+        notThrown(Exception)
+    }
+
+    void "[GroupKeyAnnounce, rekey] rejects unsigned"() {
+        groupKeyAnnounceRekey.setSignatureFields(null, StreamMessage.SignatureType.NONE)
+
+        when:
+        validator.validate(groupKeyAnnounceRekey)
+
+        then:
+        ValidationException e = thrown(ValidationException)
+        e.getReason() == ValidationException.Reason.UNSIGNED_NOT_ALLOWED
+    }
+
+    void "[GroupKeyAnnounce, rekey] rejects invalid signatures"() {
+        groupKeyAnnounceRekey.setSignatureFields(groupKeyAnnounceRekey.getSignature().replace('a', 'b'), StreamMessage.SignatureType.ETH)
+
+        when:
+        validator.validate(groupKeyAnnounceRekey)
+
+        then:
+        ValidationException e = thrown(ValidationException)
+        e.getReason() == ValidationException.Reason.INVALID_SIGNATURE
+    }
+
+    void "[GroupKeyAnnounce, rekey] rejects messages from invalid publishers"() {
+        publishers.remove(publisher)
+
+        when:
+        validator.validate(groupKeyAnnounceRekey)
+
+        then:
+        ValidationException e = thrown(ValidationException)
+        e.getReason() == ValidationException.Reason.PERMISSION_VIOLATION
+    }
+
+    void "[GroupKeyAnnounce, rekey] rejects messages to unpermitted subscribers"() {
         subscribers.remove(subscriber)
 
         when:
-        validator.validate(groupKeyReset)
+        validator.validate(groupKeyAnnounceRekey)
 
         then:
         ValidationException e = thrown(ValidationException)
