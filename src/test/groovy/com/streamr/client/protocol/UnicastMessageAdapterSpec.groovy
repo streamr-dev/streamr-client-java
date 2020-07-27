@@ -15,7 +15,7 @@ class UnicastMessageAdapterSpec extends Specification {
 
 		where:
 		serializedMessage                               | message
-		"[2,1,\"requestId\",${helloWorldSerialized31}]" | new UnicastMessage("requestId", helloWorld)
+		"[2,1,\"requestId\",${helloWorldSerialized32}]" | new UnicastMessage("requestId", helloWorld)
 	}
 
 }

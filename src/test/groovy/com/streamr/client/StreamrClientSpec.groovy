@@ -6,16 +6,18 @@ import com.streamr.client.options.ResendLastOption
 import com.streamr.client.options.ResendOption
 import com.streamr.client.options.SigningOptions
 import com.streamr.client.options.StreamrClientOptions
+import com.streamr.client.protocol.StreamrSpecification
 import com.streamr.client.protocol.control_layer.*
 import com.streamr.client.protocol.message_layer.MessageID
 import com.streamr.client.protocol.message_layer.MessageRef
 import com.streamr.client.protocol.message_layer.StreamMessage
 import com.streamr.client.rest.Stream
 import com.streamr.client.subs.Subscription
+import com.streamr.client.utils.GroupKeyStore
 import spock.lang.Specification
 import spock.util.concurrent.PollingConditions
 
-class StreamrClientSpec extends Specification {
+class StreamrClientSpec extends StreamrSpecification {
 
     private static TestWebSocketServer server = new TestWebSocketServer("localhost", 6000)
 
@@ -58,7 +60,8 @@ class StreamrClientSpec extends Specification {
         server.clear()
         SigningOptions signingOptions = new SigningOptions(SigningOptions.SignatureComputationPolicy.NEVER, SigningOptions.SignatureVerificationPolicy.NEVER)
 
-        EncryptionOptions encryptionOptions = new EncryptionOptions(new HashMap<>(), new HashMap<>(), true, null, null, false)
+        GroupKeyStore keyStore = Mock(GroupKeyStore)
+        EncryptionOptions encryptionOptions = new EncryptionOptions(keyStore, null, null, false)
         StreamrClientOptions options = new StreamrClientOptions(new ApiKeyAuthenticationMethod("apikey"), signingOptions, encryptionOptions, server.getWsUrl(), "", gapFillTimeout, retryResendAfter, false)
         options.reconnectRetryInterval = 1000
         options.connectionTimeoutMillis = 1000
@@ -71,7 +74,7 @@ class StreamrClientSpec extends Specification {
     }
 
     StreamMessage createMsg(String streamId, long timestamp, long sequenceNumber, Long prevTimestamp, Long prevSequenceNumber) {
-        MessageID msgId = new MessageID(streamId, 0, timestamp, sequenceNumber, "", "")
+        MessageID msgId = new MessageID(streamId, 0, timestamp, sequenceNumber, publisherId.toString(), "msgChainId")
         MessageRef prev = prevTimestamp == null ? null : new MessageRef(prevTimestamp, prevSequenceNumber)
         return new StreamMessage(msgId, prev, [hello: "world"])
     }
@@ -116,7 +119,7 @@ class StreamrClientSpec extends Specification {
         new PollingConditions().eventually {
             server.receivedControlMessages.size() == 2
         }
-        server.expect(new ResendRangeRequest(server.receivedControlMessages[1].message.requestId, stream.id, 0, new MessageRef(0, 1), new MessageRef(1, 0), "", "", client.sessionToken))
+        server.expect(new ResendRangeRequest(server.receivedControlMessages[1].message.requestId, stream.id, 0, new MessageRef(0, 1), new MessageRef(1, 0), publisherId, "msgChainId", client.sessionToken))
 
         when:
         client.receiveMessage(new UnicastMessage(server.receivedControlMessages[1].message.requestId, createMsg("test-stream", 1, 0, 0, 0)))
@@ -138,8 +141,8 @@ class StreamrClientSpec extends Specification {
         new PollingConditions().eventually {
             server.receivedControlMessages.size() == 3
         }
-        server.expect(new ResendRangeRequest(server.receivedControlMessages[1].message.requestId, stream.id, 0, new MessageRef(0, 1), new MessageRef(1, 0), "", "", client.sessionToken))
-        server.expect(new ResendRangeRequest(server.receivedControlMessages[2].message.requestId, stream.id, 0, new MessageRef(0, 1), new MessageRef(1, 0), "", "", client.sessionToken))
+        server.expect(new ResendRangeRequest(server.receivedControlMessages[1].message.requestId, stream.id, 0, new MessageRef(0, 1), new MessageRef(1, 0), publisherId, "msgChainId", client.sessionToken))
+        server.expect(new ResendRangeRequest(server.receivedControlMessages[2].message.requestId, stream.id, 0, new MessageRef(0, 1), new MessageRef(1, 0), publisherId, "msgChainId", client.sessionToken))
     }
 
     void "client reconnects while publishing if server is temporarily down"() {

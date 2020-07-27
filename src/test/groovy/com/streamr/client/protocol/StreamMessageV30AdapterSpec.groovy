@@ -1,13 +1,11 @@
 package com.streamr.client.protocol
 
-
 import com.streamr.client.protocol.message_layer.MessageID
 import com.streamr.client.protocol.message_layer.MessageRef
 import com.streamr.client.protocol.message_layer.StreamMessage
 import com.streamr.client.protocol.message_layer.StreamMessageAdapter
-import spock.lang.Specification
 
-class StreamMessageV30AdapterSpec extends Specification {
+class StreamMessageV30AdapterSpec extends StreamrSpecification {
 	StreamMessageAdapter adapter
 	StreamMessage msg
 
@@ -39,7 +37,7 @@ class StreamMessageV30AdapterSpec extends Specification {
 		msg.getTimestamp() == 1528228173462L
 		msg.getTimestampAsDate() == new Date(1528228173462L)
 		msg.getSequenceNumber() == 0
-		msg.getPublisherId() == "publisherId"
+		msg.getPublisherId() == publisherId
 		msg.getMsgChainId() == "1"
 		msg.getPreviousMessageRef().getTimestamp() == 1528228170000L
 		msg.getPreviousMessageRef().getTimestampAsDate() == new Date(1528228170000L)
@@ -65,7 +63,7 @@ class StreamMessageV30AdapterSpec extends Specification {
 		msg.getTimestamp() == 1528228173462L
 		msg.getTimestampAsDate() == new Date(1528228173462L)
 		msg.getSequenceNumber() == 0
-		msg.getPublisherId() == "publisherId"
+		msg.getPublisherId() == publisherId
 		msg.getMsgChainId() == "1"
 		msg.getPreviousMessageRef() == null
 		msg.getMessageType() == StreamMessage.MessageType.STREAM_MESSAGE
@@ -89,7 +87,7 @@ class StreamMessageV30AdapterSpec extends Specification {
 		msg.getTimestamp() == 1528228173462L
 		msg.getTimestampAsDate() == new Date(1528228173462L)
 		msg.getSequenceNumber() == 0
-		msg.getPublisherId() == "publisherId"
+		msg.getPublisherId() == publisherId
 		msg.getMsgChainId() == "1"
 		msg.getPreviousMessageRef() == null
 		msg.getMessageType() == StreamMessage.MessageType.STREAM_MESSAGE

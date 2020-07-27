@@ -1,7 +1,6 @@
 package com.streamr.client.protocol.message_layer;
 
 import com.streamr.client.utils.EncryptedGroupKey;
-import com.streamr.client.utils.GroupKey;
 import com.streamr.client.utils.ValidationUtil;
 
 import java.util.List;
@@ -44,5 +43,10 @@ public class GroupKeyResponse extends AbstractGroupKeyMessage {
         if (!requestId.equals(that.requestId)) return false;
         if (!streamId.equals(that.streamId)) return false;
         return keys.equals(that.keys);
+    }
+
+    @Override
+    public String toString() {
+        return String.format("GroupKeyResponse{requestId=%s, streamId=%s, keys=%s}", requestId, streamId, keys);
     }
 }

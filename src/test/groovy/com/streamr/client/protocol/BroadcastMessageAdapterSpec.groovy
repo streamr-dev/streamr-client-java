@@ -5,7 +5,7 @@ import com.streamr.client.protocol.control_layer.ControlMessage
 import spock.lang.Specification
 
 import static com.streamr.client.protocol.StreamMessageExamples.InvalidSignature.helloWorld
-import static com.streamr.client.protocol.StreamMessageExamples.InvalidSignature.helloWorldSerialized31
+import static com.streamr.client.protocol.StreamMessageExamples.InvalidSignature.helloWorldSerialized32
 
 class BroadcastMessageAdapterSpec extends Specification {
 
@@ -16,6 +16,6 @@ class BroadcastMessageAdapterSpec extends Specification {
 
 		where:
 		serializedMessage | message
-		"[2,0,\"requestId\",${helloWorldSerialized31}]" | new BroadcastMessage("requestId", helloWorld)
+		"[2,0,\"requestId\",${helloWorldSerialized32}]" | new BroadcastMessage("requestId", helloWorld)
 	}
 }

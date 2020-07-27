@@ -7,6 +7,7 @@ import com.squareup.moshi.JsonWriter;
 import com.streamr.client.exceptions.MalformedMessageException;
 import com.streamr.client.protocol.message_layer.StreamMessage.MessageType;
 import com.streamr.client.protocol.message_layer.StreamMessage.SignatureType;
+import org.jetbrains.annotations.NotNull;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -48,7 +49,7 @@ public class StreamMessageV30Adapter extends JsonAdapter<StreamMessage> {
     }
 
     @Override
-    public void toJson(JsonWriter writer, StreamMessage msg) throws IOException {
+    public void toJson(@NotNull JsonWriter writer, StreamMessage msg) throws IOException {
         throw new RuntimeException("Serializing to old version is not supported");
     }
 }

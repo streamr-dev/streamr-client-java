@@ -2,10 +2,7 @@ package com.streamr.client.protocol.message_layer;
 
 import com.streamr.client.utils.ValidationUtil;
 
-import java.util.Collection;
-import java.util.LinkedHashMap;
 import java.util.List;
-import java.util.Map;
 
 public class GroupKeyRequest extends AbstractGroupKeyMessage {
     private final String requestId;
@@ -52,5 +49,10 @@ public class GroupKeyRequest extends AbstractGroupKeyMessage {
         if (!streamId.equals(that.streamId)) return false;
         if (!publicKey.equals(that.publicKey)) return false;
         return groupKeyIds.equals(that.groupKeyIds);
+    }
+
+    @Override
+    public String toString() {
+        return String.format("GroupKeyRequest{requestId=%s, streamId=%s, keys=%s, publicKey=%s}", requestId, streamId, groupKeyIds, publicKey);
     }
 }

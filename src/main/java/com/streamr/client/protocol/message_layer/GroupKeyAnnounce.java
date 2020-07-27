@@ -1,7 +1,6 @@
 package com.streamr.client.protocol.message_layer;
 
 import com.streamr.client.utils.EncryptedGroupKey;
-import com.streamr.client.utils.GroupKey;
 import com.streamr.client.utils.ValidationUtil;
 
 import java.util.List;
@@ -33,5 +32,10 @@ public class GroupKeyAnnounce extends AbstractGroupKeyMessage {
 
         if (!streamId.equals(that.streamId)) return false;
         return groupKeys.equals(that.groupKeys);
+    }
+
+    @Override
+    public String toString() {
+        return String.format("GroupKeyAnnounce{streamId=%s, groupKeys=%s}", streamId, groupKeys);
     }
 }

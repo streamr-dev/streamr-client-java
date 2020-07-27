@@ -195,9 +195,9 @@ class KeyExchangeUtilSpec extends StreamrSpecification {
         util = new KeyExchangeUtil(keyStore, messageCreationUtil, encryptionUtil, addressValidityUtil2, publish, onNewKeysFunction)
 
         // Set some public keys for subscribers
-        util.getKnownPublicKeysByPublisher().put(subscriberId1, new EncryptionUtil().publicKeyAsPemString)
-        util.getKnownPublicKeysByPublisher().put(subscriberId2, new EncryptionUtil().publicKeyAsPemString)
-        util.getKnownPublicKeysByPublisher().put(subscriberId3, new EncryptionUtil().publicKeyAsPemString)
+        util.getKnownPublicKeysByPublisher().put(getSubscriberId(1), new EncryptionUtil().publicKeyAsPemString)
+        util.getKnownPublicKeysByPublisher().put(getSubscriberId(2), new EncryptionUtil().publicKeyAsPemString)
+        util.getKnownPublicKeysByPublisher().put(getSubscriberId(3), new EncryptionUtil().publicKeyAsPemString)
 
         StreamMessage announce1 = new GroupKeyAnnounce("streamId", []).toStreamMessage(new MessageID(
                 "keyexchange-sub1", 0, 0, 0,"publisherId", "msgChainId"
@@ -211,12 +211,12 @@ class KeyExchangeUtilSpec extends StreamrSpecification {
 
         then:
         // Should check current subscribers with AddressValidityUtil, which responds that subscribers 1 and 3 are still active
-        1 * addressValidityUtil2.getSubscribersSet("streamId", true) >> [subscriberId1, subscriberId3].toSet()
+        1 * addressValidityUtil2.getSubscribersSet("streamId", true) >> [getSubscriberId(1), getSubscriberId(3)].toSet()
         // Add new key to keystore
         1 * keyStore.add("streamId", _)
-        1 * messageCreationUtil.createGroupKeyAnnounceForSubscriber(subscriberId1, "streamId", _, _) >> announce1
-        0 * messageCreationUtil.createGroupKeyAnnounceForSubscriber(subscriberId2, "streamId", _, _) // don't call for subscriber 2
-        1 * messageCreationUtil.createGroupKeyAnnounceForSubscriber(subscriberId3, "streamId", _, _) >> announce3
+        1 * messageCreationUtil.createGroupKeyAnnounceForSubscriber(getSubscriberId(1), "streamId", _, _) >> announce1
+        0 * messageCreationUtil.createGroupKeyAnnounceForSubscriber(getSubscriberId(2), "streamId", _, _) // don't call for subscriber 2
+        1 * messageCreationUtil.createGroupKeyAnnounceForSubscriber(getSubscriberId(3), "streamId", _, _) >> announce3
 
         published.size() == 2
         published[0] == announce1

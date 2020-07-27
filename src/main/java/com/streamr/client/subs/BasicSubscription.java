@@ -105,9 +105,9 @@ public abstract class BasicSubscription extends Subscription {
                 }
             }
         };
-        t.schedule(request, 0, propagationTimeout);
         pendingGroupKeyRequests.put(publisherId, t);
         encryptedMsgsQueues.offer(msgToQueue);
+        t.schedule(request, 0, propagationTimeout);
     }
 
     protected void handleEncryptionQueue(Address publisherId) {
@@ -184,12 +184,12 @@ public abstract class BasicSubscription extends Subscription {
             if (success) { // the message was successfully decrypted
                 handler.onMessage(this, msg);
             } else {
-                getLogger().info("Failed to decrypt msg {} from {}. Going to request the correct decryption key(s) and try again.",
-                        msg.getMessageRef(), msg.getPublisherId());
+                getLogger().info("Failed to decrypt msg {} from {} in stream {}. Going to request the correct decryption key(s) and try again.",
+                        msg.getMessageRef(), msg.getPublisherId(), msg.getStreamId());
             }
         } catch (UnableToDecryptException e) { // failed to decrypt for the second time (after receiving the decryption key(s))
-            getLogger().error("Failed to decrypt msg {} from {} even after receiving the decryption keys.",
-                    msg.getMessageRef(), msg.getPublisherId());
+            getLogger().error("Failed to decrypt msg {} from {} in stream {} even after receiving the decryption keys. Calling the onUnableToDecrypt handler!",
+                    msg.getMessageRef(), msg.getPublisherId(), msg.getStreamId());
             handler.onUnableToDecrypt(e);
         }
     }

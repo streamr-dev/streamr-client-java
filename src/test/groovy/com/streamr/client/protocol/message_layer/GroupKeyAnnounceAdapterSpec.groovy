@@ -1,11 +1,12 @@
 package com.streamr.client.protocol.message_layer
 
-import com.streamr.client.utils.GroupKey
+import com.streamr.client.utils.EncryptedGroupKey
 import spock.lang.Specification
 
 class GroupKeyAnnounceAdapterSpec extends Specification {
-	static final GroupKey key1 = GroupKey.generate("groupKeyId1")
-	static final GroupKey key2 = GroupKey.generate("groupKeyId2")
+	static final EncryptedGroupKey key1 = new EncryptedGroupKey("groupKeyId1", "encrypted1")
+	static final EncryptedGroupKey key2 = new EncryptedGroupKey("groupKeyId2", "encrypted2")
+
 
 	def "serialization and deserialization"(String serializedMessage, GroupKeyAnnounce message) {
 		expect:
@@ -14,7 +15,7 @@ class GroupKeyAnnounceAdapterSpec extends Specification {
 
 		where:
 		serializedMessage | message
-		'["streamId",[["groupKeyId1","'+key1.groupKeyHex+'"],["groupKeyId2","'+key2.groupKeyHex+'"]]]' | new GroupKeyAnnounce("streamId", [key1, key2])
+		'["streamId",[["groupKeyId1","'+key1.encryptedGroupKeyHex+'"],["groupKeyId2","'+key2.encryptedGroupKeyHex+'"]]]' | new GroupKeyAnnounce("streamId", [key1, key2])
 	}
 
 }

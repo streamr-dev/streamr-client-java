@@ -43,7 +43,7 @@ public class GroupKey {
 
     @Override
     public String toString() {
-        return String.format("GroupKey{%s}", groupKeyId);
+        return String.format("GroupKey{groupKeyId=%s}", groupKeyId);
     }
 
     public static GroupKey generate() {

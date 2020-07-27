@@ -58,4 +58,9 @@ public class GroupKeyErrorResponse extends AbstractGroupKeyMessage {
         if (!message.equals(that.message)) return false;
         return groupKeyIds.equals(that.groupKeyIds);
     }
+
+    @Override
+    public String toString() {
+        return String.format("GroupKeyErrorResponse{requestId=%s, streamId=%s, code=%s, message=%s}", requestId, streamId, code, message);
+    }
 }

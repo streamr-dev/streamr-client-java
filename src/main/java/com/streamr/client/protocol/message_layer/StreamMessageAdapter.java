@@ -39,6 +39,14 @@ public class StreamMessageAdapter extends JsonAdapter<StreamMessage> {
         return staticAdapter.toJson(msg);
     }
 
+    public static String serialize(StreamMessage msg, int version) {
+        JsonAdapter<StreamMessage> adapter = adapterByVersion.get(version);
+        if (adapter == null) {
+            throw new UnsupportedMessageException("Unrecognized stream message version: " + version);
+        }
+        return adapter.toJson(msg);
+    }
+
     public static StreamMessage deserialize(String json) throws MalformedMessageException {
         JsonReader reader = JsonReader.of(new Buffer().writeString(json, StandardCharsets.UTF_8));
         try {
@@ -74,9 +82,7 @@ public class StreamMessageAdapter extends JsonAdapter<StreamMessage> {
      */
     @Override
     public void toJson(JsonWriter writer, StreamMessage value) throws IOException {
-        writer.beginArray();
         adapterByVersion.get(StreamMessage.LATEST_VERSION).toJson(writer, value);
-        writer.endArray();
     }
 
 }

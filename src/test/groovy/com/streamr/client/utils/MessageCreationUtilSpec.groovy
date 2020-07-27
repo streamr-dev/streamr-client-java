@@ -208,12 +208,11 @@ class MessageCreationUtilSpec extends StreamrSpecification {
         msg.getSignature() != null
 
         when:
-        encryptionUtil.decryptWithPrivateKey(msg)
         GroupKeyResponse response = (GroupKeyResponse) AbstractGroupKeyMessage.deserialize(msg.getSerializedContent(), StreamMessage.MessageType.GROUP_KEY_RESPONSE)
 
         then:
         response.getStreamId() == "streamId"
-        response.getKeys() == [groupKey]
+        encryptionUtil.decryptWithPrivateKey(response.getKeys()[0]) == groupKey
     }
 
     void "createGroupKeyAnnounceForSubscriber() should throw if SigningUtil is not set"() {
@@ -239,12 +238,11 @@ class MessageCreationUtilSpec extends StreamrSpecification {
         msg.getSignature() != null
 
         when:
-        encryptionUtil.decryptWithPrivateKey(msg)
         GroupKeyAnnounce announce = (GroupKeyAnnounce) AbstractGroupKeyMessage.deserialize(msg.getSerializedContent(), StreamMessage.MessageType.GROUP_KEY_ANNOUNCE)
 
         then:
         announce.getStreamId() == "streamId"
-        announce.getKeys() == [groupKey]
+        encryptionUtil.decryptWithPrivateKey(announce.getKeys()[0]) == groupKey
     }
 
     void "createGroupKeyAnnounceOnStream() should throw if SigningUtil is not set"() {
@@ -270,12 +268,11 @@ class MessageCreationUtilSpec extends StreamrSpecification {
         msg.getSignature() != null
 
         when:
-        EncryptionUtil.decryptStreamMessage(msg, oldGroupKey)
         GroupKeyAnnounce announce = (GroupKeyAnnounce) AbstractGroupKeyMessage.deserialize(msg.getSerializedContent(), StreamMessage.MessageType.GROUP_KEY_ANNOUNCE)
 
         then:
         announce.getStreamId() == "streamId"
-        announce.getKeys() == [newGroupKey]
+        EncryptionUtil.decryptGroupKey(announce.getKeys()[0], oldGroupKey) == newGroupKey
     }
 
     void "createGroupKeyErrorResponse() should throw if SigningUtil is not set"() {

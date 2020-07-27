@@ -35,7 +35,7 @@ public class ResendRangeRequestAdapter extends ControlLayerAdapter<ResendRangeRe
         writer.value(value.getStreamPartition());
         msgRefAdapter.toJson(writer, value.getFromMsgRef());
         msgRefAdapter.toJson(writer, value.getToMsgRef());
-        writer.value(value.getPublisherId().toString());
+        writer.value(value.getPublisherId() != null ? value.getPublisherId().toString() : null);
         writer.value(value.getMsgChainId());
         writer.value(value.getSessionToken());
         writer.endArray();

@@ -22,17 +22,23 @@ import spock.util.concurrent.PollingConditions
  */
 class BasicSubscriptionSpec extends StreamrSpecification {
 
+    private static final long propagationTimeout = 1000
+    private static final long resendTimeout = 1000
+
     StreamMessage msg
     GroupKeyStore keyStore
     List<StreamMessage> received
     RealTimeSubscription sub
+    int groupKeyRequestCount
+    int unableToDecryptCount
 
     def setup() {
         msg = createMessage()
         keyStore = Mock(GroupKeyStore)
         received = []
         sub = createSub()
-        groupKeyFunctionCallCount = 0
+        groupKeyRequestCount = 0
+        unableToDecryptCount = 0
     }
 
     MessageHandler defaultHandler = new MessageHandler() {
@@ -40,18 +46,22 @@ class BasicSubscriptionSpec extends StreamrSpecification {
         void onMessage(Subscription sub, StreamMessage message) {
             received.add(message)
         }
+
+        @Override
+        void onUnableToDecrypt(UnableToDecryptException e) {
+            unableToDecryptCount++
+        }
     }
 
-    int groupKeyFunctionCallCount
-    GroupKeyRequestFunction defaultGroupKeyRequestFunction = new BasicSubscription.GroupKeyRequestFunction() {
+    GroupKeyRequestFunction defaultGroupKeyRequestFunction = new GroupKeyRequestFunction() {
         @Override
         void apply(Address publisherId, List<String> groupKeyIds) {
-            groupKeyFunctionCallCount++
+            groupKeyRequestCount++
         }
     }
 
     private RealTimeSubscription createSub(MessageHandler handler = defaultHandler, String streamId = msg.getStreamId(), GroupKeyRequestFunction groupKeyRequestFunction = defaultGroupKeyRequestFunction) {
-        return new RealTimeSubscription(streamId, 0, handler, keyStore, groupKeyRequestFunction)
+        return new RealTimeSubscription(streamId, 0, handler, keyStore, groupKeyRequestFunction, propagationTimeout, resendTimeout, false)
     }
 
     void "calls the message handler when realtime messages are received"() {
@@ -99,12 +109,12 @@ class BasicSubscriptionSpec extends StreamrSpecification {
 
     void "calls the gap handler if a gap is detected"() {
         StreamMessage msg1 = createMessage(1, 0, null, 0)
-        StreamMessage afterMsg1 = createMessage(1, 1, null, 0)
         StreamMessage msg4 = createMessage(4, 0, 3, 0)
         GapDetectedException ex
         sub.setGapHandler(new OrderedMsgChain.GapHandlerFunction() {
             @Override
             void apply(MessageRef from, MessageRef to, Address publisherId, String msgChainId) {
+                // GapDetectedException is used just to store the values the gap handler is called with
                 ex = new GapDetectedException(sub.getStreamId(), sub.getPartition(), from, to, publisherId, msgChainId)
             }
         })
@@ -116,13 +126,12 @@ class BasicSubscriptionSpec extends StreamrSpecification {
 
         when:
         sub.handleRealTimeMessage(msg4)
-        Thread.sleep(50L)
-        sub.clear()
+        Thread.sleep(5 * propagationTimeout) // make sure the propagationTimeout has passed and the gap handler triggered
 
         then:
         ex.getStreamId() == msg1.getStreamId()
         ex.getStreamPartition() == msg1.getStreamPartition()
-        ex.getFrom() == afterMsg1.getMessageRef()
+        ex.getFrom() == new MessageRef(msg1.getTimestamp(), msg1.getSequenceNumber() + 1)
         ex.getTo() == msg4.getPreviousMessageRef()
         ex.getPublisherId() == msg1.getPublisherId()
         ex.getMsgChainId() == msg1.getMsgChainId()
@@ -142,12 +151,12 @@ class BasicSubscriptionSpec extends StreamrSpecification {
 
     void "calls the gap handler if a gap is detected (same timestamp but different sequence numbers)"() {
         StreamMessage msg1 = createMessage(1, 0, null, 0)
-        StreamMessage afterMsg1 = createMessage(1, 1, null, 0)
         StreamMessage msg4 = createMessage(1, 4, 1, 3)
         GapDetectedException ex
         sub.setGapHandler(new OrderedMsgChain.GapHandlerFunction() {
             @Override
             void apply(MessageRef from, MessageRef to, Address publisherId, String msgChainId) {
+                // GapDetectedException is used just to store the values the gap handler is called with
                 ex = new GapDetectedException(sub.getStreamId(), sub.getPartition(), from, to, publisherId, msgChainId)
             }
         })
@@ -159,13 +168,12 @@ class BasicSubscriptionSpec extends StreamrSpecification {
 
         when:
         sub.handleRealTimeMessage(msg4)
-        Thread.sleep(50L)
-        sub.clear()
+        Thread.sleep(5 * propagationTimeout) // make sure the propagationTimeout has passed and the gap handler triggered
 
         then:
         ex.getStreamId() == msg1.getStreamId()
         ex.getStreamPartition() == msg1.getStreamPartition()
-        ex.getFrom() == afterMsg1.getMessageRef()
+        ex.getFrom() == new MessageRef(msg1.getTimestamp(), msg1.getSequenceNumber() + 1)
         ex.getTo() == msg4.getPreviousMessageRef()
         ex.getPublisherId() == msg1.getPublisherId()
         ex.getMsgChainId() == msg1.getMsgChainId()
@@ -176,10 +184,18 @@ class BasicSubscriptionSpec extends StreamrSpecification {
         StreamMessage msg2 = createMessage(1, 1, 1, 0)
         StreamMessage msg3 = createMessage(4, 0, 1, 1)
 
+        sub.setGapHandler(new OrderedMsgChain.GapHandlerFunction() {
+            @Override
+            void apply(MessageRef from, MessageRef to, Address publisherId, String msgChainId) {
+                throw new GapDetectedException(sub.getStreamId(), sub.getPartition(), from, to, publisherId, msgChainId)
+            }
+        })
+
         when:
         sub.handleRealTimeMessage(msg1)
         sub.handleRealTimeMessage(msg2)
         sub.handleRealTimeMessage(msg3)
+        Thread.sleep(5 * propagationTimeout) // make sure the propagationTimeout has passed to allow the gap handler to trigger
 
         then:
         received.size() == 3
@@ -193,23 +209,20 @@ class BasicSubscriptionSpec extends StreamrSpecification {
         StreamMessage msg1 = createMessage(plaintext)
 
         EncryptionUtil.encryptStreamMessage(msg1, groupKey)
-        keyStore.add(msg1.getStreamId(), groupKey)
 
         when:
         sub.handleRealTimeMessage(msg1)
 
         then:
+        1 * keyStore.get(msg1.getStreamId(), groupKey.getGroupKeyId()) >> groupKey
         received[0].getParsedContent() == plaintext
     }
 
-    void "calls key request function when cannot decrypt messages with wrong key (multiple times when no response)"() {
+    void "calls key request function if the key is not in the key store (multiple times if there's no response)"() {
         GroupKey groupKey = GroupKey.generate()
-        GroupKey wrongGroupKey = GroupKey.generate()
-
         EncryptionUtil.encryptStreamMessage(msg, groupKey)
-        keyStore.add(msg.getStreamId(), wrongGroupKey)
 
-        String receivedPublisherId = null
+        Address receivedPublisherId = null
         int nbCalls = 0
         int timeout = 3000
         RealTimeSubscription sub = new RealTimeSubscription(msg.getStreamId(), 0, defaultHandler, keyStore,
@@ -226,14 +239,18 @@ class BasicSubscriptionSpec extends StreamrSpecification {
         sub.handleRealTimeMessage(msg)
         // Wait for 2 timeouts to happen
         Thread.sleep(timeout * 2 + 1500)
+
         then:
+        1 * keyStore.get(msg.getStreamId(), groupKey.getGroupKeyId()) >> null // key not found in store
         nbCalls == 3
 
         when:
         sub.onNewKeysAdded(msg.getPublisherId(), [groupKey])
         Thread.sleep(timeout * 2)
+
         then:
-        receivedPublisherId == msg.getPublisherId().toLowerCase()
+        1 * keyStore.get(msg.getStreamId(), groupKey.getGroupKeyId()) >> groupKey // key is now found
+        receivedPublisherId == msg.getPublisherId()
         nbCalls == 3
     }
 
@@ -256,6 +273,7 @@ class BasicSubscriptionSpec extends StreamrSpecification {
         Thread.sleep(timeout * (BasicSubscription.MAX_NB_GROUP_KEY_REQUESTS + 2))
 
         then:
+        1 * keyStore.get(msg.getStreamId(), groupKey.getGroupKeyId()) >> null // key not found in store
         nbCalls == BasicSubscription.MAX_NB_GROUP_KEY_REQUESTS
     }
 
@@ -268,30 +286,35 @@ class BasicSubscriptionSpec extends StreamrSpecification {
         EncryptionUtil.encryptStreamMessage(msg2, groupKey)
 
         when:
-        // Cannot decrypt msg1, queues it and calls the handler
+        // Cannot decrypt msg1, queues it and calls the key request function
         sub.handleRealTimeMessage(msg1)
+        // group key request function gets called asynchronously, make sure there's time to call it
+        Thread.sleep(100)
 
         then:
-        new PollingConditions().within(10) {
-            groupKeyFunctionCallCount == 1
-        }
+        1 * keyStore.get(msg1.getStreamId(), groupKey.getGroupKeyId()) >> null // key not found in store
+        groupKeyRequestCount == 1
 
         when:
-        // Cannot decrypt msg2, queues it.
+        // Cannot decrypt msg2, queues it but doesn't call the key request function
         sub.handleRealTimeMessage(msg2)
+        // group key request function gets called asynchronously, make sure there's time to call it
+        Thread.sleep(100)
 
         then:
-        groupKeyFunctionCallCount == 1
+        0 * keyStore.get(msg1.getStreamId(), groupKey.getGroupKeyId()) // not called because the request for the key is in progress
+        groupKeyRequestCount == 1
 
         // faking the reception of the group key response
         when:
         sub.onNewKeysAdded(msg1.getPublisherId(), [groupKey])
 
         then:
+        2 * keyStore.get(msg1.getStreamId(), groupKey.getGroupKeyId()) >> groupKey // key now found for both messages
         received.size() == 2
         received[0].getParsedContent() == [foo: 'bar1']
         received[1].getParsedContent() == [foo: 'bar2']
-        groupKeyFunctionCallCount == 1
+        groupKeyRequestCount == 1
     }
 
     void "queues messages when not able to decrypt and handles them once the key is updated (multiple publishers)"() {
@@ -300,52 +323,65 @@ class BasicSubscriptionSpec extends StreamrSpecification {
         StreamMessage msg1pub2 = createMessage(1, 0, null, null, "publisherId2", [foo: 'bar3'])
         StreamMessage msg2pub2 = createMessage(2, 0, null, null, "publisherId2", [foo: 'bar4'])
 
-        GroupKey groupKey1 = GroupKey.generate()
-        GroupKey groupKey2 = GroupKey.generate()
+        GroupKey groupKeyPub1 = GroupKey.generate()
+        GroupKey groupKeyPub2 = GroupKey.generate()
 
-        EncryptionUtil.encryptStreamMessage(msg1pub1, groupKey1)
-        EncryptionUtil.encryptStreamMessage(msg2pub1, groupKey1)
-        EncryptionUtil.encryptStreamMessage(msg1pub2, groupKey2)
-        EncryptionUtil.encryptStreamMessage(msg2pub2, groupKey2)
+        EncryptionUtil.encryptStreamMessage(msg1pub1, groupKeyPub1)
+        EncryptionUtil.encryptStreamMessage(msg2pub1, groupKeyPub1)
+        EncryptionUtil.encryptStreamMessage(msg1pub2, groupKeyPub2)
+        EncryptionUtil.encryptStreamMessage(msg2pub2, groupKeyPub2)
 
         when:
-        // Cannot decrypt msg1, queues it and calls the handler
+        // Cannot decrypt msg1pub1, queues it and calls the key request function
         sub.handleRealTimeMessage(msg1pub1)
+        // group key request function gets called asynchronously, make sure there's time to call it
+        Thread.sleep(100)
+
         then:
-        new PollingConditions().within(10) {
-            groupKeyFunctionCallCount == 1
-        }
+        1 * keyStore.get(msg1pub1.getStreamId(), groupKeyPub1.getGroupKeyId()) >> null // key not found in store
+        groupKeyRequestCount == 1
 
         when:
-        // Cannot decrypt msg2, queues it.
+        // Cannot decrypt msg2pub1, queues it.
         sub.handleRealTimeMessage(msg2pub1)
+        // group key request function gets called asynchronously, make sure there's time to call it
+        Thread.sleep(100)
+
         then:
-        groupKeyFunctionCallCount == 1
+        0 * keyStore.get(msg1pub1.getStreamId(), groupKeyPub1.getGroupKeyId()) // not called because the request for the key is in progress
+        groupKeyRequestCount == 1
 
         when:
-        // Cannot decrypt msg3, queues it and calls the handler
+        // Cannot decrypt msg1pub2, queues it and calls the key request function
         sub.handleRealTimeMessage(msg1pub2)
+        // group key request function gets called asynchronously, make sure there's time to call it
+        Thread.sleep(100)
+
         then:
-        new PollingConditions().within(10) {
-            groupKeyFunctionCallCount == 2
-        }
+        1 * keyStore.get(msg1pub2.getStreamId(), groupKeyPub2.getGroupKeyId()) >> null // key not found in store
+        groupKeyRequestCount == 2
 
         when:
-        // Cannot decrypt msg4, queues it.
+        // Cannot decrypt msg2pub2, queues it.
         sub.handleRealTimeMessage(msg2pub2)
+
         then:
-        groupKeyFunctionCallCount == 2
+        groupKeyRequestCount == 2
+        0 * keyStore.get(msg2pub2.getStreamId(), groupKeyPub2.getGroupKeyId()) // not called because the request for the key is in progress
 
         when:
         // faking the reception of the group key response
-        sub.onNewKeysAdded(msg1pub1.getPublisherId(), [groupKey1])
-        sub.onNewKeysAdded(msg1pub2.getPublisherId(), [groupKey2])
+        sub.onNewKeysAdded(msg1pub1.getPublisherId(), [groupKeyPub1])
+        sub.onNewKeysAdded(msg1pub2.getPublisherId(), [groupKeyPub2])
+
         then:
+        2 * keyStore.get(msg1pub1.getStreamId(), groupKeyPub1.getGroupKeyId()) >> groupKeyPub1
+        2 * keyStore.get(msg1pub2.getStreamId(), groupKeyPub2.getGroupKeyId()) >> groupKeyPub2
         received.get(0).getParsedContent() == [foo: 'bar1']
         received.get(1).getParsedContent() == [foo: 'bar2']
         received.get(2).getParsedContent() == [foo: 'bar3']
         received.get(3).getParsedContent() == [foo: 'bar4']
-        groupKeyFunctionCallCount == 2
+        groupKeyRequestCount == 2
     }
 
     void "queues messages when not able to decrypt and handles them once the key is updated (multiple publishers interleaved)"() {
@@ -355,39 +391,77 @@ class BasicSubscriptionSpec extends StreamrSpecification {
         StreamMessage msg1pub2 = createMessage(1, 0, null, null, "publisherId2", [foo: 'bar4'])
         StreamMessage msg2pub2 = createMessage(2, 0, null, null, "publisherId2", [foo: 'bar5'])
 
-        GroupKey groupKey1 = GroupKey.generate()
-        GroupKey groupKey2 = GroupKey.generate()
+        GroupKey groupKeyPub1 = GroupKey.generate()
+        GroupKey groupKeyPub2 = GroupKey.generate()
 
-        EncryptionUtil.encryptStreamMessage(msg1pub1, groupKey1)
-        EncryptionUtil.encryptStreamMessage(msg2pub1, groupKey1)
-        EncryptionUtil.encryptStreamMessage(msg1pub2, groupKey2)
-        EncryptionUtil.encryptStreamMessage(msg2pub2, groupKey2)
+        EncryptionUtil.encryptStreamMessage(msg1pub1, groupKeyPub1)
+        EncryptionUtil.encryptStreamMessage(msg2pub1, groupKeyPub1)
+        EncryptionUtil.encryptStreamMessage(msg3pub1, groupKeyPub1)
+        EncryptionUtil.encryptStreamMessage(msg1pub2, groupKeyPub2)
+        EncryptionUtil.encryptStreamMessage(msg2pub2, groupKeyPub2)
 
         when:
         sub.handleRealTimeMessage(msg1pub1)
         sub.handleRealTimeMessage(msg1pub2)
+        // group key request function gets called asynchronously, make sure there's time to call it
+        Thread.sleep(100)
+
         then:
-        new PollingConditions().within(10) {
-            groupKeyFunctionCallCount == 2
-        }
+        1 * keyStore.get(msg1pub1.getStreamId(), groupKeyPub1.getGroupKeyId()) >> null // key not found in store
+        1 * keyStore.get(msg1pub2.getStreamId(), groupKeyPub2.getGroupKeyId()) >> null // key not found in store
+        groupKeyRequestCount == 2
 
         when:
-        sub.handleRealTimeMessage(msg2pub1)
-        sub.onNewKeysAdded("publisherId1", [groupKey1])
-        sub.handleRealTimeMessage(msg3pub1)
-        sub.handleRealTimeMessage(msg2pub2)
-        sub.onNewKeysAdded("publisherId2", [groupKey2])
+        sub.handleRealTimeMessage(msg2pub1) // queued
+        // group key request function gets called asynchronously, make sure there's time to call it
+        Thread.sleep(100)
 
         then:
+        groupKeyRequestCount == 2
+        0 * keyStore.get(msg2pub2.getStreamId(), groupKeyPub2.getGroupKeyId()) // not called because the request for the key is in progress
+
+        when:
+        // Triggers processing of queued messages for pub1
+        sub.onNewKeysAdded(getPublisherId(1), [groupKeyPub1])
+
+        then:
+        2 * keyStore.get(msg1pub1.getStreamId(), groupKeyPub1.getGroupKeyId()) >> groupKeyPub1
+        groupKeyRequestCount == 2
+        received.size() == 2
         received.get(0).getParsedContent() == [foo: 'bar1']
         received.get(1).getParsedContent() == [foo: 'bar2']
+
+        when:
+        // Processed immediately because now we have the key
+        sub.handleRealTimeMessage(msg3pub1)
+
+        then:
+        1 * keyStore.get(msg1pub1.getStreamId(), groupKeyPub1.getGroupKeyId()) >> groupKeyPub1
+        received.size() == 3
         received.get(2).getParsedContent() == [foo: 'bar3']
+
+        when:
+        sub.handleRealTimeMessage(msg2pub2) // queued, because no key for pub2 yet
+        // group key request function gets called asynchronously, make sure there's time to call it
+        Thread.sleep(100)
+
+        then:
+        received.size() == 3
+        groupKeyRequestCount == 2
+
+        when:
+        // Triggers processing of queued messages for pub2
+        sub.onNewKeysAdded(getPublisherId(2), [groupKeyPub2])
+
+        then:
+        2 * keyStore.get(msg1pub2.getStreamId(), groupKeyPub2.getGroupKeyId()) >> groupKeyPub2
+        received.size() == 5
         received.get(3).getParsedContent() == [foo: 'bar4']
         received.get(4).getParsedContent() == [foo: 'bar5']
-        groupKeyFunctionCallCount == 2
+        groupKeyRequestCount == 2
     }
 
-    void "throws when not able to decrypt after receiving key"() {
+    void "calls onUnableToDecrypt handler when not able to decrypt after receiving key"() {
         GroupKey correctGroupKey = GroupKey.generate()
         GroupKey incorrectGroupKeyWithCorrectId = new GroupKey(correctGroupKey.getGroupKeyId(), GroupKey.generate().getGroupKeyHex())
 
@@ -398,7 +472,7 @@ class BasicSubscriptionSpec extends StreamrSpecification {
         sub.onNewKeysAdded(msg.getPublisherId(), [incorrectGroupKeyWithCorrectId])
 
         then:
-        thrown(UnableToDecryptException)
+        unableToDecryptCount == 1
     }
 
     // TODO: good test?

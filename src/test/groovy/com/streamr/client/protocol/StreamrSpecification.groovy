@@ -12,19 +12,15 @@ import spock.lang.Specification
 class StreamrSpecification extends Specification {
     private int seqNo = 0
 
-    protected final Address subscriberId = new Address("subscriberId")
-    protected final subscriberId1 = new Address("subscriberId1")
-    protected final subscriberId2 = new Address("subscriberId2")
-    protected final subscriberId3 = new Address("subscriberId3")
-    protected final subscriberId4 = new Address("subscriberId4")
-    protected final subscriberId5 = new Address("subscriberId5")
+    protected static final Address subscriberId = new Address("subscriberId")
+    protected static final Address publisherId = new Address("publisherId")
 
-    protected final Address publisherId = new Address("publisherId")
-    protected final publisherId1 = new Address("publisherId1")
-    protected final publisherId2 = new Address("publisherId2")
-    protected final publisherId3 = new Address("publisherId3")
-    protected final publisherId4 = new Address("publisherId4")
-    protected final publisherId5 = new Address("publisherId5")
+    protected static Address getSubscriberId(int number) {
+        return new Address("subscriberId${number}")
+    }
+    protected static Address getPublisherId(int number) {
+        return new Address("publisherId${number}")
+    }
 
     protected StreamMessage createMessage(Map content) {
         return createMessage(new Date().getTime(), seqNo++, null, null, "publisherId", content)

@@ -32,6 +32,7 @@ public class StreamMessageV32Adapter extends JsonAdapter<StreamMessage> {
     @Override
     public StreamMessage fromJson(JsonReader reader) throws IOException {
         try {
+            // top-level array has already been opened in StreamMessageAdapter
             // version field has already been read in StreamMessageAdapter
             MessageID messageID = msgIdAdapter.fromJson(reader);
             MessageRef previousMessageRef = nullSafeRead(reader, () -> msgRefAdapter.fromJson(reader));
@@ -43,6 +44,7 @@ public class StreamMessageV32Adapter extends JsonAdapter<StreamMessage> {
             String serializedContent = reader.nextString();
             SignatureType signatureType = SignatureType.fromId((byte)reader.nextInt());
             String signature = nullSafeRead(reader, reader::nextString);
+            // top-level array will be closed in StreamMessageAdapter
 
             return new StreamMessage(messageID, previousMessageRef, messageType, serializedContent, contentType, encryptionType, groupKeyId, signatureType, signature);
         } catch (Exception e) {
@@ -53,7 +55,7 @@ public class StreamMessageV32Adapter extends JsonAdapter<StreamMessage> {
 
     @Override
     public void toJson(JsonWriter writer, StreamMessage value) throws IOException {
-        // Top-level array already written in StreamMessageAdapter
+        writer.beginArray();
         writer.value(VERSION);
         msgIdAdapter.toJson(writer, value.getMessageID());
         if (value.getPreviousMessageRef() != null) {
@@ -68,6 +70,6 @@ public class StreamMessageV32Adapter extends JsonAdapter<StreamMessage> {
         writer.value(value.getSerializedContent());
         writer.value(value.getSignatureType().getId());
         writer.value(value.getSignature());
-        // Top-level array will be closed in StreamMessageAdapter
+        writer.endArray();
     }
 }
