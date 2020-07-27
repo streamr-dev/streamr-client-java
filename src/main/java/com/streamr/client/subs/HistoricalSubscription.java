@@ -69,7 +69,7 @@ public class HistoricalSubscription extends BasicSubscription {
     @Override
     public void onNewKeysAdded(Address publisherId, Collection<GroupKey> groupKeys) {
         super.onNewKeysAdded(publisherId, groupKeys);
-        if (resendDone && encryptedMsgsQueues.isEmpty()) { // the messages in the queue were the last ones to handle
+        if (resendDone && decryptionQueues.isEmpty()) { // the messages in the queue were the last ones to handle
             this.handler.done(this);
         }
     }
@@ -102,7 +102,7 @@ public class HistoricalSubscription extends BasicSubscription {
     @Override
     public void endResend() throws GapDetectedException {
         // Don't call the done handler until all encrypted messages have been handled (see onNewKeys)
-        if (encryptedMsgsQueues.isEmpty()) {
+        if (decryptionQueues.isEmpty()) {
             this.handler.done(this);
         } else { // received all historical messages but not yet the keys to decrypt them
             resendDone = true;

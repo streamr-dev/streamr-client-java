@@ -9,12 +9,7 @@ import com.streamr.client.subs.BasicSubscription
 import com.streamr.client.subs.BasicSubscription.GroupKeyRequestFunction
 import com.streamr.client.subs.RealTimeSubscription
 import com.streamr.client.subs.Subscription
-import com.streamr.client.utils.Address
-import com.streamr.client.utils.EncryptionUtil
-import com.streamr.client.utils.GroupKey
-import com.streamr.client.utils.GroupKeyStore
-import com.streamr.client.utils.OrderedMsgChain
-import spock.util.concurrent.PollingConditions
+import com.streamr.client.utils.*
 
 /**
  * BasicSubscription is abstract, but contains most of the code for RealtimeSubscription and
@@ -326,10 +321,8 @@ class BasicSubscriptionSpec extends StreamrSpecification {
         GroupKey groupKeyPub1 = GroupKey.generate()
         GroupKey groupKeyPub2 = GroupKey.generate()
 
-        EncryptionUtil.encryptStreamMessage(msg1pub1, groupKeyPub1)
-        EncryptionUtil.encryptStreamMessage(msg2pub1, groupKeyPub1)
-        EncryptionUtil.encryptStreamMessage(msg1pub2, groupKeyPub2)
-        EncryptionUtil.encryptStreamMessage(msg2pub2, groupKeyPub2)
+        [msg1pub1, msg2pub1].each { EncryptionUtil.encryptStreamMessage(it, groupKeyPub1) }
+        [msg1pub2, msg2pub2].each { EncryptionUtil.encryptStreamMessage(it, groupKeyPub2) }
 
         when:
         // Cannot decrypt msg1pub1, queues it and calls the key request function
@@ -394,11 +387,8 @@ class BasicSubscriptionSpec extends StreamrSpecification {
         GroupKey groupKeyPub1 = GroupKey.generate()
         GroupKey groupKeyPub2 = GroupKey.generate()
 
-        EncryptionUtil.encryptStreamMessage(msg1pub1, groupKeyPub1)
-        EncryptionUtil.encryptStreamMessage(msg2pub1, groupKeyPub1)
-        EncryptionUtil.encryptStreamMessage(msg3pub1, groupKeyPub1)
-        EncryptionUtil.encryptStreamMessage(msg1pub2, groupKeyPub2)
-        EncryptionUtil.encryptStreamMessage(msg2pub2, groupKeyPub2)
+        [msg1pub1, msg2pub1, msg3pub1].each { EncryptionUtil.encryptStreamMessage(it, groupKeyPub1) }
+        [msg1pub2, msg2pub2].each { EncryptionUtil.encryptStreamMessage(it, groupKeyPub2) }
 
         when:
         sub.handleRealTimeMessage(msg1pub1)
@@ -458,6 +448,64 @@ class BasicSubscriptionSpec extends StreamrSpecification {
         received.size() == 5
         received.get(3).getParsedContent() == [foo: 'bar4']
         received.get(4).getParsedContent() == [foo: 'bar5']
+        groupKeyRequestCount == 2
+    }
+
+
+    void "queues messages when not able to decrypt and handles them once the key is updated (one publisher, two keys on two msgChains)"() {
+        // All messages have the same publisherId
+        StreamMessage key1msg1 = createMessage(1, 0, null, null, "publisherId1", [n: 1], "msgChain1")
+        StreamMessage key1msg2 = createMessage(2, 0, null, null, "publisherId1", [n: 2], "msgChain1")
+        StreamMessage key2msg1 = createMessage(3, 0, null, null, "publisherId1", [n: 3], "msgChain2")
+        StreamMessage key2msg2 = createMessage(4, 0, null, null, "publisherId1", [n: 4], "msgChain2")
+
+        GroupKey key1 = GroupKey.generate()
+        GroupKey key2 = GroupKey.generate()
+
+        [key1msg1, key1msg2].each { EncryptionUtil.encryptStreamMessage(it, key1) }
+        [key2msg1, key2msg2].each { EncryptionUtil.encryptStreamMessage(it, key2) }
+
+        when:
+        sub.handleRealTimeMessage(key1msg1)
+        sub.handleRealTimeMessage(key2msg1)
+        // group key request function gets called asynchronously, make sure there's time to call it
+        Thread.sleep(100)
+
+        then:
+        1 * keyStore.get(key1msg1.getStreamId(), key1.getGroupKeyId()) >> null // key not found in store
+        1 * keyStore.get(key2msg1.getStreamId(), key2.getGroupKeyId()) >> null // key not found in store
+        groupKeyRequestCount == 2
+
+        when:
+        sub.handleRealTimeMessage(key1msg2) // queued
+        sub.handleRealTimeMessage(key2msg2) // queued
+        // group key request function gets called asynchronously, make sure there's time to call it
+        Thread.sleep(100)
+
+        then:
+        groupKeyRequestCount == 2
+        0 * keyStore.get(_, _) // not called because the request for both keys is in progress
+
+        when:
+        // Triggers processing of queued messages for key1 / msgChain1
+        sub.onNewKeysAdded(getPublisherId(1), [key1])
+
+        then:
+        2 * keyStore.get(key1msg1.getStreamId(), key1.getGroupKeyId()) >> key1
+        groupKeyRequestCount == 2
+        received.size() == 2
+        received.get(0).getParsedContent() == [n: 1]
+        received.get(1).getParsedContent() == [n: 2]
+
+        when:
+        // Triggers processing of queued messages for key2 / msgChain2
+        sub.onNewKeysAdded(getPublisherId(1), [key2])
+
+        then:
+        2 * keyStore.get(key2msg1.getStreamId(), key2.getGroupKeyId()) >> key2
+        received.size() == 4
+        received.get(2).getParsedContent() == [n: 3]
+        received.get(3).getParsedContent() == [n: 4]
         groupKeyRequestCount == 2
     }
 
