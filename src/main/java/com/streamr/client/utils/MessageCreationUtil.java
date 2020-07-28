@@ -108,6 +108,7 @@ public class MessageCreationUtil {
         Pair<MessageID, MessageRef> pair = createDefaultMsgIdAndRef(keyExchangeStreamId);
         StreamMessage streamMessage = response.toStreamMessage(pair.getLeft(), pair.getRight());
         streamMessage.setEncryptionType(StreamMessage.EncryptionType.RSA);
+        streamMessage.setGroupKeyId(request.getPublicKey());
 
         // Always sign
         signingUtil.signStreamMessage(streamMessage);
@@ -132,6 +133,7 @@ public class MessageCreationUtil {
         Pair<MessageID, MessageRef> pair = createDefaultMsgIdAndRef(keyExchangeStreamId);
         StreamMessage streamMessage = announce.toStreamMessage(pair.getLeft(), pair.getRight());
         streamMessage.setEncryptionType(StreamMessage.EncryptionType.RSA);
+        streamMessage.setGroupKeyId(publicKey);
 
         // Always sign
         signingUtil.signStreamMessage(streamMessage);
@@ -153,6 +155,7 @@ public class MessageCreationUtil {
         Pair<MessageID, MessageRef> pair = createDefaultMsgIdAndRef(streamId);
         StreamMessage streamMessage = announce.toStreamMessage(pair.getLeft(), pair.getRight());
         streamMessage.setEncryptionType(StreamMessage.EncryptionType.AES);
+        streamMessage.setGroupKeyId(previousGroupKey.getGroupKeyId());
 
         // Always sign
         signingUtil.signStreamMessage(streamMessage);

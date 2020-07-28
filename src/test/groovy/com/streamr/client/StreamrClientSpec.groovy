@@ -1,11 +1,9 @@
 package com.streamr.client
 
-import com.streamr.client.authentication.ApiKeyAuthenticationMethod
-import com.streamr.client.options.EncryptionOptions
-import com.streamr.client.options.ResendLastOption
-import com.streamr.client.options.ResendOption
-import com.streamr.client.options.SigningOptions
-import com.streamr.client.options.StreamrClientOptions
+
+import com.streamr.client.authentication.AuthenticationMethod
+import com.streamr.client.authentication.EthereumAuthenticationMethod
+import com.streamr.client.options.*
 import com.streamr.client.protocol.StreamrSpecification
 import com.streamr.client.protocol.control_layer.*
 import com.streamr.client.protocol.message_layer.MessageID
@@ -13,8 +11,9 @@ import com.streamr.client.protocol.message_layer.MessageRef
 import com.streamr.client.protocol.message_layer.StreamMessage
 import com.streamr.client.rest.Stream
 import com.streamr.client.subs.Subscription
-import com.streamr.client.utils.GroupKeyStore
-import spock.lang.Specification
+import com.streamr.client.utils.GroupKey
+import com.streamr.client.utils.InMemoryGroupKeyStore
+import com.streamr.client.utils.KeyExchangeUtil
 import spock.util.concurrent.PollingConditions
 
 class StreamrClientSpec extends StreamrSpecification {
@@ -58,15 +57,35 @@ class StreamrClientSpec extends StreamrSpecification {
 
     void setup() {
         server.clear()
-        SigningOptions signingOptions = new SigningOptions(SigningOptions.SignatureComputationPolicy.NEVER, SigningOptions.SignatureVerificationPolicy.NEVER)
 
-        GroupKeyStore keyStore = Mock(GroupKeyStore)
-        EncryptionOptions encryptionOptions = new EncryptionOptions(keyStore, null, null, false)
-        StreamrClientOptions options = new StreamrClientOptions(new ApiKeyAuthenticationMethod("apikey"), signingOptions, encryptionOptions, server.getWsUrl(), "", gapFillTimeout, retryResendAfter, false)
+        AuthenticationMethod authenticationMethod = new EthereumAuthenticationMethod(publisherPrivateKey) {
+            // Override login so that this doesn't call the REST API
+            @Override
+            protected AuthenticationMethod.LoginResponse login(String restApiUrl) throws IOException {
+                return new AuthenticationMethod.LoginResponse("sessionToken", new Date() + 365)
+            }
+        }
+
+        // Turn off autoRevoke, otherwise it will try and to REST API calls
+        EncryptionOptions encryptionOptions = new EncryptionOptions(new InMemoryGroupKeyStore(), null, null, false);
+
+        StreamrClientOptions options = new StreamrClientOptions(authenticationMethod, SigningOptions.getDefault(), encryptionOptions, server.getWsUrl(), "dont-call-this-rest-api-url", gapFillTimeout, retryResendAfter, false)
         options.reconnectRetryInterval = 1000
         options.connectionTimeoutMillis = 1000
+
         client = new TestingStreamrClient(options)
         client.connect()
+
+        expect:
+        // The client subscribes to key exchange stream on connect
+        new PollingConditions().eventually {
+            server.receivedControlMessages.size() == 1
+        }
+        server.receivedControlMessages[0].message instanceof SubscribeRequest
+
+        cleanup:
+        // Remove that SubscribeRequest so that it doesn't need to be considered in each test case
+        server.clear()
     }
 
     void cleanup() {
@@ -145,6 +164,53 @@ class StreamrClientSpec extends StreamrSpecification {
         server.expect(new ResendRangeRequest(server.receivedControlMessages[2].message.requestId, stream.id, 0, new MessageRef(0, 1), new MessageRef(1, 0), publisherId, "msgChainId", client.sessionToken))
     }
 
+    void "publish() publishes with the latest key added to keyStore"() {
+        GroupKey groupKey = GroupKey.generate()
+        client.getKeyStore().add(stream.getId(), groupKey)
+
+        when:
+        client.publish(stream, [test: "secret"])
+
+        then:
+        new PollingConditions().eventually {
+            server.receivedControlMessages.size() == 1
+        }
+        ((PublishRequest)server.receivedControlMessages[0].message).streamMessage.getGroupKeyId() == groupKey.groupKeyId
+        !((PublishRequest)server.receivedControlMessages[0].message).streamMessage.getSerializedContent().contains("secret")
+    }
+
+    void "publish() called with the current GroupKey does not rotate the key"() {
+        GroupKey groupKey = GroupKey.generate()
+        client.getKeyStore().add(stream.getId(), groupKey)
+
+        when:
+        client.publish(stream, [test: "secret"], new Date(), null, groupKey)
+
+        then:
+        new PollingConditions().eventually {
+            server.receivedControlMessages.size() == 1
+        }
+        ((PublishRequest)server.receivedControlMessages[0].message).streamMessage.getGroupKeyId() == groupKey.groupKeyId
+    }
+
+    void "publish() called with a new GroupKey rotates the key by announcing the new key and then publishing the message"() {
+        GroupKey currentKey = GroupKey.generate()
+        GroupKey newKey = GroupKey.generate()
+        client.getKeyStore().add(stream.getId(), currentKey)
+
+        when:
+        client.publish(stream, [test: "secret"], new Date(), null, newKey)
+
+        then:
+        new PollingConditions().eventually {
+            server.receivedControlMessages.size() == 2 // announce & message
+        }
+        ((PublishRequest)server.receivedControlMessages[0].message).streamMessage.getGroupKeyId() == currentKey.groupKeyId
+        ((PublishRequest)server.receivedControlMessages[0].message).streamMessage.getMessageType() == StreamMessage.MessageType.GROUP_KEY_ANNOUNCE
+        ((PublishRequest)server.receivedControlMessages[1].message).streamMessage.getGroupKeyId() == newKey.groupKeyId
+        !((PublishRequest)server.receivedControlMessages[1].message).streamMessage.getSerializedContent().contains("secret")
+    }
+
     void "client reconnects while publishing if server is temporarily down"() {
         Thread serverRestart = new Thread() {
             void run() {
@@ -179,7 +245,11 @@ class StreamrClientSpec extends StreamrSpecification {
 
         then:
         new PollingConditions().eventually {
-            server.receivedControlMessages.size() == 4 // count restarts on the server restart
+            // The client sends subscribe requests to key exchange stream on reconnect,
+            // filter those out to only get the publish requests
+            server.receivedControlMessages
+                    .findAll { it.message instanceof PublishRequest }
+                    .size() == 4
         }
     }
 
@@ -239,11 +309,12 @@ class StreamrClientSpec extends StreamrSpecification {
         sleep(10000)
 
         then:
-        // Client should have resubscribed
-        server.expect(new SubscribeRequest(server.receivedControlMessages[0].message.requestId, stream.id, 0, client.sessionToken))
+        // Client should have resubscribed to its key exchange stream and the actual stream
+        server.expect(new SubscribeRequest(server.receivedControlMessages[0].message.requestId, KeyExchangeUtil.getKeyExchangeStreamId(publisher), 0, client.sessionToken))
+        server.expect(new SubscribeRequest(server.receivedControlMessages[1].message.requestId, stream.id, 0, client.sessionToken))
 
         when:
-        server.respondTo(server.receivedControlMessages[0])
+        server.respondTo(server.receivedControlMessages[1])
         server.broadcastMessageToAll(stream, Collections.singletonMap("key", "msg #2"))
 
         then:

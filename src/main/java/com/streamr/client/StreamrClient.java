@@ -417,13 +417,16 @@ public class StreamrClient extends StreamrRESTClient {
         publish(stream, payload, timestamp, partitionKey, null);
     }
 
-    public void publish(Stream stream, Map<String, Object> payload, Date timestamp, String partitionKey, GroupKey newGroupKey) {
+    public void publish(Stream stream, Map<String, Object> payload, Date timestamp, String partitionKey, GroupKey groupKey) {
         // Convenience feature: allow user to call publish() without having had called connect() beforehand.
         connect();
 
         // If the key was given and it's not the key currently in use, rotate the key
-        if (newGroupKey != null && newGroupKey.equals(keyStore.getCurrentKey(stream.getId()))) {
-            keyExchangeUtil.rotate(stream.getId(), newGroupKey);
+        if (groupKey != null && !groupKey.equals(keyStore.getCurrentKey(stream.getId()))) {
+            keyExchangeUtil.rotate(stream.getId(), groupKey);
+        } else if (groupKey == null) {
+            // If no key was given, use the current key
+            groupKey = keyStore.getCurrentKey(stream.getId());
         }
 
         // Check if an automatic rekey is needed
@@ -431,7 +434,7 @@ public class StreamrClient extends StreamrRESTClient {
             keyExchangeUtil.rekey(stream.getId(), true);
         }
 
-        StreamMessage streamMessage = msgCreationUtil.createStreamMessage(stream, payload, timestamp, partitionKey, newGroupKey);
+        StreamMessage streamMessage = msgCreationUtil.createStreamMessage(stream, payload, timestamp, partitionKey, groupKey);
         try {
             publish(streamMessage);
         } catch (WebsocketNotConnectedException e) {
