@@ -9,6 +9,7 @@ import com.streamr.client.exceptions.ResourceNotFoundException;
 import com.streamr.client.options.StreamrClientOptions;
 import com.streamr.client.rest.*;
 import com.streamr.client.utils.HttpUtils;
+import com.streamr.client.utils.Address;
 import okhttp3.*;
 
 import java.io.IOException;
@@ -177,6 +178,10 @@ public abstract class StreamrRESTClient extends AbstractStreamrClient {
         return get(url, publishersJsonAdapter).getAddresses();
     }
 
+    public boolean isPublisher(String streamId, Address address) throws IOException {
+        return isPublisher(streamId, address.toString());
+    }
+
     public boolean isPublisher(String streamId, String ethAddress) throws IOException {
         HttpUrl url = HttpUrl.parse(options.getRestApiUrl() + "/streams/" + streamId + "/publisher/" + ethAddress);
         try {
@@ -190,6 +195,10 @@ public abstract class StreamrRESTClient extends AbstractStreamrClient {
     public List<String> getSubscribers(String streamId) throws IOException {
         HttpUrl url = HttpUrl.parse(options.getRestApiUrl() + "/streams/" + streamId + "/subscribers");
         return get(url, subscribersJsonAdapter).getAddresses();
+    }
+
+    public boolean isSubscriber(String streamId, Address address) throws IOException {
+        return isSubscriber(streamId, address.toString());
     }
 
     public boolean isSubscriber(String streamId, String ethAddress) throws IOException {

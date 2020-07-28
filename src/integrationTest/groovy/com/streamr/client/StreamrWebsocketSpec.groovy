@@ -8,33 +8,23 @@ import com.streamr.client.rest.Permission
 import com.streamr.client.rest.Stream
 import com.streamr.client.subs.Subscription
 import com.streamr.client.utils.GroupKey
-import org.apache.commons.codec.binary.Hex
 import org.java_websocket.enums.ReadyState
 import spock.util.concurrent.PollingConditions
 
-import java.security.SecureRandom
-
 class StreamrWebsocketSpec extends StreamrIntegrationSpecification {
 
-	private SecureRandom secureRandom = new SecureRandom()
 	private StreamrClient publisher
 	private StreamrClient subscriber
 	private Stream stream
 	PollingConditions within10sec = new PollingConditions(timeout: 10)
-
-	GroupKey genKey() {
-		byte[] keyBytes = new byte[32]
-		secureRandom.nextBytes(keyBytes)
-		return new GroupKey(Hex.encodeHexString(keyBytes), new Date())
-	}
 
 	void setup() {
 		publisher = createClientWithPrivateKey(generatePrivateKey())
 		subscriber = createClientWithPrivateKey(generatePrivateKey())
 
 		stream = publisher.createStream(new Stream(generateResourceName(), ""))
-		publisher.grant(stream, Permission.Operation.stream_get, subscriber.getPublisherId())
-		publisher.grant(stream, Permission.Operation.stream_subscribe, subscriber.getPublisherId())
+		publisher.grant(stream, Permission.Operation.stream_get, subscriber.getPublisherId().toString())
+		publisher.grant(stream, Permission.Operation.stream_subscribe, subscriber.getPublisherId().toString())
 	}
 
 	void cleanup() {
@@ -156,9 +146,8 @@ class StreamrWebsocketSpec extends StreamrIntegrationSpecification {
 	}
 
 	void "subscriber can decrypt messages when he knows the keys used to encrypt"() {
-		GroupKey key = genKey()
-		HashMap<String, GroupKey> keys = new HashMap<>()
-		keys.put(publisher.getPublisherId(), key)
+		GroupKey key = GroupKey.generate()
+		subscriber.getKeyStore().add(stream.getId(), key)
 
 		when:
 		// Subscribe to the stream
@@ -169,7 +158,7 @@ class StreamrWebsocketSpec extends StreamrIntegrationSpecification {
 				//reaching this point ensures that the signature verification and decryption didn't throw
 				msg = (StreamMessage) message
 			}
-		}, null, keys)
+		}, null)
 		Thread.sleep(2000)
 
 		publisher.publish(stream, [test: 'clear text'], new Date(), null, key)
@@ -180,8 +169,8 @@ class StreamrWebsocketSpec extends StreamrIntegrationSpecification {
 		}
 
 		when:
-		// publishing a second message with a new group key
-		publisher.publish(stream, [test: 'another clear text'], new Date(), null, genKey())
+		// publishing a second message with a new group key, triggers key rotate & announce
+		publisher.publish(stream, [test: 'another clear text'], new Date(), null, GroupKey.generate())
 
 		then:
 		// no need to explicitly give the new group key to the subscriber
@@ -191,7 +180,7 @@ class StreamrWebsocketSpec extends StreamrIntegrationSpecification {
 	}
 
 	void "subscriber can get the group key and decrypt encrypted messages using an RSA key pair"() {
-		GroupKey key = genKey()
+		GroupKey key = GroupKey.generate()
 
 		when:
 		// Subscribe to the stream without knowing the group key
@@ -220,7 +209,7 @@ class StreamrWebsocketSpec extends StreamrIntegrationSpecification {
 
 		when:
 		// publishing a second message with a new group key
-		publisher.publish(stream, [test: 'another clear text'], new Date(), null, genKey())
+		publisher.publish(stream, [test: 'another clear text'], new Date(), null, GroupKey.generate())
 
 		then:
 		within10sec.eventually {
@@ -230,7 +219,7 @@ class StreamrWebsocketSpec extends StreamrIntegrationSpecification {
 	}
 
 	void "subscriber can get the new group key after reset and decrypt encrypted messages"() {
-		GroupKey key = genKey()
+		GroupKey key = GroupKey.generate()
 
 		when:
 		// Subscribe to the stream without knowing the group key
@@ -271,9 +260,8 @@ class StreamrWebsocketSpec extends StreamrIntegrationSpecification {
 
 	void "subscriber can get the historical keys and decrypt old encrypted messages using an RSA key pair"() {
 		// publishing historical messages with different group keys before subscribing
-		List<GroupKey> keys = [genKey()]
+		List<GroupKey> keys = [GroupKey.generate(), GroupKey.generate()]
 		publisher.publish(stream, [test: 'clear text'], new Date(), null, keys[0])
-		keys.add(genKey())
 		publisher.publish(stream, [test: 'another clear text'], new Date(), null, keys[1])
 		Thread.sleep(3000)
 
@@ -319,14 +307,13 @@ class StreamrWebsocketSpec extends StreamrIntegrationSpecification {
 	}
 
 	void "subscribe with resend last"() {
-		Subscription sub
 		boolean received = false
 
 		when:
 		publisher.publish(stream, [i: 1])
 		Thread.sleep(6000) // wait to land in storage
 		// Subscribe to the stream
-		sub = subscriber.subscribe(stream, 0, new MessageHandler() {
+		subscriber.subscribe(stream, 0, new MessageHandler() {
 			@Override
 			void onMessage(Subscription s, StreamMessage message) {
 				received = message.getParsedContent() == [i: 1]
@@ -348,7 +335,7 @@ class StreamrWebsocketSpec extends StreamrIntegrationSpecification {
 		Thread.sleep(2000)
 
         // Subscribe to the stream
-        Subscription sub = subscriber.subscribe(stream, 0, new MessageHandler() {
+        subscriber.subscribe(stream, 0, new MessageHandler() {
             @Override
             void onMessage(Subscription s, StreamMessage message) {
                 received = message.getParsedContent() == [i: 1]
@@ -374,7 +361,6 @@ class StreamrWebsocketSpec extends StreamrIntegrationSpecification {
 		}
 		Thread.sleep(6000) // wait to land in storage
 
-		int i = 0
 		// Resend last
 		subscriber.resend(stream, 0, new MessageHandler() {
 			@Override
@@ -415,7 +401,6 @@ class StreamrWebsocketSpec extends StreamrIntegrationSpecification {
 		}
 		Thread.sleep(6000) // wait to land in storage
 
-		int i = 0
 		// Resend from
 		subscriber.resend(stream, 0, new MessageHandler() {
 			@Override

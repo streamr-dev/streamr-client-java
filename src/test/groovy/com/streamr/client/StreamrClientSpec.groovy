@@ -179,6 +179,33 @@ class StreamrClientSpec extends StreamrSpecification {
         !((PublishRequest)server.receivedControlMessages[0].message).streamMessage.getSerializedContent().contains("secret")
     }
 
+    void "publish() publishes with the key given as argument"() {
+        GroupKey groupKey = GroupKey.generate()
+
+        when:
+        client.publish(stream, [test: "secret"], new Date(), null, groupKey)
+
+        then:
+        new PollingConditions().eventually {
+            server.receivedControlMessages.size() == 1
+        }
+        ((PublishRequest)server.receivedControlMessages[0].message).streamMessage.getGroupKeyId() == groupKey.groupKeyId
+        !((PublishRequest)server.receivedControlMessages[0].message).streamMessage.getSerializedContent().contains("secret")
+
+        when:
+        // The group key is not given in the next call
+        client.publish(stream, [test: "another"])
+
+        then:
+        // The message is still encrypted with the current key
+        new PollingConditions().eventually {
+            server.receivedControlMessages.size() == 2
+        }
+        ((PublishRequest)server.receivedControlMessages[1].message).streamMessage.getGroupKeyId() == groupKey.groupKeyId
+        !((PublishRequest)server.receivedControlMessages[1].message).streamMessage.getSerializedContent().contains("another")
+
+    }
+
     void "publish() called with the current GroupKey does not rotate the key"() {
         GroupKey groupKey = GroupKey.generate()
         client.getKeyStore().add(stream.getId(), groupKey)

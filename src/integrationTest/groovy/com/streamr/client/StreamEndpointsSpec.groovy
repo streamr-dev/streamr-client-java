@@ -175,7 +175,7 @@ class StreamEndpointsSpec extends StreamrIntegrationSpecification {
         when:
         List<String> publishers = client.getPublishers(createdResult.id)
         then:
-        publishers == [client.getPublisherId()]
+        publishers == [client.getPublisherId().toString()]
     }
 
     void "isPublisher()"() {
@@ -195,14 +195,14 @@ class StreamEndpointsSpec extends StreamrIntegrationSpecification {
         when:
         List<String> subscribers = client.getSubscribers(createdResult.id)
         then:
-        subscribers == [client.getPublisherId()]
+        subscribers == [client.getPublisherId().toString()]
     }
 
     void "isSubscriber()"() {
         Stream proto = new Stream(generateResourceName(), "This stream was created from an integration test")
         Stream createdResult = client.createStream(proto)
         when:
-        boolean isValid1 = client.isSubscriber(createdResult.id, client.getPublisherId())
+        boolean isValid1 = client.isSubscriber(createdResult.id, client.getPublisherId().toString())
         boolean isValid2 = client.isSubscriber(createdResult.id, "wrong-address")
         then:
         isValid1

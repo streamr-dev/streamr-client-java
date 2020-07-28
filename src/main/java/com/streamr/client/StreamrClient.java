@@ -421,12 +421,22 @@ public class StreamrClient extends StreamrRESTClient {
         // Convenience feature: allow user to call publish() without having had called connect() beforehand.
         connect();
 
-        // If the key was given and it's not the key currently in use, rotate the key
-        if (groupKey != null && !groupKey.equals(keyStore.getCurrentKey(stream.getId()))) {
-            keyExchangeUtil.rotate(stream.getId(), groupKey);
-        } else if (groupKey == null) {
-            // If no key was given, use the current key
-            groupKey = keyStore.getCurrentKey(stream.getId());
+        GroupKey currentKey = keyStore.getCurrentKey(stream.getId());
+
+        // Handle the key given as argument
+        if (groupKey != null) {
+            // If the given key is not the current key, announce the new key
+            if (currentKey != null && !groupKey.equals(currentKey)) {
+                keyExchangeUtil.rotate(stream.getId(), groupKey);
+            }
+
+            // Add it to the store if it's not there already
+            if (keyStore.get(stream.getId(), groupKey.getGroupKeyId()) == null) {
+                keyStore.add(stream.getId(), groupKey);
+            }
+
+            // Use the given key
+            currentKey = groupKey;
         }
 
         // Check if an automatic rekey is needed
@@ -434,7 +444,7 @@ public class StreamrClient extends StreamrRESTClient {
             keyExchangeUtil.rekey(stream.getId(), true);
         }
 
-        StreamMessage streamMessage = msgCreationUtil.createStreamMessage(stream, payload, timestamp, partitionKey, groupKey);
+        StreamMessage streamMessage = msgCreationUtil.createStreamMessage(stream, payload, timestamp, partitionKey, currentKey);
         try {
             publish(streamMessage);
         } catch (WebsocketNotConnectedException e) {
