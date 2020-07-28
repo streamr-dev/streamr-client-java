@@ -52,7 +52,7 @@ public class StreamrClient extends StreamrRESTClient {
 
     protected final Subscriptions subs = new Subscriptions();
 
-    private String publisherId = null;
+    private Address publisherId = null;
     private final EncryptionUtil encryptionUtil;
     private final MessageCreationUtil msgCreationUtil;
     private final StreamMessageValidator streamMessageValidator;
@@ -74,7 +74,7 @@ public class StreamrClient extends StreamrRESTClient {
         super(options);
         AddressValidityUtil addressValidityUtil = new AddressValidityUtil(streamId -> {
             try {
-                return getSubscribers(streamId).stream().map(address -> new Address(address)).collect(Collectors.toList());
+                return getSubscribers(streamId).stream().map(Address::new).collect(Collectors.toList());
             } catch (IOException e) {
                 throw new RuntimeException(e);
             }
@@ -86,7 +86,7 @@ public class StreamrClient extends StreamrRESTClient {
             }
         }, streamId -> {
             try {
-                return getPublishers(streamId).stream().map(address -> new Address(address)).collect(Collectors.toList());
+                return getPublishers(streamId).stream().map(Address::new).collect(Collectors.toList());
             } catch (IOException e) {
                 throw new RuntimeException(e);
             }
@@ -108,17 +108,17 @@ public class StreamrClient extends StreamrRESTClient {
         if (options.getAuthenticationMethod() instanceof ApiKeyAuthenticationMethod) {
             try {
                 UserInfo info = getUserInfo();
-                publisherId = DigestUtils.sha256Hex(info.getUsername() == null ? info.getId() : info.getUsername());
+                publisherId = new Address(DigestUtils.sha256Hex(info.getUsername() == null ? info.getId() : info.getUsername()));
             } catch (IOException e) {
                 throw new RuntimeException(e);
             }
         } else if (options.getAuthenticationMethod() instanceof EthereumAuthenticationMethod) {
-            publisherId = ((EthereumAuthenticationMethod) options.getAuthenticationMethod()).getAddress();
+            publisherId = new Address(((EthereumAuthenticationMethod) options.getAuthenticationMethod()).getAddress());
 
             // The key exchange stream is a system stream.
             // It doesn't explicitly exist, but as per spec, we can subscribe to it anyway.
             keyExchangeStream = new Stream("Key exchange stream for " + publisherId, "");
-            keyExchangeStream.setId(KeyExchangeUtil.getKeyExchangeStreamId(new Address(publisherId)));
+            keyExchangeStream.setId(KeyExchangeUtil.getKeyExchangeStreamId(publisherId));
             keyExchangeStream.setPartitions(1);
         }
         SigningUtil signingUtil = null;
@@ -129,7 +129,7 @@ public class StreamrClient extends StreamrRESTClient {
         // Create key storage
         keyStore = options.getEncryptionOptions().getKeyStore();
 
-        msgCreationUtil = new MessageCreationUtil(new Address(publisherId), signingUtil);
+        msgCreationUtil = new MessageCreationUtil(publisherId, signingUtil);
         encryptionUtil = new EncryptionUtil(options.getEncryptionOptions().getRsaPublicKey(),
                 options.getEncryptionOptions().getRsaPrivateKey());
         keyExchangeUtil = new KeyExchangeUtil(keyStore, msgCreationUtil, encryptionUtil, addressValidityUtil,
@@ -328,7 +328,7 @@ public class StreamrClient extends StreamrRESTClient {
         return this.websocket == null ? ReadyState.CLOSED : this.websocket.getReadyState();
     }
 
-    public String getPublisherId() {
+    public Address getPublisherId() {
         return publisherId;
     }
 
