@@ -18,4 +18,10 @@ public class UnsubscribeResponse extends ControlMessage {
     public int getStreamPartition() {
         return streamPartition;
     }
+
+    @Override
+    public String toString() {
+        return String.format("UnsubscribeResponse{requestId=%s, streamId=%s, streamPartition=%s",
+                getRequestId(), streamId, streamPartition);
+    }
 }

@@ -342,7 +342,16 @@ public class StreamMessage implements ITimestamped {
 
     @Override
     public String toString() {
-        return this.getClass().getSimpleName() + ": " + this.serialize();
+        return messageType+"{" +
+                "messageID=" + messageID +
+                ", previousMessageRef=" + previousMessageRef +
+                ", content='" + serializedContent + '\'' +
+                ", contentType=" + contentType +
+                ", encryptionType=" + encryptionType +
+                ", groupKeyId='" + groupKeyId + '\'' +
+                ", signatureType=" + signatureType +
+                ", signature='" + signature + '\'' +
+                '}';
     }
 
     @Override

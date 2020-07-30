@@ -183,7 +183,6 @@ public class StreamrClient extends StreamrRESTClient {
 
                 @Override
                 public void send(String text) throws NotYetConnectedException {
-                    log.trace(">> {} (client {})", text, getPublisherId());
                     super.send(text);
                 }
             };
@@ -321,6 +320,7 @@ public class StreamrClient extends StreamrRESTClient {
     }
 
     private void send(ControlMessage message) {
+        log.trace("[{}] >> {}", publisherId != null ? publisherId.toString().substring(0, 6) : null, message);
         this.websocket.send(message.toJson());
     }
 
@@ -342,10 +342,11 @@ public class StreamrClient extends StreamrRESTClient {
 
     protected void handleMessage(String rawMessageAsString) {
         try {
-            log.trace("<< {} (client {})", rawMessageAsString, getPublisherId());
-
             // Handle different message types
             ControlMessage message = ControlMessage.fromJson(rawMessageAsString);
+
+            log.trace("[{}] << {}", publisherId != null ? publisherId.toString().substring(0, 6) : null, message);
+
             if (message != null) {
                 try {
                     if (message.getType() == BroadcastMessage.TYPE) {
@@ -456,8 +457,7 @@ public class StreamrClient extends StreamrRESTClient {
     }
 
     private void publish(StreamMessage streamMessage) {
-        PublishRequest req = new PublishRequest(newRequestId("pub"), streamMessage, getSessionToken());
-        getWebsocket().send(req.toJson());
+        send(new PublishRequest(newRequestId("pub"), streamMessage, getSessionToken()));
     }
 
     public void rekey(Stream stream) {
@@ -489,15 +489,15 @@ public class StreamrClient extends StreamrRESTClient {
         Subscription sub;
         BasicSubscription.GroupKeyRequestFunction requestFunction = (publisherId, groupKeyIds) -> sendGroupKeyRequest(stream.getId(), publisherId, groupKeyIds);
         if (resendOption == null) {
-            sub = new RealTimeSubscription(stream.getId(), partition, handler, keyStore,
+            sub = new RealTimeSubscription(stream.getId(), partition, handler, keyStore, keyExchangeUtil,
                     requestFunction, options.getPropagationTimeout(), options.getResendTimeout(),
                     options.getSkipGapsOnFullQueue());
         } else if (isExplicitResend) {
-            sub = new HistoricalSubscription(stream.getId(), partition, handler, keyStore, resendOption,
+            sub = new HistoricalSubscription(stream.getId(), partition, handler, keyStore, keyExchangeUtil, resendOption,
                     requestFunction, options.getPropagationTimeout(), options.getResendTimeout(),
                     options.getSkipGapsOnFullQueue());
         } else {
-            sub = new CombinedSubscription(stream.getId(), partition, handler, keyStore, resendOption, requestFunction,
+            sub = new CombinedSubscription(stream.getId(), partition, handler, keyStore, keyExchangeUtil, resendOption, requestFunction,
                     options.getPropagationTimeout(), options.getResendTimeout(), options.getSkipGapsOnFullQueue());
         }
         sub.setGapHandler((MessageRef from, MessageRef to, Address publisherId, String msgChainId) -> {

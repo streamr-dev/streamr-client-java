@@ -19,4 +19,10 @@ public abstract class ResendResponse extends ControlMessage {
         return streamPartition;
     }
 
+    @Override
+    public String toString() {
+        return String.format("%s{requestId=%s, streamId=%s, streamPartition=%s",
+                getClass().getSimpleName(), getRequestId(), streamId, streamPartition);
+    }
+
 }

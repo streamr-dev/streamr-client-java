@@ -15,4 +15,10 @@ public class BroadcastMessage extends ControlMessage {
     public StreamMessage getStreamMessage() {
         return streamMessage;
     }
+
+    @Override
+    public String toString() {
+        return String.format("BroadcastMessage{requestId=%s, streamMessage=%s",
+                getRequestId(), streamMessage);
+    }
 }

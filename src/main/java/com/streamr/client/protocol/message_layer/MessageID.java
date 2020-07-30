@@ -56,4 +56,16 @@ public class MessageID {
     public String getMsgChainId() {
         return msgChainId;
     }
+
+    @Override
+    public String toString() {
+        return "MessageID{" +
+                "streamId='" + streamId + '\'' +
+                ", streamPartition=" + streamPartition +
+                ", timestamp=" + timestamp +
+                ", sequenceNumber=" + sequenceNumber +
+                ", publisherId='" + publisherId + '\'' +
+                ", msgChainId='" + msgChainId + '\'' +
+                '}';
+    }
 }

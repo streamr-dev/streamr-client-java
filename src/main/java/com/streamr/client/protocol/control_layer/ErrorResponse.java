@@ -18,4 +18,10 @@ public class ErrorResponse extends ControlMessage {
     public String getErrorCode() {
         return errorCode;
     }
+
+    @Override
+    public String toString() {
+        return String.format("ErrorResponse{requestId=%s, errorCode=%s, errorMessage=%s",
+                getRequestId(), errorCode, errorMessage);
+    }
 }

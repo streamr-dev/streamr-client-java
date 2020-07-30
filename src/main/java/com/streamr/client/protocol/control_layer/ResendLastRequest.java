@@ -31,4 +31,10 @@ public class ResendLastRequest extends ControlMessage {
     public String getSessionToken() {
         return sessionToken;
     }
+
+    @Override
+    public String toString() {
+        return String.format("ResendLastRequest{requestId=%s, streamId=%s, streamPartition=%s, numberLast=%s, sessionToken=%s",
+                getRequestId(), streamId, streamPartition, numberLast, sessionToken);
+    }
 }

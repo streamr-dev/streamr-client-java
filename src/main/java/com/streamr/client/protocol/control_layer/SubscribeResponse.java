@@ -20,4 +20,10 @@ public class SubscribeResponse extends ControlMessage {
         return streamPartition;
     }
 
+    @Override
+    public String toString() {
+        return String.format("SubscribeResponse{requestId=%s, streamId=%s, streamPartition=%s",
+                getRequestId(), streamId, streamPartition);
+    }
+
 }

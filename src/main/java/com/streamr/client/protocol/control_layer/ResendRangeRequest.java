@@ -62,4 +62,10 @@ public class ResendRangeRequest extends ControlMessage {
     public String getSessionToken() {
         return sessionToken;
     }
+
+    @Override
+    public String toString() {
+        return String.format("ResendRangeRequest{requestId=%s, streamId=%s, streamPartition=%s, fromMsgRef=%s, toMsgRef=%s, publisherId=%s, msgChainId=%s, sessionToken=%s",
+                getRequestId(), streamId, streamPartition, fromMsgRef, toMsgRef, publisherId, msgChainId, sessionToken);
+    }
 }

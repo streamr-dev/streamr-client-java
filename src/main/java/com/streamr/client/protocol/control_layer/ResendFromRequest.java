@@ -44,4 +44,10 @@ public class ResendFromRequest extends ControlMessage {
     public String getSessionToken() {
         return sessionToken;
     }
+
+    @Override
+    public String toString() {
+        return String.format("ResendFromRequest{requestId=%s, streamId=%s, streamPartition=%s, fromMsgRef=%s, publisherId=%s, sessionToken=%s",
+                getRequestId(), streamId, streamPartition, fromMsgRef, publisherId, sessionToken);
+    }
 }
