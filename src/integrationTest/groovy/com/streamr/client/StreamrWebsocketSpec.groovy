@@ -285,7 +285,7 @@ class StreamrWebsocketSpec extends StreamrIntegrationSpecification {
 				}
 
 			}
-		}, new ResendLastOption(2))
+		}, new ResendLastOption(3)) // need to resend 3 messages because the announce counts
 
 		then:
 		within10sec.eventually {
@@ -481,7 +481,7 @@ class StreamrWebsocketSpec extends StreamrIntegrationSpecification {
 				Thread.sleep(500)
 			}
 		}
-		Thread.sleep(2000) // make sure the publisher has time to publish some messages
+		Thread.sleep(5000) // make sure some published messages have time to get written to storage
 
 		when:
 		// Subscribe with resend last
@@ -489,8 +489,6 @@ class StreamrWebsocketSpec extends StreamrIntegrationSpecification {
 			@Override
 			void onMessage(Subscription s, StreamMessage message) {
 				receivedMessages++
-				// TODO: remove println
-				System.out.println("Subscriber received message ${message.getMessageRef()}")
 			}
 		}, new ResendLastOption(1000)) // resend all previous messages to make the counters match
 		Thread.sleep(3000) // Time to do the key exchanges etc.
