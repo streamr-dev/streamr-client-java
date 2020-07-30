@@ -180,7 +180,7 @@ public class KeyExchangeUtil {
         publishFunction.accept(groupKeyResetMsg);
     }
 
-    public void rekey(String streamId, boolean getSubscribersLocally) {
+    public GroupKey rekey(String streamId, boolean getSubscribersLocally) {
         GroupKey newKey = GroupKey.generate();
         keyStore.add(streamId, newKey);
 
@@ -197,6 +197,7 @@ public class KeyExchangeUtil {
             }
         }
         revoked.forEach(publicKeys::remove); // remove all revoked (Ethereum address --> RSA public key) from local cache
+        return newKey;
     }
 
     public static String getKeyExchangeStreamId(Address recipientAddress) {

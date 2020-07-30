@@ -249,7 +249,7 @@ class MessageCreationUtilSpec extends StreamrSpecification {
         msgCreationUtil = new MessageCreationUtil(publisherId, null)
 
         when:
-        msgCreationUtil.createGroupKeyAnnounceOnStream("streamId", [GroupKey.generate()], GroupKey.generate())
+        msgCreationUtil.createGroupKeyAnnounceOnStream("streamId", [GroupKey.generate()], GroupKey.generate(), new Date())
         then:
         thrown SigningRequiredException
     }
@@ -259,7 +259,7 @@ class MessageCreationUtilSpec extends StreamrSpecification {
         GroupKey newGroupKey = GroupKey.generate()
 
         when:
-        StreamMessage msg = msgCreationUtil.createGroupKeyAnnounceOnStream("streamId",  [newGroupKey], oldGroupKey)
+        StreamMessage msg = msgCreationUtil.createGroupKeyAnnounceOnStream("streamId",  [newGroupKey], oldGroupKey, new Date())
 
         then:
         msg.getStreamId() == "streamId"

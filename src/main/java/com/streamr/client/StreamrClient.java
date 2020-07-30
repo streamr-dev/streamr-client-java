@@ -146,6 +146,10 @@ public class StreamrClient extends StreamrRESTClient {
         this(new StreamrClientOptions(authenticationMethod));
     }
 
+    public StreamrClient() {
+        this(new StreamrClientOptions());
+    }
+
     private void initWebsocket() {
         try {
             this.websocket = new WebSocketClient(new URI(options.getWebsocketApiUrl())) {
@@ -411,11 +415,19 @@ public class StreamrClient extends StreamrRESTClient {
      */
 
     public void publish(Stream stream, Map<String, Object> payload) {
-        publish(stream, payload, new Date(), null);
+        publish(stream, payload, new Date(), null, null);
+    }
+
+    public void publish(Stream stream, Map<String, Object> payload, GroupKey groupKey) {
+        publish(stream, payload, new Date(), null, groupKey);
     }
 
     public void publish(Stream stream, Map<String, Object> payload, Date timestamp) {
-        publish(stream, payload, timestamp, null);
+        publish(stream, payload, timestamp, null, null);
+    }
+
+    public void publish(Stream stream, Map<String, Object> payload, Date timestamp, GroupKey groupKey) {
+        publish(stream, payload, timestamp, null, groupKey);
     }
 
     public void publish(Stream stream, Map<String, Object> payload, Date timestamp, String partitionKey) {
@@ -464,8 +476,8 @@ public class StreamrClient extends StreamrRESTClient {
         send(new PublishRequest(newRequestId("pub"), streamMessage, getSessionToken()));
     }
 
-    public void rekey(Stream stream) {
-        keyExchangeUtil.rekey(stream.getId(), false);
+    public GroupKey rekey(Stream stream) {
+        return keyExchangeUtil.rekey(stream.getId(), false);
     }
 
     /*

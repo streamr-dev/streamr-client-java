@@ -35,7 +35,7 @@ And the artifact itself:
   <dependency>
     <groupId>com.streamr</groupId>
     <artifactId>client</artifactId>
-    <version>1.5.0</version>
+    <version>2.0.0</version>
   </dependency>
   ...
 </dependencies>
@@ -54,13 +54,13 @@ repositories {
 And the artifact itself:
 ```
 dependencies {
-    implementation 'com.streamr:client:1.5.0'
+    implementation 'com.streamr:client:2.0.0'
 }
 ```
 
 # Usage
 
-Every interaction with the API is done through a `StreamrClient` instance. In the following sections, we will see how to:
+Every interaction with Streamr is done through a `StreamrClient` instance. In the following sections, we will see how to:
 - [Create a `StreamrClient` instance with different options](#options)
 - [Create Streams](#creating-streams)
 - [Look up Streams](#looking-up-streams)
@@ -70,10 +70,24 @@ Every interaction with the API is done through a `StreamrClient` instance. In th
 <a name="options"></a>
 ## Instantiation and options
 
-Every interaction with the API is done through a `StreamrClient` object which is constructed with a `StreamrClientOptions` object:
+Quickstart (unauthenticated):
 
 ```java
-StreamrClientOptions options = ...
+StreamrClient client = new StreamrClient();
+```
+
+Quickstart (authenticated):
+
+```java
+// An Ethereum private key to use for signing and identity
+String myPrivateKey = "0x..."; 
+StreamrClient client = new StreamrClient(new EthereumAuthenticationMethod(myPrivateKey));
+```
+
+For full configuration of the client's behavior, you can construct the client with `StreamrClientOptions`:
+
+```java
+StreamrClientOptions options = new StreamrClientOptions(...);
 StreamrClient client = new StreamrClient(options);
 ```
 
@@ -92,15 +106,7 @@ StreamrClientOptions(
 )
 ```
 
-All the classes listed above can be imported from `com.streamr.client.options.*`. Commonly, only the `AuthenticationMethod` has to be set and all the other parameters can be set to their default value, which is why there is a shorthand constructor for the `StreamrClient`:
-
-```java
-// See Authentication section
-AuthenticationMethod auth = ...
-StreamrClient client = new StreamrClient(auth); 
-```
-
-Nevertheless, the next subsections will cover every parameter of the `StreamrClientOptions` constructor:
+The next subsections will cover every parameter of the `StreamrClientOptions` constructor:
 - [Authentication options](#authentication)
 - [Signing options](#signing)
 - [Encryption options](#encryption)
@@ -110,16 +116,8 @@ Nevertheless, the next subsections will cover every parameter of the `StreamrCli
 ### Authentication
 To authenticate as a Streamr user, provide an `AuthenticationMethod` instance. We have two concrete classes that extend `AuthenticationMethod`:
 
-- `ApiKeyAuthenticationMethod(String apiKey)`
 - `EthereumAuthenticationMethod(String ethereumPrivateKey)`
-
-To authenticate with an API key, create an `ApiKeyAuthenticationMethod` instance and pass it to the `StreamrClient` constructor:
-
-```java
-StreamrClient client = new StreamrClient(new ApiKeyAuthenticationMethod(myApiKey)); 
-```
-
-The library will automatically fetch a session token using the provided API key to allow authenticated requests to be made.
+- `ApiKeyAuthenticationMethod(String apiKey)` (deprecated and will be removed in the future)
 
 To authenticate with an Ethereum account, create an `EthereumAuthenticationMethod` instance and pass it to the `StreamrClient` constructor:
 
@@ -171,85 +169,54 @@ NEVER | All signed events are verified. Unsigned events are always accepted.
 <a name="encryption"></a>
 ### Encryption
 
-We first introduce the `UnencryptedGroupKey` class: it defines a symmetric AES-256 group key used by the publisher to encrypt data and by the subscriber to decrypt data. It can be constructed as follows:
-```java
-// hexadecimal representation of an AES 256 bit key
-String groupKey1Hex = "0xb9e447d458ed8e5cb24cbd7dd0e957b44ef3109917cd2b7517857429b2659b5b";
-// specify when the key was first used to encrypt
-Date start = new Date(4134515);
-UnencryptedGroupKey key1 = new GroupKey(groupKey1Hex, start);
-// can also specify only the hex string (default start time is now)
-UnencryptedGroupKey key2 = new GroupKey("0xa75113d458ed8e5cb24cbd7dd0e957b44ef3109917cd2b7517857429b26599f2");
-```
-
-These `UnencryptedGroupKey`s can then be passed as maps to the `EncryptionOptions`:
+We first introduce the `GroupKey` class: it defines a symmetric AES-256 group key used by the publisher to encrypt data and by the subscriber to decrypt data. A new, random `GroupKey` can be generated as follows:
 
 ```java
-// streamId -> UnencryptedGroupKey
-HashMap<String, UnencryptedGroupKey> publisherGroupKeys = ...;
-// streamId -> (publisherId -> UnencryptedGroupKey)
-HashMap<String, HashMap<String, UnencryptedGroupKey>> subscriberGroupKeys = ...;
-
-EncryptionOptions options = new EncryptionOptions(publisherGroupKeys, subscriberGroupKeys);
+GroupKey groupKey = GroupKey.generate();
 ```
 
-In most cases, these `UnencryptedGroupKey`s are not known in advance by the subscribers who will obtain them using the key exchange mechanism. This mechanism requires the subscriber to have an RSA key pair, which will be automatically generated if none is provided. The publisher can choose whether to store all `UnencryptedGroupKey`s used or only the latest `UnencryptedGroupKey` used. If historical keys are stored (they are by default), subscribers will be able to decrypt resent historical messages. These options can be passed to the `EncryptionOptions`:
+The `GroupKey` can then be passed to the `publish` method to publish end-to-end encrypted messages:
 
 ```java
-// default is true
-boolean storeKeys = false;
-// RSA keys as Strings must be in the PEM format, generated if not passed to the encryption options
-String rsaPrivateKey = "-----BEGIN RSA PRIVATE KEY-----...";
-String rsaPublicKey = "-----BEGIN RSA PUBLIC KEY-----...";
-
-EncryptionOptions options = new EncryptionOptions(publisherGroupKeys, subscriberGroupKeys, storeKeys, rsaPublicKey, rsaPrivateKey);
+client.publish(stream, payload, groupKey);
 ```
 
-You can also pass RSA keys using the `java.security` classes:
+To rotate the key, simply generate a new one. This will announce the new key to everyone who has the current key. Rotating the key every now and then establishes forward secrecy: compromised future `GroupKey`s will not reveal previous messages. 
 
 ```java
-import java.security.*;
-
-KeyPairGenerator generator = KeyPairGenerator.getInstance("RSA");
-generator.initialize(4096, new SecureRandom());
-
-KeyPair pair = generator.generateKeyPair();
-RSAPublicKey rsaPublicKey = (RSAPublicKey) pair.getPublic();
-RSAPrivateKey rsaPrivateKey = (RSAPrivateKey) pair.getPrivate();
-
-EncryptionOptions options = new EncryptionOptions(publisherGroupKeys, subscriberGroupKeys, false, rsaPublicKey, rsaPrivateKey);
+groupKey = GroupKey.generate(); // Generate new key
+client.publish(stream, payload, groupKey); // Publish as usual
 ```
 
-We also need a way to revoke subscribers whose subscription expired. To this end, we need to "rekey" the system, meaning that a new group key must be defined by the publishers and shared only with the remaining subscibers and not the revoked ones.
+Subscribers normally obtain the `GroupKey` via an automatic key exchange mechanism, which is triggered if the subscriber receives messages for which they don't have the key. As an alternative, keys can also be pre-shared manually and configured on the client like this:
 
-For now, the rekeying scheme is very simple and inefficient: for each remaining subscribers, the publisher sends to the susbcriber the group key encrypted with the subscriber's RSA public key.
+```
+client.getKeyStore().add(streamId, new GroupKey(keyId, groupKeyHex));
+```
+
+We also need a way to revoke subscribers whose subscription has expired. This is accomplished with a rekey, which means that a new group key is chosen by the publisher and sent to the remaining valid subscribers but not to the revoked ones. The rekey is a fairly intensive operation which should be used only when necessary.
 
 There are two ways to rekey (examples below):
-- using the automatic built-in revocation mechanism: it periodically checks how many subscribers should be revoked and rekey if the number reaches a threshold (5 subscribers).
-- explicitly calling the `rekey` method
+- By using the automatic built-in revocation mechanism: it periodically checks how many subscribers should be revoked and rekey if the number reaches a threshold (5 subscribers).
+- By explicitly calling the `client.rekey(stream)` method at any time.
 
 ```java
-// default is true
-boolean autoRevoke = false; // determines whether the automatic revocation mechanism is to be used or not. In this case, it is deactivated.
-EncryptionOptions options = new EncryptionOptions(publisherGroupKeys, subscriberGroupKeys, storeKeys, rsaPublicKey, rsaPrivateKey, autoRevoke);
+// autoRevoke determines whether the automatic revocation mechanism is to be used or not. 
+// In this case, it is deactivated.
+boolean autoRevoke = false; // default is true 
+EncryptionOptions encryptionOptions = new EncryptionOptions(autoRevoke);
 
-StreamrClient client = new StreamrClient(...); // passing the encryption options here
+StreamrClient client = new StreamrClient(new StreamrClientOptions(...)); // passing the encryptionOptions here
 
-client.publish("streamId", ...); // publishing some message with an initial key
+GroupKey key = GroupKey.generate()
+client.publish("streamId", payload, key); // publishing some message with an initial key
 
-client.rekey("streamId"); // can trigger a rekey of the stream at any moment to potentially revoke subscribers.
+// You can trigger a rekey of the stream at any moment to revoke any expired subscribers from the next message.
+key = client.rekey("streamId");
 
-client.publish("streamId", ...) // publishing with the new key generated during the rekey.
+// Publish with the new key generated during the rekey.
+client.publish("streamId", payload, key); 
 ```
-
-
-You can also use the default `EncryptionOptions`:
-
-```java
-// empty UnencryptedGroupKey maps, publisher stores historical keys, automatically generated RSA key pair, autoRevoke is set
-EncryptionOptions options = EncryptionOptions.getDefault();
-```
-
 
 <a name="other-options"></a>
 ### Other options
@@ -258,8 +225,8 @@ The following table describes the other options of the `StreamrClientOptions` co
 
 Option | Default value | Description
 ------ | ------------- | -----------
-websocketApiUrl | wss://www.streamr.com/api/v1/ws | Address of the Streamr websocket endpoint to connect to.
-restApiUrl | https://www.streamr.com/api/v1 | Base URL of the Streamr REST API.
+websocketApiUrl | wss://streamr.network/api/v1/ws | Address of the websocket endpoint to connect to.
+restApiUrl | https://streamr.network/api/v1 | Base URL of the Streamr REST API.
 gapFillTimeout | 5 seconds | When a gap between two received events is detected, a resend request is sent periodically until the gap is resolved. This option determines that period. 
 retryResendAfter | 5 seconds | When subscribing with a resend option (See [this](#subscribing-unsubscribing) section), the messages requested by a first resend request might not be available yet. This option determines after how much time, the resend must be requested a second time.
 skipGapsOnFullQueue | true | Determine behaviour in the case of gap filling failure. Default behaviour (`true`) is to clear the internal queue of messages and start immediately processing new incoming messages. This means that any queued messages are effectively ignored and skipped. If it is more important that messages be processed at the expense of latency, this should be set to `false`. This will mean that in the case of gap filling failure, the next messages (and potential gaps) in the queue will be processed in order. This comes at the expense of the real-time.
@@ -321,19 +288,20 @@ All events are timestamped. The above example assigns the current timestamp to t
 client.publish(stream, msg, new Date());
 ```
 
-By default the stream partition is 0, but you can publish using a specific partition key:
+By default streams have one partition. For streams with multiple partitions, you can map messages to partitions using a partition key. The same partition key always maps to the same partition:
 ```java
 client.publish(stream, msg, new Date(), "myPartitionKey");
 ```
 
-The events can be encrypted using AES-256 in CTR mode. The group keys can be set at construction (See [encryption options](#encryption)). But in order to prevent new subscribers to eavesdrop and then decrypt past messages, the key can be updated at will when publishing:
+The events can be end-to-end encrypted by passing a `GroupKey` to the `publish` method:
 
 ```java
-String newGroupKey = "0x..."
-// The key is updated to be 'newGroupKey' and sent along with 'msg'
-client.publish(stream, msg, new Date(), null, newGroupKey)
-// next messages are encrypted with 'newGroupKey'
-client.publish(stream, msg2)
+GroupKey key = GroupKey.generate();
+client.publish(stream, msg, key);
+
+// You can rotate the key at any time
+GroupKey newKey = GroupKey.generate();
+client.publish(stream, msg2, newKey); // message is encrypted with newKey instead of key
 ```
 
 <a name="subscribing-unsubscribing"></a>
@@ -351,7 +319,7 @@ Subscription sub = client.subscribe(stream, new MessageHandler() {
 });
 ```
 
-You can also choose other options such as a specific partition to subscribe to or a resend option:
+You can also choose other options such as a specific partition to subscribe to (for load balancing high-volume, partitioned streams), or specify a resend option:
 
 ```java
 int partition = 0;
@@ -388,11 +356,6 @@ To stop receiving events from a Stream, pass the `Subscription` object you got w
 client.unsubscribe(sub);
 ```
 
-# TODO
-
-This library is work in progress. At least the following will be done, probably sooner than later:
-
-- Covering all of the Stream API
-- Covering the API endpoints for other resources than Streams
+### Contributions
 
 This library is officially developed and maintained by the Streamr core dev team, but community contributions are very welcome!

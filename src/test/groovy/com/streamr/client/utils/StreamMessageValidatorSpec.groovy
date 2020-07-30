@@ -68,7 +68,7 @@ class StreamMessageValidatorSpec extends StreamrSpecification {
 
         groupKeyRequest = subscriberMsgCreationUtil.createGroupKeyRequest(publisher, stream.getId(), encryptionUtil.publicKeyAsPemString, [groupKey.getGroupKeyId()])
         groupKeyResponse = publisherMsgCreationUtil.createGroupKeyResponse(subscriber, (GroupKeyRequest) AbstractGroupKeyMessage.fromStreamMessage(groupKeyRequest), [groupKey])
-        groupKeyAnnounceRotate = publisherMsgCreationUtil.createGroupKeyAnnounceOnStream(stream.getId(), [groupKey], previousGroupKey)
+        groupKeyAnnounceRotate = publisherMsgCreationUtil.createGroupKeyAnnounceOnStream(stream.getId(), [groupKey], previousGroupKey, new Date())
         groupKeyAnnounceRekey = publisherMsgCreationUtil.createGroupKeyAnnounceForSubscriber(subscriber, stream.getId(), encryptionUtil.publicKeyAsPemString, [groupKey])
         groupKeyErrorResponse = publisherMsgCreationUtil.createGroupKeyErrorResponse(subscriber, (GroupKeyRequest) AbstractGroupKeyMessage.fromStreamMessage(groupKeyRequest), new Exception("Test exception"))
 

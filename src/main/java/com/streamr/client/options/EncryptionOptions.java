@@ -41,6 +41,10 @@ public class EncryptionOptions {
         this(new InMemoryGroupKeyStore(), null, null);
     }
 
+    public EncryptionOptions(boolean autoRevoke) {
+        this(new InMemoryGroupKeyStore(), null, null, autoRevoke);
+    }
+
     public GroupKeyStore getKeyStore() {
         return keyStore;
     }
