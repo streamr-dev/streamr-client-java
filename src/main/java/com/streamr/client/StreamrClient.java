@@ -321,7 +321,11 @@ public class StreamrClient extends StreamrRESTClient {
 
     private void send(ControlMessage message) {
         log.trace("[{}] >> {}", publisherId != null ? publisherId.toString().substring(0, 6) : null, message);
-        this.websocket.send(message.toJson());
+        if (this.websocket != null) {
+            this.websocket.send(message.toJson());
+        } else {
+            log.warn("send: websocket is null, not sending message {}", message);
+        }
     }
 
     public ReadyState getState() {
