@@ -9,6 +9,7 @@ import com.streamr.client.subs.CombinedSubscription
 import com.streamr.client.subs.Subscription
 import com.streamr.client.utils.Address
 import com.streamr.client.utils.GroupKeyStore
+import com.streamr.client.utils.KeyExchangeUtil
 import com.streamr.client.utils.OrderedMsgChain
 
 class CombinedSubscriptionSpec extends StreamrSpecification {
@@ -22,7 +23,7 @@ class CombinedSubscriptionSpec extends StreamrSpecification {
             void onMessage(Subscription sub, StreamMessage message) {
 
             }
-        }, Mock(GroupKeyStore), new ResendLastOption(10), null, 10L, 10L, false)
+        }, Mock(GroupKeyStore), Mock(KeyExchangeUtil), new ResendLastOption(10), null, 10L, 10L, false)
         GapDetectedException ex
         sub.setGapHandler(new OrderedMsgChain.GapHandlerFunction() {
             @Override

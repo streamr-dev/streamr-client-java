@@ -11,14 +11,16 @@ class SubscriptionsSpec extends Specification {
 
 	private Subscriptions subs
 	private GroupKeyStore keyStore
+	private KeyExchangeUtil keyExchangeUtil
 
 	private RealTimeSubscription createSub(String streamId="stream", int partition=0) {
-		return new RealTimeSubscription(streamId, partition, null, keyStore, null)
+		return new RealTimeSubscription(streamId, partition, null, keyStore, keyExchangeUtil,null)
 	}
 
 	void setup() {
 		subs = new Subscriptions()
 		keyStore = Mock(GroupKeyStore)
+		keyExchangeUtil = Mock(KeyExchangeUtil)
 	}
 
 	void "subscriptions can be added and retrieved"() {

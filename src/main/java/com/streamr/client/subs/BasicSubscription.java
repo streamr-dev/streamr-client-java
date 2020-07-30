@@ -25,9 +25,9 @@ public abstract class BasicSubscription extends Subscription {
     private final GroupKeyRequestFunction groupKeyRequestFunction;
 
     public BasicSubscription(String streamId, int partition, MessageHandler handler, GroupKeyStore keyStore,
-                             GroupKeyRequestFunction groupKeyRequestFunction, long propagationTimeout,
+                             KeyExchangeUtil keyExchangeUtil, GroupKeyRequestFunction groupKeyRequestFunction, long propagationTimeout,
                              long resendTimeout, boolean skipGapsOnFullQueue) {
-        super(streamId, partition, handler, keyStore, propagationTimeout, resendTimeout, skipGapsOnFullQueue);
+        super(streamId, partition, handler, keyStore, keyExchangeUtil, propagationTimeout, resendTimeout, skipGapsOnFullQueue);
 
         orderingUtil = new OrderingUtil(
                 streamId, partition,
@@ -153,7 +153,12 @@ public abstract class BasicSubscription extends Subscription {
         try {
             boolean success = tryDecrypt(msg);
             if (success) {
-                handler.onMessage(this, msg);
+                // GroupKeyAnnounce messages can occur on normal streams, reroute them to the KeyExchangeUtil
+                if (msg.getMessageType() == StreamMessage.MessageType.GROUP_KEY_ANNOUNCE) {
+                    keyExchangeUtil.handleGroupKeyAnnounce(msg);
+                } else {
+                    handler.onMessage(this, msg);
+                }
             } else {
                 // If not successfully decrypted, request group key and queue the message
                 getLogger().debug("Failed to decrypt stream {} publisher {} ref {}, requesting group key {} and queuing message",

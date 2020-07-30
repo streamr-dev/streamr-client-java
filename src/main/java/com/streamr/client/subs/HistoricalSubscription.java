@@ -8,6 +8,7 @@ import com.streamr.client.protocol.message_layer.StreamMessage;
 import com.streamr.client.utils.Address;
 import com.streamr.client.utils.GroupKey;
 import com.streamr.client.utils.GroupKeyStore;
+import com.streamr.client.utils.KeyExchangeUtil;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -26,13 +27,14 @@ public class HistoricalSubscription extends BasicSubscription {
                                   int partition,
                                   MessageHandler handler,
                                   GroupKeyStore keyStore,
+                                  KeyExchangeUtil keyExchangeUtil,
                                   ResendOption resendOption,
                                   GroupKeyRequestFunction groupKeyRequestFunction,
                                   long propagationTimeout,
                                   long resendTimeout,
                                   boolean skipGapsOnFullQueue,
                                   Consumer<StreamMessage> onRealTimeMsg) {
-        super(streamId, partition, handler, keyStore, groupKeyRequestFunction, propagationTimeout, resendTimeout,
+        super(streamId, partition, handler, keyStore, keyExchangeUtil, groupKeyRequestFunction, propagationTimeout, resendTimeout,
                 skipGapsOnFullQueue);
         this.resendOption = resendOption;
         this.onRealTimeMsg = onRealTimeMsg;
@@ -42,12 +44,13 @@ public class HistoricalSubscription extends BasicSubscription {
                                   int partition,
                                   MessageHandler handler,
                                   GroupKeyStore keyStore,
+                                  KeyExchangeUtil keyExchangeUtil,
                                   ResendOption resendOption,
                                   GroupKeyRequestFunction groupKeyRequestFunction,
                                   long propagationTimeout,
                                   long resendTimeout,
                                   boolean skipGapsOnFullQueue) {
-        this(streamId, partition, handler, keyStore, resendOption, groupKeyRequestFunction, propagationTimeout,
+        this(streamId, partition, handler, keyStore, keyExchangeUtil, resendOption, groupKeyRequestFunction, propagationTimeout,
                 resendTimeout, skipGapsOnFullQueue, null);
     }
 
@@ -55,15 +58,16 @@ public class HistoricalSubscription extends BasicSubscription {
                                   int partition,
                                   MessageHandler handler,
                                   GroupKeyStore keyStore,
+                                  KeyExchangeUtil keyExchangeUtil,
                                   ResendOption resendOption,
                                   GroupKeyRequestFunction groupKeyRequestFunction) {
-        this(streamId, partition, handler, keyStore, resendOption, groupKeyRequestFunction,
+        this(streamId, partition, handler, keyStore, keyExchangeUtil, resendOption, groupKeyRequestFunction,
                 Subscription.DEFAULT_PROPAGATION_TIMEOUT, Subscription.DEFAULT_RESEND_TIMEOUT,
                 Subscription.DEFAULT_SKIP_GAPS_ON_FULL_QUEUE);
     }
 
-    public HistoricalSubscription(String streamId, int partition, MessageHandler handler, GroupKeyStore keyStore, ResendOption resendOption) {
-        this(streamId, partition, handler, keyStore, resendOption, null);
+    public HistoricalSubscription(String streamId, int partition, MessageHandler handler, GroupKeyStore keyStore, KeyExchangeUtil keyExchangeUtil, ResendOption resendOption) {
+        this(streamId, partition, handler, keyStore, keyExchangeUtil, resendOption, null);
     }
 
     @Override

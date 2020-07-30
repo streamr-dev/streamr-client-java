@@ -169,13 +169,13 @@ public class KeyExchangeUtil {
      * Rotates the key by publishing a new GroupKeyAnnounce message on the stream,
      * encrypted with the key currently in use.
      */
-    public void rotate(String streamId, GroupKey newKey) {
+    public void rotate(String streamId, GroupKey newKey, Date timestamp) {
         GroupKey currentKey = keyStore.getCurrentKey(streamId);
         if (currentKey == null) {
             throw new IllegalStateException("Can't rotate: there is no current key for stream " + streamId);
         }
 
-        StreamMessage groupKeyResetMsg = messageCreationUtil.createGroupKeyAnnounceOnStream(streamId, Collections.singletonList(newKey), keyStore.getCurrentKey(streamId));
+        StreamMessage groupKeyResetMsg = messageCreationUtil.createGroupKeyAnnounceOnStream(streamId, Collections.singletonList(newKey), keyStore.getCurrentKey(streamId), timestamp);
         keyStore.add(streamId, newKey);
         publishFunction.accept(groupKeyResetMsg);
     }

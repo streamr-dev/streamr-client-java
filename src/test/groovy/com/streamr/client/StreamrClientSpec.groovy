@@ -232,10 +232,13 @@ class StreamrClientSpec extends StreamrSpecification {
         new PollingConditions().eventually {
             server.receivedControlMessages.size() == 2 // announce & message
         }
-        ((PublishRequest)server.receivedControlMessages[0].message).streamMessage.getGroupKeyId() == currentKey.groupKeyId
-        ((PublishRequest)server.receivedControlMessages[0].message).streamMessage.getMessageType() == StreamMessage.MessageType.GROUP_KEY_ANNOUNCE
-        ((PublishRequest)server.receivedControlMessages[1].message).streamMessage.getGroupKeyId() == newKey.groupKeyId
-        !((PublishRequest)server.receivedControlMessages[1].message).streamMessage.getSerializedContent().contains("secret")
+        StreamMessage first =  ((PublishRequest) server.receivedControlMessages[0].message).streamMessage
+        StreamMessage second =  ((PublishRequest) server.receivedControlMessages[1].message).streamMessage
+        first.getGroupKeyId() == currentKey.groupKeyId
+        first.getMessageType() == StreamMessage.MessageType.GROUP_KEY_ANNOUNCE
+        second.getGroupKeyId() == newKey.groupKeyId
+        !second.getSerializedContent().contains("secret")
+        first.getMessageRef() < second.getMessageRef()
     }
 
     void "client reconnects while publishing if server is temporarily down"() {

@@ -140,7 +140,7 @@ public class MessageCreationUtil {
         return streamMessage;
     }
 
-    public StreamMessage createGroupKeyAnnounceOnStream(String streamId, List<GroupKey> newGroupKeys, GroupKey previousGroupKey) {
+    public StreamMessage createGroupKeyAnnounceOnStream(String streamId, List<GroupKey> newGroupKeys, GroupKey previousGroupKey, Date timestamp) {
         if (signingUtil == null) {
             throw new SigningRequiredException("Cannot create unsigned group key announce. Must authenticate with an Ethereum account");
         }
@@ -152,7 +152,7 @@ public class MessageCreationUtil {
 
         GroupKeyAnnounce announce = new GroupKeyAnnounce(streamId, encryptedGroupKeys);
 
-        Pair<MessageID, MessageRef> pair = createDefaultMsgIdAndRef(streamId);
+        Pair<MessageID, MessageRef> pair = createMsgIdAndRef(streamId, 0, timestamp.getTime());
         StreamMessage streamMessage = announce.toStreamMessage(pair.getLeft(), pair.getRight());
         streamMessage.setEncryptionType(StreamMessage.EncryptionType.AES);
         streamMessage.setGroupKeyId(previousGroupKey.getGroupKeyId());

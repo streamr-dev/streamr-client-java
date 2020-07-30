@@ -4,10 +4,7 @@ import com.streamr.client.MessageHandler;
 import com.streamr.client.exceptions.*;
 import com.streamr.client.options.ResendOption;
 import com.streamr.client.protocol.message_layer.StreamMessage;
-import com.streamr.client.utils.Address;
-import com.streamr.client.utils.GroupKey;
-import com.streamr.client.utils.GroupKeyStore;
-import com.streamr.client.utils.OrderedMsgChain;
+import com.streamr.client.utils.*;
 
 import java.util.ArrayDeque;
 import java.util.Collection;
@@ -17,11 +14,11 @@ public class CombinedSubscription extends Subscription {
     private BasicSubscription currentSub;
     private final ArrayDeque<StreamMessage> queuedRealtimeMessages = new ArrayDeque<>();
 
-    public CombinedSubscription(String streamId, int partition, MessageHandler handler, GroupKeyStore keyStore, ResendOption resendOption,
+    public CombinedSubscription(String streamId, int partition, MessageHandler handler, GroupKeyStore keyStore, KeyExchangeUtil keyExchangeUtil, ResendOption resendOption,
                                 BasicSubscription.GroupKeyRequestFunction groupKeyRequestFunction,
                                 long propagationTimeout, long resendTimeout, boolean skipGapsOnFullQueue) {
 
-        super(streamId, partition, handler, keyStore, propagationTimeout, resendTimeout, skipGapsOnFullQueue);
+        super(streamId, partition, handler, keyStore, keyExchangeUtil, propagationTimeout, resendTimeout, skipGapsOnFullQueue);
 
         MessageHandler wrapperHandler = new MessageHandler() {
             @Override
@@ -35,7 +32,7 @@ public class CombinedSubscription extends Subscription {
                 log.debug("HistoricalSubscription for stream {} is done. Switching to RealtimeSubscription.", streamId);
 
                 // once the initial resend is done, switch to real time
-                RealTimeSubscription realTime = new RealTimeSubscription(streamId, partition, handler, keyStore,
+                RealTimeSubscription realTime = new RealTimeSubscription(streamId, partition, handler, keyStore, keyExchangeUtil,
                         groupKeyRequestFunction, propagationTimeout, resendTimeout, skipGapsOnFullQueue);
 
                 realTime.setGapHandler(currentSub.getGapHandler());
@@ -54,7 +51,7 @@ public class CombinedSubscription extends Subscription {
             }
         };
         // starts to request the initial resend
-        currentSub = new HistoricalSubscription(streamId, partition, wrapperHandler, keyStore, resendOption,
+        currentSub = new HistoricalSubscription(streamId, partition, wrapperHandler, keyStore, keyExchangeUtil, resendOption,
                 groupKeyRequestFunction, propagationTimeout, resendTimeout, skipGapsOnFullQueue, queuedRealtimeMessages::push);
     }
 

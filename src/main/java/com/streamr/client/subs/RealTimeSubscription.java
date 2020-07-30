@@ -6,10 +6,7 @@ import com.streamr.client.exceptions.UnableToDecryptException;
 import com.streamr.client.exceptions.UnsupportedMessageException;
 import com.streamr.client.options.ResendOption;
 import com.streamr.client.protocol.message_layer.StreamMessage;
-import com.streamr.client.utils.EncryptionUtil;
-import com.streamr.client.utils.GroupKey;
-import com.streamr.client.utils.GroupKeyStore;
-import com.streamr.client.utils.OrderedMsgChain;
+import com.streamr.client.utils.*;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -27,17 +24,18 @@ public class RealTimeSubscription extends BasicSubscription {
                                 int partition,
                                 MessageHandler handler,
                                 GroupKeyStore keyStore,
+                                KeyExchangeUtil keyExchangeUtil,
                                 GroupKeyRequestFunction groupKeyRequestFunction,
                                 long propagationTimeout,
                                 long resendTimeout,
                                 boolean skipGapsOnFullQueue) {
-        super(streamId, partition, handler, keyStore, groupKeyRequestFunction, propagationTimeout, resendTimeout,
+        super(streamId, partition, handler, keyStore, keyExchangeUtil, groupKeyRequestFunction, propagationTimeout, resendTimeout,
                 skipGapsOnFullQueue);
     }
 
-    public RealTimeSubscription(String streamId, int partition, MessageHandler handler, GroupKeyStore keyStore,
+    public RealTimeSubscription(String streamId, int partition, MessageHandler handler, GroupKeyStore keyStore, KeyExchangeUtil keyExchangeUtil,
                                 GroupKeyRequestFunction groupKeyRequestFunction) {
-        this(streamId, partition, handler, keyStore, groupKeyRequestFunction, Subscription.DEFAULT_PROPAGATION_TIMEOUT,
+        this(streamId, partition, handler, keyStore, keyExchangeUtil, groupKeyRequestFunction, Subscription.DEFAULT_PROPAGATION_TIMEOUT,
                 Subscription.DEFAULT_RESEND_TIMEOUT, Subscription.DEFAULT_SKIP_GAPS_ON_FULL_QUEUE);
     }
 

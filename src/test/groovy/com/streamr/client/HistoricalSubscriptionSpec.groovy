@@ -11,6 +11,7 @@ import com.streamr.client.utils.Address
 import com.streamr.client.utils.EncryptionUtil
 import com.streamr.client.utils.GroupKey
 import com.streamr.client.utils.GroupKeyStore
+import com.streamr.client.utils.KeyExchangeUtil
 import spock.util.concurrent.PollingConditions
 
 /**
@@ -21,6 +22,7 @@ import spock.util.concurrent.PollingConditions
 class HistoricalSubscriptionSpec extends StreamrSpecification {
     StreamMessage msg
     GroupKeyStore keyStore
+    KeyExchangeUtil keyExchangeUtil
     List<StreamMessage> received
     HistoricalSubscription sub
     boolean doneHandlerCalled
@@ -28,6 +30,7 @@ class HistoricalSubscriptionSpec extends StreamrSpecification {
     def setup() {
         msg = createMessage()
         keyStore = Mock(GroupKeyStore)
+        keyExchangeUtil = Mock(KeyExchangeUtil)
         received = []
         sub = createSub()
         groupKeyFunctionCallCount = 0
@@ -55,7 +58,7 @@ class HistoricalSubscriptionSpec extends StreamrSpecification {
     }
 
     private HistoricalSubscription createSub(MessageHandler handler = defaultHandler, ResendOption resendOption = new ResendLastOption(10), String streamId = msg.getStreamId(), BasicSubscription.GroupKeyRequestFunction groupKeyRequestFunction = defaultGroupKeyRequestFunction) {
-        return new HistoricalSubscription(streamId, 0, handler, keyStore, resendOption, groupKeyRequestFunction)
+        return new HistoricalSubscription(streamId, 0, handler, keyStore, keyExchangeUtil, resendOption, groupKeyRequestFunction)
     }
 
     void "does not handle real-time messages (queued)"() {

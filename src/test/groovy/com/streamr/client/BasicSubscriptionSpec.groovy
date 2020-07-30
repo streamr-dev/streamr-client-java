@@ -3,6 +3,7 @@ package com.streamr.client
 import com.streamr.client.exceptions.GapDetectedException
 import com.streamr.client.exceptions.UnableToDecryptException
 import com.streamr.client.protocol.StreamrSpecification
+import com.streamr.client.protocol.message_layer.GroupKeyAnnounce
 import com.streamr.client.protocol.message_layer.MessageRef
 import com.streamr.client.protocol.message_layer.StreamMessage
 import com.streamr.client.subs.BasicSubscription
@@ -22,6 +23,7 @@ class BasicSubscriptionSpec extends StreamrSpecification {
 
     StreamMessage msg
     GroupKeyStore keyStore
+    KeyExchangeUtil keyExchangeUtil
     List<StreamMessage> received
     RealTimeSubscription sub
     int groupKeyRequestCount
@@ -30,6 +32,7 @@ class BasicSubscriptionSpec extends StreamrSpecification {
     def setup() {
         msg = createMessage()
         keyStore = Mock(GroupKeyStore)
+        keyExchangeUtil = Mock(KeyExchangeUtil)
         received = []
         sub = createSub()
         groupKeyRequestCount = 0
@@ -56,7 +59,7 @@ class BasicSubscriptionSpec extends StreamrSpecification {
     }
 
     private RealTimeSubscription createSub(MessageHandler handler = defaultHandler, String streamId = msg.getStreamId(), GroupKeyRequestFunction groupKeyRequestFunction = defaultGroupKeyRequestFunction) {
-        return new RealTimeSubscription(streamId, 0, handler, keyStore, groupKeyRequestFunction, propagationTimeout, resendTimeout, false)
+        return new RealTimeSubscription(streamId, 0, handler, keyStore, keyExchangeUtil, groupKeyRequestFunction, propagationTimeout, resendTimeout, false)
     }
 
     void "calls the message handler when realtime messages are received"() {
@@ -213,6 +216,20 @@ class BasicSubscriptionSpec extends StreamrSpecification {
         received[0].getParsedContent() == plaintext
     }
 
+    void "does not report GroupKeyAnnounce messages to message handler"() {
+        GroupKey oldKey = GroupKey.generate()
+        GroupKey newKey = GroupKey.generate()
+        GroupKeyAnnounce announce = new GroupKeyAnnounce(msg.getStreamId(), [EncryptionUtil.encryptGroupKey(newKey, oldKey)])
+        StreamMessage announceStreamMessage = announce.toStreamMessage(msg.getMessageID(), null)
+
+        when:
+        sub.handleRealTimeMessage(announceStreamMessage)
+
+        then:
+        1 * keyExchangeUtil.handleGroupKeyAnnounce(announceStreamMessage)
+        received.size() == 0 // not reported to handler
+    }
+
     void "calls key request function if the key is not in the key store (multiple times if there's no response)"() {
         GroupKey groupKey = GroupKey.generate()
         EncryptionUtil.encryptStreamMessage(msg, groupKey)
@@ -220,7 +237,7 @@ class BasicSubscriptionSpec extends StreamrSpecification {
         Address receivedPublisherId = null
         int nbCalls = 0
         int timeout = 3000
-        RealTimeSubscription sub = new RealTimeSubscription(msg.getStreamId(), 0, defaultHandler, keyStore,
+        RealTimeSubscription sub = new RealTimeSubscription(msg.getStreamId(), 0, defaultHandler, keyStore, keyExchangeUtil,
             new GroupKeyRequestFunction() {
                 @Override
                 void apply(Address publisherId, List<String> groupKeyIds) {
@@ -255,7 +272,7 @@ class BasicSubscriptionSpec extends StreamrSpecification {
 
         int nbCalls = 0
         int timeout = 200
-        RealTimeSubscription sub = new RealTimeSubscription(msg.getStreamId(), 0, defaultHandler, keyStore,
+        RealTimeSubscription sub = new RealTimeSubscription(msg.getStreamId(), 0, defaultHandler, keyStore, keyExchangeUtil,
                 new GroupKeyRequestFunction() {
                     @Override
                     void apply(Address publisherId, List<String> groupKeyIds) {

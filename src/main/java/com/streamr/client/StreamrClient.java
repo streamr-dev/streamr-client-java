@@ -427,7 +427,8 @@ public class StreamrClient extends StreamrRESTClient {
         if (groupKey != null) {
             // If the given key is not the current key, announce the new key
             if (currentKey != null && !groupKey.equals(currentKey)) {
-                keyExchangeUtil.rotate(stream.getId(), groupKey);
+                // Use the given timestamp to ensure that the announce doesn't get a *newer* timestamp than the message!
+                keyExchangeUtil.rotate(stream.getId(), groupKey, timestamp);
             }
 
             // Add it to the store if it's not there already

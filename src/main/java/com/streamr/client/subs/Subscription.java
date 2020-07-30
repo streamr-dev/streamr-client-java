@@ -5,10 +5,7 @@ import com.streamr.client.exceptions.GapDetectedException;
 import com.streamr.client.exceptions.UnsupportedMessageException;
 import com.streamr.client.options.ResendOption;
 import com.streamr.client.protocol.message_layer.StreamMessage;
-import com.streamr.client.utils.Address;
-import com.streamr.client.utils.GroupKey;
-import com.streamr.client.utils.GroupKeyStore;
-import com.streamr.client.utils.OrderedMsgChain;
+import com.streamr.client.utils.*;
 
 import java.util.Collection;
 import java.util.UUID;
@@ -23,6 +20,7 @@ public abstract class Subscription {
     private final String id;
     protected final MessageHandler handler;
     protected final GroupKeyStore keyStore;
+    protected final KeyExchangeUtil keyExchangeUtil;
     protected final long propagationTimeout;
     protected final long resendTimeout;
     protected final boolean skipGapsOnFullQueue;
@@ -33,13 +31,14 @@ public abstract class Subscription {
         SUBSCRIBING, SUBSCRIBED, UNSUBSCRIBING, UNSUBSCRIBED
     }
 
-    public Subscription(String streamId, int partition, MessageHandler handler, GroupKeyStore keyStore,
+    public Subscription(String streamId, int partition, MessageHandler handler, GroupKeyStore keyStore, KeyExchangeUtil keyExchangeUtil,
                         long propagationTimeout, long resendTimeout, boolean skipGapsOnFullQueue) {
         this.id = UUID.randomUUID().toString();
         this.streamId = streamId;
         this.partition = partition;
         this.handler = handler;
         this.keyStore = keyStore;
+        this.keyExchangeUtil = keyExchangeUtil;
         this.propagationTimeout = propagationTimeout;
         this.resendTimeout = resendTimeout;
         this.skipGapsOnFullQueue = skipGapsOnFullQueue;
