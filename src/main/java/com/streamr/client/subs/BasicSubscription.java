@@ -153,11 +153,11 @@ public abstract class BasicSubscription extends Subscription {
         try {
             boolean success = tryDecrypt(msg);
             if (success) {
-                // GroupKeyAnnounce messages can occur on normal streams, reroute them to the KeyExchangeUtil
-                if (msg.getMessageType() == StreamMessage.MessageType.GROUP_KEY_ANNOUNCE) {
-                    keyExchangeUtil.handleGroupKeyAnnounce(msg);
-                } else {
-                    handler.onMessage(this, msg);
+                handler.onMessage(this, msg);
+
+                // Handle new key if the message contains one
+                if (msg.getNewGroupKey() != null) {
+                    keyExchangeUtil.handleNewAESEncryptedKeys(Collections.singletonList(msg.getNewGroupKey()), msg.getStreamId(), msg.getPublisherId(), msg.getGroupKeyId());
                 }
             } else {
                 // If not successfully decrypted, request group key and queue the message

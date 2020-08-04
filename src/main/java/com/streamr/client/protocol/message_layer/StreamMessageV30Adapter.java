@@ -41,7 +41,7 @@ public class StreamMessageV30Adapter extends JsonAdapter<StreamMessage> {
                 reader.nextNull();
             }
 
-            return new StreamMessage(messageID, previousMessageRef, messageType, serializedContent, StreamMessage.ContentType.JSON, StreamMessage.EncryptionType.NONE, null, signatureType, signature);
+            return new StreamMessage(messageID, previousMessageRef, messageType, serializedContent, StreamMessage.ContentType.JSON, StreamMessage.EncryptionType.NONE, null, null, signatureType, signature);
         } catch (JsonDataException e) {
             log.error("Failed to parse StreamMessageV30", e);
             throw new MalformedMessageException("Malformed message: " + reader.toString(), e);

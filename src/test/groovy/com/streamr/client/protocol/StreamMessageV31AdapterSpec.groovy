@@ -21,6 +21,7 @@ class StreamMessageV31AdapterSpec extends StreamrSpecification {
 				StreamMessage.ContentType.JSON,
 				StreamMessage.EncryptionType.NONE,
 				null,
+				null,
 				StreamMessage.SignatureType.ETH,
 				"signature")
 	}

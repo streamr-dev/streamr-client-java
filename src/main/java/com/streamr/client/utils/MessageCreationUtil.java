@@ -41,25 +41,30 @@ public class MessageCreationUtil {
     }
 
     public StreamMessage createStreamMessage(Stream stream, Map<String, Object> payload, Date timestamp) {
-        return createStreamMessage(stream, payload, timestamp, null, null);
+        return createStreamMessage(stream, payload, timestamp, null, null, null);
     }
 
     public StreamMessage createStreamMessage(Stream stream, Map<String, Object> payload, Date timestamp, String partitionKey) {
-        return createStreamMessage(stream, payload, timestamp, partitionKey, null);
+        return createStreamMessage(stream, payload, timestamp, partitionKey, null, null);
     }
 
-    public StreamMessage createStreamMessage(Stream stream, Map<String, Object> payload, Date timestamp, @Nullable String partitionKey, @Nullable GroupKey groupKey) {
+    public StreamMessage createStreamMessage(Stream stream, Map<String, Object> payload, Date timestamp, @Nullable String partitionKey, @Nullable GroupKey groupKey, @Nullable GroupKey newGroupKey) {
         int streamPartition = getStreamPartition(stream.getPartitions(), partitionKey);
 
         Pair<MessageID, MessageRef> pair = createMsgIdAndRef(stream.getId(), streamPartition, timestamp.getTime());
         StreamMessage streamMessage = new StreamMessage(pair.getLeft(), pair.getRight(), payload);
 
-        // Encrypt if GroupKey provided
+        // Encrypt content if the GroupKey is provided
         if (groupKey != null) {
             try {
                 EncryptionUtil.encryptStreamMessage(streamMessage, groupKey);
             } catch (InvalidGroupKeyException e) {
                 throw new RuntimeException(e);
+            }
+
+            // Encrypt and attach newGroupKey if it's provided
+            if (newGroupKey != null) {
+                streamMessage.setNewGroupKey(EncryptionUtil.encryptGroupKey(newGroupKey, groupKey));
             }
         }
 
@@ -115,7 +120,7 @@ public class MessageCreationUtil {
         return streamMessage;
     }
 
-    public StreamMessage createGroupKeyAnnounceForSubscriber(Address subscriberAddress, String streamId, String publicKey, List<GroupKey> groupKeys) {
+    public StreamMessage createGroupKeyAnnounce(Address subscriberAddress, String streamId, String publicKey, List<GroupKey> groupKeys) {
         if (signingUtil == null) {
             throw new SigningRequiredException("Cannot create unsigned group key announce. Must authenticate with an Ethereum account");
         }
@@ -134,28 +139,6 @@ public class MessageCreationUtil {
         StreamMessage streamMessage = announce.toStreamMessage(pair.getLeft(), pair.getRight());
         streamMessage.setEncryptionType(StreamMessage.EncryptionType.RSA);
         streamMessage.setGroupKeyId(publicKey);
-
-        // Always sign
-        signingUtil.signStreamMessage(streamMessage);
-        return streamMessage;
-    }
-
-    public StreamMessage createGroupKeyAnnounceOnStream(String streamId, List<GroupKey> newGroupKeys, GroupKey previousGroupKey, Date timestamp) {
-        if (signingUtil == null) {
-            throw new SigningRequiredException("Cannot create unsigned group key announce. Must authenticate with an Ethereum account");
-        }
-
-        // Encrypt the group keys
-        List<EncryptedGroupKey> encryptedGroupKeys = newGroupKeys.stream().map(
-                key -> EncryptionUtil.encryptGroupKey(key, previousGroupKey)
-        ).collect(Collectors.toList());
-
-        GroupKeyAnnounce announce = new GroupKeyAnnounce(streamId, encryptedGroupKeys);
-
-        Pair<MessageID, MessageRef> pair = createMsgIdAndRef(streamId, 0, timestamp.getTime());
-        StreamMessage streamMessage = announce.toStreamMessage(pair.getLeft(), pair.getRight());
-        streamMessage.setEncryptionType(StreamMessage.EncryptionType.AES);
-        streamMessage.setGroupKeyId(previousGroupKey.getGroupKeyId());
 
         // Always sign
         signingUtil.signStreamMessage(streamMessage);

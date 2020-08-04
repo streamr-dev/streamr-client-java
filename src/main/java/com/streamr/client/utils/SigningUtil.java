@@ -69,6 +69,9 @@ public class SigningUtil {
                 sb.append(msg.getPreviousMessageRef().getSequenceNumber());
             }
             sb.append(msg.getSerializedContent());
+            if (msg.getNewGroupKey() != null) {
+                sb.append(msg.getNewGroupKey().serialize());
+            }
             return sb.toString();
         }
         throw new UnsupportedSignatureTypeException(signatureType);

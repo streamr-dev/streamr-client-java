@@ -249,7 +249,7 @@ class StreamrWebsocketSpec extends StreamrIntegrationSpecification {
 		when:
 		// publishing a second message after a rekey to revoke old subscribers
 		publisher.rekey(stream)
-		publisher.publish(stream, [test: 'another clear text'], new Date(), null)
+		publisher.publish(stream, [test: 'another clear text'])
 
 		then:
 		within10sec.eventually {

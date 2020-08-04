@@ -55,6 +55,7 @@ public abstract class AbstractGroupKeyMessage {
                 StreamMessage.ContentType.JSON,
                 StreamMessage.EncryptionType.NONE,
                 null,
+                null,
                 StreamMessage.SignatureType.NONE,
                 null);
     }

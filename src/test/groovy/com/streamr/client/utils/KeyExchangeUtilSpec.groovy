@@ -24,6 +24,7 @@ class KeyExchangeUtilSpec extends StreamrSpecification {
             StreamMessage.ContentType.JSON,
             StreamMessage.EncryptionType.RSA,
             null,
+            null,
             StreamMessage.SignatureType.ETH,
             "signature"
     )
@@ -214,9 +215,9 @@ class KeyExchangeUtilSpec extends StreamrSpecification {
         1 * addressValidityUtil2.getSubscribersSet("streamId", true) >> [getSubscriberId(1), getSubscriberId(3)].toSet()
         // Add new key to keystore
         1 * keyStore.add("streamId", _)
-        1 * messageCreationUtil.createGroupKeyAnnounceForSubscriber(getSubscriberId(1), "streamId", _, _) >> announce1
-        0 * messageCreationUtil.createGroupKeyAnnounceForSubscriber(getSubscriberId(2), "streamId", _, _) // don't call for subscriber 2
-        1 * messageCreationUtil.createGroupKeyAnnounceForSubscriber(getSubscriberId(3), "streamId", _, _) >> announce3
+        1 * messageCreationUtil.createGroupKeyAnnounce(getSubscriberId(1), "streamId", _, _) >> announce1
+        0 * messageCreationUtil.createGroupKeyAnnounce(getSubscriberId(2), "streamId", _, _) // don't call for subscriber 2
+        1 * messageCreationUtil.createGroupKeyAnnounce(getSubscriberId(3), "streamId", _, _) >> announce3
 
         published.size() == 2
         published[0] == announce1

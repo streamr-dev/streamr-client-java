@@ -52,6 +52,17 @@ class SigningUtilSpec extends Specification {
         msg.signature == SigningUtil.sign(expectedPayload, account)
     }
 
+    void "should correctly sign a StreamMessage with new group key"() {
+        StreamMessage msg = new StreamMessage(msgId, new MessageRef(100, 1), [foo: 'bar'])
+        msg.setNewGroupKey(new EncryptedGroupKey("groupKeyId", "keyHex"))
+        String expectedPayload = "streamId04252353150publisheridmsgChainId1001"+'{"foo":"bar"}'+'["groupKeyId","keyHex"]'
+        when:
+        signingUtil.signStreamMessage(msg)
+        then:
+        msg.signatureType == StreamMessage.SignatureType.ETH
+        msg.signature == SigningUtil.sign(expectedPayload, account)
+    }
+
     void "returns false if no signature"() {
         when:
         StreamMessage msg = new StreamMessage(msgId, null, [foo: 'bar'])

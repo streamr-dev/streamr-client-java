@@ -3,6 +3,7 @@ package com.streamr.client.protocol.message_layer;
 import com.streamr.client.exceptions.EncryptedContentNotParsableException;
 import com.streamr.client.exceptions.UnsupportedMessageException;
 import com.streamr.client.utils.Address;
+import com.streamr.client.utils.EncryptedGroupKey;
 import com.streamr.client.utils.HttpUtils;
 
 import java.io.IOException;
@@ -129,6 +130,7 @@ public class StreamMessage implements ITimestamped {
     private final ContentType contentType;
     private EncryptionType encryptionType;
     private String groupKeyId;
+    private EncryptedGroupKey newGroupKey;
     private SignatureType signatureType;
     private String signature;
 
@@ -143,6 +145,7 @@ public class StreamMessage implements ITimestamped {
             ContentType contentType,
             EncryptionType encryptionType,
             String groupKeyId,
+            EncryptedGroupKey newGroupKey,
             SignatureType signatureType,
             String signature
     ) {
@@ -153,6 +156,7 @@ public class StreamMessage implements ITimestamped {
         this.contentType = contentType;
         this.encryptionType = encryptionType;
         this.groupKeyId = groupKeyId;
+        this.newGroupKey = newGroupKey;
         this.signatureType = signatureType;
         this.signature = signature;
     }
@@ -170,7 +174,7 @@ public class StreamMessage implements ITimestamped {
             SignatureType signatureType,
             String signature
     ) {
-        this(messageID, previousMessageRef, messageType, HttpUtils.mapAdapter.toJson(content), ContentType.JSON, encryptionType, groupKeyId, signatureType, signature);
+        this(messageID, previousMessageRef, messageType, HttpUtils.mapAdapter.toJson(content), ContentType.JSON, encryptionType, groupKeyId, null, signatureType, signature);
     }
 
     /**
@@ -183,7 +187,7 @@ public class StreamMessage implements ITimestamped {
             MessageType messageType,
             Map<String, Object> content
     ) {
-        this(messageID, previousMessageRef, messageType, HttpUtils.mapAdapter.toJson(content), ContentType.JSON, EncryptionType.NONE, null, SignatureType.NONE, null);
+        this(messageID, previousMessageRef, messageType, HttpUtils.mapAdapter.toJson(content), ContentType.JSON, EncryptionType.NONE, null, null, SignatureType.NONE, null);
     }
 
     /**
@@ -195,7 +199,7 @@ public class StreamMessage implements ITimestamped {
             MessageRef previousMessageRef,
             Map<String, Object> content
     ) {
-        this(messageID, previousMessageRef, MessageType.STREAM_MESSAGE, HttpUtils.mapAdapter.toJson(content), ContentType.JSON, EncryptionType.NONE, null, SignatureType.NONE, null);
+        this(messageID, previousMessageRef, MessageType.STREAM_MESSAGE, HttpUtils.mapAdapter.toJson(content), ContentType.JSON, EncryptionType.NONE, null, null, SignatureType.NONE, null);
     }
 
     public MessageID getMessageID() {
@@ -307,6 +311,17 @@ public class StreamMessage implements ITimestamped {
         this.groupKeyId = groupKeyId;
     }
 
+    public EncryptedGroupKey getNewGroupKey() {
+        return newGroupKey;
+    }
+
+    public void setNewGroupKey(EncryptedGroupKey newGroupKey) {
+        if (newGroupKey.getGroupKeyId().equals(groupKeyId)) {
+            throw new IllegalArgumentException("newGroupKey isn't new - it matches the groupKeyId of the message: " + newGroupKey.getGroupKeyId());
+        }
+        this.newGroupKey = newGroupKey;
+    }
+
     public void setSerializedContent(String serializedContent) {
         this.serializedContent = serializedContent;
     }
@@ -349,6 +364,7 @@ public class StreamMessage implements ITimestamped {
                 ", contentType=" + contentType +
                 ", encryptionType=" + encryptionType +
                 ", groupKeyId='" + groupKeyId + '\'' +
+                ", newGroupKey='" + newGroupKey + '\'' +
                 ", signatureType=" + signatureType +
                 ", signature='" + signature + '\'' +
                 '}';

@@ -69,10 +69,21 @@ class MessageCreationUtilSpec extends StreamrSpecification {
     void "createStreamMessage() encrypts the messages if a GroupKey is passed"() {
         GroupKey key = GroupKey.generate()
         when:
-        StreamMessage msg = msgCreationUtil.createStreamMessage(stream, message, new Date(), null, key)
+        StreamMessage msg = msgCreationUtil.createStreamMessage(stream, message, new Date(), null, key, null)
         then:
         msg.getEncryptionType() == StreamMessage.EncryptionType.AES
         msg.getGroupKeyId() == key.getGroupKeyId()
+    }
+
+    void "createStreamMessage() encrypts the new key if a current key and new key are passed"() {
+        GroupKey key = GroupKey.generate()
+        GroupKey newKey = GroupKey.generate()
+        when:
+        StreamMessage msg = msgCreationUtil.createStreamMessage(stream, message, new Date(), null, key, newKey)
+        then:
+        msg.getEncryptionType() == StreamMessage.EncryptionType.AES
+        msg.getGroupKeyId() == key.getGroupKeyId()
+        EncryptionUtil.decryptGroupKey(msg.getNewGroupKey(), key) == newKey
     }
 
     void "createStreamMessage() with different timestamps chains messages with sequenceNumber always zero"() {
@@ -215,21 +226,21 @@ class MessageCreationUtilSpec extends StreamrSpecification {
         encryptionUtil.decryptWithPrivateKey(response.getKeys()[0]) == groupKey
     }
 
-    void "createGroupKeyAnnounceForSubscriber() should throw if SigningUtil is not set"() {
+    void "createGroupKeyAnnounce() should throw if SigningUtil is not set"() {
         msgCreationUtil = new MessageCreationUtil(publisherId, null)
         GroupKey key = GroupKey.generate()
 
         when:
-        msgCreationUtil.createGroupKeyAnnounceForSubscriber(subscriberId, "streamId", "publicKey", [key])
+        msgCreationUtil.createGroupKeyAnnounce(subscriberId, "streamId", "publicKey", [key])
         then:
         thrown SigningRequiredException
     }
 
-    void "createGroupKeyAnnounceForSubscriber() sends the group key announce RSA encrypted on the subscriber's key exchange stream"() {
+    void "createGroupKeyAnnounce() sends the group key announce RSA encrypted on the subscriber's key exchange stream"() {
         GroupKey groupKey = GroupKey.generate()
 
         when:
-        StreamMessage msg = msgCreationUtil.createGroupKeyAnnounceForSubscriber(subscriberId, "streamId", encryptionUtil.publicKeyAsPemString, [groupKey])
+        StreamMessage msg = msgCreationUtil.createGroupKeyAnnounce(subscriberId, "streamId", encryptionUtil.publicKeyAsPemString, [groupKey])
 
         then:
         msg.getStreamId() == KeyExchangeUtil.getKeyExchangeStreamId(subscriberId)
@@ -243,36 +254,6 @@ class MessageCreationUtilSpec extends StreamrSpecification {
         then:
         announce.getStreamId() == "streamId"
         encryptionUtil.decryptWithPrivateKey(announce.getKeys()[0]) == groupKey
-    }
-
-    void "createGroupKeyAnnounceOnStream() should throw if SigningUtil is not set"() {
-        msgCreationUtil = new MessageCreationUtil(publisherId, null)
-
-        when:
-        msgCreationUtil.createGroupKeyAnnounceOnStream("streamId", [GroupKey.generate()], GroupKey.generate(), new Date())
-        then:
-        thrown SigningRequiredException
-    }
-
-    void "createGroupKeyAnnounceOnStream() sends the group key announce AES encrypted on the stream"() {
-        GroupKey oldGroupKey = GroupKey.generate()
-        GroupKey newGroupKey = GroupKey.generate()
-
-        when:
-        StreamMessage msg = msgCreationUtil.createGroupKeyAnnounceOnStream("streamId",  [newGroupKey], oldGroupKey, new Date())
-
-        then:
-        msg.getStreamId() == "streamId"
-        msg.getMessageType() == StreamMessage.MessageType.GROUP_KEY_ANNOUNCE
-        msg.getEncryptionType() == StreamMessage.EncryptionType.AES
-        msg.getSignature() != null
-
-        when:
-        GroupKeyAnnounce announce = (GroupKeyAnnounce) AbstractGroupKeyMessage.deserialize(msg.getSerializedContent(), StreamMessage.MessageType.GROUP_KEY_ANNOUNCE)
-
-        then:
-        announce.getStreamId() == "streamId"
-        EncryptionUtil.decryptGroupKey(announce.getKeys()[0], oldGroupKey) == newGroupKey
     }
 
     void "createGroupKeyErrorResponse() should throw if SigningUtil is not set"() {

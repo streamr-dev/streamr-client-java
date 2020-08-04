@@ -216,18 +216,19 @@ class BasicSubscriptionSpec extends StreamrSpecification {
         received[0].getParsedContent() == plaintext
     }
 
-    void "does not report GroupKeyAnnounce messages to message handler"() {
+    void "reports new group keys to the keyExchangeUtil"() {
         GroupKey oldKey = GroupKey.generate()
         GroupKey newKey = GroupKey.generate()
-        GroupKeyAnnounce announce = new GroupKeyAnnounce(msg.getStreamId(), [EncryptionUtil.encryptGroupKey(newKey, oldKey)])
-        StreamMessage announceStreamMessage = announce.toStreamMessage(msg.getMessageID(), null)
+        StreamMessage msg = createMessage()
+        EncryptionUtil.encryptStreamMessage(msg, oldKey)
+        msg.setNewGroupKey(EncryptionUtil.encryptGroupKey(newKey, oldKey))
 
         when:
-        sub.handleRealTimeMessage(announceStreamMessage)
+        sub.handleRealTimeMessage(msg)
 
         then:
-        1 * keyExchangeUtil.handleGroupKeyAnnounce(announceStreamMessage)
-        received.size() == 0 // not reported to handler
+        1 * keyStore.get(msg.getStreamId(), oldKey.getGroupKeyId()) >> oldKey
+        1 * keyExchangeUtil.handleNewAESEncryptedKeys([msg.getNewGroupKey()], msg.getStreamId(), msg.getPublisherId(), msg.getGroupKeyId());
     }
 
     void "calls key request function if the key is not in the key store (multiple times if there's no response)"() {

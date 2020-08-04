@@ -11,6 +11,7 @@ import com.streamr.client.protocol.message_layer.MessageRef
 import com.streamr.client.protocol.message_layer.StreamMessage
 import com.streamr.client.rest.Stream
 import com.streamr.client.subs.Subscription
+import com.streamr.client.utils.EncryptionUtil
 import com.streamr.client.utils.GroupKey
 import com.streamr.client.utils.InMemoryGroupKeyStore
 import com.streamr.client.utils.KeyExchangeUtil
@@ -220,7 +221,7 @@ class StreamrClientSpec extends StreamrSpecification {
         ((PublishRequest)server.receivedControlMessages[0].message).streamMessage.getGroupKeyId() == groupKey.groupKeyId
     }
 
-    void "publish() called with a new GroupKey rotates the key by announcing the new key and then publishing the message"() {
+    void "publish() called with a new GroupKey rotates the key"() {
         GroupKey currentKey = GroupKey.generate()
         GroupKey newKey = GroupKey.generate()
         client.getKeyStore().add(stream.getId(), currentKey)
@@ -230,15 +231,31 @@ class StreamrClientSpec extends StreamrSpecification {
 
         then:
         new PollingConditions().eventually {
-            server.receivedControlMessages.size() == 2 // announce & message
+            server.receivedControlMessages.size() == 1
         }
-        StreamMessage first =  ((PublishRequest) server.receivedControlMessages[0].message).streamMessage
-        StreamMessage second =  ((PublishRequest) server.receivedControlMessages[1].message).streamMessage
-        first.getGroupKeyId() == currentKey.groupKeyId
-        first.getMessageType() == StreamMessage.MessageType.GROUP_KEY_ANNOUNCE
-        second.getGroupKeyId() == newKey.groupKeyId
-        !second.getSerializedContent().contains("secret")
-        first.getMessageRef() < second.getMessageRef()
+        StreamMessage msg = ((PublishRequest) server.receivedControlMessages[0].message).streamMessage
+        // content is encrypted with current key
+        msg.getGroupKeyId() == currentKey.groupKeyId
+        !msg.getSerializedContent().contains("secret")
+        // new key is encrypted with current key
+        msg.getNewGroupKey().getGroupKeyId() == newKey.getGroupKeyId()
+        EncryptionUtil.decryptGroupKey(msg.getNewGroupKey(), currentKey) == newKey
+
+        when:
+        // next message is published
+        client.publish(stream, [test: "secret"])
+
+        then:
+        new PollingConditions().eventually {
+            server.receivedControlMessages.size() == 2
+        }
+        // content is encrypted with new key
+        StreamMessage msg2 = ((PublishRequest) server.receivedControlMessages[1].message).streamMessage
+        // content is encrypted with current key
+        msg2.getGroupKeyId() == newKey.groupKeyId
+        !msg2.getSerializedContent().contains("secret")
+        // there is no new key attached this time
+        msg2.getNewGroupKey() == null
     }
 
     void "client reconnects while publishing if server is temporarily down"() {

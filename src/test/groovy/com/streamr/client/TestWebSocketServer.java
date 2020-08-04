@@ -43,7 +43,7 @@ public class TestWebSocketServer extends WebSocketServer {
             throw new IllegalStateException("Tried to broadcast a message, but there are no connected clients! Something's wrong!");
         }
         log.info("sendToAll: connections list size is " + getConnections().size());
-        StreamMessage streamMessage = msgCreationUtil.createStreamMessage(stream, payload, new Date(), null, null);
+        StreamMessage streamMessage = msgCreationUtil.createStreamMessage(stream, payload, new Date());
         BroadcastMessage req = new BroadcastMessage("", streamMessage);
         getConnections().forEach((webSocket -> {
             log.info("send: " + req.toJson());

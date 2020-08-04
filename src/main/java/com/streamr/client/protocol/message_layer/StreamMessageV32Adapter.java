@@ -1,12 +1,12 @@
 package com.streamr.client.protocol.message_layer;
 
 import com.squareup.moshi.JsonAdapter;
-import com.squareup.moshi.JsonDataException;
 import com.squareup.moshi.JsonReader;
 import com.squareup.moshi.JsonWriter;
 import com.streamr.client.exceptions.MalformedMessageException;
 import com.streamr.client.protocol.message_layer.StreamMessage.EncryptionType;
 import com.streamr.client.protocol.message_layer.StreamMessage.SignatureType;
+import com.streamr.client.utils.EncryptedGroupKey;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -39,14 +39,25 @@ public class StreamMessageV32Adapter extends JsonAdapter<StreamMessage> {
             StreamMessage.MessageType messageType = StreamMessage.MessageType.fromId((byte)reader.nextInt());
             StreamMessage.ContentType contentType = StreamMessage.ContentType.fromId((byte)reader.nextInt());
             EncryptionType encryptionType = EncryptionType.fromId((byte)reader.nextInt());
-            // Peek at the groupKeyId, as it can be null
             String groupKeyId = nullSafeRead(reader, reader::nextString);
             String serializedContent = reader.nextString();
+            String serializedNewGroupKey = nullSafeRead(reader, reader::nextString);
             SignatureType signatureType = SignatureType.fromId((byte)reader.nextInt());
             String signature = nullSafeRead(reader, reader::nextString);
             // top-level array will be closed in StreamMessageAdapter
 
-            return new StreamMessage(messageID, previousMessageRef, messageType, serializedContent, contentType, encryptionType, groupKeyId, signatureType, signature);
+            return new StreamMessage(
+                    messageID,
+                    previousMessageRef,
+                    messageType,
+                    serializedContent,
+                    contentType,
+                    encryptionType,
+                    groupKeyId,
+                    serializedNewGroupKey != null ? EncryptedGroupKey.deserialize(serializedNewGroupKey) : null,
+                    signatureType,
+                    signature
+            );
         } catch (Exception e) {
             log.error("Failed to parse StreamMessageV31", e);
             throw new MalformedMessageException("Malformed message: " + reader.toString(), e);
@@ -58,16 +69,25 @@ public class StreamMessageV32Adapter extends JsonAdapter<StreamMessage> {
         writer.beginArray();
         writer.value(VERSION);
         msgIdAdapter.toJson(writer, value.getMessageID());
+
         if (value.getPreviousMessageRef() != null) {
             msgRefAdapter.toJson(writer, value.getPreviousMessageRef());
-        }else {
-            writer.value((String)null);
+        } else {
+            writer.value((String) null);
         }
+
         writer.value(value.getMessageType().getId());
         writer.value(value.getContentType().getId());
         writer.value(value.getEncryptionType().getId());
         writer.value(value.getGroupKeyId());
         writer.value(value.getSerializedContent());
+
+        if (value.getNewGroupKey() != null) {
+            writer.value(value.getNewGroupKey().serialize());
+        } else {
+            writer.value((String) null);
+        }
+
         writer.value(value.getSignatureType().getId());
         writer.value(value.getSignature());
         writer.endArray();

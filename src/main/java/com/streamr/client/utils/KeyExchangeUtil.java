@@ -95,46 +95,11 @@ public class KeyExchangeUtil {
         log.debug("Received group key response from publisher {} for stream {}, keys {}",
                 streamMessage.getPublisherId(), response.getStreamId(), response.getKeys());
 
-        List<GroupKey> keys;
         if (streamMessage.getEncryptionType() == StreamMessage.EncryptionType.RSA) {
-            keys = decryptGroupKeysRSA(response.getKeys(), response);
+            handleNewRSAEncryptedKeys(response.getKeys(), response.getStreamId(), streamMessage.getPublisherId());
         } else {
             throw new RuntimeException("Unexpected EncryptionType: " + streamMessage.getEncryptionType());
         }
-
-        handleNewKeys(response.getStreamId(), streamMessage.getPublisherId(), keys);
-    }
-
-    private List<GroupKey> decryptGroupKeysRSA(List<EncryptedGroupKey> encryptedKeys, AbstractGroupKeyMessage groupKeyMessage) {
-        return encryptedKeys.stream()
-                .map(encryptedKey -> {
-                    try {
-                        return encryptionUtil.decryptWithPrivateKey(encryptedKey);
-                    } catch (Exception e) {
-                        log.error("Unable to decrypt group key {} for stream {}", encryptedKey.getGroupKeyId(), groupKeyMessage.getStreamId(), e);
-                        return null;
-                    }
-                })
-                .filter(Objects::nonNull)
-                .collect(Collectors.toList());
-    }
-
-    private List<GroupKey> decryptGroupKeysAES(List<EncryptedGroupKey> encryptedKeys, AbstractGroupKeyMessage groupKeyMessage, String groupKeyId) {
-        return encryptedKeys.stream()
-                .map(encryptedKey -> {
-                    try {
-                        GroupKey keyToDecryptWith = keyStore.get(groupKeyMessage.getStreamId(), groupKeyId);
-                        if (keyToDecryptWith == null) {
-                            throw new Exception(String.format("Key %s for stream %s was not found in keyStore", groupKeyId, groupKeyMessage.getStreamId()));
-                        }
-                        return EncryptionUtil.decryptGroupKey(encryptedKey, keyToDecryptWith);
-                    } catch (Exception e) {
-                        log.error("Unable to decrypt group key {} for stream {}", encryptedKey.getGroupKeyId(), groupKeyMessage.getStreamId(), e);
-                        return null;
-                    }
-                })
-                .filter(Objects::nonNull)
-                .collect(Collectors.toList());
     }
 
     public void handleGroupKeyAnnounce(StreamMessage streamMessage) {
@@ -143,16 +108,49 @@ public class KeyExchangeUtil {
         log.debug("Received group key announce from publisher {} for stream {}, keys {}",
                 streamMessage.getPublisherId(), announce.getStreamId(), announce.getKeys());
 
-        List<GroupKey> keys;
         if (streamMessage.getEncryptionType() == StreamMessage.EncryptionType.RSA) {
-            keys = decryptGroupKeysRSA(announce.getKeys(), announce);
+            handleNewRSAEncryptedKeys(announce.getKeys(), announce.getStreamId(), streamMessage.getPublisherId());
         } else if (streamMessage.getEncryptionType() == StreamMessage.EncryptionType.AES) {
-            keys = decryptGroupKeysAES(announce.getKeys(), announce, streamMessage.getGroupKeyId());
+            handleNewAESEncryptedKeys(announce.getKeys(), announce.getStreamId(), streamMessage.getPublisherId(), streamMessage.getGroupKeyId());
         } else {
             throw new RuntimeException("Unexpected EncryptionType: " + streamMessage.getEncryptionType());
         }
+    }
 
-        handleNewKeys(announce.getStreamId(), streamMessage.getPublisherId(), keys);
+    public void handleNewRSAEncryptedKeys(Collection<EncryptedGroupKey> encryptedKeys, String streamId, Address publisherId) {
+        List<GroupKey> keys = encryptedKeys.stream()
+                .map(encryptedKey -> {
+                    try {
+                        return encryptionUtil.decryptWithPrivateKey(encryptedKey);
+                    } catch (Exception e) {
+                        log.error("Unable to decrypt group key {} for stream {}", encryptedKey.getGroupKeyId(), streamId, e);
+                        return null;
+                    }
+                })
+                .filter(Objects::nonNull)
+                .collect(Collectors.toList());
+
+        handleNewKeys(streamId, publisherId, keys);
+    }
+
+    public void handleNewAESEncryptedKeys(List<EncryptedGroupKey> encryptedKeys, String streamId, Address publisherId, String groupKeyId) {
+        List<GroupKey> keys = encryptedKeys.stream()
+                .map(encryptedKey -> {
+                    try {
+                        GroupKey keyToDecryptWith = keyStore.get(streamId, groupKeyId);
+                        if (keyToDecryptWith == null) {
+                            throw new Exception(String.format("Key %s for stream %s was not found in keyStore", groupKeyId, streamId));
+                        }
+                        return EncryptionUtil.decryptGroupKey(encryptedKey, keyToDecryptWith);
+                    } catch (Exception e) {
+                        log.error("Unable to decrypt group key {} for stream {}", encryptedKey.getGroupKeyId(), streamId, e);
+                        return null;
+                    }
+                })
+                .filter(Objects::nonNull)
+                .collect(Collectors.toList());
+
+        handleNewKeys(streamId, publisherId, keys);
     }
 
     public boolean keyRevocationNeeded(String streamId) {
@@ -165,21 +163,6 @@ public class KeyExchangeUtil {
         return res;
     }
 
-    /**
-     * Rotates the key by publishing a new GroupKeyAnnounce message on the stream,
-     * encrypted with the key currently in use.
-     */
-    public void rotate(String streamId, GroupKey newKey, Date timestamp) {
-        GroupKey currentKey = keyStore.getCurrentKey(streamId);
-        if (currentKey == null) {
-            throw new IllegalStateException("Can't rotate: there is no current key for stream " + streamId);
-        }
-
-        StreamMessage groupKeyResetMsg = messageCreationUtil.createGroupKeyAnnounceOnStream(streamId, Collections.singletonList(newKey), keyStore.getCurrentKey(streamId), timestamp);
-        keyStore.add(streamId, newKey);
-        publishFunction.accept(groupKeyResetMsg);
-    }
-
     public GroupKey rekey(String streamId, boolean getSubscribersLocally) {
         GroupKey newKey = GroupKey.generate();
         keyStore.add(streamId, newKey);
@@ -190,7 +173,7 @@ public class KeyExchangeUtil {
         for (Address subscriberId: publicKeys.keySet() ) { // iterating over local cache of Ethereum address --> RSA public key
             if (trueSubscribersSet.contains(subscriberId)) { // if still valid subscriber, send the new key
                 String publicKey = publicKeys.get(subscriberId);
-                StreamMessage announce = messageCreationUtil.createGroupKeyAnnounceForSubscriber(subscriberId, streamId, publicKey, Collections.singletonList(newKey));
+                StreamMessage announce = messageCreationUtil.createGroupKeyAnnounce(subscriberId, streamId, publicKey, Collections.singletonList(newKey));
                 publishFunction.accept(announce);
             } else { // no longer a valid subscriber, to be removed from local cache
                 revoked.add(subscriberId);

@@ -10,7 +10,8 @@ import com.streamr.client.utils.GroupKey;
 import javax.annotation.Nullable;
 import java.io.IOException;
 
-class EncryptedGroupKeyAdapter extends JsonAdapter<EncryptedGroupKey> {
+public class EncryptedGroupKeyAdapter extends JsonAdapter<EncryptedGroupKey> {
+
     @Nullable
     @Override
     public EncryptedGroupKey fromJson(JsonReader reader) throws IOException {

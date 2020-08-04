@@ -26,6 +26,7 @@ import org.java_websocket.handshake.ServerHandshake;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import javax.annotation.Nullable;
 import java.io.IOException;
 import java.net.URI;
 import java.net.URISyntaxException;
@@ -434,27 +435,26 @@ public class StreamrClient extends StreamrRESTClient {
         publish(stream, payload, timestamp, partitionKey, null);
     }
 
-    public void publish(Stream stream, Map<String, Object> payload, Date timestamp, String partitionKey, GroupKey groupKey) {
+    public void publish(Stream stream, Map<String, Object> payload, Date timestamp, @Nullable String partitionKey, @Nullable GroupKey newGroupKey) {
         // Convenience feature: allow user to call publish() without having had called connect() beforehand.
         connect();
 
         GroupKey currentKey = keyStore.getCurrentKey(stream.getId());
 
-        // Handle the key given as argument
-        if (groupKey != null) {
-            // If the given key is not the current key, announce the new key
-            if (currentKey != null && !groupKey.equals(currentKey)) {
-                // Use the given timestamp to ensure that the announce doesn't get a *newer* timestamp than the message!
-                keyExchangeUtil.rotate(stream.getId(), groupKey, timestamp);
-            }
+        // Use the new key if there wasn't one before
+        if (currentKey == null && newGroupKey != null) {
+            currentKey = newGroupKey;
+            keyStore.add(stream.getId(), newGroupKey);
+        }
 
-            // Add it to the store if it's not there already
-            if (keyStore.get(stream.getId(), groupKey.getGroupKeyId()) == null) {
-                keyStore.add(stream.getId(), groupKey);
-            }
+        // Ignore newGroupKey if it's the same as the current one
+        if (currentKey != null && newGroupKey != null && currentKey.equals(newGroupKey)) {
+            newGroupKey = null;
+        }
 
-            // Use the given key
-            currentKey = groupKey;
+        // Add the new key to the keyStore unless it's already there
+        if (newGroupKey != null && keyStore.get(stream.getId(), newGroupKey.getGroupKeyId()) == null) {
+            keyStore.add(stream.getId(), newGroupKey);
         }
 
         // Check if an automatic rekey is needed
@@ -462,7 +462,7 @@ public class StreamrClient extends StreamrRESTClient {
             keyExchangeUtil.rekey(stream.getId(), true);
         }
 
-        StreamMessage streamMessage = msgCreationUtil.createStreamMessage(stream, payload, timestamp, partitionKey, currentKey);
+        StreamMessage streamMessage = msgCreationUtil.createStreamMessage(stream, payload, timestamp, partitionKey, currentKey, newGroupKey);
         try {
             publish(streamMessage);
         } catch (WebsocketNotConnectedException e) {
