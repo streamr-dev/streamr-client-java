@@ -15,7 +15,7 @@ class StreamMessageSpec extends Specification {
 	StreamMessage msg
 
 	void setup() {
-		msg = StreamMessageExamples.InvalidSignature.helloWorld
+		msg = StreamMessage.deserialize(StreamMessageExamples.InvalidSignature.helloWorldSerialized32)
 	}
 
 	void "constructor that takes Map content sets the correct serializedContent"() {
@@ -39,15 +39,5 @@ class StreamMessageSpec extends Specification {
 		msg.getParsedContent()
 		then:
 		thrown EncryptedContentNotParsableException
-
-		// TODO: the whole content should be either encrypted or not encrypted
-		// Address in a subsequent PR and then uncomment this test
-		/*
-		when:
-		msg.setEncryptionType(EncryptionType.RSA)
-		msg.getParsedContent()
-		then:
-		thrown EncryptedContentNotParsableException
-		 */
 	}
 }
