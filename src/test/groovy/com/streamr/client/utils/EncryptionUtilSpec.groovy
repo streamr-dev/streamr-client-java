@@ -2,11 +2,11 @@ package com.streamr.client.utils
 
 import com.streamr.client.exceptions.InvalidGroupKeyException
 import com.streamr.client.exceptions.InvalidRSAKeyException
+import com.streamr.client.protocol.StreamrSpecification
 import com.streamr.client.protocol.message_layer.MessageID
 import com.streamr.client.protocol.message_layer.MessageRef
 import com.streamr.client.protocol.message_layer.StreamMessage
 import org.apache.commons.codec.binary.Hex
-import spock.lang.Specification
 
 import javax.xml.bind.DatatypeConverter
 import java.nio.charset.StandardCharsets
@@ -15,7 +15,7 @@ import java.security.SecureRandom
 import java.security.interfaces.RSAPrivateKey
 import java.security.interfaces.RSAPublicKey
 
-class EncryptionUtilSpec extends Specification {
+class EncryptionUtilSpec extends StreamrSpecification {
 
     final Map plaintextContent = [foo: 'bar']
     final String serializedPlaintextContent = "{\"foo\":\"bar\"}"
@@ -27,7 +27,7 @@ class EncryptionUtilSpec extends Specification {
 
     def setup() {
         streamMessage = new StreamMessage(
-                new MessageID("stream-id", 0, 1L, 0L, "publisherId", "msgChainId"),
+                new MessageID("stream-id", 0, 1L, 0L, publisherId, "msgChainId"),
                 new MessageRef(0L, 0L),
                 plaintextContent)
         util = new EncryptionUtil()

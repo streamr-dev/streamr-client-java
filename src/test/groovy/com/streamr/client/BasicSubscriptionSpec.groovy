@@ -3,7 +3,6 @@ package com.streamr.client
 import com.streamr.client.exceptions.GapDetectedException
 import com.streamr.client.exceptions.UnableToDecryptException
 import com.streamr.client.protocol.StreamrSpecification
-import com.streamr.client.protocol.message_layer.GroupKeyAnnounce
 import com.streamr.client.protocol.message_layer.MessageRef
 import com.streamr.client.protocol.message_layer.StreamMessage
 import com.streamr.client.subs.BasicSubscription
@@ -136,8 +135,8 @@ class BasicSubscriptionSpec extends StreamrSpecification {
     }
 
     void "does not throw if different publishers"() {
-        StreamMessage msg1 = createMessage(1, 0, null, 0, "publisher1")
-        StreamMessage msg4 = createMessage(4, 0, 3, 0, "publisher2")
+        StreamMessage msg1 = createMessage(1, 0, null, 0, getPublisherId(1))
+        StreamMessage msg4 = createMessage(4, 0, 3, 0, getPublisherId(2))
 
         when:
         sub.handleRealTimeMessage(msg1)
@@ -228,7 +227,7 @@ class BasicSubscriptionSpec extends StreamrSpecification {
 
         then:
         1 * keyStore.get(msg.getStreamId(), oldKey.getGroupKeyId()) >> oldKey
-        1 * keyExchangeUtil.handleNewAESEncryptedKeys([msg.getNewGroupKey()], msg.getStreamId(), msg.getPublisherId(), msg.getGroupKeyId());
+        1 * keyExchangeUtil.handleNewAESEncryptedKeys([msg.getNewGroupKey()], msg.getStreamId(), msg.getPublisherId(), msg.getGroupKeyId())
     }
 
     void "calls key request function if the key is not in the key store (multiple times if there's no response)"() {
@@ -331,10 +330,10 @@ class BasicSubscriptionSpec extends StreamrSpecification {
     }
 
     void "queues messages when not able to decrypt and handles them once the key is updated (multiple publishers)"() {
-        StreamMessage msg1pub1 = createMessage(1, 0, null, null, "publisherId1", [foo: 'bar1'])
-        StreamMessage msg2pub1 = createMessage(2, 0, null, null, "publisherId1", [foo: 'bar2'])
-        StreamMessage msg1pub2 = createMessage(1, 0, null, null, "publisherId2", [foo: 'bar3'])
-        StreamMessage msg2pub2 = createMessage(2, 0, null, null, "publisherId2", [foo: 'bar4'])
+        StreamMessage msg1pub1 = createMessage(1, 0, null, null, getPublisherId(1), [foo: 'bar1'])
+        StreamMessage msg2pub1 = createMessage(2, 0, null, null, getPublisherId(1), [foo: 'bar2'])
+        StreamMessage msg1pub2 = createMessage(1, 0, null, null, getPublisherId(2), [foo: 'bar3'])
+        StreamMessage msg2pub2 = createMessage(2, 0, null, null, getPublisherId(2), [foo: 'bar4'])
 
         GroupKey groupKeyPub1 = GroupKey.generate()
         GroupKey groupKeyPub2 = GroupKey.generate()
@@ -396,11 +395,11 @@ class BasicSubscriptionSpec extends StreamrSpecification {
     }
 
     void "queues messages when not able to decrypt and handles them once the key is updated (multiple publishers interleaved)"() {
-        StreamMessage msg1pub1 = createMessage(1, 0, null, null, "publisherId1", [foo: 'bar1'])
-        StreamMessage msg2pub1 = createMessage(2, 0, null, null, "publisherId1", [foo: 'bar2'])
-        StreamMessage msg3pub1 = createMessage(3, 0, null, null, "publisherId1", [foo: 'bar3'])
-        StreamMessage msg1pub2 = createMessage(1, 0, null, null, "publisherId2", [foo: 'bar4'])
-        StreamMessage msg2pub2 = createMessage(2, 0, null, null, "publisherId2", [foo: 'bar5'])
+        StreamMessage msg1pub1 = createMessage(1, 0, null, null, getPublisherId(1), [foo: 'bar1'])
+        StreamMessage msg2pub1 = createMessage(2, 0, null, null, getPublisherId(1), [foo: 'bar2'])
+        StreamMessage msg3pub1 = createMessage(3, 0, null, null, getPublisherId(1), [foo: 'bar3'])
+        StreamMessage msg1pub2 = createMessage(1, 0, null, null, getPublisherId(2), [foo: 'bar4'])
+        StreamMessage msg2pub2 = createMessage(2, 0, null, null, getPublisherId(2), [foo: 'bar5'])
 
         GroupKey groupKeyPub1 = GroupKey.generate()
         GroupKey groupKeyPub2 = GroupKey.generate()
@@ -472,10 +471,10 @@ class BasicSubscriptionSpec extends StreamrSpecification {
 
     void "queues messages when not able to decrypt and handles them once the key is updated (one publisher, two keys on two msgChains)"() {
         // All messages have the same publisherId
-        StreamMessage key1msg1 = createMessage(1, 0, null, null, "publisherId1", [n: 1], "msgChain1")
-        StreamMessage key1msg2 = createMessage(2, 0, null, null, "publisherId1", [n: 2], "msgChain1")
-        StreamMessage key2msg1 = createMessage(3, 0, null, null, "publisherId1", [n: 3], "msgChain2")
-        StreamMessage key2msg2 = createMessage(4, 0, null, null, "publisherId1", [n: 4], "msgChain2")
+        StreamMessage key1msg1 = createMessage(1, 0, null, null, getPublisherId(1), [n: 1], "msgChain1")
+        StreamMessage key1msg2 = createMessage(2, 0, null, null, getPublisherId(1), [n: 2], "msgChain1")
+        StreamMessage key2msg1 = createMessage(3, 0, null, null, getPublisherId(1), [n: 3], "msgChain2")
+        StreamMessage key2msg2 = createMessage(4, 0, null, null, getPublisherId(1), [n: 4], "msgChain2")
 
         GroupKey key1 = GroupKey.generate()
         GroupKey key2 = GroupKey.generate()

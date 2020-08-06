@@ -1,17 +1,18 @@
 package com.streamr.client.protocol.message_layer;
 import com.streamr.client.exceptions.MalformedMessageException;
+import com.streamr.client.utils.Address;
 
 import java.util.Date;
 
 public class MessageID {
-    private String streamId;
-    private int streamPartition;
-    private long timestamp;
-    private long sequenceNumber;
-    private String publisherId;
-    private String msgChainId;
+    private final String streamId;
+    private final int streamPartition;
+    private final long timestamp;
+    private final long sequenceNumber;
+    private final Address publisherId;
+    private final String msgChainId;
 
-    public MessageID(String streamId, int streamPartition, long timestamp, long sequenceNumber, String publisherId, String msgChainId) {
+    public MessageID(String streamId, int streamPartition, long timestamp, long sequenceNumber, Address publisherId, String msgChainId) {
         if (streamId == null) {
             throw new MalformedMessageException("'streamId' cannot be null.");
         }
@@ -49,7 +50,7 @@ public class MessageID {
         return sequenceNumber;
     }
 
-    public String getPublisherId() {
+    public Address getPublisherId() {
         return publisherId;
     }
 

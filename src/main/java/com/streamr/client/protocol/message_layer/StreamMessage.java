@@ -223,7 +223,7 @@ public class StreamMessage implements ITimestamped {
     }
 
     public Address getPublisherId() {
-        return new Address(messageID.getPublisherId());
+        return messageID.getPublisherId();
     }
 
     public String getMsgChainId() {

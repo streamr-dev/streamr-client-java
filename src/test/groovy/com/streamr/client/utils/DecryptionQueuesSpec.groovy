@@ -17,17 +17,17 @@ class DecryptionQueuesSpec extends StreamrSpecification {
 		GroupKey pub2key = GroupKey.generate()
 
 		// msgChain1 has messages with two different keys
-		StreamMessage chain1key1msg1 = createMessage(0, 0, null, null, "publisherId", [:], "msgChain1")
-		StreamMessage chain1key1msg2 = createMessage(1, 0, 0, 0, "publisherId", [:], "msgChain1")
-		StreamMessage chain1key1msg3 = createMessage(2, 0, 0, 0, "publisherId", [:], "msgChain1")
-		StreamMessage chain1key2msg4 = createMessage(3, 0, 0, 0, "publisherId", [:], "msgChain1")
+		StreamMessage chain1key1msg1 = createMessage(0, 0, null, null, publisherId, [:], "msgChain1")
+		StreamMessage chain1key1msg2 = createMessage(1, 0, 0, 0, publisherId, [:], "msgChain1")
+		StreamMessage chain1key1msg3 = createMessage(2, 0, 0, 0, publisherId, [:], "msgChain1")
+		StreamMessage chain1key2msg4 = createMessage(3, 0, 0, 0, publisherId, [:], "msgChain1")
 
 		// Also there's another msgChain from the same publisher
-		StreamMessage chain2key2msg1 = createMessage(0, 0, null, null, "publisherId", [:], "msgChain2")
-		StreamMessage chain2key2msg2 = createMessage(1, 0, 0, 0, "publisherId", [:], "msgChain2")
+		StreamMessage chain2key2msg1 = createMessage(0, 0, null, null, publisherId, [:], "msgChain2")
+		StreamMessage chain2key2msg2 = createMessage(1, 0, 0, 0, publisherId, [:], "msgChain2")
 
 		// And a completely different publisher
-		StreamMessage pub2msg1 = createMessage(0, 0, null, null, "publisherId2", [:], "pub2msgChain")
+		StreamMessage pub2msg1 = createMessage(0, 0, null, null, getPublisherId(2), [:], "pub2msgChain")
 
 		// Encrypt each message with appropriate key and add to the decryptionQueues
 		[chain1key1msg1, chain1key1msg2, chain1key1msg3].each { EncryptionUtil.encryptStreamMessage(it, key1)}.each { decryptionQueues.add(it) }

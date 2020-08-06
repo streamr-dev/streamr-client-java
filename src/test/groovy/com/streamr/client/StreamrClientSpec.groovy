@@ -68,7 +68,7 @@ class StreamrClientSpec extends StreamrSpecification {
         }
 
         // Turn off autoRevoke, otherwise it will try and to REST API calls
-        EncryptionOptions encryptionOptions = new EncryptionOptions(new InMemoryGroupKeyStore(), null, null, false);
+        EncryptionOptions encryptionOptions = new EncryptionOptions(new InMemoryGroupKeyStore(), null, null, false)
 
         StreamrClientOptions options = new StreamrClientOptions(authenticationMethod, SigningOptions.getDefault(), encryptionOptions, server.getWsUrl(), "dont-call-this-rest-api-url", gapFillTimeout, retryResendAfter, false)
         options.reconnectRetryInterval = 1000
@@ -94,7 +94,7 @@ class StreamrClientSpec extends StreamrSpecification {
     }
 
     StreamMessage createMsg(String streamId, long timestamp, long sequenceNumber, Long prevTimestamp, Long prevSequenceNumber) {
-        MessageID msgId = new MessageID(streamId, 0, timestamp, sequenceNumber, publisherId.toString(), "msgChainId")
+        MessageID msgId = new MessageID(streamId, 0, timestamp, sequenceNumber, publisherId, "msgChainId")
         MessageRef prev = prevTimestamp == null ? null : new MessageRef(prevTimestamp, prevSequenceNumber)
         return new StreamMessage(msgId, prev, [hello: "world"])
     }

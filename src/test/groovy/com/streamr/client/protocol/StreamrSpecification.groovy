@@ -29,14 +29,14 @@ class StreamrSpecification extends Specification {
     }
 
     protected StreamMessage createMessage(Map content) {
-        return createMessage(new Date().getTime(), seqNo++, null, null, "publisherId", content)
+        return createMessage(new Date().getTime(), seqNo++, null, null, publisherId, content)
     }
 
     protected StreamMessage createMessage(long timestamp, Map content) {
-        return createMessage(timestamp, 0, null, null, "publisherId", content)
+        return createMessage(timestamp, 0, null, null, publisherId, content)
     }
 
-    protected StreamMessage createMessage(long timestamp = 0, long sequenceNumber = 0, Long previousTimestamp = null, Long previousSequenceNumber = null, String publisherId = "publisherId", Map content = [:], String msgChainId = "msgChainId") {
+    protected StreamMessage createMessage(long timestamp = 0, long sequenceNumber = 0, Long previousTimestamp = null, Long previousSequenceNumber = null, Address publisherId = new Address("publisherId"), Map content = [:], String msgChainId = "msgChainId") {
         new StreamMessage(
                 new MessageID("streamId", 0, timestamp, sequenceNumber, publisherId, msgChainId),
                 (previousTimestamp != null ? new MessageRef(previousTimestamp, previousSequenceNumber ?: 0) : null),

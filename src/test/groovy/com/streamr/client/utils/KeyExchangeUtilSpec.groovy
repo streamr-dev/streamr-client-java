@@ -17,7 +17,7 @@ class KeyExchangeUtilSpec extends StreamrSpecification {
     KeyExchangeUtil.OnNewKeysFunction onNewKeysFunction
     ArrayList<StreamMessage> published
     StreamMessage response = new StreamMessage(
-            new MessageID("subscriberId", 0, 5145, 0, "publisherId", ""),
+            new MessageID("subscriberId", 0, 5145, 0, publisherId, ""),
             null,
             StreamMessage.MessageType.GROUP_KEY_RESPONSE,
             "response",
@@ -54,7 +54,7 @@ class KeyExchangeUtilSpec extends StreamrSpecification {
     }
 
     void "handleGroupKeyRequest() should send group key response for the requested keys"() {
-        MessageID id = new MessageID("publisherInbox", 0, 414, 0, subscriberId.toString(), "msgChainId")
+        MessageID id = new MessageID("publisherInbox", 0, 414, 0, subscriberId, "msgChainId")
         GroupKey key1 = GroupKey.generate()
         GroupKey key2 = GroupKey.generate()
 
@@ -83,7 +83,7 @@ class KeyExchangeUtilSpec extends StreamrSpecification {
     }
 
     void "handleGroupKeyResponse() should decrypt keys, add keys to keyStore, and call onNewKeys function"() {
-        MessageID id = new MessageID("subscriberInbox", 0, 414, 0, "publisherId", "msgChainId")
+        MessageID id = new MessageID("subscriberInbox", 0, 414, 0, publisherId, "msgChainId")
         GroupKey key = GroupKey.generate()
         EncryptedGroupKey encryptedKey = EncryptionUtil.encryptWithPublicKey(key, encryptionUtil.publicKey)
 
@@ -100,7 +100,7 @@ class KeyExchangeUtilSpec extends StreamrSpecification {
     }
 
     void "handleGroupKeyAnnounce() should RSA decrypt keys, add them to keyStore, and call onNewKeys function"() {
-        MessageID id = new MessageID("subscriberInbox", 0, 414, 0, "publisherId", "msgChainId")
+        MessageID id = new MessageID("subscriberInbox", 0, 414, 0, publisherId, "msgChainId")
         GroupKey key = GroupKey.generate()
         EncryptedGroupKey encryptedKey = EncryptionUtil.encryptWithPublicKey(key, encryptionUtil.publicKey)
 
@@ -117,7 +117,7 @@ class KeyExchangeUtilSpec extends StreamrSpecification {
     }
 
     void "handleGroupKeyAnnounce() should AES decrypt keys, add them to keyStore, and call onNewKeys function"() {
-        MessageID id = new MessageID("subscriberInbox", 0, 414, 0, "publisherId", "msgChainId")
+        MessageID id = new MessageID("subscriberInbox", 0, 414, 0, publisherId, "msgChainId")
         GroupKey keyToEncrypt = GroupKey.generate()
         GroupKey keyToEncryptWith = GroupKey.generate()
         EncryptedGroupKey encryptedKey = EncryptionUtil.encryptGroupKey(keyToEncrypt, keyToEncryptWith)
@@ -201,10 +201,10 @@ class KeyExchangeUtilSpec extends StreamrSpecification {
         util.getKnownPublicKeysByPublisher().put(getSubscriberId(3), new EncryptionUtil().publicKeyAsPemString)
 
         StreamMessage announce1 = new GroupKeyAnnounce("streamId", []).toStreamMessage(new MessageID(
-                "keyexchange-sub1", 0, 0, 0,"publisherId", "msgChainId"
+                "keyexchange-sub1", 0, 0, 0,publisherId, "msgChainId"
         ), null)
         StreamMessage announce3 = new GroupKeyAnnounce("streamId", []).toStreamMessage(new MessageID(
-                "keyexchange-sub1", 0, 0, 0,"publisherId", "msgChainId"
+                "keyexchange-sub1", 0, 0, 0,publisherId, "msgChainId"
         ), null)
 
         when:

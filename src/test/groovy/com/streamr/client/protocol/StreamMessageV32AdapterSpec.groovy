@@ -4,6 +4,7 @@ import com.streamr.client.protocol.message_layer.MessageID
 import com.streamr.client.protocol.message_layer.MessageRef
 import com.streamr.client.protocol.message_layer.StreamMessage
 import com.streamr.client.protocol.message_layer.StreamMessageAdapter
+import com.streamr.client.utils.Address
 import com.streamr.client.utils.EncryptedGroupKey
 
 class StreamMessageV32AdapterSpec extends StreamrSpecification {
@@ -17,14 +18,14 @@ class StreamMessageV32AdapterSpec extends StreamrSpecification {
 
 		// Message with minimal fields
 		msg = new StreamMessage(
-				new MessageID("streamId", 0, 123L, 0, "publisherId", "msgChainId"),
+				new MessageID("streamId", 0, 123L, 0, publisherId, "msgChainId"),
 				null,
 				[:]
 		)
 	}
 
 	void "serialize minimal message"() {
-		String expectedJson = '[32,["streamId",0,123,0,"publisherId","msgChainId"],null,27,0,0,null,"{}",null,0,null]'
+		String expectedJson = '[32,["streamId",0,123,0,"publisherid","msgChainId"],null,27,0,0,null,"{}",null,0,null]'
 
 		expect:
 		adapter.serialize(msg, VERSION) == expectedJson
@@ -32,7 +33,7 @@ class StreamMessageV32AdapterSpec extends StreamrSpecification {
 	}
 
 	void "serialize maximal message"() {
-		String expectedJson = '[32,["streamId",0,123,0,"publisherId","msgChainId"],[122,0],27,0,2,"groupKeyId","encrypted-content","[\\\"newGroupKeyId\\\",\\\"encryptedGroupKeyHex-cached\\\"]",2,"signature"]'
+		String expectedJson = '[32,["streamId",0,123,0,"publisherid","msgChainId"],[122,0],27,0,2,"groupKeyId","encrypted-content","[\\\"newGroupKeyId\\\",\\\"encryptedGroupKeyHex-cached\\\"]",2,"signature"]'
 		msg.setPreviousMessageRef(new MessageRef(122L, 0))
 		msg.setEncryptionType(StreamMessage.EncryptionType.AES);
 		msg.setGroupKeyId("groupKeyId")
@@ -46,7 +47,7 @@ class StreamMessageV32AdapterSpec extends StreamrSpecification {
 	}
 
 	void "deserialize minimal message"() {
-		String json = '[32,["streamId",0,123,0,"publisherId","msgChainId"],null,27,0,0,null,"{}",null,0,null]'
+		String json = '[32,["streamId",0,123,0,"publisherid","msgChainId"],null,27,0,0,null,"{}",null,0,null]'
 
 		when:
 		msg = StreamMessageAdapter.deserialize(json)
@@ -71,7 +72,7 @@ class StreamMessageV32AdapterSpec extends StreamrSpecification {
 	}
 
 	void "deserialize maximal message"() {
-		String json = '[32,["streamId",0,123,0,"publisherId","msgChainId"],[122,0],27,0,2,"groupKeyId","encrypted-content","[\\\"newGroupKeyId\\\",\\\"encryptedGroupKeyHex\\\"]",2,"signature"]'
+		String json = '[32,["streamId",0,123,0,"publisherid","msgChainId"],[122,0],27,0,2,"groupKeyId","encrypted-content","[\\\"newGroupKeyId\\\",\\\"encryptedGroupKeyHex\\\"]",2,"signature"]'
 
 		when:
 		msg = StreamMessageAdapter.deserialize(json)

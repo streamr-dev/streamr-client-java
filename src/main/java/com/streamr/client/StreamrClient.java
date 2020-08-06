@@ -81,7 +81,7 @@ public class StreamrClient extends StreamrRESTClient {
             }
         }, (streamId, subscriberAddress) -> {
             try {
-                return isSubscriber(streamId, subscriberAddress.toString());
+                return isSubscriber(streamId, subscriberAddress);
             } catch (IOException e) {
                 throw new RuntimeException(e);
             }
@@ -93,7 +93,7 @@ public class StreamrClient extends StreamrRESTClient {
             }
         }, (streamId, publisherAddress) -> {
             try {
-                return isPublisher(streamId, publisherAddress.toString());
+                return isPublisher(streamId, publisherAddress);
             } catch (IOException e) {
                 throw new RuntimeException(e);
             }
