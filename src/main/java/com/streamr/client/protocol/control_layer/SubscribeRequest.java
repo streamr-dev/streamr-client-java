@@ -25,4 +25,10 @@ public class SubscribeRequest extends ControlMessage {
     public String getSessionToken() {
         return sessionToken;
     }
+
+    @Override
+    public String toString() {
+        return String.format("SubscribeRequest{requestId=%s, streamId=%s, streamPartition=%s, sessionToken=%s",
+                getRequestId(), streamId, streamPartition, sessionToken);
+    }
 }

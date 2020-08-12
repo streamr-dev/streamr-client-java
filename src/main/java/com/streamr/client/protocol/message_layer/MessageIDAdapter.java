@@ -3,6 +3,7 @@ package com.streamr.client.protocol.message_layer;
 import com.squareup.moshi.JsonAdapter;
 import com.squareup.moshi.JsonReader;
 import com.squareup.moshi.JsonWriter;
+import com.streamr.client.utils.Address;
 
 import java.io.IOException;
 
@@ -17,7 +18,7 @@ public class MessageIDAdapter extends JsonAdapter<MessageID> {
         String publisherId = reader.nextString();
         String msgChainId = reader.nextString();
         reader.endArray();
-        return new MessageID(streamId, streamPartition, timestamp, sequenceNumber, publisherId, msgChainId);
+        return new MessageID(streamId, streamPartition, timestamp, sequenceNumber, new Address(publisherId), msgChainId);
     }
 
     @Override
@@ -27,7 +28,7 @@ public class MessageIDAdapter extends JsonAdapter<MessageID> {
         writer.value(value.getStreamPartition());
         writer.value(value.getTimestamp());
         writer.value(value.getSequenceNumber());
-        writer.value(value.getPublisherId());
+        writer.value(value.getPublisherId().toString());
         writer.value(value.getMsgChainId());
         writer.endArray();
     }

@@ -2,25 +2,21 @@ package com.streamr.client.options;
 
 import com.streamr.client.utils.EncryptionUtil;
 import com.streamr.client.utils.GroupKey;
-import com.streamr.client.utils.UnencryptedGroupKey;
+import com.streamr.client.utils.GroupKeyStore;
+import com.streamr.client.utils.InMemoryGroupKeyStore;
 
 import java.security.interfaces.RSAPrivateKey;
 import java.security.interfaces.RSAPublicKey;
 import java.util.HashMap;
 
 public class EncryptionOptions {
-    private final HashMap<String, UnencryptedGroupKey> publisherGroupKeys; // streamId --> groupKeyHex
-    private final HashMap<String, HashMap<String, UnencryptedGroupKey>> subscriberGroupKeys; // streamId --> (publisherId --> groupKeyHex)
-    private boolean publisherStoreKeyHistory = true;
+    private final GroupKeyStore keyStore;
     private RSAPublicKey rsaPublicKey;
     private RSAPrivateKey rsaPrivateKey;
-    private boolean autoRevoke = true;
+    private final boolean autoRevoke;
 
-    public EncryptionOptions(HashMap<String, UnencryptedGroupKey> publisherGroupKeys, HashMap<String, HashMap<String, UnencryptedGroupKey>> subscriberGroupKeys,
-                             boolean publisherStoreKeyHistory, String rsaPublicKey, String rsaPrivateKey, boolean autoRevoke) {
-        this.publisherGroupKeys = publisherGroupKeys;
-        this.subscriberGroupKeys = subscriberGroupKeys;
-        this.publisherStoreKeyHistory = publisherStoreKeyHistory;
+    public EncryptionOptions(GroupKeyStore keyStore, String rsaPublicKey, String rsaPrivateKey, boolean autoRevoke) {
+        this.keyStore = keyStore;
         if (rsaPublicKey != null) {
             EncryptionUtil.validatePublicKey(rsaPublicKey);
             this.rsaPublicKey = EncryptionUtil.getPublicKeyFromString(rsaPublicKey);
@@ -32,29 +28,25 @@ public class EncryptionOptions {
         this.autoRevoke = autoRevoke;
     }
 
-    public EncryptionOptions(HashMap<String, UnencryptedGroupKey> publisherGroupKeys, HashMap<String, HashMap<String, UnencryptedGroupKey>> subscriberGroupKeys,
-                             boolean publisherStoreKeyHistory, String rsaPublicKey, String rsaPrivateKey) {
-        this(publisherGroupKeys, subscriberGroupKeys, publisherStoreKeyHistory, rsaPublicKey, rsaPrivateKey, true);
+    public EncryptionOptions(GroupKeyStore keyStore, String rsaPublicKey, String rsaPrivateKey) {
+        this(keyStore, rsaPublicKey, rsaPrivateKey, true);
     }
 
-    public EncryptionOptions(HashMap<String, UnencryptedGroupKey> publisherGroupKeys, HashMap<String, HashMap<String, UnencryptedGroupKey>> subscriberGroupKeys) {
-        this(publisherGroupKeys, subscriberGroupKeys, true, null, null, true);
+    // TODO: non-null RSA defaults?
+    public EncryptionOptions(GroupKeyStore keyStore) {
+        this(keyStore, null, null, true);
     }
 
     public EncryptionOptions() {
-        this(new HashMap<>(), new HashMap<>(), true, null, null);
+        this(new InMemoryGroupKeyStore(), null, null);
     }
 
-    public HashMap<String, UnencryptedGroupKey> getPublisherGroupKeys() {
-        return publisherGroupKeys;
+    public EncryptionOptions(boolean autoRevoke) {
+        this(new InMemoryGroupKeyStore(), null, null, autoRevoke);
     }
 
-    public HashMap<String, HashMap<String, UnencryptedGroupKey>> getSubscriberGroupKeys() {
-        return subscriberGroupKeys;
-    }
-
-    public boolean getPublisherStoreKeyHistory() {
-        return publisherStoreKeyHistory;
+    public GroupKeyStore getKeyStore() {
+        return keyStore;
     }
 
     public RSAPublicKey getRsaPublicKey() {

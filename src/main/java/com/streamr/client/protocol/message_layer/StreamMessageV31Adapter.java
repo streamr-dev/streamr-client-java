@@ -7,6 +7,7 @@ import com.squareup.moshi.JsonWriter;
 import com.streamr.client.exceptions.MalformedMessageException;
 import com.streamr.client.protocol.message_layer.StreamMessage.EncryptionType;
 import com.streamr.client.protocol.message_layer.StreamMessage.SignatureType;
+import org.jetbrains.annotations.NotNull;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -43,7 +44,7 @@ public class StreamMessageV31Adapter extends JsonAdapter<StreamMessage> {
                 reader.nextNull();
             }
 
-            return new StreamMessage(messageID, previousMessageRef, messageType, serializedContent, StreamMessage.ContentType.JSON, encryptionType, null, signatureType, signature);
+            return new StreamMessage(messageID, previousMessageRef, messageType, serializedContent, StreamMessage.ContentType.JSON, encryptionType, null, null, signatureType, signature);
         } catch (JsonDataException e) {
             log.error("Failed to parse StreamMessageV31", e);
             throw new MalformedMessageException("Malformed message: " + reader.toString(), e);
@@ -51,20 +52,7 @@ public class StreamMessageV31Adapter extends JsonAdapter<StreamMessage> {
     }
 
     @Override
-    public void toJson(JsonWriter writer, StreamMessage value) throws IOException {
-        // Top-level array already written in StreamMessageAdapter
-        writer.value(VERSION);
-        msgIdAdapter.toJson(writer, value.getMessageID());
-        if (value.getPreviousMessageRef() != null) {
-            msgRefAdapter.toJson(writer, value.getPreviousMessageRef());
-        }else {
-            writer.value((String)null);
-        }
-        writer.value(value.getMessageType().getId());
-        writer.value(value.getEncryptionType().getId());
-        writer.value(value.getSerializedContent());
-        writer.value(value.getSignatureType().getId());
-        writer.value(value.getSignature());
-        // Top-level array will be closed in StreamMessageAdapter
+    public void toJson(@NotNull JsonWriter writer, StreamMessage msg) throws IOException {
+        throw new RuntimeException("Serializing to old version is not supported");
     }
 }

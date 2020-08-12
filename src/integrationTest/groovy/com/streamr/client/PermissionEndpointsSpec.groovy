@@ -28,12 +28,12 @@ class PermissionEndpointsSpec extends StreamrIntegrationSpecification {
         Stream stream = grantor.createStream(proto)
 
         when:
-        Permission p = grantor.grant(stream, Permission.Operation.stream_get, grantee.getPublisherId())
+        Permission p = grantor.grant(stream, Permission.Operation.stream_get, grantee.getPublisherId().toString())
 
         then:
         p.getId() != null
         p.getOperation() == Permission.Operation.stream_get
-        p.getUser() == grantee.getPublisherId()
+        p.getUser() == grantee.getPublisherId().toString()
 
         when:
         Stream granteeStream = grantee.getStream(stream.getId())

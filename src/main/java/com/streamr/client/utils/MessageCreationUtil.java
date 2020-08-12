@@ -1,122 +1,151 @@
 package com.streamr.client.utils;
 
-import com.streamr.client.exceptions.InvalidGroupKeyRequestException;
-import com.streamr.client.exceptions.InvalidGroupKeyResponseException;
-import com.streamr.client.exceptions.MalformedMessageException;
-import com.streamr.client.exceptions.SigningRequiredException;
+import com.streamr.client.exceptions.*;
 import com.streamr.client.protocol.message_layer.*;
 import com.streamr.client.rest.Stream;
 import org.apache.commons.lang3.RandomStringUtils;
 import org.apache.commons.lang3.tuple.Pair;
 
+import javax.annotation.Nullable;
 import java.nio.ByteBuffer;
 import java.nio.charset.StandardCharsets;
 import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
+import java.security.interfaces.RSAPublicKey;
 import java.util.*;
 import java.util.stream.Collectors;
 
+/**
+ * A stateful helper class to create StreamMessages, with the following responsibilities:
+ *
+ * - Maintains message chains by creating appropriate MessageIDs and MessageRefs
+ * - Encrypts created messages
+ * - Signs created messages
+ *
+ * Does NOT:
+ * - Manage encryption keys
+ */
 public class MessageCreationUtil {
-    private final String publisherId;
+    private final Address publisherId;
     private final String msgChainId;
     private final SigningUtil signingUtil;
-    private final KeyStorage keyStorage;
 
     private final HashMap<String, MessageRef> refsPerStreamAndPartition = new HashMap<>();
 
     private final HashMap<String, Integer> cachedHashes = new HashMap<>();
 
-    public MessageCreationUtil(String publisherId, SigningUtil signingUtil, KeyStorage keyStorage) {
+    public MessageCreationUtil(Address publisherId, SigningUtil signingUtil) {
         this.publisherId = publisherId;
         msgChainId = RandomStringUtils.randomAlphanumeric(20);
         this.signingUtil = signingUtil;
-        this.keyStorage = keyStorage;
+    }
+
+    public StreamMessage createStreamMessage(Stream stream, Map<String, Object> payload, Date timestamp) {
+        return createStreamMessage(stream, payload, timestamp, null, null, null);
     }
 
     public StreamMessage createStreamMessage(Stream stream, Map<String, Object> payload, Date timestamp, String partitionKey) {
-        return createStreamMessage(stream, payload, timestamp, partitionKey, null);
+        return createStreamMessage(stream, payload, timestamp, partitionKey, null, null);
     }
 
-    public StreamMessage createStreamMessage(Stream stream, Map<String, Object> payload, Date timestamp, String partitionKey, UnencryptedGroupKey newGroupKey) {
-        String groupKeyHex = newGroupKey == null ? null : newGroupKey.getGroupKeyHex();
-
+    public StreamMessage createStreamMessage(Stream stream, Map<String, Object> payload, Date timestamp, @Nullable String partitionKey, @Nullable GroupKey groupKey, @Nullable GroupKey newGroupKey) {
         int streamPartition = getStreamPartition(stream.getPartitions(), partitionKey);
 
         Pair<MessageID, MessageRef> pair = createMsgIdAndRef(stream.getId(), streamPartition, timestamp.getTime());
-
         StreamMessage streamMessage = new StreamMessage(pair.getLeft(), pair.getRight(), payload);
 
-        if (keyStorage.hasKey(stream.getId()) && groupKeyHex != null) {
-            EncryptionUtil.encryptStreamMessageAndNewKey(groupKeyHex, streamMessage, keyStorage.getLatestKey(stream.getId()).getSecretKey());
-            keyStorage.addKey(stream.getId(), newGroupKey);
-        } else if (keyStorage.hasKey(stream.getId()) || groupKeyHex != null) {
-            if (groupKeyHex != null) {
-                keyStorage.addKey(stream.getId(), newGroupKey);
+        // Encrypt content if the GroupKey is provided
+        if (groupKey != null) {
+            try {
+                EncryptionUtil.encryptStreamMessage(streamMessage, groupKey);
+            } catch (InvalidGroupKeyException e) {
+                throw new RuntimeException(e);
             }
-            EncryptionUtil.encryptStreamMessage(streamMessage, keyStorage.getLatestKey(stream.getId()).getSecretKey());
+
+            // Encrypt and attach newGroupKey if it's provided
+            if (newGroupKey != null) {
+                streamMessage.setNewGroupKey(EncryptionUtil.encryptGroupKey(newGroupKey, groupKey));
+            }
         }
 
+        // Sign if signingUtil provided
         if (signingUtil != null) {
             signingUtil.signStreamMessage(streamMessage);
         }
         return streamMessage;
     }
 
-    public StreamMessage createGroupKeyRequest(String publisherAddress, String streamId, String rsaPublicKey, Date start, Date end) {
+    public StreamMessage createGroupKeyRequest(Address publisherAddress, String streamId, String rsaPublicKey, List<String> groupKeyIds) {
         if (signingUtil == null) {
             throw new SigningRequiredException("Cannot create unsigned group key request. Must authenticate with an Ethereum account");
         }
 
-        GroupKeyRequest.Range range = null;
-        if (start != null && end != null) {
-            range = new GroupKeyRequest.Range(start.getTime(), end.getTime());
-        }
-        GroupKeyRequest request = new GroupKeyRequest(UUID.randomUUID().toString(), streamId, rsaPublicKey, range);
+        GroupKeyRequest request = new GroupKeyRequest(UUID.randomUUID().toString(), streamId, rsaPublicKey, groupKeyIds);
 
         String keyExchangeStreamId = KeyExchangeUtil.getKeyExchangeStreamId(publisherAddress);
         Pair<MessageID, MessageRef> pair = createDefaultMsgIdAndRef(keyExchangeStreamId);
-        StreamMessage streamMessage = new StreamMessage(pair.getLeft(), pair.getRight(), StreamMessage.MessageType.GROUP_KEY_REQUEST, request.toMap());
+        StreamMessage streamMessage = request.toStreamMessage(pair.getLeft(), pair.getRight());
+
+        // Never encrypt but always sign
         signingUtil.signStreamMessage(streamMessage);
         return streamMessage;
     }
 
-    public StreamMessage createGroupKeyResponse(String subscriberAddress, GroupKeyRequest request, List<EncryptedGroupKey> encryptedGroupKeys) {
+    public StreamMessage createGroupKeyResponse(Address subscriberAddress, GroupKeyRequest request, List<GroupKey> groupKeys) {
         if (signingUtil == null) {
             throw new SigningRequiredException("Cannot create unsigned group key response. Must authenticate with an Ethereum account");
         }
 
+        // Encrypt the group keys
+        List<EncryptedGroupKey> encryptedGroupKeys = groupKeys.stream().map(key -> {
+                RSAPublicKey publicKey = EncryptionUtil.getPublicKeyFromString(request.getPublicKey());
+                return EncryptionUtil.encryptWithPublicKey(key, publicKey);
+            }
+        ).collect(Collectors.toList());
+
         GroupKeyResponse response = new GroupKeyResponse(
                 request.getRequestId(),
                 request.getStreamId(),
-                encryptedGroupKeys.stream()
-                        .map(GroupKeyResponse.Key::fromGroupKey)
-                        .collect(Collectors.toList())
+                encryptedGroupKeys
         );
 
         String keyExchangeStreamId = KeyExchangeUtil.getKeyExchangeStreamId(subscriberAddress);
         Pair<MessageID, MessageRef> pair = createDefaultMsgIdAndRef(keyExchangeStreamId);
-        StreamMessage streamMessage = new StreamMessage(pair.getLeft(), pair.getRight(), StreamMessage.MessageType.GROUP_KEY_RESPONSE_SIMPLE, response.toMap());
-        streamMessage.setEncryptionType(StreamMessage.EncryptionType.RSA); // TODO: would make more sense to encrypt the whole content. Address in a follow-up PR
+        StreamMessage streamMessage = response.toStreamMessage(pair.getLeft(), pair.getRight());
+        streamMessage.setEncryptionType(StreamMessage.EncryptionType.RSA);
+        streamMessage.setGroupKeyId(request.getPublicKey());
+
+        // Always sign
         signingUtil.signStreamMessage(streamMessage);
         return streamMessage;
     }
 
-    public StreamMessage createGroupKeyReset(String subscriberAddress, String streamId, EncryptedGroupKey encryptedGroupKey) {
+    public StreamMessage createGroupKeyAnnounce(Address subscriberAddress, String streamId, String publicKey, List<GroupKey> groupKeys) {
         if (signingUtil == null) {
-            throw new SigningRequiredException("Cannot create unsigned group key reset. Must authenticate with an Ethereum account");
+            throw new SigningRequiredException("Cannot create unsigned group key announce. Must authenticate with an Ethereum account");
         }
 
-        GroupKeyReset reset = new GroupKeyReset(streamId, encryptedGroupKey.getGroupKeyHex(), encryptedGroupKey.getStartTime());
+        // Encrypt the group keys
+        List<EncryptedGroupKey> encryptedGroupKeys = groupKeys.stream().map(key -> {
+                    RSAPublicKey rsaPublicKey = EncryptionUtil.getPublicKeyFromString(publicKey);
+                    return EncryptionUtil.encryptWithPublicKey(key, rsaPublicKey);
+                }
+        ).collect(Collectors.toList());
+
+        GroupKeyAnnounce announce = new GroupKeyAnnounce(streamId, encryptedGroupKeys);
 
         String keyExchangeStreamId = KeyExchangeUtil.getKeyExchangeStreamId(subscriberAddress);
         Pair<MessageID, MessageRef> pair = createDefaultMsgIdAndRef(keyExchangeStreamId);
-        StreamMessage streamMessage = new StreamMessage(pair.getLeft(), pair.getRight(), StreamMessage.MessageType.GROUP_KEY_RESET_SIMPLE, reset.toMap());
-        streamMessage.setEncryptionType(StreamMessage.EncryptionType.RSA); // TODO: would make more sense to encrypt the whole content. Address in a follow-up PR
+        StreamMessage streamMessage = announce.toStreamMessage(pair.getLeft(), pair.getRight());
+        streamMessage.setEncryptionType(StreamMessage.EncryptionType.RSA);
+        streamMessage.setGroupKeyId(publicKey);
+
+        // Always sign
         signingUtil.signStreamMessage(streamMessage);
         return streamMessage;
     }
 
-    public StreamMessage createGroupKeyErrorResponse(String destinationAddress, GroupKeyRequest request, Exception e) {
+    public StreamMessage createGroupKeyErrorResponse(Address destinationAddress, GroupKeyRequest request, Exception e) {
         if (signingUtil == null) {
             throw new SigningRequiredException("Cannot create unsigned error message. Must authenticate with an Ethereum account");
         }
@@ -125,12 +154,15 @@ public class MessageCreationUtil {
                 request.getRequestId(),
                 request.getStreamId(),
                 getErrorCodeFromException(e),
-                e.getMessage()
+                e.getMessage(),
+                request.getGroupKeyIds()
         );
 
         String keyExchangeStreamId = KeyExchangeUtil.getKeyExchangeStreamId(destinationAddress);
         Pair<MessageID, MessageRef> pair = createDefaultMsgIdAndRef(keyExchangeStreamId);
-        StreamMessage streamMessage = new StreamMessage(pair.getLeft(), pair.getRight(), StreamMessage.MessageType.GROUP_KEY_RESPONSE_ERROR, response.toMap());
+        StreamMessage streamMessage = response.toStreamMessage(pair.getLeft(), pair.getRight());
+
+        // Never encrypt but always sign
         signingUtil.signStreamMessage(streamMessage);
         return streamMessage;
     }
@@ -165,7 +197,7 @@ public class MessageCreationUtil {
 
     private int getStreamPartition(int nbPartitions, String partitionKey) {
         if (nbPartitions == 0) {
-            throw new Error("partitionCount is falsey!");
+            throw new Error("partitionCount is zero!");
         } else if (nbPartitions == 1) {
             return 0;
         } else if (partitionKey != null) {

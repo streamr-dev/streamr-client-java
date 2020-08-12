@@ -1,20 +1,20 @@
 package com.streamr.client.protocol.message_layer;
 
-import com.streamr.client.utils.GroupKey;
+import com.streamr.client.utils.EncryptedGroupKey;
 import com.streamr.client.utils.ValidationUtil;
 
-import java.util.*;
-import java.util.stream.Collectors;
+import java.util.List;
 
 public class GroupKeyResponse extends AbstractGroupKeyMessage {
-    private String requestId;
-    private Collection<Key> keys;
+    private final String requestId;
+    private final List<EncryptedGroupKey> keys;
 
-    public GroupKeyResponse(String requestId, String streamId, Collection<Key> keys) {
+    public GroupKeyResponse(String requestId, String streamId, List<EncryptedGroupKey> keys) {
         super(streamId);
 
         ValidationUtil.checkNotNull(requestId, "requestId");
         ValidationUtil.checkNotNull(keys, "keys");
+        ValidationUtil.checkNotEmpty(keys, "keys");
 
         this.requestId = requestId;
         this.keys = keys;
@@ -24,90 +24,29 @@ public class GroupKeyResponse extends AbstractGroupKeyMessage {
         return requestId;
     }
 
-    public void setRequestId(String requestId) {
-        this.requestId = requestId;
-    }
-
-    public Collection<Key> getKeys() {
+    public List<EncryptedGroupKey> getKeys() {
         return keys;
     }
 
-    public void setKeys(Collection<Key> keys) {
-        this.keys = keys;
+    @Override
+    protected StreamMessage.MessageType getMessageType() {
+        return StreamMessage.MessageType.GROUP_KEY_RESPONSE;
     }
 
-    public static GroupKeyResponse fromMap(Map<String, Object> map) {
-        List<Key> keys = new ArrayList<>();
-        List<Map<String, Object>> keyMaps = (List<Map<String, Object>>) map.get("keys");
+    @Override
+    public boolean equals(Object o) {
+        if (this == o) return true;
+        if (o == null || getClass() != o.getClass()) return false;
 
-        if (keyMaps != null) {
-            keys = keyMaps.stream()
-                    .map(Key::fromMap)
-                    .collect(Collectors.toList());
-        }
+        GroupKeyResponse that = (GroupKeyResponse) o;
 
-        return new GroupKeyResponse(
-                (String) map.get("requestId"),
-                (String) map.get("streamId"),
-                keys
-        );
+        if (!requestId.equals(that.requestId)) return false;
+        if (!streamId.equals(that.streamId)) return false;
+        return keys.equals(that.keys);
     }
 
-    public Map<String, Object> toMap() {
-        Map<String, Object> map = new LinkedHashMap<>();
-        map.put("requestId", requestId);
-        map.put("streamId", streamId);
-        map.put("keys", keys.stream().map(Key::toMap).collect(Collectors.toList()));
-        return map;
-    }
-
-    public static class Key {
-        private String groupKey;
-        private long start;
-
-        public Key(String groupKey, long start) {
-            this.groupKey = groupKey;
-            this.start = start;
-        }
-
-        public String getGroupKey() {
-            return groupKey;
-        }
-
-        public long getStart() {
-            return start;
-        }
-
-        public static Key fromMap(Map<String, Object> map) {
-            return new Key(
-                    (String) map.get("groupKey"),
-                    ((Number) map.get("start")).longValue()
-            );
-        }
-
-        public Map<String, Object> toMap() {
-            Map<String, Object> map = new LinkedHashMap<>();
-            map.put("groupKey", groupKey);
-            map.put("start", start);
-            return map;
-        }
-
-        public static Key fromGroupKey(GroupKey key) {
-            return new Key(
-                    key.getGroupKeyHex(),
-                    key.getStartTime()
-            );
-        }
-
-        @Override
-        public boolean equals(Object o) {
-            if (this == o) return true;
-            if (o == null || getClass() != o.getClass()) return false;
-
-            Key key = (Key) o;
-
-            if (start != key.start) return false;
-            return groupKey.equals(key.groupKey);
-        }
+    @Override
+    public String toString() {
+        return String.format("GroupKeyResponse{requestId=%s, streamId=%s, keys=%s}", requestId, streamId, keys);
     }
 }

@@ -22,4 +22,10 @@ public class PublishRequest extends ControlMessage {
     public String getSessionToken() {
         return sessionToken;
     }
+
+    @Override
+    public String toString() {
+        return String.format("PublishRequest{requestId=%s, streamMessage=%s, sessionToken=%s",
+                getRequestId(), streamMessage, sessionToken);
+    }
 }

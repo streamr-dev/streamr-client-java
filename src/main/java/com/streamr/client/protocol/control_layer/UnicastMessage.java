@@ -15,4 +15,10 @@ public class UnicastMessage extends ControlMessage {
     public StreamMessage getStreamMessage() {
         return msg;
     }
+
+    @Override
+    public String toString() {
+        return String.format("UnicastMessage{requestId=%s, streamMessage=%s",
+                getRequestId(), msg);
+    }
 }

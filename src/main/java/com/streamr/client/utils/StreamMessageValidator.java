@@ -35,6 +35,9 @@ public class StreamMessageValidator {
         return streamsPerStreamId;
     }
 
+    /**
+     * Validates the message using the protocol rules and throws if the message fails validation.
+     */
     public void validate(StreamMessage msg) throws ValidationException {
         if (msg == null) {
             throw new IllegalArgumentException("StreamMessage was null!");
@@ -42,22 +45,24 @@ public class StreamMessageValidator {
 
         switch (msg.getMessageType()) {
             case STREAM_MESSAGE:
-                validateMessage(msg);
+                validateStreamMessage(msg);
                 break;
             case GROUP_KEY_REQUEST:
                 validateGroupKeyRequest(msg);
                 break;
-            case GROUP_KEY_RESPONSE_SIMPLE:
-            case GROUP_KEY_RESET_SIMPLE:
-            case GROUP_KEY_RESPONSE_ERROR:
-                validateGroupKeyResponseOrReset(msg);
+            case GROUP_KEY_ANNOUNCE:
+                validateGroupKeyAnnounce(msg);
+                break;
+            case GROUP_KEY_RESPONSE:
+            case GROUP_KEY_ERROR_RESPONSE:
+                validateGroupKeyResponse(msg);
                 break;
             default:
                 throw new ValidationException(msg, ValidationException.Reason.INVALID_MESSAGE);
         }
     }
 
-    private void validateMessage(StreamMessage msg) {
+    private void validateStreamMessage(StreamMessage msg) {
         Stream stream = getStream(msg.getStreamId());
 
         // Checks against stream metadata
@@ -75,7 +80,7 @@ public class StreamMessageValidator {
 
         // Check publisher. Note that this can only be checked on signed messages.
         if (msg.getSignature() != null) {
-            String sender = msg.getPublisherId();
+            Address sender = msg.getPublisherId();
 
             // Check that the sender of the message is a valid publisher of the stream
             if (!addressValidityUtil.isValidPublisher(msg.getStreamId(), sender)) {
@@ -121,9 +126,9 @@ public class StreamMessageValidator {
         // Signatures on key exchange messages are checked regardless of policy setting
         assertValidSignature(streamMessage);
 
-        AbstractGroupKeyMessage request = AbstractGroupKeyMessage.fromContent(streamMessage.getParsedContent(), streamMessage.getMessageType());
-        String sender = streamMessage.getPublisherId();
-        String recipient = KeyExchangeUtil.getRecipientFromKeyExchangeStreamId(streamMessage.getStreamId());
+        AbstractGroupKeyMessage request = AbstractGroupKeyMessage.deserialize(streamMessage.getSerializedContent(), streamMessage.getMessageType());
+        Address sender = streamMessage.getPublisherId();
+        Address recipient = KeyExchangeUtil.getRecipientFromKeyExchangeStreamId(streamMessage.getStreamId());
 
         // Check that the recipient of the request is a valid publisher of the stream
         if (!addressValidityUtil.isValidPublisher(request.getStreamId(), recipient)) {
@@ -136,7 +141,7 @@ public class StreamMessageValidator {
         }
     }
 
-    private void validateGroupKeyResponseOrReset(StreamMessage streamMessage) {
+    private void validateGroupKeyResponse(StreamMessage streamMessage) {
         if (streamMessage.getSignature() == null) {
             throw new ValidationException(streamMessage, ValidationException.Reason.UNSIGNED_NOT_ALLOWED, "Received unsigned group key response (it must be signed to avoid MitM attacks)");
         }
@@ -146,9 +151,9 @@ public class StreamMessageValidator {
         // Signatures on key exchange messages are checked regardless of policy setting
         assertValidSignature(streamMessage);
 
-        AbstractGroupKeyMessage response = AbstractGroupKeyMessage.fromContent(streamMessage.getParsedContent(), streamMessage.getMessageType());
-        String sender = streamMessage.getPublisherId();
-        String recipient = KeyExchangeUtil.getRecipientFromKeyExchangeStreamId(streamMessage.getStreamId());
+        AbstractGroupKeyMessage response = AbstractGroupKeyMessage.deserialize(streamMessage.getSerializedContent(), streamMessage.getMessageType());
+        Address sender = streamMessage.getPublisherId();
+        Address recipient = KeyExchangeUtil.getRecipientFromKeyExchangeStreamId(streamMessage.getStreamId());
 
         // Check that the sender of the request is a valid publisher of the stream
         if (!addressValidityUtil.isValidPublisher(response.getStreamId(), sender)) {
@@ -159,6 +164,21 @@ public class StreamMessageValidator {
         if (!addressValidityUtil.isValidSubscriber(response.getStreamId(), recipient)) {
             throw new ValidationException(streamMessage, ValidationException.Reason.PERMISSION_VIOLATION, recipient + " is not a subscriber on stream " + response.getStreamId());
         }
+    }
+
+    private void validateGroupKeyAnnounce(StreamMessage streamMessage) {
+        // Announce messages can appear in key exchange streams and normal streams and are validated differently
+        if (KeyExchangeUtil.isKeyExchangeStreamId(streamMessage.getStreamId())) {
+            // Validate using the same logic as GroupKeyResponse
+            validateGroupKeyResponse(streamMessage);
+        } else {
+            // Validate like a StreamMessage (except always reject unsigned)
+            if (streamMessage.getSignature() == null) {
+                throw new ValidationException(streamMessage, ValidationException.Reason.UNSIGNED_NOT_ALLOWED, "Received unsigned group key response (it must be signed to avoid MitM attacks)");
+            }
+            validateStreamMessage(streamMessage);
+        }
+
     }
 
     private static void assertKeyExchangeStream(StreamMessage streamMessage) {

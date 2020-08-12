@@ -2,6 +2,8 @@ package com.streamr.client.protocol.message_layer;
 
 import com.streamr.client.exceptions.EncryptedContentNotParsableException;
 import com.streamr.client.exceptions.UnsupportedMessageException;
+import com.streamr.client.utils.Address;
+import com.streamr.client.utils.EncryptedGroupKey;
 import com.streamr.client.utils.HttpUtils;
 
 import java.io.IOException;
@@ -11,15 +13,14 @@ import java.util.Map;
 
 public class StreamMessage implements ITimestamped {
 
-    public static final int LATEST_VERSION = 31;
+    public static final int LATEST_VERSION = 32;
 
     public enum MessageType {
         STREAM_MESSAGE ((byte) 27),
         GROUP_KEY_REQUEST ((byte) 28),
-        GROUP_KEY_RESPONSE_SIMPLE ((byte) 29),
-        GROUP_KEY_RESET_SIMPLE ((byte) 30),
-        GROUP_KEY_RESPONSE_ERROR((byte) 31),
-        GROUP_KEY_ROTATE((byte) 32);
+        GROUP_KEY_RESPONSE((byte) 29),
+        GROUP_KEY_ANNOUNCE((byte) 30),
+        GROUP_KEY_ERROR_RESPONSE((byte) 31);
 
         private final byte id;
 
@@ -36,14 +37,12 @@ public class StreamMessage implements ITimestamped {
                 return STREAM_MESSAGE;
             } else if (id == GROUP_KEY_REQUEST.id) {
                 return GROUP_KEY_REQUEST;
-            } else if (id == GROUP_KEY_RESPONSE_SIMPLE.id) {
-                return GROUP_KEY_RESPONSE_SIMPLE;
-            } else if (id == GROUP_KEY_RESET_SIMPLE.id) {
-                return GROUP_KEY_RESET_SIMPLE;
-            } else if (id == GROUP_KEY_RESPONSE_ERROR.id) {
-                return GROUP_KEY_RESPONSE_ERROR;
-            } else if (id == GROUP_KEY_ROTATE.id) {
-                return GROUP_KEY_ROTATE;
+            } else if (id == GROUP_KEY_RESPONSE.id) {
+                return GROUP_KEY_RESPONSE;
+            } else if (id == GROUP_KEY_ANNOUNCE.id) {
+                return GROUP_KEY_ANNOUNCE;
+            } else if (id == GROUP_KEY_ERROR_RESPONSE.id) {
+                return GROUP_KEY_ERROR_RESPONSE;
             }
             throw new UnsupportedMessageException("Unrecognized content type: "+id);
         }
@@ -100,8 +99,7 @@ public class StreamMessage implements ITimestamped {
     public enum EncryptionType {
         NONE ((byte) 0),
         RSA ((byte) 1),
-        AES ((byte) 2),
-        NEW_KEY_AND_AES ((byte) 3);
+        AES ((byte) 2);
 
         private final byte id;
 
@@ -120,8 +118,6 @@ public class StreamMessage implements ITimestamped {
                 return RSA;
             } else if (id == AES.id) {
                 return AES;
-            } else if (id == NEW_KEY_AND_AES.id) {
-                return NEW_KEY_AND_AES;
             }
             throw new UnsupportedMessageException("Unrecognized encryption type: "+id);
         }
@@ -134,6 +130,7 @@ public class StreamMessage implements ITimestamped {
     private final ContentType contentType;
     private EncryptionType encryptionType;
     private String groupKeyId;
+    private EncryptedGroupKey newGroupKey;
     private SignatureType signatureType;
     private String signature;
 
@@ -148,6 +145,7 @@ public class StreamMessage implements ITimestamped {
             ContentType contentType,
             EncryptionType encryptionType,
             String groupKeyId,
+            EncryptedGroupKey newGroupKey,
             SignatureType signatureType,
             String signature
     ) {
@@ -158,6 +156,7 @@ public class StreamMessage implements ITimestamped {
         this.contentType = contentType;
         this.encryptionType = encryptionType;
         this.groupKeyId = groupKeyId;
+        this.newGroupKey = newGroupKey;
         this.signatureType = signatureType;
         this.signature = signature;
     }
@@ -175,7 +174,7 @@ public class StreamMessage implements ITimestamped {
             SignatureType signatureType,
             String signature
     ) {
-        this(messageID, previousMessageRef, messageType, HttpUtils.mapAdapter.toJson(content), ContentType.JSON, encryptionType, groupKeyId, signatureType, signature);
+        this(messageID, previousMessageRef, messageType, HttpUtils.mapAdapter.toJson(content), ContentType.JSON, encryptionType, groupKeyId, null, signatureType, signature);
     }
 
     /**
@@ -188,7 +187,7 @@ public class StreamMessage implements ITimestamped {
             MessageType messageType,
             Map<String, Object> content
     ) {
-        this(messageID, previousMessageRef, messageType, HttpUtils.mapAdapter.toJson(content), ContentType.JSON, EncryptionType.NONE, null, SignatureType.NONE, null);
+        this(messageID, previousMessageRef, messageType, HttpUtils.mapAdapter.toJson(content), ContentType.JSON, EncryptionType.NONE, null, null, SignatureType.NONE, null);
     }
 
     /**
@@ -200,7 +199,7 @@ public class StreamMessage implements ITimestamped {
             MessageRef previousMessageRef,
             Map<String, Object> content
     ) {
-        this(messageID, previousMessageRef, MessageType.STREAM_MESSAGE, HttpUtils.mapAdapter.toJson(content), ContentType.JSON, EncryptionType.NONE, null, SignatureType.NONE, null);
+        this(messageID, previousMessageRef, MessageType.STREAM_MESSAGE, HttpUtils.mapAdapter.toJson(content), ContentType.JSON, EncryptionType.NONE, null, null, SignatureType.NONE, null);
     }
 
     public MessageID getMessageID() {
@@ -223,7 +222,7 @@ public class StreamMessage implements ITimestamped {
         return messageID.getSequenceNumber();
     }
 
-    public String getPublisherId() {
+    public Address getPublisherId() {
         return messageID.getPublisherId();
     }
 
@@ -276,10 +275,7 @@ public class StreamMessage implements ITimestamped {
 
     public Map<String, Object> getParsedContent() {
         if (parsedContent == null) {
-            // TODO: awkward condition due to the "partial" RSA encryption used in delivering group key responses and resets.
-            // Address in a subsequent PR so that the whole content is always either encrypted or not encrypted.
-            // Then change the below condition to: if (encryptionType != EncryptionType.NONE) {
-            if (encryptionType == EncryptionType.AES || encryptionType == EncryptionType.NEW_KEY_AND_AES) {
+            if (encryptionType != EncryptionType.NONE) {
                 throw new EncryptedContentNotParsableException(encryptionType);
             }
             if (contentType == ContentType.JSON) {
@@ -291,7 +287,6 @@ public class StreamMessage implements ITimestamped {
             } else {
                 throw new RuntimeException("Unknown contentType encountered: " + contentType);
             }
-            validateContent(parsedContent, messageType);
         }
         return parsedContent;
     }
@@ -316,22 +311,26 @@ public class StreamMessage implements ITimestamped {
         this.groupKeyId = groupKeyId;
     }
 
-    public void setSerializedContent(String serializedContent) throws IOException {
-        if (this.encryptionType == EncryptionType.NONE) {
-            this.parsedContent = HttpUtils.mapAdapter.fromJson(serializedContent);
-            validateContent(parsedContent, messageType);
-        } else {
-            this.parsedContent = null;
+    public EncryptedGroupKey getNewGroupKey() {
+        return newGroupKey;
+    }
+
+    public void setNewGroupKey(EncryptedGroupKey newGroupKey) {
+        if (newGroupKey.getGroupKeyId().equals(groupKeyId)) {
+            throw new IllegalArgumentException("newGroupKey isn't new - it matches the groupKeyId of the message: " + newGroupKey.getGroupKeyId());
         }
+        this.newGroupKey = newGroupKey;
+    }
+
+    public void setSerializedContent(String serializedContent) {
         this.serializedContent = serializedContent;
     }
 
-    public void setSerializedContent(byte[] serializedContent) throws IOException {
+    public void setSerializedContent(byte[] serializedContent) {
         setSerializedContent(new String(serializedContent, StandardCharsets.UTF_8));
     }
 
     public void setParsedContent(Map<String, Object> parsedContent) {
-        validateContent(parsedContent, messageType);
         this.parsedContent = parsedContent;
         this.serializedContent = HttpUtils.mapAdapter.toJson(parsedContent);
     }
@@ -356,15 +355,28 @@ public class StreamMessage implements ITimestamped {
         return StreamMessage.deserialize(new String(bytes, StandardCharsets.UTF_8));
     }
 
-    private static void validateContent(Map<String, Object> content, MessageType messageType) {
-        if (messageType != MessageType.STREAM_MESSAGE) {
-            // Throws if the content is not valid
-            AbstractGroupKeyMessage.fromContent(content, messageType);
-        }
+    @Override
+    public String toString() {
+        return messageType+"{" +
+                "messageID=" + messageID +
+                ", previousMessageRef=" + previousMessageRef +
+                ", content='" + serializedContent + '\'' +
+                ", contentType=" + contentType +
+                ", encryptionType=" + encryptionType +
+                ", groupKeyId='" + groupKeyId + '\'' +
+                ", newGroupKey='" + newGroupKey + '\'' +
+                ", signatureType=" + signatureType +
+                ", signature='" + signature + '\'' +
+                '}';
     }
 
     @Override
-    public String toString() {
-        return this.getClass().getSimpleName() + ": " + this.serialize();
+    public boolean equals(Object o) {
+        if (this == o) return true;
+        if (o == null || getClass() != o.getClass()) return false;
+
+        StreamMessage that = (StreamMessage) o;
+        return this.serialize().equals(that.serialize());
     }
+
 }

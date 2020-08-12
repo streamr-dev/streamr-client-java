@@ -1,5 +1,7 @@
 package com.streamr.client
 
+import com.streamr.client.authentication.EthereumAuthenticationMethod
+import com.streamr.client.exceptions.UnableToDecryptException
 import com.streamr.client.options.ResendFromOption
 import com.streamr.client.options.ResendLastOption
 import com.streamr.client.options.ResendRangeOption
@@ -7,34 +9,28 @@ import com.streamr.client.protocol.message_layer.StreamMessage
 import com.streamr.client.rest.Permission
 import com.streamr.client.rest.Stream
 import com.streamr.client.subs.Subscription
-import com.streamr.client.utils.UnencryptedGroupKey
-import org.apache.commons.codec.binary.Hex
+import com.streamr.client.utils.GroupKey
 import org.java_websocket.enums.ReadyState
 import spock.util.concurrent.PollingConditions
 
-import java.security.SecureRandom
-
 class StreamrWebsocketSpec extends StreamrIntegrationSpecification {
 
-	private SecureRandom secureRandom = new SecureRandom()
+	private String publisherPrivateKey
+	private String subscriberPrivateKey
 	private StreamrClient publisher
 	private StreamrClient subscriber
 	private Stream stream
 	PollingConditions within10sec = new PollingConditions(timeout: 10)
 
-	UnencryptedGroupKey genKey() {
-		byte[] keyBytes = new byte[32]
-		secureRandom.nextBytes(keyBytes)
-		return new UnencryptedGroupKey(Hex.encodeHexString(keyBytes), new Date())
-	}
-
 	void setup() {
-		publisher = createClientWithPrivateKey(generatePrivateKey())
-		subscriber = createClientWithPrivateKey(generatePrivateKey())
+		publisherPrivateKey = generatePrivateKey()
+		subscriberPrivateKey = generatePrivateKey()
+		publisher = createClientWithPrivateKey(publisherPrivateKey)
+		subscriber = createClientWithPrivateKey(subscriberPrivateKey)
 
 		stream = publisher.createStream(new Stream(generateResourceName(), ""))
-		publisher.grant(stream, Permission.Operation.stream_get, subscriber.getPublisherId())
-		publisher.grant(stream, Permission.Operation.stream_subscribe, subscriber.getPublisherId())
+		publisher.grant(stream, Permission.Operation.stream_get, subscriber.getPublisherId().toString())
+		publisher.grant(stream, Permission.Operation.stream_subscribe, subscriber.getPublisherId().toString())
 	}
 
 	void cleanup() {
@@ -156,9 +152,8 @@ class StreamrWebsocketSpec extends StreamrIntegrationSpecification {
 	}
 
 	void "subscriber can decrypt messages when he knows the keys used to encrypt"() {
-		UnencryptedGroupKey key = genKey()
-		HashMap<String, UnencryptedGroupKey> keys = new HashMap<>()
-		keys.put(publisher.getPublisherId(), key)
+		GroupKey key = GroupKey.generate()
+		subscriber.getKeyStore().add(stream.getId(), key)
 
 		when:
 		// Subscribe to the stream
@@ -169,7 +164,7 @@ class StreamrWebsocketSpec extends StreamrIntegrationSpecification {
 				//reaching this point ensures that the signature verification and decryption didn't throw
 				msg = (StreamMessage) message
 			}
-		}, null, keys)
+		}, null)
 		Thread.sleep(2000)
 
 		publisher.publish(stream, [test: 'clear text'], new Date(), null, key)
@@ -180,8 +175,8 @@ class StreamrWebsocketSpec extends StreamrIntegrationSpecification {
 		}
 
 		when:
-		// publishing a second message with a new group key
-		publisher.publish(stream, [test: 'another clear text'], new Date(), null, genKey())
+		// publishing a second message with a new group key, triggers key rotate & announce
+		publisher.publish(stream, [test: 'another clear text'], new Date(), null, GroupKey.generate())
 
 		then:
 		// no need to explicitly give the new group key to the subscriber
@@ -191,7 +186,7 @@ class StreamrWebsocketSpec extends StreamrIntegrationSpecification {
 	}
 
 	void "subscriber can get the group key and decrypt encrypted messages using an RSA key pair"() {
-		UnencryptedGroupKey key = genKey()
+		GroupKey key = GroupKey.generate()
 
 		when:
 		// Subscribe to the stream without knowing the group key
@@ -220,7 +215,7 @@ class StreamrWebsocketSpec extends StreamrIntegrationSpecification {
 
 		when:
 		// publishing a second message with a new group key
-		publisher.publish(stream, [test: 'another clear text'], new Date(), null, genKey())
+		publisher.publish(stream, [test: 'another clear text'], new Date(), null, GroupKey.generate())
 
 		then:
 		within10sec.eventually {
@@ -230,7 +225,7 @@ class StreamrWebsocketSpec extends StreamrIntegrationSpecification {
 	}
 
 	void "subscriber can get the new group key after reset and decrypt encrypted messages"() {
-		UnencryptedGroupKey key = genKey()
+		GroupKey key = GroupKey.generate()
 
 		when:
 		// Subscribe to the stream without knowing the group key
@@ -260,7 +255,7 @@ class StreamrWebsocketSpec extends StreamrIntegrationSpecification {
 		when:
 		// publishing a second message after a rekey to revoke old subscribers
 		publisher.rekey(stream)
-		publisher.publish(stream, [test: 'another clear text'], new Date(), null)
+		publisher.publish(stream, [test: 'another clear text'])
 
 		then:
 		within10sec.eventually {
@@ -271,9 +266,8 @@ class StreamrWebsocketSpec extends StreamrIntegrationSpecification {
 
 	void "subscriber can get the historical keys and decrypt old encrypted messages using an RSA key pair"() {
 		// publishing historical messages with different group keys before subscribing
-		List<UnencryptedGroupKey> keys = [genKey()]
+		List<GroupKey> keys = [GroupKey.generate(), GroupKey.generate()]
 		publisher.publish(stream, [test: 'clear text'], new Date(), null, keys[0])
-		keys.add(genKey())
 		publisher.publish(stream, [test: 'another clear text'], new Date(), null, keys[1])
 		Thread.sleep(3000)
 
@@ -297,7 +291,7 @@ class StreamrWebsocketSpec extends StreamrIntegrationSpecification {
 				}
 
 			}
-		}, new ResendLastOption(2))
+		}, new ResendLastOption(3)) // need to resend 3 messages because the announce counts
 
 		then:
 		within10sec.eventually {
@@ -319,14 +313,13 @@ class StreamrWebsocketSpec extends StreamrIntegrationSpecification {
 	}
 
 	void "subscribe with resend last"() {
-		Subscription sub
 		boolean received = false
 
 		when:
 		publisher.publish(stream, [i: 1])
 		Thread.sleep(6000) // wait to land in storage
 		// Subscribe to the stream
-		sub = subscriber.subscribe(stream, 0, new MessageHandler() {
+		subscriber.subscribe(stream, 0, new MessageHandler() {
 			@Override
 			void onMessage(Subscription s, StreamMessage message) {
 				received = message.getParsedContent() == [i: 1]
@@ -348,7 +341,7 @@ class StreamrWebsocketSpec extends StreamrIntegrationSpecification {
 		Thread.sleep(2000)
 
         // Subscribe to the stream
-        Subscription sub = subscriber.subscribe(stream, 0, new MessageHandler() {
+        subscriber.subscribe(stream, 0, new MessageHandler() {
             @Override
             void onMessage(Subscription s, StreamMessage message) {
                 received = message.getParsedContent() == [i: 1]
@@ -374,7 +367,6 @@ class StreamrWebsocketSpec extends StreamrIntegrationSpecification {
 		}
 		Thread.sleep(6000) // wait to land in storage
 
-		int i = 0
 		// Resend last
 		subscriber.resend(stream, 0, new MessageHandler() {
 			@Override
@@ -415,7 +407,6 @@ class StreamrWebsocketSpec extends StreamrIntegrationSpecification {
 		}
 		Thread.sleep(6000) // wait to land in storage
 
-		int i = 0
 		// Resend from
 		subscriber.resend(stream, 0, new MessageHandler() {
 			@Override
@@ -492,11 +483,11 @@ class StreamrWebsocketSpec extends StreamrIntegrationSpecification {
 			while (!stop) {
 				// The publisher generates a new key for every message
 				publishedMessages++
-				publisher.publish(stream, [i: i++], new Date(), "", UnencryptedGroupKey.generate())
+				publisher.publish(stream, [i: i++], new Date(), "", GroupKey.generate())
 				Thread.sleep(500)
 			}
 		}
-		Thread.sleep(2000) // make sure the publisher has time to publish some messages
+		Thread.sleep(5000) // make sure some published messages have time to get written to storage
 
 		when:
 		// Subscribe with resend last
@@ -504,8 +495,6 @@ class StreamrWebsocketSpec extends StreamrIntegrationSpecification {
 			@Override
 			void onMessage(Subscription s, StreamMessage message) {
 				receivedMessages++
-				// TODO: remove println
-				System.out.println("Subscriber received message ${message.getMessageRef()}")
 			}
 		}, new ResendLastOption(1000)) // resend all previous messages to make the counters match
 		Thread.sleep(3000) // Time to do the key exchanges etc.
@@ -520,5 +509,76 @@ class StreamrWebsocketSpec extends StreamrIntegrationSpecification {
 		within10sec.eventually {
 			publishedMessages == receivedMessages
 		}
+	}
+
+	void "two instances of same publisher publishing to the same stream"() {
+		boolean stop = false
+		StreamrClient publisher2 = createClientWithPrivateKey(publisherPrivateKey) // same private key
+		publisher.grant(stream, Permission.Operation.stream_get, publisher2.getPublisherId().toString())
+		publisher.grant(stream, Permission.Operation.stream_publish, publisher2.getPublisherId().toString())
+
+		GroupKey keyPublisher1 = GroupKey.generate()
+		GroupKey keyPublisher2 = GroupKey.generate()
+		int publishedByPublisher1 = 0
+		int publishedByPublisher2 = 0
+		int receivedFromPublisher1 = 0
+		int receivedFromPublisher2 = 0
+		int unableToDecryptCount = 0
+
+		Thread publisher1Thread = Thread.start {
+			int i = 0
+			while (!stop) {
+				// The publisher generates a new key for every message
+				publishedByPublisher1++
+				publisher.publish(stream, [publisher: 1, i: i++], new Date(), "", keyPublisher1)
+				Thread.sleep(500)
+			}
+		}
+		Thread publisher2Thread = Thread.start {
+			int i = 0
+			while (!stop) {
+				// The publisher generates a new key for every message
+				publishedByPublisher2++
+				publisher2.publish(stream, [publisher: 2, i: i++], new Date(), "", keyPublisher2)
+				Thread.sleep(500)
+			}
+		}
+
+		Thread.sleep(5000) // make sure some published messages have time to get written to storage
+
+		when:
+		// Subscribe with resend last
+		subscriber.subscribe(stream, 0, new MessageHandler() {
+			@Override
+			void onMessage(Subscription s, StreamMessage message) {
+				if (message.getParsedContent().publisher == 1) {
+					receivedFromPublisher1++
+					log.info("Received from publisher1 message: {}", message.getParsedContent())
+				} else if (message.getParsedContent().publisher == 2) {
+					receivedFromPublisher2++
+					log.info("Received from publisher2 message: {}", message.getParsedContent())
+				} else {
+					throw new RuntimeException("Received an unexpected message: " + message.getParsedContent())
+				}
+			}
+
+			@Override
+			void onUnableToDecrypt(UnableToDecryptException e) {
+				unableToDecryptCount++
+			}
+		}, new ResendLastOption(1000)) // resend all previous messages to make the counters match
+		Thread.sleep(3000) // Time to do the key exchanges etc.
+		stop = true
+
+		then:
+		within10sec.eventually {
+			!publisher1Thread.isAlive() && !publisher2Thread.isAlive()
+		}
+
+		then:
+		within10sec.eventually {
+			publishedByPublisher1 == receivedFromPublisher1 && publishedByPublisher2 == receivedFromPublisher2
+		}
+		unableToDecryptCount == 0
 	}
 }

@@ -36,7 +36,7 @@ class StreamrClientOptionsSpec extends Specification {
     }
     void "throws if invalid public key passed to constructor"() {
         when:
-        new EncryptionOptions(null, null, true, "wrong-format", null)
+        new EncryptionOptions(null, "wrong-format", null)
         then:
         InvalidRSAKeyException e = thrown InvalidRSAKeyException
         e.message == "Must be a valid RSA public key in the PEM format."
@@ -44,7 +44,7 @@ class StreamrClientOptionsSpec extends Specification {
     void "throws if invalid private key passed to constructor"() {
         EncryptionUtil util = new EncryptionUtil()
         when:
-        new EncryptionOptions(null, null, true, util.publicKeyAsPemString, "wrong-format")
+        new EncryptionOptions(null, util.publicKeyAsPemString, "wrong-format")
         then:
         InvalidRSAKeyException e = thrown InvalidRSAKeyException
         e.message == "Must be a valid RSA private key in the PEM format."

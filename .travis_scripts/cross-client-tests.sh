@@ -7,7 +7,7 @@ if [ ! -d streamr-docker-dev ]; then # Skip clone on subsequent attemps.
 fi
 
 sudo ifconfig docker0 10.200.10.1/24
-"$TRAVIS_BUILD_DIR/streamr-docker-dev/streamr-docker-dev/bin.sh" start smart-contracts-init nginx engine-and-editor --wait
+"$TRAVIS_BUILD_DIR/streamr-docker-dev/streamr-docker-dev/bin.sh" start --wait
 
 echo "Clean out install phase build"
 rm -rf build/libs
@@ -38,9 +38,8 @@ npm install
 echo "Run cross-client test scenarios"
 java -jar build/libs/client_testing-1.0-SNAPSHOT.jar -s stream-cleartext-unsigned -c config/default-ci.conf && \
 java -jar build/libs/client_testing-1.0-SNAPSHOT.jar -s stream-cleartext-signed -c config/default-ci.conf && \
-java -jar build/libs/client_testing-1.0-SNAPSHOT.jar -s stream-encrypted-shared-signed -c config/default-ci.conf && \
-java -jar build/libs/client_testing-1.0-SNAPSHOT.jar -s stream-encrypted-shared-rotating-signed -c config/default-ci.conf # && \
-
-# TODO: uncomment once key exchange works
-# java -jar build/libs/client_testing-1.0-SNAPSHOT.jar -s stream-encrypted-exchanged-rotating-signed -c config/java-only-ci.conf && \
-# java -jar build/libs/client_testing-1.0-SNAPSHOT.jar -s stream-encrypted-exchanged-rotating-revoking-signed -c config/java-only-ci.conf
+# TODO: change the following to default-ci.conf once JS client works too
+java -jar build/libs/client_testing-1.0-SNAPSHOT.jar -s stream-encrypted-shared-signed -c config/java-only-ci.conf && \
+java -jar build/libs/client_testing-1.0-SNAPSHOT.jar -s stream-encrypted-shared-rotating-signed -c config/java-only-ci.conf && \
+java -jar build/libs/client_testing-1.0-SNAPSHOT.jar -s stream-encrypted-exchanged-rotating-signed -c config/java-only-ci.conf && \
+java -jar build/libs/client_testing-1.0-SNAPSHOT.jar -s stream-encrypted-exchanged-rotating-revoking-signed -c config/java-only-ci.conf

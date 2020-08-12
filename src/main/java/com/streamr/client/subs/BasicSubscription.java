@@ -6,12 +6,12 @@ import com.streamr.client.exceptions.UnableToDecryptException;
 import com.streamr.client.exceptions.UnsupportedMessageException;
 import com.streamr.client.protocol.message_layer.MessageRef;
 import com.streamr.client.protocol.message_layer.StreamMessage;
-import com.streamr.client.utils.OrderedMsgChain;
-import com.streamr.client.utils.OrderingUtil;
+import com.streamr.client.utils.*;
 import org.slf4j.Logger;
 
 import java.util.*;
 import java.util.concurrent.ConcurrentHashMap;
+import java.util.stream.Collectors;
 
 public abstract class BasicSubscription extends Subscription {
     public static final int MAX_NB_GROUP_KEY_REQUESTS = 10;
@@ -19,42 +19,29 @@ public abstract class BasicSubscription extends Subscription {
     protected OrderingUtil orderingUtil;
     private final ConcurrentHashMap<String, Timer> pendingGroupKeyRequests = new ConcurrentHashMap<>();
     private final ConcurrentHashMap<String, Integer> nbGroupKeyRequestsCalls = new ConcurrentHashMap<>();
-    protected class MsgQueues {
-        private final HashMap<String, ArrayDeque<StreamMessage>> queues = new HashMap<>();
+    private final HashSet<String> alreadyFailedToDecrypt = new HashSet<>();
 
-        public ArrayDeque<StreamMessage> get(String publisherId) {
-            if (!queues.containsKey(publisherId.toLowerCase())) {
-                queues.put(publisherId.toLowerCase(), new ArrayDeque<>());
-            }
-            return queues.get(publisherId.toLowerCase());
-        }
-
-        public void offer(StreamMessage msg) {
-            get(msg.getPublisherId()).offer(msg);
-            getLogger().trace("Message added to encryption queue: {}", msg.getMessageRef());
-        }
-
-        public boolean isEmpty() {
-            for (ArrayDeque<StreamMessage> queue: queues.values()) {
-                if (!queue.isEmpty()) {
-                    return false;
-                }
-            }
-            return true;
-        }
-    }
-    protected final MsgQueues encryptedMsgsQueues = new MsgQueues();
+    protected final DecryptionQueues decryptionQueues;
     private final GroupKeyRequestFunction groupKeyRequestFunction;
-    public BasicSubscription(String streamId, int partition, MessageHandler handler,
-                             GroupKeyRequestFunction groupKeyRequestFunction, long propagationTimeout,
+
+    public BasicSubscription(String streamId, int partition, MessageHandler handler, GroupKeyStore keyStore,
+                             KeyExchangeUtil keyExchangeUtil, GroupKeyRequestFunction groupKeyRequestFunction, long propagationTimeout,
                              long resendTimeout, boolean skipGapsOnFullQueue) {
-        super(streamId, partition, handler, propagationTimeout, resendTimeout, skipGapsOnFullQueue);
-        orderingUtil = new OrderingUtil(streamId, partition,
-                this::handleInOrder, (MessageRef from, MessageRef to, String publisherId, String msgChainId) -> {
-            throw new GapDetectedException(streamId, partition, from, to, publisherId, msgChainId);
-        }, this.propagationTimeout, this.resendTimeout, this.skipGapsOnFullQueue);
+        super(streamId, partition, handler, keyStore, keyExchangeUtil, propagationTimeout, resendTimeout, skipGapsOnFullQueue);
+
+        orderingUtil = new OrderingUtil(
+                streamId, partition,
+                this::handleInOrder,
+                (MessageRef from, MessageRef to, Address publisherId, String msgChainId) -> {
+                    throw new GapDetectedException(streamId, partition, from, to, publisherId, msgChainId);
+                },
+                this.propagationTimeout, this.resendTimeout, this.skipGapsOnFullQueue
+        );
+
+        decryptionQueues = new DecryptionQueues(streamId, partition);
+
         this.groupKeyRequestFunction = groupKeyRequestFunction != null ? groupKeyRequestFunction
-                : ((publisherId, start, end) -> getLogger().warn("Group key missing for stream " + streamId + " and publisher " + publisherId + " but no handler is set."));
+                : ((publisherId, groupKeyIds) -> getLogger().warn("Group key missing for stream " + streamId + " and publisher " + publisherId + " but no handler is set."));
     }
 
     @Override
@@ -76,51 +63,43 @@ public abstract class BasicSubscription extends Subscription {
         return orderingUtil.getGapHandler();
     }
 
-    protected void requestGroupKeyAndQueueMessage(StreamMessage msgToQueue, Date start, Date end) {
+    protected void requestGroupKeyAndQueueMessage(StreamMessage msgToQueue) {
         Timer t = new Timer(String.format("GroupKeyTimer-%s-%s", msgToQueue.getStreamId(), msgToQueue.getMessageRef().toString()), true);
-        String publisherId = msgToQueue.getPublisherId().toLowerCase();
-        nbGroupKeyRequestsCalls.put(publisherId, 0);
+        String groupKeyId = msgToQueue.getGroupKeyId();
+        nbGroupKeyRequestsCalls.put(groupKeyId, 0);
+
         TimerTask request = new TimerTask() {
             @Override
             public void run() {
                 synchronized (BasicSubscription.this) {
-                    if (pendingGroupKeyRequests.containsKey(publisherId)) {
-                        if (nbGroupKeyRequestsCalls.get(publisherId) < MAX_NB_GROUP_KEY_REQUESTS) {
-                            nbGroupKeyRequestsCalls.put(publisherId, nbGroupKeyRequestsCalls.get(publisherId) + 1);
-                            groupKeyRequestFunction.apply(publisherId, start, end);
-                            getLogger().info("Sent key request for stream {} to {}, range {} to {}",
-                                    streamId, publisherId, start != null ? start.getTime() : null, end != null ? end.getTime() : null);
+                    if (pendingGroupKeyRequests.containsKey(groupKeyId)) {
+                        if (nbGroupKeyRequestsCalls.get(groupKeyId) < MAX_NB_GROUP_KEY_REQUESTS) {
+                            nbGroupKeyRequestsCalls.put(groupKeyId, nbGroupKeyRequestsCalls.get(groupKeyId) + 1);
+                            groupKeyRequestFunction.apply(msgToQueue.getPublisherId(), Collections.singletonList(msgToQueue.getGroupKeyId()));
+                            getLogger().info("Sent key request for stream {} publisher {}, key id {}",
+                                    streamId, msgToQueue.getPublisherId(), groupKeyId);
                         } else {
-                            getLogger().warn("Failed to received group key response from "
-                                    + publisherId + " after " + MAX_NB_GROUP_KEY_REQUESTS + " requests.");
-                            cancelGroupKeyRequest(publisherId);
+                            getLogger().warn("Failed to receive group key {} from publisher {} after {} tries.",
+                                    groupKeyId, msgToQueue.getPublisherId(), MAX_NB_GROUP_KEY_REQUESTS);
+                            cancelGroupKeyRequest(groupKeyId);
                         }
                     }
                 }
             }
         };
+
+        pendingGroupKeyRequests.put(groupKeyId, t);
+        decryptionQueues.add(msgToQueue);
         t.schedule(request, 0, propagationTimeout);
-        pendingGroupKeyRequests.put(publisherId, t);
-        encryptedMsgsQueues.offer(msgToQueue);
     }
 
-    protected void handleInOrderQueue(String publisherId) {
-        cancelGroupKeyRequest(publisherId);
-        ArrayDeque<StreamMessage> queue = encryptedMsgsQueues.get(publisherId);
-        getLogger().trace("Checking and handling encryption queue for publisher {}. Queue size: {}", publisherId, queue.size());
-        while (!queue.isEmpty()) {
-            decryptAndHandle(queue.poll());
-        }
-    }
-
-    private synchronized void cancelGroupKeyRequest(String publisherId) {
-        publisherId = publisherId.toLowerCase();
-        if (pendingGroupKeyRequests.containsKey(publisherId)) {
-            getLogger().trace("Pending group key request canceled for publisher {}", publisherId);
-            Timer timer = pendingGroupKeyRequests.get(publisherId);
+    private synchronized void cancelGroupKeyRequest(String groupKeyId) {
+        if (pendingGroupKeyRequests.containsKey(groupKeyId)) {
+            getLogger().trace("Pending group key request canceled for group key {}", groupKeyId);
+            Timer timer = pendingGroupKeyRequests.get(groupKeyId);
             timer.cancel();
             timer.purge();
-            pendingGroupKeyRequests.remove(publisherId);
+            pendingGroupKeyRequests.remove(groupKeyId);
         }
     }
 
@@ -128,36 +107,89 @@ public abstract class BasicSubscription extends Subscription {
         return orderingUtil.getChains();
     }
 
-    public abstract boolean decryptOrRequestGroupKey(StreamMessage msg) throws UnableToDecryptException;
+    private boolean tryDecrypt(StreamMessage msg) throws UnableToDecryptException {
+        // Key exchange messages are handled in a special way in KeyExchangeUtil
+        if (msg.getMessageType() != StreamMessage.MessageType.STREAM_MESSAGE) {
+            return true;
+        }
+
+        // Nothing needs to be done here if the message is not encrypted
+        if (msg.getEncryptionType() == StreamMessage.EncryptionType.NONE) {
+            return true;
+        }
+
+        try {
+            GroupKey groupKey = keyStore.get(msg.getStreamId(), msg.getGroupKeyId());
+            if (groupKey == null) {
+                throw new UnableToDecryptException(msg.getSerializedContent());
+            }
+
+            EncryptionUtil.decryptStreamMessage(msg, groupKey);
+            alreadyFailedToDecrypt.remove(msg.getGroupKeyId());
+            return true;
+        } catch (UnableToDecryptException e) {
+            if (alreadyFailedToDecrypt.contains(msg.getGroupKeyId())) {
+                // even after receiving the latest group key, we still cannot decrypt
+                throw e;
+            } else {
+                // Fail next time we come here
+                alreadyFailedToDecrypt.add(msg.getGroupKeyId());
+            }
+            return false;
+        }
+    }
 
     private void handleInOrder(StreamMessage msg) {
-        if (!pendingGroupKeyRequests.containsKey(msg.getPublisherId().toLowerCase())) {
-            decryptAndHandle(msg);
+        // Is there already a pending request for the key this message was encrypted with?
+        if (msg.getGroupKeyId() != null && pendingGroupKeyRequests.containsKey(msg.getGroupKeyId())) {
+            decryptionQueues.add(msg);
         } else {
-            encryptedMsgsQueues.offer(msg);
+            // If not, handle normally
+            decryptAndHandle(msg);
         }
     }
 
     private void decryptAndHandle(StreamMessage msg) {
         try {
-            boolean success = decryptOrRequestGroupKey(msg);
-            if (success) { // the message was successfully decrypted
+            boolean success = tryDecrypt(msg);
+            if (success) {
                 handler.onMessage(this, msg);
+
+                // Handle new key if the message contains one
+                if (msg.getNewGroupKey() != null) {
+                    keyExchangeUtil.handleNewAESEncryptedKeys(Collections.singletonList(msg.getNewGroupKey()), msg.getStreamId(), msg.getPublisherId(), msg.getGroupKeyId());
+                }
             } else {
-                getLogger().info("Failed to decrypt msg {} from {}. Going to request the correct decryption key(s) and try again.",
-                        msg.getMessageRef(), msg.getPublisherId());
+                // If not successfully decrypted, request group key and queue the message
+                getLogger().debug("Failed to decrypt stream {} publisher {} ref {}, requesting group key {} and queuing message",
+                        msg.getStreamId(), msg.getPublisherId(), msg.getMessageRef(), msg.getGroupKeyId());
+                requestGroupKeyAndQueueMessage(msg);
             }
         } catch (UnableToDecryptException e) { // failed to decrypt for the second time (after receiving the decryption key(s))
-            getLogger().error("Failed to decrypt msg {} from {} even after receiving the decryption keys.",
-                    msg.getMessageRef(), msg.getPublisherId());
+            getLogger().error("Failed to decrypt msg {} from {} in stream {} even after receiving the decryption keys. Calling the onUnableToDecrypt handler!",
+                    msg.getMessageRef(), msg.getPublisherId(), msg.getStreamId());
             handler.onUnableToDecrypt(e);
         }
+    }
+
+    @Override
+    public void onNewKeysAdded(Address publisherId, Collection<GroupKey> groupKeys) {
+        // Cancel any pending request timers for all the received keys
+        groupKeys.forEach(key -> cancelGroupKeyRequest(key.getGroupKeyId()));
+
+        Set<String> groupKeyIds = groupKeys.stream().map(GroupKey::getGroupKeyId).collect(Collectors.toSet());
+        Collection<StreamMessage> unlocked = decryptionQueues.drainUnlockedMessages(publisherId, groupKeyIds);
+
+        getLogger().trace("Received keys from publisher {}: {}. Unlocked {} queued messages.",
+                publisherId, groupKeys, unlocked.size());
+
+        unlocked.forEach(this::decryptAndHandle);
     }
 
     public abstract Logger getLogger();
 
     @FunctionalInterface
     public interface GroupKeyRequestFunction {
-        void apply(String publisherId, Date start, Date end);
+        void apply(Address publisherId, List<String> groupKeyIds);
     }
 }

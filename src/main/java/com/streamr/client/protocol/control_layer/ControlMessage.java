@@ -55,4 +55,8 @@ public abstract class ControlMessage {
         return this.toJson().equals(that.toJson());
     }
 
+    @Override
+    public String toString() {
+        return getClass().getSimpleName() + ": " + toJson();
+    }
 }

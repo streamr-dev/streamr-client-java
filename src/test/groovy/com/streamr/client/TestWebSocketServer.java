@@ -6,7 +6,7 @@ import com.streamr.client.protocol.control_layer.SubscribeRequest;
 import com.streamr.client.protocol.control_layer.SubscribeResponse;
 import com.streamr.client.protocol.message_layer.StreamMessage;
 import com.streamr.client.rest.Stream;
-import com.streamr.client.utils.KeyHistoryStorage;
+import com.streamr.client.utils.Address;
 import com.streamr.client.utils.MessageCreationUtil;
 import junit.framework.AssertionFailedError;
 import org.java_websocket.WebSocket;
@@ -21,9 +21,9 @@ import java.util.*;
 
 public class TestWebSocketServer extends WebSocketServer {
     private static final Logger log = LoggerFactory.getLogger(TestWebSocketServer.class);
-    private final MessageCreationUtil msgCreationUtil = new MessageCreationUtil("publisherId", null, new KeyHistoryStorage());
-    private LinkedList<ReceivedControlMessage> receivedControlMessages = new LinkedList<>();
-    private String wsUrl;
+    private final MessageCreationUtil msgCreationUtil = new MessageCreationUtil(new Address("publisherId"), null);
+    private final LinkedList<ReceivedControlMessage> receivedControlMessages = new LinkedList<>();
+    private final String wsUrl;
     private int checkedControlMessages = 0;
 
     public TestWebSocketServer(String host, int port) {
@@ -43,7 +43,7 @@ public class TestWebSocketServer extends WebSocketServer {
             throw new IllegalStateException("Tried to broadcast a message, but there are no connected clients! Something's wrong!");
         }
         log.info("sendToAll: connections list size is " + getConnections().size());
-        StreamMessage streamMessage = msgCreationUtil.createStreamMessage(stream, payload, new Date(), null);
+        StreamMessage streamMessage = msgCreationUtil.createStreamMessage(stream, payload, new Date());
         BroadcastMessage req = new BroadcastMessage("", streamMessage);
         getConnections().forEach((webSocket -> {
             log.info("send: " + req.toJson());

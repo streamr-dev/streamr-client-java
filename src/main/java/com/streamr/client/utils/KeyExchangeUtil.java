@@ -1,14 +1,10 @@
 package com.streamr.client.utils;
 
-import com.streamr.client.exceptions.*;
-import com.streamr.client.protocol.message_layer.GroupKeyRequest;
-import com.streamr.client.protocol.message_layer.GroupKeyReset;
-import com.streamr.client.protocol.message_layer.GroupKeyResponse;
-import com.streamr.client.protocol.message_layer.StreamMessage;
+import com.streamr.client.exceptions.KeyAlreadyExistsException;
+import com.streamr.client.protocol.message_layer.*;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import java.security.interfaces.RSAPublicKey;
 import java.time.Clock;
 import java.time.Duration;
 import java.time.Instant;
@@ -16,149 +12,145 @@ import java.util.*;
 import java.util.function.Consumer;
 import java.util.stream.Collectors;
 
+/**
+ * This is a helper class for key exchange.
+ *
+ * - Publishes messages to key exchange streams (on rotate and rekey)
+ * - Handles messages published to key exchange streams (requests, responses, announces)
+ * - Manages the keys in the GroupKeyStore
+ */
 public class KeyExchangeUtil {
     private static final Logger log = LoggerFactory.getLogger(KeyExchangeUtil.class);
     private final Clock clock;
     public static final int REVOCATION_THRESHOLD = 5;
     public static final int REVOCATION_DELAY = 10; // in minutes
 
-    private final KeyStorage keyStorage;
+    private final GroupKeyStore keyStore;
     private final MessageCreationUtil messageCreationUtil;
     private final EncryptionUtil encryptionUtil;
     private final AddressValidityUtil addressValidityUtil;
     private final Consumer<StreamMessage> publishFunction;
-    private final SetGroupKeysFunction setGroupKeysFunction;
+    private final OnNewKeysFunction onNewKeysFunction;
     private Instant lastCallToCheckRevocation = Instant.MIN;
-    private final HashMap<String, RSAPublicKey> publicKeys = new HashMap<>();
+    private final HashMap<Address, String> publicKeys = new HashMap<>();
 
     public static final String KEY_EXCHANGE_STREAM_PREFIX = "SYSTEM/keyexchange/";
 
-    public KeyExchangeUtil(KeyStorage keyStorage, MessageCreationUtil messageCreationUtil, EncryptionUtil encryptionUtil,
+    public KeyExchangeUtil(GroupKeyStore keyStore, MessageCreationUtil messageCreationUtil, EncryptionUtil encryptionUtil,
                            AddressValidityUtil addressValidityUtil, Consumer<StreamMessage> publishFunction,
-                           SetGroupKeysFunction setGroupKeysFunction) {
-        this(keyStorage, messageCreationUtil, encryptionUtil, addressValidityUtil, publishFunction,
-                setGroupKeysFunction, Clock.systemDefaultZone());
+                           OnNewKeysFunction onNewKeysFunction) {
+        this(keyStore, messageCreationUtil, encryptionUtil, addressValidityUtil, publishFunction,
+                onNewKeysFunction, Clock.systemDefaultZone());
     }
 
     // constructor used for testing in KeyExchangeUtilSpec
-    public KeyExchangeUtil(KeyStorage keyStorage, MessageCreationUtil messageCreationUtil, EncryptionUtil encryptionUtil,
+    public KeyExchangeUtil(GroupKeyStore keyStore, MessageCreationUtil messageCreationUtil, EncryptionUtil encryptionUtil,
                            AddressValidityUtil addressValidityUtil, Consumer<StreamMessage> publishFunction,
-                           SetGroupKeysFunction setGroupKeysFunction, Clock clock) {
-        this.keyStorage = keyStorage;
+                           OnNewKeysFunction onNewKeysFunction, Clock clock) {
+        this.keyStore = keyStore;
         this.messageCreationUtil = messageCreationUtil;
         this.encryptionUtil = encryptionUtil;
         this.addressValidityUtil = addressValidityUtil;
         this.publishFunction = publishFunction;
-        this.setGroupKeysFunction = setGroupKeysFunction;
+        this.onNewKeysFunction = onNewKeysFunction;
         this.clock = clock;
     }
 
-    public void handleGroupKeyRequest(StreamMessage streamMessage) throws InvalidGroupKeyRequestException {
-        // The StreamMessage should already be validated by the StreamrClient, but double-check
-        if (streamMessage.getSignature() == null) {
-            throw new InvalidGroupKeyRequestException("Received unsigned group key request (the public key must be signed to avoid MitM attacks).");
-        }
-
-        GroupKeyRequest request = GroupKeyRequest.fromMap(streamMessage.getParsedContent());
+    public void handleGroupKeyRequest(StreamMessage streamMessage) {
+        GroupKeyRequest request = (GroupKeyRequest) AbstractGroupKeyMessage.fromStreamMessage(streamMessage);
 
         String streamId = request.getStreamId();
-        String sender = streamMessage.getPublisherId();
-        if (!addressValidityUtil.isValidSubscriber(streamId, sender)) {
-            throw new InvalidGroupKeyRequestException("Received group key request for stream '" + streamId + "' from invalid address '" + sender + "'");
-        }
+        Address sender = streamMessage.getPublisherId();
 
-        GroupKeyRequest.Range range = request.getRange();
-        ArrayList<UnencryptedGroupKey> keys;
-        if (range != null) {
-            log.debug("Querying keys for stream {} between {} and {}. Key storage content is {}",
-                    streamId, range.getStart(), range.getEnd(), keyStorage.getKeysBetween(streamId, 0, new Date().getTime()));
-            keys = keyStorage.getKeysBetween(streamId, range.getStart(), range.getEnd());
-        } else {
-            keys = new ArrayList<>();
-            log.debug("Querying latest key for stream {}. Key storage content is {}",
-                    streamId, keyStorage.getKeysBetween(streamId, 0, new Date().getTime()));
-            UnencryptedGroupKey latest = keyStorage.getLatestKey(streamId);
-            if (latest != null) {
-                keys.add(latest);
+        log.debug("Subscriber {} is querying group keys for stream {}: {}. Key storage content is {}",
+                streamMessage.getPublisherId(), streamId, request.getGroupKeyIds(), keyStore);
+
+        ArrayList<GroupKey> foundKeys = new ArrayList<>();
+        ArrayList<GroupKey> notFoundKeys = new ArrayList<>();
+        for (String groupKeyId : request.getGroupKeyIds()) {
+            GroupKey key = keyStore.get(request.getStreamId(), groupKeyId);
+            if (key != null) {
+                foundKeys.add(key);
+            } else {
+                notFoundKeys.add(key);
             }
         }
-        if (keys.isEmpty()) {
-            throw new InvalidGroupKeyRequestException("Received group key request for stream '" + streamId + "' but no group key is set");
+
+        if (!notFoundKeys.isEmpty()) {
+            log.warn("The following keys requested by subscriber {} in stream {} were not found in key store: {}",
+                    streamMessage.getPublisherId(), streamId, notFoundKeys);
         }
-        ArrayList<EncryptedGroupKey> encryptedGroupKeys = new ArrayList<>();
-        RSAPublicKey publicKey;
-        try {
-            EncryptionUtil.validatePublicKey(request.getPublicKey());
-            publicKey = EncryptionUtil.getPublicKeyFromString(request.getPublicKey());
-        } catch (Exception e) {
-            throw new InvalidGroupKeyRequestException(e.getMessage());
-        }
-        for (UnencryptedGroupKey key: keys) {
-            encryptedGroupKeys.add(key.getEncrypted(publicKey));
-        }
-        publicKeys.put(sender, publicKey);
-        StreamMessage response = messageCreationUtil.createGroupKeyResponse(sender, request, encryptedGroupKeys);
+
+        StreamMessage response = messageCreationUtil.createGroupKeyResponse(sender, request, foundKeys);
+
+        // For re-keys, remember the public key for this subscriber
+        publicKeys.put(sender, request.getPublicKey());
+
         publishFunction.accept(response);
     }
 
-    public void handleGroupKeyResponse(StreamMessage streamMessage) throws InvalidGroupKeyResponseException {
-        // The StreamMessage should already be validated by the StreamrClient, but double-check
-        if (streamMessage.getSignature() == null) {
-            throw new InvalidGroupKeyResponseException("Received unsigned group key response (it must be signed to avoid MitM attacks).");
-        }
+    public void handleGroupKeyResponse(StreamMessage streamMessage) {
+        GroupKeyResponse response = (GroupKeyResponse) AbstractGroupKeyMessage.fromStreamMessage(streamMessage);
 
-        GroupKeyResponse response = GroupKeyResponse.fromMap(streamMessage.getParsedContent());
+        log.debug("Received group key response from publisher {} for stream {}, keys {}",
+                streamMessage.getPublisherId(), response.getStreamId(), response.getKeys());
 
-        // A valid publisher of the client's inbox stream could send key responses for other streams to which
-        // the publisher doesn't have write permissions. Thus the following additional check is necessary.
-        if (!addressValidityUtil.isValidPublisher(response.getStreamId(), streamMessage.getPublisherId())) {
-            throw new InvalidGroupKeyResponseException("Received group key from an invalid publisher "
-                    + streamMessage.getPublisherId() + " for stream " + response.getStreamId());
-        }
-        ArrayList<UnencryptedGroupKey> decryptedKeys = new ArrayList<>();
-        for (GroupKeyResponse.Key key : response.getKeys()) {
-            try {
-                UnencryptedGroupKey decryptedKey = new EncryptedGroupKey(key.getGroupKey(), new Date(key.getStart())).getDecrypted(encryptionUtil);
-                decryptedKeys.add(decryptedKey);
-            } catch (UnableToDecryptException | InvalidGroupKeyException e) {
-                throw new InvalidGroupKeyResponseException(e.getMessage());
-            }
-        }
-        try {
-            log.debug("Received group key response for stream {}, keys {}",
-                    response.getStreamId(), decryptedKeys);
-            setGroupKeysFunction.apply(response.getStreamId(), streamMessage.getPublisherId(), decryptedKeys);
-        } catch (UnableToSetKeysException e) {
-            throw new InvalidGroupKeyResponseException(e.getMessage());
+        if (streamMessage.getEncryptionType() == StreamMessage.EncryptionType.RSA) {
+            handleNewRSAEncryptedKeys(response.getKeys(), response.getStreamId(), streamMessage.getPublisherId());
+        } else {
+            throw new RuntimeException("Unexpected EncryptionType: " + streamMessage.getEncryptionType());
         }
     }
 
-    public void handleGroupKeyReset(StreamMessage streamMessage) throws InvalidGroupKeyResetException {
-        // The StreamMessage should already be validated by the StreamrClient, but double-check
-        if (streamMessage.getSignature() == null) {
-            throw new InvalidGroupKeyResetException("Received unsigned group key reset (it must be signed to avoid MitM attacks).");
-        }
+    public void handleGroupKeyAnnounce(StreamMessage streamMessage) {
+        GroupKeyAnnounce announce = (GroupKeyAnnounce) AbstractGroupKeyMessage.fromStreamMessage(streamMessage);
 
-        GroupKeyReset reset = GroupKeyReset.fromMap(streamMessage.getParsedContent());
-        // A valid publisher of the client's inbox stream could send key resets for other streams to which
-        // the publisher doesn't have write permissions. Thus the following additional check is necessary.
-        if (!addressValidityUtil.isValidPublisher(reset.getStreamId(), streamMessage.getPublisherId())) {
-            throw new InvalidGroupKeyResetException("Received group key reset from an invalid publisher "
-                    + streamMessage.getPublisherId() + " for stream " + reset.getStreamId());
+        log.debug("Received group key announce from publisher {} for stream {}, keys {}",
+                streamMessage.getPublisherId(), announce.getStreamId(), announce.getKeys());
+
+        if (streamMessage.getEncryptionType() == StreamMessage.EncryptionType.RSA) {
+            handleNewRSAEncryptedKeys(announce.getKeys(), announce.getStreamId(), streamMessage.getPublisherId());
+        } else if (streamMessage.getEncryptionType() == StreamMessage.EncryptionType.AES) {
+            handleNewAESEncryptedKeys(announce.getKeys(), announce.getStreamId(), streamMessage.getPublisherId(), streamMessage.getGroupKeyId());
+        } else {
+            throw new RuntimeException("Unexpected EncryptionType: " + streamMessage.getEncryptionType());
         }
-        UnencryptedGroupKey newGroupKey;
-        try {
-            newGroupKey = new EncryptedGroupKey(reset.getGroupKey(), new Date(reset.getStart())).getDecrypted(encryptionUtil);
-        } catch (UnableToDecryptException | InvalidGroupKeyException e) {
-            throw new InvalidGroupKeyResetException(e.getMessage());
-        }
-        ArrayList<UnencryptedGroupKey> keyWrapped = new ArrayList<>();
-        keyWrapped.add(newGroupKey);
-        try {
-            setGroupKeysFunction.apply(reset.getStreamId(), streamMessage.getPublisherId(), keyWrapped);
-        } catch (UnableToSetKeysException e) {
-            throw new InvalidGroupKeyResetException(e.getMessage());
-        }
+    }
+
+    public void handleNewRSAEncryptedKeys(Collection<EncryptedGroupKey> encryptedKeys, String streamId, Address publisherId) {
+        List<GroupKey> keys = encryptedKeys.stream()
+                .map(encryptedKey -> {
+                    try {
+                        return encryptionUtil.decryptWithPrivateKey(encryptedKey);
+                    } catch (Exception e) {
+                        log.error("Unable to decrypt group key {} for stream {}", encryptedKey.getGroupKeyId(), streamId, e);
+                        return null;
+                    }
+                })
+                .filter(Objects::nonNull)
+                .collect(Collectors.toList());
+
+        handleNewKeys(streamId, publisherId, keys);
+    }
+
+    public void handleNewAESEncryptedKeys(List<EncryptedGroupKey> encryptedKeys, String streamId, Address publisherId, String groupKeyId) {
+        List<GroupKey> keys = encryptedKeys.stream()
+                .map(encryptedKey -> {
+                    try {
+                        GroupKey keyToDecryptWith = keyStore.get(streamId, groupKeyId);
+                        if (keyToDecryptWith == null) {
+                            throw new Exception(String.format("Key %s for stream %s was not found in keyStore", groupKeyId, streamId));
+                        }
+                        return EncryptionUtil.decryptGroupKey(encryptedKey, keyToDecryptWith);
+                    } catch (Exception e) {
+                        log.error("Unable to decrypt group key {} for stream {}", encryptedKey.getGroupKeyId(), streamId, e);
+                        return null;
+                    }
+                })
+                .filter(Objects::nonNull)
+                .collect(Collectors.toList());
+
+        handleNewKeys(streamId, publisherId, keys);
     }
 
     public boolean keyRevocationNeeded(String streamId) {
@@ -171,37 +163,55 @@ public class KeyExchangeUtil {
         return res;
     }
 
-    public void rekey(String streamId, boolean getSubscribersLocally) {
-        UnencryptedGroupKey groupKeyReset = EncryptionUtil.genGroupKey();
-        Set<String> trueSubscribersSet = addressValidityUtil.getSubscribersSet(streamId, getSubscribersLocally);
-        Set<String> revoked = new HashSet<>();
-        for (String subscriberId: publicKeys.keySet() ) { // iterating over local cache of Ethereum address --> RSA public key
+    public GroupKey rekey(String streamId, boolean getSubscribersLocally) {
+        GroupKey newKey = GroupKey.generate();
+        keyStore.add(streamId, newKey);
+
+        Set<Address> trueSubscribersSet = addressValidityUtil.getSubscribersSet(streamId, getSubscribersLocally);
+        Set<Address> revoked = new HashSet<>();
+
+        for (Address subscriberId: publicKeys.keySet() ) { // iterating over local cache of Ethereum address --> RSA public key
             if (trueSubscribersSet.contains(subscriberId)) { // if still valid subscriber, send the new key
-                EncryptedGroupKey encryptedGroupKey = groupKeyReset.getEncrypted(publicKeys.get(subscriberId));
-                StreamMessage groupKeyResetMsg = messageCreationUtil.createGroupKeyReset(subscriberId, streamId, encryptedGroupKey);
-                publishFunction.accept(groupKeyResetMsg);
+                String publicKey = publicKeys.get(subscriberId);
+                StreamMessage announce = messageCreationUtil.createGroupKeyAnnounce(subscriberId, streamId, publicKey, Collections.singletonList(newKey));
+                publishFunction.accept(announce);
             } else { // no longer a valid subscriber, to be removed from local cache
                 revoked.add(subscriberId);
             }
         }
         revoked.forEach(publicKeys::remove); // remove all revoked (Ethereum address --> RSA public key) from local cache
-        keyStorage.addKey(streamId, groupKeyReset);
+        return newKey;
     }
 
-    public static String getKeyExchangeStreamId(String recipientAddress) {
-        return KEY_EXCHANGE_STREAM_PREFIX + recipientAddress.toLowerCase();
+    public static String getKeyExchangeStreamId(Address recipientAddress) {
+        return KEY_EXCHANGE_STREAM_PREFIX + recipientAddress;
     }
 
     public static boolean isKeyExchangeStreamId(String streamId) {
         return streamId.startsWith(KEY_EXCHANGE_STREAM_PREFIX);
     }
 
-    public static String getRecipientFromKeyExchangeStreamId(String keyExchangeStreamId) {
-        return keyExchangeStreamId.substring(KEY_EXCHANGE_STREAM_PREFIX.length());
+    public static Address getRecipientFromKeyExchangeStreamId(String keyExchangeStreamId) {
+        return new Address(keyExchangeStreamId.substring(KEY_EXCHANGE_STREAM_PREFIX.length()));
+    }
+
+    public HashMap<Address, String> getKnownPublicKeysByPublisher() {
+        return publicKeys;
     }
 
     @FunctionalInterface
-    public interface SetGroupKeysFunction {
-        void apply(String streamId, String publisherId, ArrayList<UnencryptedGroupKey> keys) throws UnableToSetKeysException;
+    public interface OnNewKeysFunction {
+        void apply(String streamId, Address publisherId, Collection<GroupKey> keys);
+    }
+
+    private void handleNewKeys(String streamId, Address publisherId, List<GroupKey> newKeys) {
+        for (GroupKey key : newKeys) {
+            try {
+                keyStore.add(streamId, key);
+            } catch (KeyAlreadyExistsException e) {
+                log.warn("Key {} already exists in key store, skipping", key.getGroupKeyId());
+            }
+        }
+        onNewKeysFunction.apply(streamId, publisherId, newKeys);
     }
 }
