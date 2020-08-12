@@ -29,13 +29,13 @@ In your `pom.xml`, add the repository:
   ...
 </repositories>
 ```
-And the artifact itself:
+And the artifact itself (replace x.y.z with the [latest version](https://mvnrepository.com/artifact/com.streamr/client)):
 ```
 <dependencies>
   <dependency>
     <groupId>com.streamr</groupId>
     <artifactId>client</artifactId>
-    <version>2.0.0</version>
+    <version>x.y.z</version>
   </dependency>
   ...
 </dependencies>
@@ -51,10 +51,10 @@ repositories {
     }
 }
 ```
-And the artifact itself:
+And the artifact itself (replace x.y.z with the [latest version](https://mvnrepository.com/artifact/com.streamr/client)):
 ```
 dependencies {
-    implementation 'com.streamr:client:2.0.0'
+    implementation 'com.streamr:client:x.y.z'
 }
 ```
 
