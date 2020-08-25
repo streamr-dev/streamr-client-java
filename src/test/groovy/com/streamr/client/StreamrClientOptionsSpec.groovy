@@ -76,4 +76,11 @@ class StreamrClientOptionsSpec extends Specification {
         then:
         options.getWebsocketApiUrl() == expectedUrl
     }
+
+    void "by default has correct versions in ws url"() {
+        when:
+        StreamrClientOptions options = new StreamrClientOptions()
+        then:
+        options.getWebsocketApiUrl() == "wss://www.streamr.com/api/v1/ws?controlLayerVersion=${ControlMessage.LATEST_VERSION}&messageLayerVersion=${StreamMessage.LATEST_VERSION}"
+    }
 }
