@@ -114,6 +114,11 @@ signing {
 	sign configurations.archives
 }
 
+java {
+    withJavadocJar()
+    withSourcesJar()
+}
+
 publishing {
 	publications {
 		maven(MavenPublication) {
@@ -127,6 +132,12 @@ publishing {
 	repositories {
 		mavenLocal()
 	}
+}
+
+javadoc {
+    if(JavaVersion.current().isJava9Compatible()) {
+        options.addBooleanOption('html5', true)
+    }
 }
 
 /*
