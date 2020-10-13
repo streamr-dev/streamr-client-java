@@ -17,8 +17,8 @@ public class StreamrClientOptions {
             "&messageLayerVersion=" + StreamMessage.LATEST_VERSION;
     private String restApiUrl = "https://www.streamr.com/api/v1";
 
-    private String mainnetRpcUrl = "";
-    private String sidechainRpcUrl = "";
+    private String mainnetRpcUrl = "http://localhost:8545";
+    private String sidechainRpcUrl = "http://localhost:8546";
 
 
     private long connectionTimeoutMillis = 10 * 1000;
