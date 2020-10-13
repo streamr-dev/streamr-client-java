@@ -16,6 +16,11 @@ public class StreamrClientOptions {
             "?controlLayerVersion=" + ControlMessage.LATEST_VERSION +
             "&messageLayerVersion=" + StreamMessage.LATEST_VERSION;
     private String restApiUrl = "https://www.streamr.com/api/v1";
+
+    private String mainnetRpcUrl = "";
+    private String sidechainRpcUrl = "";
+
+
     private long connectionTimeoutMillis = 10 * 1000;
     private long reconnectRetryInterval = 10 * 1000;
     private int propagationTimeout = 5000;
@@ -76,6 +81,17 @@ public class StreamrClientOptions {
     public String getRestApiUrl() {
         return restApiUrl;
     }
+
+    public String getMainnetRpcUrl() {
+        return mainnetRpcUrl;
+    }
+    public String getSidechainRpcUrl() {
+        return sidechainRpcUrl;
+    }
+
+
+
+
 
     public void setRestApiUrl(String restApiUrl) {
         this.restApiUrl = restApiUrl;
