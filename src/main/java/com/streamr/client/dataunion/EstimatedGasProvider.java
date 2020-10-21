@@ -32,6 +32,7 @@ public class EstimatedGasProvider implements ContractGasProvider {
     private static final Logger log = LoggerFactory.getLogger(EstimatedGasProvider.class);
 
     private final Web3j web3j;
+    private BigInteger gasLimit = BigInteger.valueOf(6_000_000);
 
     public EstimatedGasProvider(Web3j web3j) {
         this.web3j = web3j;
@@ -52,13 +53,18 @@ public class EstimatedGasProvider implements ContractGasProvider {
         }
     }
 
+    public void setGasLimit(BigInteger limit){
+        gasLimit = limit;
+    }
+
     @Override
     public BigInteger getGasLimit(String contractFunc) {
-        return BigInteger.valueOf(6_000_000);
+        return gasLimit;
     }
 
     @Override
     public BigInteger getGasLimit() {
-        return BigInteger.valueOf(6_000_000);
+        return gasLimit;
     }
+
 }
