@@ -3,6 +3,7 @@ package com.streamr.client;
 import com.streamr.client.authentication.ApiKeyAuthenticationMethod;
 import com.streamr.client.authentication.AuthenticationMethod;
 import com.streamr.client.authentication.EthereumAuthenticationMethod;
+import com.streamr.client.dataunion.DataUnionClient;
 import com.streamr.client.exceptions.ConnectionTimeoutException;
 import com.streamr.client.exceptions.MalformedMessageException;
 import com.streamr.client.exceptions.PartitionNotSpecifiedException;
@@ -343,6 +344,10 @@ public class StreamrClient extends StreamrRESTClient {
 
     public GroupKeyStore getKeyStore() {
         return keyStore;
+    }
+
+    public DataUnionClient dataUnionClient() {
+        return new DataUnionClient(options.getMainnetRpcUrl(), options.getSidechainRpcUrl());
     }
 
     /*
