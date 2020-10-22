@@ -248,7 +248,7 @@ If no error message handler is register then the error is logged.
 You create Streams via the `create(Stream)` method, passing in a prototype `Stream` object with fields set as you wish. The method returns the `Stream` object that was actually created.
 
 ```java
-Stream created = client.create(new Stream("Stream name", "Stream description"));
+Stream created = client.createStream(new Stream("Stream name", "Stream description"));
 ```
 
 <a name="looking-up-streams"></a>
