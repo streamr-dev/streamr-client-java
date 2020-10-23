@@ -474,6 +474,57 @@ class StreamrWebsocketSpec extends StreamrIntegrationSpecification {
 		}
 	}
 
+    void "resend range again"() {
+        List receivedMsg = []
+        boolean done = false
+        int j = 0
+        Date resendFromDate
+        Date resendToDate
+
+        when:
+        for(j = 0; j < 2; j++) {
+            for (int i = 0; i <= 10; i++) {
+                Date date = new Date()
+                publisher.publish(stream, [i: i], date)
+
+                if (i == 3) {
+                    resendFromDate = new Date(date.getTime() + 1)
+                }
+
+                if (i == 7) {
+                    resendToDate = new Date(date.getTime() - 1)
+                }
+            }
+            Thread.sleep(6000) // wait to land in storage
+
+            // Resend range
+            subscriber.resend(stream, 0, new MessageHandler() {
+                @Override
+                void onMessage(Subscription s, StreamMessage message) {
+                    receivedMsg.push(message.getParsedContent())
+                }
+
+                void done(Subscription sub) {
+                    if(j == 1)
+                        done = true
+                }
+            }, new ResendRangeOption(resendFromDate, resendToDate))
+        }
+        then:
+        List expectedMessages = [
+            Collections.singletonMap("i", 4.0),
+            Collections.singletonMap("i", 5.0),
+            Collections.singletonMap("i", 6.0),
+            Collections.singletonMap("i", 4.0),
+            Collections.singletonMap("i", 5.0),
+            Collections.singletonMap("i", 6.0)
+        ]
+
+        within10sec.eventually() {
+            done && receivedMsg == expectedMessages
+        }
+    }
+
 	void "subscribe with resend last, with key exchange"() {
 		boolean stop = false
 		int publishedMessages = 0
