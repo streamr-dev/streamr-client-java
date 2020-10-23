@@ -587,6 +587,7 @@ public class StreamrClient extends StreamrRESTClient {
 
     private void handleUnsubscribeResponse(UnsubscribeResponse res) throws SubscriptionNotFoundException {
         Subscription sub = subs.get(res.getStreamId(), res.getStreamPartition());
+        sub.setState(Subscription.State.UNSUBSCRIBED);
         subs.remove(sub);
     }
 
