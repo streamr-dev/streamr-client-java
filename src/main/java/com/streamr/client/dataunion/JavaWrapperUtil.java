@@ -72,8 +72,8 @@ public class JavaWrapperUtil {
     }
 
     public static void main(String[] args){
-        String buildDir = args[0];
-        //String buildDir = "data-union-solidity/build/contracts";
+        String buildDir = args.length > 0 ? args[0] : "../data-union-solidity/build/contracts";
+
         log.info("Processing buildDir " + buildDir);
         try {
             wrapJsonInDir(new File(buildDir),

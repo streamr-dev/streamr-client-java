@@ -2,6 +2,7 @@ package com.streamr.client
 
 import com.streamr.client.authentication.ApiKeyAuthenticationMethod
 import com.streamr.client.authentication.EthereumAuthenticationMethod
+import com.streamr.client.dataunion.DataUnionClient
 import com.streamr.client.options.EncryptionOptions
 import com.streamr.client.options.SigningOptions
 import com.streamr.client.options.StreamrClientOptions
@@ -13,10 +14,20 @@ class StreamrIntegrationSpecification extends Specification {
     protected final static DEFAULT_REST_URL = "http://localhost/api/v1"
     private final static DEFAULT_WEBSOCKET_URL = "ws://localhost/api/v1/ws"
 
+    protected final static DEV_MAINCHAIN_RPC = "http://localhost:8545"
+    protected final static DEV_SIDECHAIN_RPC = "http://localhost:8546"
+
     protected static String generatePrivateKey() {
         byte[] array = new byte[32]
         new Random().nextBytes(array)
         return Hex.encodeHexString(array)
+    }
+
+    protected static DataUnionClient devChainDataUnionClient() {
+        StreamrClientOptions opts = new StreamrClientOptions(null, SigningOptions.getDefault(), EncryptionOptions.getDefault(), DEFAULT_WEBSOCKET_URL, DEFAULT_REST_URL)
+        opts.setSidechainRpcUrl(DEV_SIDECHAIN_RPC)
+        opts.setMainnetRpcUrl(DEV_MAINCHAIN_RPC)
+        return new StreamrClient(opts).dataUnionClient()
     }
 
     protected static StreamrClient createUnauthenticatedClient() {
