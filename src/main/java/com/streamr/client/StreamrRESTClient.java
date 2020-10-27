@@ -113,7 +113,7 @@ public abstract class StreamrRESTClient extends AbstractStreamrClient {
             throw new IllegalArgumentException("streamId cannot be null!");
         }
 
-        HttpUrl url = HttpUrl.parse(options.getRestApiUrl() + "/streams/" + streamId);
+        HttpUrl url = getEndpointUrl("streams", streamId);
         return get(url, streamJsonAdapter);
     }
 
@@ -122,7 +122,7 @@ public abstract class StreamrRESTClient extends AbstractStreamrClient {
             throw new IllegalArgumentException("Stream name must be specified!");
         }
 
-        HttpUrl url = HttpUrl.parse(options.getRestApiUrl() + "/streams")
+        HttpUrl url = getEndpointUrl("streams")
                 .newBuilder()
                 .setQueryParameter("name", name)
                 .build();
@@ -138,7 +138,7 @@ public abstract class StreamrRESTClient extends AbstractStreamrClient {
     }
 
     public Stream createStream(Stream stream) throws IOException {
-        HttpUrl url = HttpUrl.parse(options.getRestApiUrl() + "/streams");
+        HttpUrl url = getEndpointUrl("streams");
         return post(url, streamJsonAdapter.toJson(stream), streamJsonAdapter);
     }
 
@@ -149,7 +149,7 @@ public abstract class StreamrRESTClient extends AbstractStreamrClient {
 
         Permission permission = new Permission(operation, user);
 
-        HttpUrl url = HttpUrl.parse(options.getRestApiUrl() + "/streams/" + stream.getId() + "/permissions");
+        HttpUrl url = getEndpointUrl("streams", stream.getId(), "permissions");
         return post(url, permissionJsonAdapter.toJson(permission), permissionJsonAdapter);
     }
 
@@ -160,17 +160,17 @@ public abstract class StreamrRESTClient extends AbstractStreamrClient {
 
         Permission permission = new Permission(operation);
 
-        HttpUrl url = HttpUrl.parse(options.getRestApiUrl() + "/streams/" + stream.getId() + "/permissions");
+        HttpUrl url = getEndpointUrl("streams", stream.getId(), "permissions");
         return post(url, permissionJsonAdapter.toJson(permission), permissionJsonAdapter);
     }
 
     public UserInfo getUserInfo() throws IOException {
-        HttpUrl url = HttpUrl.parse(options.getRestApiUrl() + "/users/me");
+        HttpUrl url = getEndpointUrl("users", "me");
         return get(url, userInfoJsonAdapter);
     }
 
     public List<String> getPublishers(String streamId) throws IOException {
-        HttpUrl url = HttpUrl.parse(options.getRestApiUrl() + "/streams/" + streamId + "/publishers");
+        HttpUrl url = getEndpointUrl("streams", streamId, "publishers");
         return get(url, publishersJsonAdapter).getAddresses();
     }
 
@@ -179,7 +179,7 @@ public abstract class StreamrRESTClient extends AbstractStreamrClient {
     }
 
     public boolean isPublisher(String streamId, String ethAddress) throws IOException {
-        HttpUrl url = HttpUrl.parse(options.getRestApiUrl() + "/streams/" + streamId + "/publisher/" + ethAddress);
+        HttpUrl url = getEndpointUrl("streams", streamId, "publisher", ethAddress);
         try {
             get(url, null);
             return true;
@@ -189,7 +189,7 @@ public abstract class StreamrRESTClient extends AbstractStreamrClient {
     }
 
     public List<String> getSubscribers(String streamId) throws IOException {
-        HttpUrl url = HttpUrl.parse(options.getRestApiUrl() + "/streams/" + streamId + "/subscribers");
+        HttpUrl url = getEndpointUrl("streams", streamId, "subscribers");
         return get(url, subscribersJsonAdapter).getAddresses();
     }
 
@@ -198,7 +198,7 @@ public abstract class StreamrRESTClient extends AbstractStreamrClient {
     }
 
     public boolean isSubscriber(String streamId, String ethAddress) throws IOException {
-        HttpUrl url = HttpUrl.parse(options.getRestApiUrl() + "/streams/" + streamId + "/subscriber/" + ethAddress);
+        HttpUrl url = getEndpointUrl("streams", streamId, "subscriber", ethAddress);
         try {
             get(url, null);
             return true;
@@ -208,7 +208,15 @@ public abstract class StreamrRESTClient extends AbstractStreamrClient {
     }
 
     public void logout() throws IOException {
-        HttpUrl url = HttpUrl.parse(options.getRestApiUrl() + "/logout");
+        HttpUrl url = getEndpointUrl("logout");
         post(url, "", null, false);
+    }
+
+    private HttpUrl getEndpointUrl(String... pathSegments) {
+        HttpUrl.Builder builder = HttpUrl.parse(options.getRestApiUrl()).newBuilder();
+        for (String segment : pathSegments) {
+            builder = builder.addPathSegment(segment);
+        }
+        return builder.build();
     }
 }

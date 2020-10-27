@@ -367,7 +367,7 @@ public class StreamrClient extends StreamrRESTClient {
                     } else if (message.getType() == SubscribeResponse.TYPE) {
                         handleSubscribeResponse((SubscribeResponse)message);
                     } else if (message.getType() == UnsubscribeResponse.TYPE) {
-                        handleUnsubcribeResponse((UnsubscribeResponse)message);
+                        handleUnsubscribeResponse((UnsubscribeResponse)message);
                     } else if (message.getType() == ResendResponseResending.TYPE) {
                         handleResendResponseResending((ResendResponseResending)message);
                     } else if (message.getType() == ResendResponseNoResend.TYPE) {
@@ -585,9 +585,10 @@ public class StreamrClient extends StreamrRESTClient {
         }
     }
 
-    private void handleUnsubcribeResponse(UnsubscribeResponse res) throws SubscriptionNotFoundException {
+    private void handleUnsubscribeResponse(UnsubscribeResponse res) throws SubscriptionNotFoundException {
         Subscription sub = subs.get(res.getStreamId(), res.getStreamPartition());
         sub.setState(Subscription.State.UNSUBSCRIBED);
+        subs.remove(sub);
     }
 
     private void handleResendResponseResending(ResendResponseResending res) throws SubscriptionNotFoundException {
