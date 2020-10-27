@@ -4,17 +4,24 @@ import com.streamr.client.dataunion.DataUnionClient
 import com.streamr.client.dataunion.contracts.DataUnionFactoryMainnet
 import com.streamr.client.dataunion.contracts.DataUnionFactorySidechain
 import com.streamr.client.dataunion.contracts.DataUnionMainnet
+import com.streamr.client.dataunion.contracts.DataUnionSidechain
+import com.streamr.client.dataunion.contracts.IERC20
 import com.streamr.client.rest.FieldConfig
 import com.streamr.client.rest.Stream
 import com.streamr.client.rest.StreamConfig
+import com.streamr.client.utils.Web3jUtils
 import org.web3j.abi.datatypes.*
 import org.web3j.abi.datatypes.generated.Uint256
+import org.web3j.contracts.token.ERC20Interface
 import org.web3j.crypto.Credentials
+import org.web3j.protocol.core.RemoteFunctionCall
 
+import static com.streamr.client.utils.Web3jUtils.waitForErc20BalanceChange;
 class DataUnionClientSpec extends StreamrIntegrationSpecification{
     private DataUnionClient client
     private String sidechainFactoryAddress = "0x4081B7e107E59af8E82756F96C751174590989FE"
     private String mainnetFactoryAddress = "0x5E959e5d5F3813bE5c6CeA996a286F734cc9593b"
+    private String datacoinAddress = "0xbAA81A0179015bE47Ad439566374F2Bae098686F"
     //truffle keys mnemonic "testrpc"
     private String[] testrpc_keys = [
         "0x5e98cce00cff5dea6b454889f359a4ec06b9fa6b88e9d69b86de8e1c81887da0",
@@ -28,8 +35,30 @@ class DataUnionClientSpec extends StreamrIntegrationSpecification{
         "0x2cd9855d17e01ce041953829398af7e48b24ece04ff9d0e183414de54dc52285",
         "0x2c326a4c139eced39709b235fffa1fde7c252f3f7b505103f7b251586c35d543"
     ]
+    private Credentials[] wallets;
+    private DataUnionFactoryMainnet mainnetFactory;
+    private DataUnionFactorySidechain sidechainFactory;
+    private DataUnionMainnet duMainnet;
+    private DataUnionSidechain duSidechain;
+    private IERC20 dataCoin, sidechainToken;
+    private static final Utf8String duname = new Utf8String("test"+System.currentTimeMillis())
+
     void setup() {
         client = devChainDataUnionClient()
+        wallets = new Credentials[testrpc_keys.length];
+        for(int i=0; i < testrpc_keys.length; i++){
+            wallets[i] = Credentials.create(testrpc_keys[i]);
+        }
+        Address deployer = new Address(wallets[0].getAddress())
+        mainnetFactory = client.factoryMainnet(mainnetFactoryAddress, wallets[0])
+        sidechainFactory = client.factorySidechain(sidechainFactoryAddress, wallets[0])
+        Address duAddress = mainnetFactory.mainnetAddress(deployer, duname).send()
+        Address sidechainAddress = mainnetFactory.sidechainAddress(duAddress).send()
+        duMainnet = client.mainnetDU(duAddress.getValue(), wallets[0])
+        duSidechain = client.sidechainDU(sidechainAddress.getValue(), wallets[0])
+        dataCoin = client.mainnetToken(mainnetFactoryAddress, wallets[0])
+        sidechainToken = client.sidechainToken(sidechainFactoryAddress, wallets[0])
+        System.out.printf("duMainnetAddress = %s\nduSidechainAddress = %s\n", duAddress, sidechainAddress)
     }
 
 
@@ -42,15 +71,7 @@ class DataUnionClientSpec extends StreamrIntegrationSpecification{
     */
 
     void "create DU"() {
-        Credentials key0 =  Credentials.create(testrpc_keys[0])
-        DataUnionFactoryMainnet mainnetFactory = client.factoryMainnet(mainnetFactoryAddress, key0)
-        DataUnionFactorySidechain sidechainFactory = client.factorySidechain(sidechainFactoryAddress, key0)
-        Utf8String duname = new Utf8String("test"+System.currentTimeMillis())
-        Address deployer = new Address(key0.getAddress())
-        org.web3j.protocol.core.RemoteFunctionCall<Address> rfc = mainnetFactory.mainnetAddress(deployer, duname)
-        Address duAddress = rfc.send()
-        DataUnionMainnet duMainnet = client.mainnetDU(duAddress.getValue(), key0)
-        System.out.println("duAddress = " + duAddress)
+        Address deployer = new Address(wallets[0].getAddress())
         when:
         mainnetFactory.deployNewDataUnion(
                 deployer,
@@ -60,6 +81,28 @@ class DataUnionClientSpec extends StreamrIntegrationSpecification{
         ).send()
 
         then:
-        duMainnet.token().send() != null
+        duMainnet.token().send().getValue().equalsIgnoreCase(datacoinAddress)
+        client.waitForSidechainContract(duSidechain.getContractAddress(), 10000, 600000) != null
     }
+
+    void "add members"() {
+        when:
+        duSidechain.addMember(new Address(wallets[1].getAddress())).send()
+
+        then:
+        duSidechain.activeMemberCount().send().getValue().equals(BigInteger.ONE)
+    }
+
+    void "test transfer"() {
+        BigInteger sidechainBal = sidechainToken.balanceOf(new Address(duSidechain.getContractAddress())).send().getValue()
+        when:
+        dataCoin.transfer(new Address(duMainnet.getContractAddress()), new Uint256(BigInteger.valueOf(1000000000000000000l))).send()
+        duMainnet.sendTokensToBridge().send();
+        then:
+        waitForErc20BalanceChange(sidechainBal, sidechainToken.getContractAddress(), duSidechain.getContractAddress(), client.getSidechainConnector(), 10000, 600000) != null
+    }
+
+
+
+
 }

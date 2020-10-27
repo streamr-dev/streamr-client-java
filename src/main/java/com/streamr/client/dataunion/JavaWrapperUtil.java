@@ -1,18 +1,15 @@
 package com.streamr.client.dataunion;
 
 
-import com.streamr.client.dataunion.contracts.DataUnionMainnet;
 import org.json.simple.JSONArray;
 import org.json.simple.JSONObject;
 import org.json.simple.parser.JSONParser;
 import org.json.simple.parser.ParseException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import org.web3j.abi.datatypes.Address;
 import org.web3j.codegen.SolidityFunctionWrapperGenerator;
 
 import java.io.*;
-import java.nio.charset.StandardCharsets;
 
 public class JavaWrapperUtil {
     private static final Logger log = LoggerFactory.getLogger(JavaWrapperUtil.class);
@@ -27,7 +24,7 @@ public class JavaWrapperUtil {
         }
     }
 
-    public static void makeJavaClass(Reader jsonfile, String contractName) throws IOException, ParseException, ClassNotFoundException {
+    public static void makeJavaWrapper(Reader jsonfile, String contractName) throws IOException, ParseException, ClassNotFoundException {
         log.info("Making Java wrapper from Solidity contract " + contractName);
         // write .json to .bin and .abi Files.
         // cant use Reader... more bad web3j design!
@@ -65,7 +62,7 @@ public class JavaWrapperUtil {
             String fname = f.getName();
             int len = fname.length();
             log.info("Processing " + fname);
-            makeJavaClass(new FileReader(f), fname.substring(0, len - 5));
+            makeJavaWrapper(new FileReader(f), fname.endsWith(".json")  ? fname.substring(0, len - 5) : fname);
             wrapped++;
         }
         return wrapped;
@@ -81,7 +78,8 @@ public class JavaWrapperUtil {
                         @Override
                         public boolean accept(File file) {
                             String fname = file.getName();
-                            return fname.endsWith(".json")  && fname.startsWith("DataUnion");
+                            return fname.endsWith(".json")  &&
+                                    (fname.startsWith("DataUnion") || fname.contains("IERC20")) ;
                         }
                     }
             );
