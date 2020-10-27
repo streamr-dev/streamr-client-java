@@ -19,6 +19,9 @@ import java.math.BigInteger;
 
 import static com.streamr.client.utils.Web3jUtils.waitForCodeAtAddress;
 import static com.streamr.client.utils.Web3jUtils.waitForErc20BalanceChange;
+import static com.streamr.client.utils.Web3jUtils.waitForCondition;
+import com.streamr.client.utils.Web3jUtils.Condition;
+
 
 /**
  * client for DU2
@@ -65,6 +68,20 @@ public class DataUnionClient {
 
     public String waitForSidechainContract(String sidechainAddress, long sleeptime, long timeout) throws Exception {
         return waitForCodeAtAddress(sidechainAddress, sidechain, sleeptime, timeout);
+    }
+
+    public BigInteger waitForSidechainEarningsChange(final BigInteger initialBalance, DataUnionSidechain duSidechain, long sleeptime, long timeout) throws Exception {
+        Condition earningsChange = new Condition(){
+            @Override
+            public Object check() throws Exception {
+                BigInteger bal = duSidechain.totalEarnings().send().getValue();
+                if(!bal.equals(initialBalance))
+                    return bal;
+                return null;
+            }
+        };
+        Object o = waitForCondition(earningsChange, sleeptime, timeout);
+        return o == null ? null : (BigInteger) o;
     }
 
     public BigInteger waitForSidechainBalanceChange(BigInteger initialBalance, String tokenAddress, String balanceAddress, long sleeptime, long timeout) throws Exception {

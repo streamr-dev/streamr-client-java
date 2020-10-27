@@ -107,12 +107,12 @@ class DataUnionClientSpec extends StreamrIntegrationSpecification{
      */
 
     void "test transfer and sidechain stats"() {
-        BigInteger sidechainBal = sidechainToken.balanceOf(new Address(duSidechain.getContractAddress())).send().getValue()
+        BigInteger sidechainEarnings = duSidechain.totalEarnings().send().getValue()
         when:
         dataCoin.transfer(new Address(duMainnet.getContractAddress()), new Uint256(testSendAmount)).send()
         duMainnet.sendTokensToBridge().send();
         then:
-        waitForErc20BalanceChange(sidechainBal, sidechainToken.getContractAddress(), duSidechain.getContractAddress(), client.getSidechainConnector(), 10000, 600000) != null
+        client.waitForSidechainEarningsChange(sidechainEarnings, duSidechain, 10000, 600000) != null
         List<Uint256> stats = duSidechain.getStats().send().getValue()
         stats.get(0).getValue().equals(testSendAmount)
         duSidechain.getEarnings(new Address(wallets[1].getAddress())).send().getValue().equals(testSendAmount)
