@@ -11,6 +11,7 @@ import com.streamr.client.rest.Stream
 import com.streamr.client.rest.StreamConfig
 import com.streamr.client.utils.Web3jUtils
 import org.web3j.abi.datatypes.*
+import org.web3j.abi.datatypes.generated.StaticArray5
 import org.web3j.abi.datatypes.generated.Uint256
 import org.web3j.contracts.token.ERC20Interface
 import org.web3j.crypto.Credentials
@@ -35,6 +36,7 @@ class DataUnionClientSpec extends StreamrIntegrationSpecification{
         "0x2cd9855d17e01ce041953829398af7e48b24ece04ff9d0e183414de54dc52285",
         "0x2c326a4c139eced39709b235fffa1fde7c252f3f7b505103f7b251586c35d543"
     ]
+    private BigInteger testSendAmount = BigInteger.valueOf(1000000000000000000l)
     private Credentials[] wallets;
     private DataUnionFactoryMainnet mainnetFactory;
     private DataUnionFactorySidechain sidechainFactory;
@@ -75,7 +77,7 @@ class DataUnionClientSpec extends StreamrIntegrationSpecification{
         when:
         mainnetFactory.deployNewDataUnion(
                 deployer,
-                new Uint256(123),
+                new Uint256(0),
                 new DynamicArray<Address>(deployer),
                 duname
         ).send()
@@ -93,14 +95,29 @@ class DataUnionClientSpec extends StreamrIntegrationSpecification{
         duSidechain.activeMemberCount().send().getValue().equals(BigInteger.ONE)
     }
 
-    void "test transfer"() {
+    /*
+       function getStats() public view returns (uint256[5] memory) {
+        return [
+            totalEarnings,
+            totalEarningsWithdrawn,
+            activeMemberCount,
+            lifetimeMemberEarnings,
+            joinPartAgentCount
+        ];
+     */
+
+    void "test transfer and sidechain stats"() {
         BigInteger sidechainBal = sidechainToken.balanceOf(new Address(duSidechain.getContractAddress())).send().getValue()
         when:
-        dataCoin.transfer(new Address(duMainnet.getContractAddress()), new Uint256(BigInteger.valueOf(1000000000000000000l))).send()
+        dataCoin.transfer(new Address(duMainnet.getContractAddress()), new Uint256(testSendAmount)).send()
         duMainnet.sendTokensToBridge().send();
         then:
         waitForErc20BalanceChange(sidechainBal, sidechainToken.getContractAddress(), duSidechain.getContractAddress(), client.getSidechainConnector(), 10000, 600000) != null
+        List<Uint256> stats = duSidechain.getStats().send().getValue()
+        stats.get(0).getValue().equals(testSendAmount)
+        duSidechain.getEarnings(new Address(wallets[1].getAddress())).send().getValue().equals(testSendAmount)
     }
+
 
 
 
