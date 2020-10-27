@@ -15,8 +15,10 @@ import org.web3j.protocol.core.methods.response.EthGetCode;
 import org.web3j.protocol.http.HttpService;
 
 import java.io.IOException;
+import java.math.BigInteger;
 
 import static com.streamr.client.utils.Web3jUtils.waitForCodeAtAddress;
+import static com.streamr.client.utils.Web3jUtils.waitForErc20BalanceChange;
 
 /**
  * client for DU2
@@ -64,4 +66,13 @@ public class DataUnionClient {
     public String waitForSidechainContract(String sidechainAddress, long sleeptime, long timeout) throws Exception {
         return waitForCodeAtAddress(sidechainAddress, sidechain, sleeptime, timeout);
     }
+
+    public BigInteger waitForSidechainBalanceChange(BigInteger initialBalance, String tokenAddress, String balanceAddress, long sleeptime, long timeout) throws Exception {
+        return waitForErc20BalanceChange(initialBalance, tokenAddress, balanceAddress, sidechain, sleeptime, timeout);
+    }
+
+    public BigInteger waitForMainnetBalanceChange(BigInteger initialBalance, String tokenAddress, String balanceAddress, long sleeptime, long timeout) throws Exception {
+        return waitForErc20BalanceChange(initialBalance, tokenAddress, balanceAddress, mainnet, sleeptime, timeout);
+    }
+
 }
