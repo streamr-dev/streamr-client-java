@@ -138,10 +138,6 @@ public abstract class StreamrRESTClient extends AbstractStreamrClient {
     }
 
     public Stream createStream(Stream stream) throws IOException {
-        if (stream.getName() == null || stream.getName().isEmpty()) {
-            throw new IllegalArgumentException("The stream name must be set!");
-        }
-
         HttpUrl url = getEndpointUrl("streams");
         return post(url, streamJsonAdapter.toJson(stream), streamJsonAdapter);
     }
