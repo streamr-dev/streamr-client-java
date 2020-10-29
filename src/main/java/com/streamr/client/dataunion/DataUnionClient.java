@@ -29,6 +29,10 @@ import com.streamr.client.utils.Web3jUtils.Condition;
 public class DataUnionClient {
     private static final Logger log = LoggerFactory.getLogger(DataUnionClient.class);
 
+    public static final long STATUS_NONE = 0;
+    public static final long STATUS_ACTIVE = 1;
+    public static final long STATUS_INACTIVE = 2;
+
     private Web3j mainnet, sidechain;
 
     public DataUnionClient(String mainnet_url, String sidechain_url) {
@@ -91,5 +95,10 @@ public class DataUnionClient {
     public BigInteger waitForMainnetBalanceChange(BigInteger initialBalance, String tokenAddress, String balanceAddress, long sleeptime, long timeout) throws Exception {
         return waitForErc20BalanceChange(initialBalance, tokenAddress, balanceAddress, mainnet, sleeptime, timeout);
     }
+    //utility functions:
+    public static boolean isMemberActive(DataUnionSidechain dus, Address member) throws Exception {
+        return STATUS_ACTIVE == dus.memberData(member).send().component1().getValue().longValue();
+    }
+
 
 }
