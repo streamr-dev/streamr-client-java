@@ -60,6 +60,8 @@ jobs:
         with:
           repository: 'streamr-dev/streamr-docker-dev'
           path: streamr-docker-dev
+      - name: Debug
+        run: find $GITHUB_WORKSPACE
       - name: Set up JDK 1.8
         uses: actions/setup-java@v1
         with:
@@ -69,8 +71,6 @@ jobs:
           sudo sysctl fs.inotify.max_user_watches=524288
           sudo sysctl -p
           sudo ifconfig docker0 10.200.10.1/24
-      - name: Debug
-        run: find /
       - name: Gradle Assemble
         run: ./gradlew assemble -x signArchives
       - name: Start Streamr Docker Stack
