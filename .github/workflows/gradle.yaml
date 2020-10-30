@@ -47,8 +47,10 @@ jobs:
     env:
       GRADLE_OPTS: "-Xmx6g -Xms4g"
     steps:
-      - uses: actions/checkout@v2
-      - uses:  actions/checkout@v2
+      - name Checkout Java Client code
+        uses: actions/checkout@v2
+      - name Checkout Streamr Docker Dev code
+        uses:  actions/checkout@v2
         with:
           repository: 'streamr-dev/streamr-docker-dev'
       - name: Set up JDK 1.8
@@ -68,7 +70,7 @@ jobs:
           - ./streamr-docker-dev/streamr-docker-dev/bin.sh log -f engine-and-editor broker-node-storage-1 broker-node-no-storage-1 broker-node-no-storage-2 &
           - ./streamr-docker-dev/streamr-docker-dev/bin.sh wait
       - name: Build with Gradle
-      - uses: eskatos/gradle-command-action@v1
+        uses: eskatos/gradle-command-action@v1
         with:
           arguments: integrationTest --stacktrace --info
           gradle-version: ${{ matrix.gradle }}
