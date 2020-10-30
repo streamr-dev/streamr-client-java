@@ -12,34 +12,34 @@ jobs:
       fail-fast: false # run all parallel jobs
       matrix:
         gradle:
-#          - 6.7      # latest version
-#          - 6.6.1
-#          - 6.5.1
-#          - 6.4.1
-#          - 6.3
-#          - 6.2.2
-#          - 6.1.1
-#          - 6.0.1
-#          - 5.6.4
-#          - 5.5.1
-#          - 5.4.1
-#          - 5.3.1
-#          - 5.2.1
-#          - 5.1.1
-#          - 4.10.3
-#          - 4.9
-#          - 4.8.1
-#          - 4.7
-#          - 4.6
-#          - 4.5.1
-#          - 4.4.1
-#          - 4.3.1
-#          - 4.3
-#          - 4.2.1
-#          - 4.1
-#          - 4.0.2
-#          - 3.5.1
-#          - 3.4.1
+          - 6.7      # latest version
+          - 6.6.1
+          - 6.5.1
+          - 6.4.1
+          - 6.3
+          - 6.2.2
+          - 6.1.1
+          - 6.0.1
+          - 5.6.4
+          - 5.5.1
+          - 5.4.1
+          - 5.3.1
+          - 5.2.1
+          - 5.1.1
+          - 4.10.3
+          - 4.9
+          - 4.8.1
+          - 4.7
+          - 4.6
+          - 4.5.1
+          - 4.4.1
+          - 4.3.1
+          - 4.3
+          - 4.2.1
+          - 4.1
+          - 4.0.2
+          - 3.5.1
+          - 3.4.1
           - 3.3
           - 3.2.1
           - 3.1      # current version
@@ -47,11 +47,11 @@ jobs:
     env:
       GRADLE_OPTS: -Xmx6g -Xms4g
     steps:
-      - name: Checkout Java Client code
+      - name: Checkout Streamr Java Client
         uses: actions/checkout@v2
         with:
           path: streamr-client-java
-      - name: Checkout Streamr Docker Dev code
+      - name: Checkout Streamr Docker Dev
         uses:  actions/checkout@v2
         with:
           repository: streamr-dev/streamr-docker-dev
@@ -60,7 +60,7 @@ jobs:
         uses: actions/setup-java@v1
         with:
           java-version: 1.8
-      - name: Configure Linux
+      - name: Set up Linux
         run: |
           sudo sysctl fs.inotify.max_user_watches=524288
           sudo sysctl -p
@@ -74,7 +74,7 @@ jobs:
           ./streamr-docker-dev/bin.sh log -f engine-and-editor broker-node-storage-1 broker-node-no-storage-1 broker-node-no-storage-2 &
           ./streamr-docker-dev/bin.sh wait
         working-directory: streamr-docker-dev
-      - name: Build with Gradle
+      - name: Integration Test
         uses: eskatos/gradle-command-action@v1
         with:
           arguments: integrationTest --stacktrace --info
