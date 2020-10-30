@@ -12,30 +12,29 @@ jobs:
       fail-fast: false # run all parallel jobs
       matrix:
         gradle:
-          - 6.7      # latest version
-          - 6.6.1
-          - 6.5.1
-          - 6.4.1
-          - 6.3
-          - 6.2.2
-          - 6.1.1
-          - 6.0.1
-          - 5.6.4
-          - 5.5.1
-          - 5.4.1
-          - 5.3.1
-          - 5.2.1
-          - 5.1.1
-          - 4.10.3
-          - 4.9
-          - 4.8.1
-          - 4.7
-          - 4.6
-          - 4.5.1
-          - 4.4.1
-          - 4.3.1
-          - 4.3
-          - 4.2.1
+#          - 6.7      # latest version
+#          - 6.6.1
+#          - 6.5.1
+#          - 6.4.1
+#          - 6.3
+#          - 6.2.2
+#          - 6.1.1
+#          - 6.0.1
+#          - 5.6.4
+#          - 5.5.1
+#          - 5.4.1
+#          - 5.3.1
+#          - 5.2.1
+#          - 5.1.1
+#          - 4.10.3
+#          - 4.9
+#          - 4.8.1
+#          - 4.7
+#          - 4.6
+#          - 4.5.1
+#          - 4.4.1
+#          - 4.3.1
+#          - 4.2.1
           - 4.1
           - 4.0.2
           - 3.5.1
@@ -80,4 +79,3 @@ jobs:
           arguments: integrationTest --stacktrace --info
           build-root-directory: streamr-client-java
           gradle-version: ${{ matrix.gradle }}
-
