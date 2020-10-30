@@ -5,10 +5,6 @@ on:
     branches:
       - dev-upgrade-gradle
 
-defaults:
-  run:
-    working-directory: streamr-java-client
-
 jobs:
   build:
     name: Upgrade Gradle
@@ -49,7 +45,7 @@ jobs:
           - 3.1      # current version
     runs-on: ubuntu-latest
     env:
-      GRADLE_OPTS: "-Xmx6g -Xms4g"
+      GRADLE_OPTS: -Xmx6g -Xms4g
     steps:
       - name: Checkout Java Client code
         uses: actions/checkout@v2
@@ -58,12 +54,8 @@ jobs:
       - name: Checkout Streamr Docker Dev code
         uses:  actions/checkout@v2
         with:
-          repository: 'streamr-dev/streamr-docker-dev'
+          repository: streamr-dev/streamr-docker-dev
           path: streamr-docker-dev
-      - name: Debug
-        run: |
-          - echo ${GITHUB_WORKSPACE}
-          - ls ${GITHUB_WORKSPACE}
       - name: Set up JDK 1.8
         uses: actions/setup-java@v1
         with:
@@ -75,11 +67,13 @@ jobs:
           sudo ifconfig docker0 10.200.10.1/24
       - name: Gradle Assemble
         run: ./gradlew assemble -x signArchives
+        working-directory: streamr-client-java
       - name: Start Streamr Docker Stack
         run: |
-          - ./streamr-docker-dev/streamr-docker-dev/bin.sh start
-          - ./streamr-docker-dev/streamr-docker-dev/bin.sh log -f engine-and-editor broker-node-storage-1 broker-node-no-storage-1 broker-node-no-storage-2 &
-          - ./streamr-docker-dev/streamr-docker-dev/bin.sh wait
+          - ./streamr-docker-dev/bin.sh start
+          - ./streamr-docker-dev/bin.sh log -f engine-and-editor broker-node-storage-1 broker-node-no-storage-1 broker-node-no-storage-2 &
+          - ./streamr-docker-dev/bin.sh wait
+        working-directory: streamr-docker-dev
       - name: Build with Gradle
         uses: eskatos/gradle-command-action@v1
         with:
