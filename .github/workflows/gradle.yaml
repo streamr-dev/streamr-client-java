@@ -47,11 +47,11 @@ jobs:
     env:
       GRADLE_OPTS: "-Xmx6g -Xms4g"
     steps:
-      - name Checkout Java Client code
+      - name: Checkout Java Client code
         uses: actions/checkout@v2
         with:
           path: streamr-client-java
-      - name Checkout Streamr Docker Dev code
+      - name: Checkout Streamr Docker Dev code
         uses:  actions/checkout@v2
         with:
           repository: 'streamr-dev/streamr-docker-dev'
