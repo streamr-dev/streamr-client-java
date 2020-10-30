@@ -78,5 +78,6 @@ jobs:
         uses: eskatos/gradle-command-action@v1
         with:
           arguments: integrationTest --stacktrace --info
+          build-root-directory: streamr-java-client
           gradle-version: ${{ matrix.gradle }}
 
