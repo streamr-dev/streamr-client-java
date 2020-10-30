@@ -5,6 +5,10 @@ on:
     branches:
       - dev-upgrade-gradle
 
+defaults:
+  run:
+    working-directory: streamr-java-client
+
 jobs:
   build:
     name: Upgrade Gradle
