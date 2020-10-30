@@ -16,6 +16,7 @@ import org.web3j.abi.datatypes.generated.Uint256
 import org.web3j.contracts.token.ERC20Interface
 import org.web3j.crypto.Credentials
 import org.web3j.protocol.core.RemoteFunctionCall
+import org.web3j.protocol.core.methods.response.TransactionReceipt
 
 import static com.streamr.client.utils.Web3jUtils.waitForErc20BalanceChange;
 class DataUnionClientSpec extends StreamrIntegrationSpecification{
@@ -73,9 +74,10 @@ class DataUnionClientSpec extends StreamrIntegrationSpecification{
     */
 
     void "create DU"() {
+        TransactionReceipt tr;
         Address deployer = new Address(wallets[0].getAddress())
         when:
-        mainnetFactory.deployNewDataUnion(
+        tr = mainnetFactory.deployNewDataUnion(
                 deployer,
                 new Uint256(0),
                 new DynamicArray<Address>(deployer),
@@ -83,15 +85,18 @@ class DataUnionClientSpec extends StreamrIntegrationSpecification{
         ).send()
 
         then:
+        client.waitForMainnetTx(tr.getTransactionHash(), 10000, 600000)
         duMainnet.token().send().getValue().equalsIgnoreCase(datacoinAddress)
         client.waitForSidechainContract(duSidechain.getContractAddress(), 10000, 600000) != null
     }
 
     void "add members"() {
+        TransactionReceipt tr;
         when:
-        duSidechain.addMember(new Address(wallets[1].getAddress())).send()
+        tr = duSidechain.addMember(new Address(wallets[1].getAddress())).send()
 
         then:
+        client.waitForSidechainTx(tr.getTransactionHash(), 10000, 600000)
         duSidechain.activeMemberCount().send().getValue().equals(BigInteger.ONE)
     }
 
@@ -116,6 +121,19 @@ class DataUnionClientSpec extends StreamrIntegrationSpecification{
         List<Uint256> stats = duSidechain.getStats().send().getValue()
         stats.get(0).getValue().equals(testSendAmount)
         duSidechain.getEarnings(new Address(wallets[1].getAddress())).send().getValue().equals(testSendAmount)
+    }
+
+    void "signed withdrawal for another"() {
+        Address recipient = new Address(wallets[2].getAddress());
+        BigInteger recipientBal = sidechainToken.balanceOf(recipient).send().getValue();
+        byte[] sig = client.signWithdrawAll(wallets[1], recipient.getValue(), duSidechain.getContractAddress());
+        TransactionReceipt tr;
+        when:
+        tr = duSidechain.withdrawAllToSigned(new Address(wallets[1].getAddress()), recipient, new Bool(false), new DynamicBytes(sig)).send();
+
+        then:
+        client.waitForSidechainTx(tr.getTransactionHash(), 10000, 600000)
+        sidechainToken.balanceOf(recipient).send().getValue().equals(recipientBal.add(testSendAmount))
     }
 
 

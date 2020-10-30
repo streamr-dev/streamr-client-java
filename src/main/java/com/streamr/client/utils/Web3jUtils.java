@@ -82,7 +82,7 @@ public class Web3jUtils {
             if(o != null)
                 return o;
             log.info("sleeping " + timeout + "ms");
-            Thread.sleep(timeout);
+            Thread.sleep(sleeptime);
             slept += sleeptime;
         }
         return null;
