@@ -70,9 +70,9 @@ jobs:
         working-directory: streamr-client-java
       - name: Start Streamr Docker Stack
         run: |
-          - ./streamr-docker-dev/bin.sh start
-          - ./streamr-docker-dev/bin.sh log -f engine-and-editor broker-node-storage-1 broker-node-no-storage-1 broker-node-no-storage-2 &
-          - ./streamr-docker-dev/bin.sh wait
+          ./streamr-docker-dev/bin.sh start
+          ./streamr-docker-dev/bin.sh log -f engine-and-editor broker-node-storage-1 broker-node-no-storage-1 broker-node-no-storage-2 &
+          ./streamr-docker-dev/bin.sh wait
         working-directory: streamr-docker-dev
       - name: Build with Gradle
         uses: eskatos/gradle-command-action@v1
