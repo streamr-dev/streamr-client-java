@@ -8,10 +8,12 @@ import org.web3j.abi.FunctionEncoder;
 import org.web3j.abi.FunctionReturnDecoder;
 import org.web3j.abi.datatypes.Function;
 import org.web3j.abi.datatypes.Type;
+import org.web3j.crypto.Sign;
 import org.web3j.protocol.Web3j;
 import org.web3j.protocol.core.DefaultBlockParameterName;
 import org.web3j.protocol.core.methods.request.Transaction;
 import org.web3j.protocol.core.methods.response.EthCall;
+import org.web3j.protocol.core.methods.response.TransactionReceipt;
 
 import java.io.IOException;
 import java.lang.reflect.InvocationTargetException;
@@ -19,6 +21,7 @@ import java.math.BigInteger;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
+import java.util.Optional;
 
 public class Web3jUtils {
     private static final Logger log = LoggerFactory.getLogger(Web3jUtils.class);
@@ -93,6 +96,19 @@ public class Web3jUtils {
         return o == null ? null : (String) o;
     }
 
+    public static Boolean waitForTx(Web3j web3j, String txhash, long sleeptime, long timeout) throws Exception {
+        Condition txfinish = new Condition(){
+            @Override
+            public Object check() throws Exception {
+                Optional<TransactionReceipt> tr = web3j.ethGetTransactionReceipt(txhash).send().getTransactionReceipt();
+                if(!tr.isPresent())
+                    return null;
+                return tr.get().isStatusOK();
+            }
+        };
+        return (Boolean) waitForCondition(txfinish, sleeptime, timeout);
+    }
+
     /**
      *
      * @param initialBalance
@@ -148,5 +164,21 @@ public class Web3jUtils {
         if (response.isReverted())
             return null;
         return FunctionReturnDecoder.decode(response.getValue(), fn.getOutputParameters());
+    }
+
+    // these methods should be built in to SignatureData
+    public static byte[] toBytes65(Sign.SignatureData sig){
+        byte[] result = new byte[65];
+        System.arraycopy(sig.getR(), 0, result, 0, 32);
+        System.arraycopy(sig.getS(), 0, result, 32, 32);
+        System.arraycopy(sig.getV(), 0, result, 64, 1);
+        return result;
+    }
+
+    public static Sign.SignatureData fromBytes65(byte[] bytes){
+        byte[] r = Arrays.copyOfRange(bytes, 0, 32);
+        byte[] s = Arrays.copyOfRange(bytes, 32, 64);
+        byte[] v = Arrays.copyOfRange(bytes, 64, 65);
+        return new Sign.SignatureData(v,r,s);
     }
 }

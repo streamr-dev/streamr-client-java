@@ -9,6 +9,8 @@ import org.slf4j.LoggerFactory;
 import org.web3j.abi.FunctionEncoder;
 import org.web3j.abi.TypeEncoder;
 import org.web3j.abi.datatypes.Address;
+import org.web3j.abi.datatypes.DynamicBytes;
+import org.web3j.abi.datatypes.generated.Bytes32;
 import org.web3j.abi.datatypes.generated.Uint256;
 import org.web3j.crypto.Credentials;
 import org.web3j.crypto.Sign;
@@ -21,12 +23,12 @@ import org.web3j.protocol.http.HttpService;
 
 import java.io.IOException;
 import java.math.BigInteger;
+import java.util.Arrays;
 import java.util.Optional;
 
-import static com.streamr.client.utils.Web3jUtils.waitForCodeAtAddress;
-import static com.streamr.client.utils.Web3jUtils.waitForErc20BalanceChange;
-import static com.streamr.client.utils.Web3jUtils.waitForCondition;
+import static com.streamr.client.utils.Web3jUtils.*;
 import com.streamr.client.utils.Web3jUtils.Condition;
+import org.web3j.utils.Bytes;
 import org.web3j.utils.Numeric;
 
 
@@ -77,6 +79,14 @@ public class DataUnionClient {
         String tokenAddress = factorySidechain(sidechainFactory, creds).token().send().getValue();
         return IERC20.load(tokenAddress, sidechain, creds, new EstimatedGasProvider(sidechain));
     }
+    public ForeignAMB mainnetAMB(String amb, Credentials creds) throws Exception {
+        return ForeignAMB.load(amb, mainnet, creds, new EstimatedGasProvider(mainnet));
+    }
+    public HomeAMB sidechainAMB(String amb, Credentials creds) throws Exception {
+        return HomeAMB.load(amb, sidechain, creds, new EstimatedGasProvider(sidechain));
+    }
+
+
 
     public String waitForSidechainContract(String sidechainAddress, long sleeptime, long timeout) throws Exception {
         return waitForCodeAtAddress(sidechainAddress, sidechain, sleeptime, timeout);
@@ -92,8 +102,7 @@ public class DataUnionClient {
                 return null;
             }
         };
-        Object o = waitForCondition(earningsChange, sleeptime, timeout);
-        return o == null ? null : (BigInteger) o;
+        return (BigInteger) waitForCondition(earningsChange, sleeptime, timeout);
     }
 
     public BigInteger waitForSidechainBalanceChange(BigInteger initialBalance, String tokenAddress, String balanceAddress, long sleeptime, long timeout) throws Exception {
@@ -112,34 +121,44 @@ public class DataUnionClient {
         return waitForTx(sidechain, txhash, sleeptime, timeout);
     }
 
-    public static Boolean waitForTx(Web3j web3j, String txhash, long sleeptime, long timeout) throws Exception {
-        Condition txfinish = new Condition(){
-            @Override
-            public Object check() throws Exception {
-                Optional<TransactionReceipt> tr = web3j.ethGetTransactionReceipt(txhash).send().getTransactionReceipt();
-                if(!tr.isPresent())
-                    return null;
-                return tr.get().isStatusOK();
-            }
-        };
-        return (Boolean) waitForCondition(txfinish, sleeptime, timeout);
-    }
 
+    /*
+    event CollectedSignatures(
+            address authorityResponsibleForRelay,
+            bytes32 messageHash,
+            uint256 NumberOfCollectedSignatures
+    );
+
+
+
+    from foreign AMB hasEnoughValidSignatures(): Need to construct this binary blob:
+
+        * @param _signatures bytes blob with signatures to be validated.
+    * First byte X is a number of signatures in a blob,
+    * next X bytes are v components of signatures,
+    * next 32 * X bytes are r components of signatures,
+    * next 32 * X bytes are s components of signatures.
+    */
+
+    public void portTxToMainnet(Credentials creds, ForeignAMB mainnetAmb, HomeAMB sidechainAMB, byte[] msgHash, byte collectedSignatures) throws Exception {
+        Bytes32 mhash = new Bytes32(msgHash);
+        DynamicBytes message = sidechainAMB.message(mhash).send();
+        byte[] signatures = new byte[1 + (65*collectedSignatures)];
+        signatures[0] = collectedSignatures;
+        //collect signatures one by one from sidechain, add to blob
+        for(byte i = 0; i < collectedSignatures; i++){
+            Sign.SignatureData sig = fromBytes65(sidechainAMB.signature(mhash, new Uint256(i)).send().getValue());
+            signatures[i+1] = sig.getV()[0];
+            System.arraycopy(sig.getR(), 0, signatures, 1+collectedSignatures+(i*32), 32);
+            System.arraycopy(sig.getS(), 0, signatures, 1+(collectedSignatures*33)+(i*32), 32);
+        }
+        mainnetAmb.executeSignatures(message, new DynamicBytes(signatures)).send();
+    }
     //utility functions:
 
 
-    // this method should be built in to SignatureData
-    public static byte[] toBytes65(Sign.SignatureData sig){
-        byte[] result = new byte[65];
-        System.arraycopy(sig.getR(), 0, result, 0, 32);
-        System.arraycopy(sig.getS(), 0, result, 32, 32);
-        System.arraycopy(sig.getV(), 0, result, 64, 1);
-        return result;
-    }
-    /*
-            bytes32 messageHash = keccak256(abi.encodePacked(
-            "\x19Ethereum Signed Message:\n104", recipient, amount, address(this), getWithdrawn(signer)));
-     */
+
+
     public byte[] signWithdrawAll(Credentials account, String recipient, String sidechainAddress) throws Exception {
         return signWithdraw(account, recipient, sidechainAddress,  BigInteger.ZERO);
     }
