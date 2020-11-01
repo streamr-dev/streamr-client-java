@@ -122,7 +122,7 @@ class DataUnionClientSpec extends StreamrIntegrationSpecification{
         TransactionReceipt tr;
         when:
         tr = duSidechain.withdrawAllToSigned(new Address(wallets[1].getAddress()), recipient, new Bool(true), new DynamicBytes(sig)).send();
-        client.portTxsToMainnet(tr)
+        //client.portTxsToMainnet(tr)
 
         then:
         client.waitForSidechainTx(tr.getTransactionHash(), 10000, 600000)

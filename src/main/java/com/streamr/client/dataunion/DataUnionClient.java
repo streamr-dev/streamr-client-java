@@ -142,7 +142,8 @@ public class DataUnionClient {
             @Override
             public Object check() throws Exception {
                 BigInteger requiredSignatures = sidechainAMB().requiredSignatures().send().getValue();
-                BigInteger signatures = sidechainAMB().numAffirmationsSigned(msgId).send().getValue();
+                BigInteger signatures = sidechainAMB().numMessagesSigned(msgId).send().getValue();
+
                 if(signatures.compareTo(requiredSignatures) < 0)
                     return null;
                 return signatures;
@@ -254,6 +255,12 @@ public class DataUnionClient {
 
     public static boolean isMemberActive(DataUnionSidechain dus, Address member) throws Exception {
         return STATUS_ACTIVE == dus.memberData(member).send().component1().getValue().longValue();
+    }
+
+    private static class AmbMessage {
+        public AmbMessage(Bytes32 id, Bytes32 hash){
+
+        }
     }
 
     public static List<Bytes32> extractAmbMessageIds(TransactionReceipt tx){
