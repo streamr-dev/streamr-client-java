@@ -117,7 +117,8 @@ class DataUnionClientSpec extends StreamrIntegrationSpecification{
     void "signed withdrawal for another"() {
         Address recipient = new Address(wallets[2].getAddress());
         BigInteger recipientBal = client.sidechainToken().balanceOf(recipient).send().getValue();
-        byte[] sig = client.signWithdrawAll(wallets[1], recipient.getValue(), duSidechain.getContractAddress());
+        byte[] req = client.createWithdrawAllRequest(wallets[1].getAddress(), recipient.getValue(), duSidechain.getContractAddress())
+        byte[] sig = client.signWithdraw(wallets[1], req);
         TransactionReceipt tr;
         when:
         tr = duSidechain.withdrawAllToSigned(new Address(wallets[1].getAddress()), recipient, new Bool(false), new DynamicBytes(sig)).send();
@@ -126,9 +127,4 @@ class DataUnionClientSpec extends StreamrIntegrationSpecification{
         client.waitForSidechainTx(tr.getTransactionHash(), 10000, 600000)
         client.sidechainToken().balanceOf(recipient).send().getValue().equals(recipientBal.add(testSendAmount))
     }
-
-
-
-
-
 }

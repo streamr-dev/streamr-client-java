@@ -184,20 +184,24 @@ public class DataUnionClient {
 
 
     //utility functions:
-    public byte[] signWithdrawAll(Credentials account, String recipient, String sidechainAddress) throws Exception {
-        return signWithdraw(account, recipient, sidechainAddress,  BigInteger.ZERO);
+
+    //create unsigned blob. must be signed to submit
+    public byte[] createWithdrawAllRequest(String from, String to, String sidechainDUAddress) throws Exception {
+        return createWithdrawRequest(from, to, sidechainDUAddress, BigInteger.ZERO);
     }
 
-    public byte[] signWithdraw(Credentials account, String recipient, String sidechainAddress, BigInteger amount) throws Exception {
-        Uint256 withdrawn = sidechainDU(sidechainAddress).getWithdrawn(new Address(account.getAddress())).send();
+    public byte[] createWithdrawRequest(String from, String to, String sidechainDUAddress, BigInteger amount) throws Exception {
+        Uint256 withdrawn = sidechainDU(sidechainDUAddress).getWithdrawn(new Address(from)).send();
         //TypeEncode doesnt expose a non-padding encode() :(
-        String messageHex = TypeEncoder.encode(new Address(recipient)).substring(24) +
+        String messageHex = TypeEncoder.encode(new Address(to)).substring(24) +
                 TypeEncoder.encode(new Uint256(amount)) +
-                TypeEncoder.encode(new Address(sidechainAddress)).substring(24) +
+                TypeEncoder.encode(new Address(sidechainDUAddress)).substring(24) +
                 TypeEncoder.encode(withdrawn);
-        System.out.println("Created withdrawal signature " + messageHex);
+        return Numeric.hexStringToByteArray(messageHex);
+    }
 
-        Sign.SignatureData sig = Sign.signPrefixedMessage(Numeric.hexStringToByteArray(messageHex), account.getEcKeyPair());
+    public byte[] signWithdraw(Credentials account, byte[] req) throws Exception {
+        Sign.SignatureData sig = Sign.signPrefixedMessage(req, account.getEcKeyPair());
         return toBytes65(sig);
     }
 
