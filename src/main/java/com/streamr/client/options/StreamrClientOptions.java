@@ -5,6 +5,7 @@ import com.streamr.client.authentication.EthereumAuthenticationMethod;
 import com.streamr.client.exceptions.InvalidOptionsException;
 import com.streamr.client.protocol.control_layer.ControlMessage;
 import com.streamr.client.protocol.message_layer.StreamMessage;
+import org.web3j.crypto.Credentials;
 
 public class StreamrClientOptions {
 
@@ -19,6 +20,8 @@ public class StreamrClientOptions {
 
     private String mainnetRpcUrl = "http://localhost:8545";
     private String sidechainRpcUrl = "http://localhost:8546";
+    private String sidechainFactoryAddress = "0x4081B7e107E59af8E82756F96C751174590989FE";
+    private String mainnetFactoryAddress = "0x5E959e5d5F3813bE5c6CeA996a286F734cc9593b";
 
 
     private long connectionTimeoutMillis = 10 * 1000;
@@ -174,5 +177,21 @@ public class StreamrClientOptions {
             }
             return result;
         }
+    }
+
+    public String getSidechainFactoryAddress() {
+        return sidechainFactoryAddress;
+    }
+
+    public void setSidechainFactoryAddress(String sidechainFactoryAddress) {
+        this.sidechainFactoryAddress = sidechainFactoryAddress;
+    }
+
+    public String getMainnetFactoryAddress() {
+        return mainnetFactoryAddress;
+    }
+
+    public void setMainnetFactoryAddress(String mainnetFactoryAddress) {
+        this.mainnetFactoryAddress = mainnetFactoryAddress;
     }
 }

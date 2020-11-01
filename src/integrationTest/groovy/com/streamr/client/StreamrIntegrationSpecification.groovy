@@ -7,6 +7,7 @@ import com.streamr.client.options.EncryptionOptions
 import com.streamr.client.options.SigningOptions
 import com.streamr.client.options.StreamrClientOptions
 import org.apache.commons.codec.binary.Hex
+import org.web3j.crypto.Credentials
 import spock.lang.Specification
 
 class StreamrIntegrationSpecification extends Specification {
@@ -16,6 +17,8 @@ class StreamrIntegrationSpecification extends Specification {
 
     protected final static DEV_MAINCHAIN_RPC = "http://localhost:8545"
     protected final static DEV_SIDECHAIN_RPC = "http://localhost:8546"
+    protected final static DEV_SIDECHAIN_FACTORY = "0x4081B7e107E59af8E82756F96C751174590989FE"
+    protected final static DEV_MAINCHAIN_FACTORY = "0x5E959e5d5F3813bE5c6CeA996a286F734cc9593b"
 
     protected static String generatePrivateKey() {
         byte[] array = new byte[32]
@@ -23,11 +26,13 @@ class StreamrIntegrationSpecification extends Specification {
         return Hex.encodeHexString(array)
     }
 
-    protected static DataUnionClient devChainDataUnionClient() {
+    protected static DataUnionClient devChainDataUnionClient(Credentials mainnetCred, Credentials sidechainCred) {
         StreamrClientOptions opts = new StreamrClientOptions(null, SigningOptions.getDefault(), EncryptionOptions.getDefault(), DEFAULT_WEBSOCKET_URL, DEFAULT_REST_URL)
         opts.setSidechainRpcUrl(DEV_SIDECHAIN_RPC)
         opts.setMainnetRpcUrl(DEV_MAINCHAIN_RPC)
-        return new StreamrClient(opts).dataUnionClient()
+        opts.setMainnetFactoryAddress(DEV_MAINCHAIN_FACTORY)
+        opts.setSidechainFactoryAddress(DEV_SIDECHAIN_FACTORY)
+        return new StreamrClient(opts).dataUnionClient(mainnetCred, sidechainCred)
     }
 
     protected static StreamrClient createUnauthenticatedClient() {

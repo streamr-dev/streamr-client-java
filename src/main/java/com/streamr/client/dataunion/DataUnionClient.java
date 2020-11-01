@@ -28,6 +28,7 @@ import java.util.Optional;
 
 import static com.streamr.client.utils.Web3jUtils.*;
 import com.streamr.client.utils.Web3jUtils.Condition;
+import org.web3j.tx.gas.ContractGasProvider;
 import org.web3j.utils.Bytes;
 import org.web3j.utils.Numeric;
 
@@ -44,11 +45,32 @@ public class DataUnionClient {
     public static final long STATUS_INACTIVE = 2;
 
     private Web3j mainnet, sidechain;
+    private Credentials mainnetCred, sidechainCred;
+    private String sidechainFactory, mainnetFactory;
 
-    public DataUnionClient(String mainnet_url, String sidechain_url) {
+    public DataUnionClient(String mainnet_url,
+                           String mainnetFactory_,
+                           Credentials mainnetCred_,
+                           String sidechain_url,
+                           String sidechainFactory_,
+                           Credentials sidechainCred_
+                           ) {
         mainnet = Web3j.build(new HttpService(mainnet_url));
+        mainnetFactory = mainnetFactory_;
+        mainnetCred = mainnetCred_;
         sidechain = Web3j.build(new HttpService(sidechain_url));
+        sidechainFactory = sidechainFactory_;
+        sidechainCred = sidechainCred_;
     }
+
+    protected ContractGasProvider mainnetGasProvider() {
+        return new EstimatedGasProvider(mainnet);
+    }
+
+    protected ContractGasProvider sidechainGasProvider() {
+        return new EstimatedGasProvider(sidechain);
+    }
+
 
     public Web3j getMainnetConnector(){
         return mainnet;
@@ -57,33 +79,37 @@ public class DataUnionClient {
         return sidechain;
     }
 
-    public DataUnionFactoryMainnet factoryMainnet(String address, Credentials creds) {
-        return DataUnionFactoryMainnet.load(address, mainnet, creds, new EstimatedGasProvider(mainnet));
+    public DataUnionFactoryMainnet factoryMainnet() {
+        return DataUnionFactoryMainnet.load(mainnetFactory, mainnet, mainnetCred, mainnetGasProvider());
     }
-    public DataUnionMainnet mainnetDU(String address, Credentials creds) {
-        return DataUnionMainnet.load(address, mainnet, creds, new EstimatedGasProvider(mainnet));
+    public DataUnionMainnet mainnetDU(String address) {
+        return DataUnionMainnet.load(address, mainnet, mainnetCred, mainnetGasProvider());
     }
-    public DataUnionFactorySidechain factorySidechain(String address, Credentials creds) {
-        return DataUnionFactorySidechain.load(address, sidechain, creds, new EstimatedGasProvider(sidechain));
+    public DataUnionFactorySidechain factorySidechain() {
+        return DataUnionFactorySidechain.load(sidechainFactory, sidechain, sidechainCred, sidechainGasProvider());
     }
-    public DataUnionSidechain sidechainDU(String address, Credentials creds) {
-        return DataUnionSidechain.load(address, sidechain, creds, new EstimatedGasProvider(sidechain));
-    }
-
-    public IERC20 mainnetToken(String mainnetFactory, Credentials creds) throws Exception {
-        String tokenAddress = factoryMainnet(mainnetFactory, creds).token().send().getValue();
-        return IERC20.load(tokenAddress, mainnet, creds, new EstimatedGasProvider(mainnet));
+    public DataUnionSidechain sidechainDU(String address) {
+        return DataUnionSidechain.load(address, sidechain, sidechainCred, sidechainGasProvider());
     }
 
-    public IERC20 sidechainToken(String sidechainFactory, Credentials creds) throws Exception {
-        String tokenAddress = factorySidechain(sidechainFactory, creds).token().send().getValue();
-        return IERC20.load(tokenAddress, sidechain, creds, new EstimatedGasProvider(sidechain));
+    public IERC20 mainnetToken() throws Exception {
+        String tokenAddress = factoryMainnet().token().send().getValue();
+        return IERC20.load(tokenAddress, mainnet, mainnetCred, mainnetGasProvider());
     }
-    public ForeignAMB mainnetAMB(String amb, Credentials creds) throws Exception {
-        return ForeignAMB.load(amb, mainnet, creds, new EstimatedGasProvider(mainnet));
+
+    public IERC20 sidechainToken() throws Exception {
+        String tokenAddress = factorySidechain().token().send().getValue();
+        return IERC20.load(tokenAddress, sidechain, sidechainCred, sidechainGasProvider());
     }
-    public HomeAMB sidechainAMB(String amb, Credentials creds) throws Exception {
-        return HomeAMB.load(amb, sidechain, creds, new EstimatedGasProvider(sidechain));
+
+    public ForeignAMB mainnetAMB() throws Exception {
+        String amb = factoryMainnet().token().send().getValue();
+        return ForeignAMB.load(amb, mainnet, mainnetCred, mainnetGasProvider());
+    }
+
+    public HomeAMB sidechainAMB() throws Exception {
+        String amb = factorySidechain().token().send().getValue();
+        return HomeAMB.load(amb, sidechain, sidechainCred, sidechainGasProvider());
     }
 
 
@@ -140,33 +166,30 @@ public class DataUnionClient {
     * next 32 * X bytes are s components of signatures.
     */
 
-    public void portTxToMainnet(Credentials creds, ForeignAMB mainnetAmb, HomeAMB sidechainAMB, byte[] msgHash, byte collectedSignatures) throws Exception {
+    public void portTxToMainnet(byte[] msgHash, byte collectedSignatures) throws Exception {
         Bytes32 mhash = new Bytes32(msgHash);
-        DynamicBytes message = sidechainAMB.message(mhash).send();
+        DynamicBytes message = sidechainAMB().message(mhash).send();
         byte[] signatures = new byte[1 + (65*collectedSignatures)];
         signatures[0] = collectedSignatures;
         //collect signatures one by one from sidechain, add to blob
         for(byte i = 0; i < collectedSignatures; i++){
-            Sign.SignatureData sig = fromBytes65(sidechainAMB.signature(mhash, new Uint256(i)).send().getValue());
+            Sign.SignatureData sig = fromBytes65(sidechainAMB().signature(mhash, new Uint256(i)).send().getValue());
             signatures[i+1] = sig.getV()[0];
             System.arraycopy(sig.getR(), 0, signatures, 1+collectedSignatures+(i*32), 32);
             System.arraycopy(sig.getS(), 0, signatures, 1+(collectedSignatures*33)+(i*32), 32);
         }
-        mainnetAmb.executeSignatures(message, new DynamicBytes(signatures)).send();
+        mainnetAMB().executeSignatures(message, new DynamicBytes(signatures)).send();
     }
+
+
+
     //utility functions:
-
-
-
-
     public byte[] signWithdrawAll(Credentials account, String recipient, String sidechainAddress) throws Exception {
         return signWithdraw(account, recipient, sidechainAddress,  BigInteger.ZERO);
     }
 
     public byte[] signWithdraw(Credentials account, String recipient, String sidechainAddress, BigInteger amount) throws Exception {
-
-        Uint256 withdrawn = sidechainDU(sidechainAddress, account).getWithdrawn(new Address(account.getAddress())).send();
-
+        Uint256 withdrawn = sidechainDU(sidechainAddress).getWithdrawn(new Address(account.getAddress())).send();
         //TypeEncode doesnt expose a non-padding encode() :(
         String messageHex = TypeEncoder.encode(new Address(recipient)).substring(24) +
                 TypeEncoder.encode(new Uint256(amount)) +

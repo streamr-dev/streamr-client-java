@@ -26,6 +26,7 @@ import org.java_websocket.exceptions.WebsocketNotConnectedException;
 import org.java_websocket.handshake.ServerHandshake;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.web3j.crypto.Credentials;
 
 import javax.annotation.Nullable;
 import java.io.IOException;
@@ -346,8 +347,13 @@ public class StreamrClient extends StreamrRESTClient {
         return keyStore;
     }
 
-    public DataUnionClient dataUnionClient() {
-        return new DataUnionClient(options.getMainnetRpcUrl(), options.getSidechainRpcUrl());
+    public DataUnionClient dataUnionClient(Credentials mainnetCred, Credentials sidechainCred) {
+        return new DataUnionClient(options.getMainnetRpcUrl(),
+                options.getMainnetFactoryAddress(),
+                mainnetCred,
+                options.getSidechainRpcUrl(),
+                options.getSidechainFactoryAddress(),
+                sidechainCred);
     }
 
     /*

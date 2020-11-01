@@ -21,9 +21,6 @@ import org.web3j.protocol.core.methods.response.TransactionReceipt
 import static com.streamr.client.utils.Web3jUtils.waitForErc20BalanceChange;
 class DataUnionClientSpec extends StreamrIntegrationSpecification{
     private DataUnionClient client
-    private String sidechainFactoryAddress = "0x4081B7e107E59af8E82756F96C751174590989FE"
-    private String mainnetFactoryAddress = "0x5E959e5d5F3813bE5c6CeA996a286F734cc9593b"
-    private String datacoinAddress = "0xbAA81A0179015bE47Ad439566374F2Bae098686F"
     //truffle keys mnemonic "testrpc"
     private String[] testrpc_keys = [
         "0x5e98cce00cff5dea6b454889f359a4ec06b9fa6b88e9d69b86de8e1c81887da0",
@@ -39,28 +36,21 @@ class DataUnionClientSpec extends StreamrIntegrationSpecification{
     ]
     private BigInteger testSendAmount = BigInteger.valueOf(1000000000000000000l)
     private Credentials[] wallets;
-    private DataUnionFactoryMainnet mainnetFactory;
-    private DataUnionFactorySidechain sidechainFactory;
     private DataUnionMainnet duMainnet;
     private DataUnionSidechain duSidechain;
-    private IERC20 dataCoin, sidechainToken;
     private static final Utf8String duname = new Utf8String("test"+System.currentTimeMillis())
 
     void setup() {
-        client = devChainDataUnionClient()
         wallets = new Credentials[testrpc_keys.length];
         for(int i=0; i < testrpc_keys.length; i++){
             wallets[i] = Credentials.create(testrpc_keys[i]);
         }
+        client = devChainDataUnionClient(wallets[0], wallets[0])
         Address deployer = new Address(wallets[0].getAddress())
-        mainnetFactory = client.factoryMainnet(mainnetFactoryAddress, wallets[0])
-        sidechainFactory = client.factorySidechain(sidechainFactoryAddress, wallets[0])
-        Address duAddress = mainnetFactory.mainnetAddress(deployer, duname).send()
-        Address sidechainAddress = mainnetFactory.sidechainAddress(duAddress).send()
-        duMainnet = client.mainnetDU(duAddress.getValue(), wallets[0])
-        duSidechain = client.sidechainDU(sidechainAddress.getValue(), wallets[0])
-        dataCoin = client.mainnetToken(mainnetFactoryAddress, wallets[0])
-        sidechainToken = client.sidechainToken(sidechainFactoryAddress, wallets[0])
+        Address duAddress = client.factoryMainnet().mainnetAddress(deployer, duname).send()
+        Address sidechainAddress = client.factorySidechain().sidechainAddress(duAddress).send()
+        duMainnet = client.mainnetDU(duAddress.getValue())
+        duSidechain = client.sidechainDU(sidechainAddress.getValue())
         System.out.printf("duMainnetAddress = %s\nduSidechainAddress = %s\n", duAddress, sidechainAddress)
     }
 
@@ -77,7 +67,7 @@ class DataUnionClientSpec extends StreamrIntegrationSpecification{
         TransactionReceipt tr;
         Address deployer = new Address(wallets[0].getAddress())
         when:
-        tr = mainnetFactory.deployNewDataUnion(
+        tr = client.factoryMainnet().deployNewDataUnion(
                 deployer,
                 new Uint256(0),
                 new DynamicArray<Address>(deployer),
@@ -86,7 +76,7 @@ class DataUnionClientSpec extends StreamrIntegrationSpecification{
 
         then:
         client.waitForMainnetTx(tr.getTransactionHash(), 10000, 600000)
-        duMainnet.token().send().getValue().equalsIgnoreCase(datacoinAddress)
+        duMainnet.token().send().getValue().equalsIgnoreCase(client.mainnetToken().getContractAddress())
         client.waitForSidechainContract(duSidechain.getContractAddress(), 10000, 600000) != null
     }
 
@@ -114,7 +104,8 @@ class DataUnionClientSpec extends StreamrIntegrationSpecification{
     void "test transfer and sidechain stats"() {
         BigInteger sidechainEarnings = duSidechain.totalEarnings().send().getValue()
         when:
-        dataCoin.transfer(new Address(duMainnet.getContractAddress()), new Uint256(testSendAmount)).send()
+        TransactionReceipt tr = client.mainnetToken().transfer(new Address(duMainnet.getContractAddress()), new Uint256(testSendAmount)).send()
+        client.waitForMainnetTx(tr.getTransactionHash(), 10000, 600000)
         duMainnet.sendTokensToBridge().send();
         then:
         client.waitForSidechainEarningsChange(sidechainEarnings, duSidechain, 10000, 600000) != null
@@ -125,7 +116,7 @@ class DataUnionClientSpec extends StreamrIntegrationSpecification{
 
     void "signed withdrawal for another"() {
         Address recipient = new Address(wallets[2].getAddress());
-        BigInteger recipientBal = sidechainToken.balanceOf(recipient).send().getValue();
+        BigInteger recipientBal = client.sidechainToken().balanceOf(recipient).send().getValue();
         byte[] sig = client.signWithdrawAll(wallets[1], recipient.getValue(), duSidechain.getContractAddress());
         TransactionReceipt tr;
         when:
@@ -133,7 +124,7 @@ class DataUnionClientSpec extends StreamrIntegrationSpecification{
 
         then:
         client.waitForSidechainTx(tr.getTransactionHash(), 10000, 600000)
-        sidechainToken.balanceOf(recipient).send().getValue().equals(recipientBal.add(testSendAmount))
+        client.sidechainToken().balanceOf(recipient).send().getValue().equals(recipientBal.add(testSendAmount))
     }
 
 
