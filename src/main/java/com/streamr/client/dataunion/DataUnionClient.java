@@ -14,6 +14,7 @@ import org.web3j.abi.datatypes.DynamicBytes;
 import org.web3j.abi.datatypes.generated.Bytes32;
 import org.web3j.abi.datatypes.generated.Uint256;
 import org.web3j.crypto.Credentials;
+import org.web3j.crypto.Hash;
 import org.web3j.crypto.Sign;
 import org.web3j.protocol.Web3j;
 import org.web3j.protocol.core.DefaultBlockParameter;
@@ -142,8 +143,8 @@ public class DataUnionClient {
             @Override
             public Object check() throws Exception {
                 BigInteger requiredSignatures = sidechainAMB().requiredSignatures().send().getValue();
-                BigInteger signatures = sidechainAMB().numMessagesSigned(msgId).send().getValue();
-
+                //bit 255 is set in AMB to indicate completion
+                BigInteger signatures = sidechainAMB().numMessagesSigned(msgId).send().getValue().clearBit(255);
                 if(signatures.compareTo(requiredSignatures) < 0)
                     return null;
                 return signatures;
@@ -209,8 +210,10 @@ public class DataUnionClient {
     }
 
     public void portTxsToMainnet(TransactionReceipt withdraw) throws Exception {
-        List<Bytes32> ids = extractAmbMessageIds(withdraw);
-        for(Bytes32 id : ids){
+        List<Bytes32[]> msgs = extractAmbMessageIds(withdraw);
+        for(Bytes32[] msg : msgs){
+            Bytes32 id = msg[0];
+            Bytes32 hash = msg[1];
             if(mainnetAMB().messageCallStatus(id).send().getValue() ||
                     !mainnetAMB().failedMessageSender(id).send().toUint().getValue().equals(BigInteger.ZERO)){
                 log.warn("ForeignAMB has already seen msgId " + id + ". skipping");
@@ -218,13 +221,13 @@ public class DataUnionClient {
             }
 
 
-            BigInteger signatures = waitForSidechainAMBAffirmations(id, 10000, 600000);
+            BigInteger signatures = waitForSidechainAMBAffirmations(hash, 10000, 600000);
             if(signatures == null){
                 log.warn("Couldnt find affimation for AMB msgId " + id);
                 continue;
             }
-            log.info("Porting msgId " + ids);
-            portTxToMainnet(id, signatures.shortValueExact());
+            log.info("Porting msgId " + id);
+            portTxToMainnet(hash, signatures.shortValueExact());
         }
     }
 
@@ -257,22 +260,21 @@ public class DataUnionClient {
         return STATUS_ACTIVE == dus.memberData(member).send().component1().getValue().longValue();
     }
 
-    private static class AmbMessage {
-        public AmbMessage(Bytes32 id, Bytes32 hash){
 
-        }
-    }
 
-    public static List<Bytes32> extractAmbMessageIds(TransactionReceipt tx){
-        ArrayList<Bytes32> ids = new ArrayList<Bytes32>();
+    public static List<Bytes32[]> extractAmbMessageIds(TransactionReceipt tx){
+        ArrayList<Bytes32[]> msgs = new ArrayList<Bytes32[]>();
         for(Log l : tx.getLogs()){
             EventValues vals = staticExtractEventParameters(HomeAMB.USERREQUESTFORSIGNATURE_EVENT, l);
             if(vals == null)
                 continue;
             //event UserRequestForSignature(bytes32 indexed messageId, bytes encodedData);
-            ids.add((Bytes32) vals.getIndexedValues().get(0));
+            Bytes32[] idAndHash = new Bytes32[2];
+            idAndHash[0] = (Bytes32) vals.getIndexedValues().get(0);
+            idAndHash[1] = new Bytes32(Hash.sha3(((DynamicBytes) vals.getNonIndexedValues().get(0)).getValue()));
+            msgs.add(idAndHash);
         }
-        return ids;
+        return msgs;
     }
 
 
