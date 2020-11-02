@@ -1,13 +1,9 @@
 package com.streamr.client.dataunion;
 
-import com.google.common.collect.Lists;
-import com.streamr.client.StreamrClient;
 import com.streamr.client.dataunion.contracts.*;
-import com.streamr.client.utils.Web3jUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.web3j.abi.EventValues;
-import org.web3j.abi.FunctionEncoder;
 import org.web3j.abi.TypeEncoder;
 import org.web3j.abi.datatypes.Address;
 import org.web3j.abi.datatypes.DynamicBytes;
@@ -17,26 +13,19 @@ import org.web3j.crypto.Credentials;
 import org.web3j.crypto.Hash;
 import org.web3j.crypto.Sign;
 import org.web3j.protocol.Web3j;
-import org.web3j.protocol.core.DefaultBlockParameter;
-import org.web3j.protocol.core.DefaultBlockParameterName;
-import org.web3j.protocol.core.methods.response.EthGetCode;
 import org.web3j.protocol.core.methods.response.Log;
 import org.web3j.protocol.core.methods.response.TransactionReceipt;
 import org.web3j.protocol.http.HttpService;
 
-import java.io.IOException;
 import java.math.BigInteger;
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.List;
-import java.util.Optional;
 
 import static com.streamr.client.utils.Web3jUtils.*;
 import static org.web3j.tx.Contract.staticExtractEventParameters;
 
 import com.streamr.client.utils.Web3jUtils.Condition;
 import org.web3j.tx.gas.ContractGasProvider;
-import org.web3j.utils.Bytes;
 import org.web3j.utils.Numeric;
 
 
@@ -57,17 +46,17 @@ public class DataUnionClient {
 
     public DataUnionClient(String mainnet_url,
                            String mainnetFactory_,
-                           Credentials mainnetCred_,
+                           Credentials mainnetAdmin,
                            String sidechain_url,
                            String sidechainFactory_,
-                           Credentials sidechainCred_
+                           Credentials sidechainAdmin
                            ) {
         mainnet = Web3j.build(new HttpService(mainnet_url));
         mainnetFactory = mainnetFactory_;
-        mainnetCred = mainnetCred_;
+        mainnetCred = mainnetAdmin;
         sidechain = Web3j.build(new HttpService(sidechain_url));
         sidechainFactory = sidechainFactory_;
-        sidechainCred = sidechainCred_;
+        sidechainCred = sidechainAdmin;
     }
 
     protected ContractGasProvider mainnetGasProvider() {
@@ -109,9 +98,13 @@ public class DataUnionClient {
         return IERC20.load(tokenAddress, sidechain, sidechainCred, sidechainGasProvider());
     }
 
-    public ForeignAMB mainnetAMB() throws Exception {
+    public ForeignAMB mainnetAMB(Credentials cred) throws Exception {
         String amb = factoryMainnet().amb().send().getValue();
-        return ForeignAMB.load(amb, mainnet, mainnetCred, mainnetGasProvider());
+        return ForeignAMB.load(amb, mainnet, cred, mainnetGasProvider());
+    }
+
+    public ForeignAMB mainnetAMB() throws Exception {
+        return mainnetAMB(mainnetCred);
     }
 
     public HomeAMB sidechainAMB() throws Exception {
@@ -143,9 +136,11 @@ public class DataUnionClient {
             @Override
             public Object check() throws Exception {
                 BigInteger requiredSignatures = sidechainAMB().requiredSignatures().send().getValue();
-                //bit 255 is set in AMB to indicate completion
-                BigInteger signatures = sidechainAMB().numMessagesSigned(msgId).send().getValue().clearBit(255);
-                if(signatures.compareTo(requiredSignatures) < 0)
+                BigInteger signatures = sidechainAMB().numMessagesSigned(msgId).send().getValue();
+                //bit 255 is set in AMB to indicate completion. should the same as signatures >= reqd
+                boolean complete = signatures.testBit(255);
+                signatures = signatures.clearBit(255);
+                if(!complete || signatures.compareTo(requiredSignatures) < 0)
                     return null;
                 return signatures;
             }
@@ -172,27 +167,16 @@ public class DataUnionClient {
 
 
     /*
-    event CollectedSignatures(
-            address authorityResponsibleForRelay,
-            bytes32 messageHash,
-            uint256 NumberOfCollectedSignatures
-    );
-
-
-
-
     from foreign AMB hasEnoughValidSignatures(): Need to construct this binary blob:
-
-        * @param _signatures bytes blob with signatures to be validated.
+    * @param _signatures bytes blob with signatures to be validated.
     * First byte X is a number of signatures in a blob,
     * next X bytes are v components of signatures,
     * next 32 * X bytes are r components of signatures,
     * next 32 * X bytes are s components of signatures.
 
-
     java byte is signed, so we use short to support 0-255
     */
-    public void portTxToMainnet(Bytes32 mhash, short collectedSignatures) throws Exception {
+    public void portTxToMainnet(Bytes32 mhash, short collectedSignatures, Credentials cred) throws Exception {
         if(collectedSignatures > 255)
             throw new UnsupportedOperationException("collectedSignatures cannot be greater than 255");
 
@@ -206,11 +190,11 @@ public class DataUnionClient {
             System.arraycopy(sig.getR(), 0, signatures, 1+collectedSignatures+(i*32), 32);
             System.arraycopy(sig.getS(), 0, signatures, 1+(collectedSignatures*33)+(i*32), 32);
         }
-        mainnetAMB().executeSignatures(message, new DynamicBytes(signatures)).send();
+        mainnetAMB(cred).executeSignatures(message, new DynamicBytes(signatures)).send();
     }
 
     public void portTxsToMainnet(TransactionReceipt withdraw) throws Exception {
-        List<Bytes32[]> msgs = extractAmbMessageIds(withdraw);
+        List<Bytes32[]> msgs = extractAmbMessagesIdAndHash(withdraw);
         for(Bytes32[] msg : msgs){
             Bytes32 id = msg[0];
             Bytes32 hash = msg[1];
@@ -219,15 +203,13 @@ public class DataUnionClient {
                 log.warn("ForeignAMB has already seen msgId " + id + ". skipping");
                 continue;
             }
-
-
             BigInteger signatures = waitForSidechainAMBAffirmations(hash, 10000, 600000);
             if(signatures == null){
                 log.warn("Couldnt find affimation for AMB msgId " + id);
                 continue;
             }
             log.info("Porting msgId " + id);
-            portTxToMainnet(hash, signatures.shortValueExact());
+            portTxToMainnet(hash, signatures.shortValueExact(), mainnetCred);
         }
     }
 
@@ -262,7 +244,7 @@ public class DataUnionClient {
 
 
 
-    public static List<Bytes32[]> extractAmbMessageIds(TransactionReceipt tx){
+    public static List<Bytes32[]> extractAmbMessagesIdAndHash(TransactionReceipt tx){
         ArrayList<Bytes32[]> msgs = new ArrayList<Bytes32[]>();
         for(Log l : tx.getLogs()){
             EventValues vals = staticExtractEventParameters(HomeAMB.USERREQUESTFORSIGNATURE_EVENT, l);
