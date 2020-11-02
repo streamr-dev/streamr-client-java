@@ -4,11 +4,11 @@
   </a>
 </p>
 
-# Java client library for Streamr
+# Streamr Java Client
 
 Using this library, you can easily interact with Streamr over HTTP and websocket APIs from Java-based applications.
 
-This library is work-in-progress. It is currently in a MVP stage covering a very basic subset of functionality including:
+This library covers the following functionality:
 
 - [Authentication](#authentication)
 - [Data signing](#signing)
