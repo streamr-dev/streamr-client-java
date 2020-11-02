@@ -1,4 +1,8 @@
-[![Build Status](https://travis-ci.com/streamr-dev/streamr-client-java.svg?branch=master)](https://travis-ci.com/streamr-dev/streamr-client-java)
+<p align="center">
+  <a href="https://streamr.network">
+    <img alt="Streamr" src="https://raw.githubusercontent.com/streamr-dev/streamr-client-javascript/master/readme-header-img.png" width="1320" />
+  </a>
+</p>
 
 # Java client library for Streamr
 
@@ -14,11 +18,13 @@ This library is work-in-progress. It is currently in a MVP stage covering a very
 - [Publishing events to Streams](#publishing)
 - [Subscribing and unsubscribing to Streams](#subscribing-unsubscribing)
 
-# Installation
+[![Build Status](https://travis-ci.com/streamr-dev/streamr-client-java.svg?branch=master)](https://travis-ci.com/streamr-dev/streamr-client-java)
+
+## Installation
 
 This library is published to the Maven Central repository.
 
-## Using Maven
+#### Using Maven
 
 In your `pom.xml`, add the repository:
 ```
@@ -41,7 +47,7 @@ And the artifact itself (replace x.y.z with the [latest version](https://mvnrepo
 </dependencies>
 ```
 
-## Using Gradle
+#### Using Gradle
 
 In your `build.gradle`, add the repository:
 ```
@@ -58,7 +64,7 @@ dependencies {
 }
 ```
 
-# Usage
+## Usage
 
 Every interaction with Streamr is done through a `StreamrClient` instance. In the following sections, we will see how to:
 - [Create a `StreamrClient` instance with different options](#options)
@@ -68,7 +74,7 @@ Every interaction with Streamr is done through a `StreamrClient` instance. In th
 - [Subscribe and unsubscribe to Streams](#subscribing-unsubscribing)
 
 <a name="options"></a>
-## Instantiation and options
+#### Instantiation and options
 
 Quickstart (unauthenticated):
 
@@ -113,7 +119,7 @@ The next subsections will cover every parameter of the `StreamrClientOptions` co
 - [Other options](#other-options)
 
 <a name="authentication"></a>
-### Authentication
+## Authentication
 To authenticate as a Streamr user, provide an `AuthenticationMethod` instance. We have two concrete classes that extend `AuthenticationMethod`:
 
 - `EthereumAuthenticationMethod(String ethereumPrivateKey)`
@@ -134,7 +140,7 @@ StreamrClient client = new StreamrClient();
 ```
 
 <a name="signing"></a>
-### Signing
+## Signing
 
 The events published to streams can be signed using an Ethereum private key and verified using the corresponding Ethereum public key. The signing options define two policies: one deciding when to sign, the other when to verify.
 
@@ -149,7 +155,7 @@ SigningOptions signingOptions = new SigningOptions(signPol, verPol);
 The following table describes the meaning of the different values for the `SignatureComputationPolicy` enum.
 
 Option value | Description
------------- | -----------
+:------------ | :-----------
 AUTO | Default value. Published events will be signed if and only if the client is authenticated using the `EthereumAuthenticationMethod`.
 ALWAYS | The constructor will throw if the authentication method is not `EthereumAuthenticationMethod`. Will sign events otherwise.
 NEVER | Won't sign published events.
@@ -161,13 +167,13 @@ In the following table, by "verify" we mean:
 2) Check that the set of valid publishers Ethereum addresses contains the publisher's address.
 
 Option value | Description
------------- | -----------
+:------------ | :-----------
 AUTO | Default value. All signed events are verified. Unsigned events are accepted if and only if the stream does not require signed data according to the metadata boolean flag.
 ALWAYS | Only signed and verified events are accepted.
 NEVER | All signed events are verified. Unsigned events are always accepted.
 
 <a name="encryption"></a>
-### Encryption
+## Encryption
 
 We first introduce the `GroupKey` class: it defines a symmetric AES-256 group key used by the publisher to encrypt data and by the subscriber to decrypt data. A new, random `GroupKey` can be generated as follows:
 
@@ -219,12 +225,12 @@ client.publish("streamId", payload, key);
 ```
 
 <a name="other-options"></a>
-### Other options
+## Other options
 
 The following table describes the other options of the `StreamrClientOptions` constructor and their default values.
 
 Option | Default value | Description
------- | ------------- | -----------
+:------ | :------------- | :-----------
 websocketApiUrl | wss://streamr.network/api/v1/ws | Address of the websocket endpoint to connect to.
 restApiUrl | https://streamr.network/api/v1 | Base URL of the Streamr REST API.
 gapFillTimeout | 5 seconds | When a gap between two received events is detected, a resend request is sent periodically until the gap is resolved. This option determines that period. 
@@ -356,6 +362,6 @@ To stop receiving events from a Stream, pass the `Subscription` object you got w
 client.unsubscribe(sub);
 ```
 
-### Contributions
+## Contributions
 
 This library is officially developed and maintained by the Streamr core dev team, but community contributions are very welcome!
