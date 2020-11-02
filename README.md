@@ -68,10 +68,10 @@ dependencies {
 
 Every interaction with Streamr is done through a `StreamrClient` instance. In the following sections, we will see how to:
 - [Create a `StreamrClient` instance with different options](#options)
-- [Create Streams](#creating-streams)
-- [Look up Streams](#looking-up-streams)
-- [Publish events to Streams](#publishing)
-- [Subscribe and unsubscribe to Streams](#subscribing-unsubscribing)
+- [Create streams](#creating-streams)
+- [Look up streams](#looking-up-streams)
+- [Publish events to streams](#publishing)
+- [Subscribe and unsubscribe to streams](#subscribing-unsubscribing)
 
 <a name="options"></a>
 #### Instantiation and options
@@ -249,24 +249,24 @@ client.setErrorMessageHandler({ ErrorResponse error ->
 If no error message handler is register then the error is logged.
 
 <a name="creating-streams"></a>
-## Creating Streams
+## Creating streams
 
-You create Streams via the `create(Stream)` method, passing in a prototype `Stream` object with fields set as you wish. The method returns the `Stream` object that was actually created.
+You create streams via the `create(Stream)` method, passing in a prototype `Stream` object with fields set as you wish. The method returns the `Stream` object that was actually created.
 
 ```java
 Stream created = client.createStream(new Stream("Stream name", "Stream description"));
 ```
 
 <a name="looking-up-streams"></a>
-## Looking up Streams
+## Looking up streams
 
-You can look up Streams by `id`:
+You can look up streams by `id`:
 
 ```java
 Stream stream = client.getStream("id-of-the-stream");
 ```
 
-Or by the name of the Stream (expects an unique result):
+Or by the name of the stream (expects an unique result):
 
 ```java
 Stream stream = client.getStreamByName("My Fancy Stream");
@@ -311,9 +311,9 @@ client.publish(stream, msg2, newKey); // message is encrypted with newKey instea
 ```
 
 <a name="subscribing-unsubscribing"></a>
-## Subscribing and unsubscribing to Streams
+## Subscribing and unsubscribing to streams
 
-By subscribing to Streams, your application gets immediately notified about new events in the Stream. You provide a `MessageHandler` which gets called with new events.
+By subscribing to streams, your application gets immediately notified about new events in the stream. You provide a `MessageHandler` which gets called with new events.
 
 ```java
 Subscription sub = client.subscribe(stream, new MessageHandler() {
@@ -356,7 +356,7 @@ Date to = new Date(341299000);
 ResendOption opt = new ResendRangeOption(from, 0, to, 0, "publisherId", "msgChainId");
 ```
 
-To stop receiving events from a Stream, pass the `Subscription` object you got when subscribing to the `unsubscribe` method:
+To stop receiving events from a stream, pass the `Subscription` object you got when subscribing to the `unsubscribe` method:
 
 ```java
 client.unsubscribe(sub);
