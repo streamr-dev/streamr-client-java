@@ -110,7 +110,7 @@ public class DataUnion {
         return Numeric.hexStringToByteArray(messageHex);
     }
 
-    public boolean isMemberActive(Address member) throws Exception {
-        return STATUS_ACTIVE == sidechain.memberData(member).send().component1().getValue().longValue();
+    public boolean isMemberActive(String member) throws Exception {
+        return STATUS_ACTIVE == sidechain.memberData(new Address(member)).send().component1().getValue().longValue();
     }
 }

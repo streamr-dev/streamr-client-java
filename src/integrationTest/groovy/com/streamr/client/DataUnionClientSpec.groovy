@@ -59,6 +59,7 @@ class DataUnionClientSpec extends StreamrIntegrationSpecification{
         then:
         client.waitForSidechainTx(tr.getTransactionHash(), 10000, 600000)
         du.getSidechain().activeMemberCount().send().getValue().equals(BigInteger.ONE)
+        du.isMemberActive(wallets[1].getAddress())
     }
 
     /*
