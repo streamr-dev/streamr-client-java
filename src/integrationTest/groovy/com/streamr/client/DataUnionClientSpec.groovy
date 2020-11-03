@@ -1,24 +1,12 @@
 package com.streamr.client
 
+import com.streamr.client.dataunion.DataUnion
 import com.streamr.client.dataunion.DataUnionClient
-import com.streamr.client.dataunion.contracts.DataUnionFactoryMainnet
-import com.streamr.client.dataunion.contracts.DataUnionFactorySidechain
-import com.streamr.client.dataunion.contracts.DataUnionMainnet
-import com.streamr.client.dataunion.contracts.DataUnionSidechain
-import com.streamr.client.dataunion.contracts.IERC20
-import com.streamr.client.rest.FieldConfig
-import com.streamr.client.rest.Stream
-import com.streamr.client.rest.StreamConfig
-import com.streamr.client.utils.Web3jUtils
 import org.web3j.abi.datatypes.*
-import org.web3j.abi.datatypes.generated.StaticArray5
 import org.web3j.abi.datatypes.generated.Uint256
-import org.web3j.contracts.token.ERC20Interface
 import org.web3j.crypto.Credentials
-import org.web3j.protocol.core.RemoteFunctionCall
 import org.web3j.protocol.core.methods.response.TransactionReceipt
 
-import static com.streamr.client.utils.Web3jUtils.waitForErc20BalanceChange;
 class DataUnionClientSpec extends StreamrIntegrationSpecification{
     private DataUnionClient client
     //truffle keys mnemonic "testrpc"
@@ -36,9 +24,8 @@ class DataUnionClientSpec extends StreamrIntegrationSpecification{
     ]
     private BigInteger testSendAmount = BigInteger.valueOf(1000000000000000000l)
     private Credentials[] wallets;
-    private DataUnionMainnet duMainnet;
-    private DataUnionSidechain duSidechain;
-    private static final Utf8String duname = new Utf8String("test"+System.currentTimeMillis())
+    private DataUnion du;
+    private static final String duname = "test"+System.currentTimeMillis();
 
     void setup() {
         wallets = new Credentials[testrpc_keys.length];
@@ -46,48 +33,32 @@ class DataUnionClientSpec extends StreamrIntegrationSpecification{
             wallets[i] = Credentials.create(testrpc_keys[i]);
         }
         client = devChainDataUnionClient(wallets[0], wallets[0])
-        Address deployer = new Address(wallets[0].getAddress())
-        Address duAddress = client.factoryMainnet().mainnetAddress(deployer, duname).send()
-        Address sidechainAddress = client.factorySidechain().sidechainAddress(duAddress).send()
-        duMainnet = client.mainnetDU(duAddress.getValue())
-        duSidechain = client.sidechainDU(sidechainAddress.getValue())
-        System.out.printf("duMainnetAddress = %s\nduSidechainAddress = %s\n", duAddress, sidechainAddress)
+        du = client.dataUnionFromName(duname);
     }
-
-
-    /*
-    void cleanup() {
-        if (client != null) {
-            client.disconnect()
-        }
-    }
-    */
 
     void "create DU"() {
-        TransactionReceipt tr;
-        Address deployer = new Address(wallets[0].getAddress())
+        //Address deployer = new Address(wallets[0].getAddress())
         when:
-        tr = client.factoryMainnet().deployNewDataUnion(
-                deployer,
-                new Uint256(0),
-                new DynamicArray<Address>(deployer),
-                duname
-        ).send()
+        du = client.deployNewDataUnion(
+                duname,
+                wallets[0].getAddress(),
+                BigInteger.ZERO,
+                Arrays.<String>asList(wallets[0].getAddress()),
+        )
 
         then:
-        client.waitForMainnetTx(tr.getTransactionHash(), 10000, 600000)
-        duMainnet.token().send().getValue().equalsIgnoreCase(client.mainnetToken().getContractAddress())
-        client.waitForSidechainContract(duSidechain.getContractAddress(), 10000, 600000) != null
+        du.waitForDeployment(10000, 600000)
+        du.getMainnet().token().send().getValue().equalsIgnoreCase(client.mainnetToken().getContractAddress())
     }
 
     void "add members"() {
         TransactionReceipt tr;
         when:
-        tr = duSidechain.addMember(new Address(wallets[1].getAddress())).send()
+        tr = du.joinMembers(wallets[1].getAddress())
 
         then:
         client.waitForSidechainTx(tr.getTransactionHash(), 10000, 600000)
-        duSidechain.activeMemberCount().send().getValue().equals(BigInteger.ONE)
+        du.getSidechain().activeMemberCount().send().getValue().equals(BigInteger.ONE)
     }
 
     /*
@@ -102,30 +73,28 @@ class DataUnionClientSpec extends StreamrIntegrationSpecification{
      */
 
     void "test transfer and sidechain stats"() {
-        BigInteger sidechainEarnings = duSidechain.totalEarnings().send().getValue()
+        BigInteger sidechainEarnings = du.getSidechain().totalEarnings().send().getValue()
         when:
-        TransactionReceipt tr = client.mainnetToken().transfer(new Address(duMainnet.getContractAddress()), new Uint256(testSendAmount)).send()
+        TransactionReceipt tr = client.mainnetToken().transfer(new Address(du.getMainnet().getContractAddress()), new Uint256(testSendAmount)).send()
         client.waitForMainnetTx(tr.getTransactionHash(), 10000, 600000)
-        duMainnet.sendTokensToBridge().send();
+        du.getMainnet().sendTokensToBridge().send();
         then:
-        client.waitForSidechainEarningsChange(sidechainEarnings, duSidechain, 10000, 600000) != null
-        List<Uint256> stats = duSidechain.getStats().send().getValue()
+        du.waitForEarningsChange(sidechainEarnings, 10000, 600000) != null
+        List<Uint256> stats = du.getSidechain().getStats().send().getValue()
         stats.get(0).getValue().equals(testSendAmount)
-        duSidechain.getEarnings(new Address(wallets[1].getAddress())).send().getValue().equals(testSendAmount)
+        du.getSidechain().getEarnings(new Address(wallets[1].getAddress())).send().getValue().equals(testSendAmount)
     }
 
     void "signed withdrawal for another"() {
-        Address recipient = new Address(wallets[2].getAddress());
-        BigInteger recipientBal = client.mainnetToken().balanceOf(recipient).send().getValue();
-        byte[] req = client.createWithdrawAllRequest(wallets[1].getAddress(), recipient.getValue(), duSidechain.getContractAddress())
-        byte[] sig = client.signWithdraw(wallets[1], req);
+        String recipient = wallets[2].getAddress();
+        BigInteger recipientBal = client.mainnetToken().balanceOf(new Address(recipient)).send().getValue();
         TransactionReceipt tr;
         when:
-        tr = duSidechain.withdrawAllToSigned(new Address(wallets[1].getAddress()), recipient, new Bool(true), new DynamicBytes(sig)).send();
-        client.portTxsToMainnet(tr)
+        tr = du.withdraw(wallets[1], recipient, BigInteger.ZERO)
+        client.portTxsToMainnet(tr, wallets[0])
 
         then:
         client.waitForSidechainTx(tr.getTransactionHash(), 10000, 600000)
-        client.waitForMainnetBalanceChange(recipientBal,recipient.getValue(), 10000, 600000 ) != null
+        client.waitForMainnetBalanceChange(recipientBal,recipient, 10000, 600000 ) != null
     }
 }

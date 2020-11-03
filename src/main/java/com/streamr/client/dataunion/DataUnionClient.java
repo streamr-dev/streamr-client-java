@@ -6,13 +6,16 @@ import org.slf4j.LoggerFactory;
 import org.web3j.abi.EventValues;
 import org.web3j.abi.TypeEncoder;
 import org.web3j.abi.datatypes.Address;
+import org.web3j.abi.datatypes.DynamicArray;
 import org.web3j.abi.datatypes.DynamicBytes;
+import org.web3j.abi.datatypes.Utf8String;
 import org.web3j.abi.datatypes.generated.Bytes32;
 import org.web3j.abi.datatypes.generated.Uint256;
 import org.web3j.crypto.Credentials;
 import org.web3j.crypto.Hash;
 import org.web3j.crypto.Sign;
 import org.web3j.protocol.Web3j;
+import org.web3j.protocol.core.methods.request.Transaction;
 import org.web3j.protocol.core.methods.response.Log;
 import org.web3j.protocol.core.methods.response.TransactionReceipt;
 import org.web3j.protocol.http.HttpService;
@@ -34,11 +37,6 @@ import org.web3j.utils.Numeric;
  */
 public class DataUnionClient {
     private static final Logger log = LoggerFactory.getLogger(DataUnionClient.class);
-
-    public enum TxStatus{unconfirmed, success, error};
-    public static final long STATUS_NONE = 0;
-    public static final long STATUS_ACTIVE = 1;
-    public static final long STATUS_INACTIVE = 2;
 
     private Web3j mainnet, sidechain;
     private Credentials mainnetCred, sidechainCred;
@@ -78,6 +76,36 @@ public class DataUnionClient {
     public DataUnionFactoryMainnet factoryMainnet() {
         return DataUnionFactoryMainnet.load(mainnetFactory, mainnet, mainnetCred, mainnetGasProvider());
     }
+
+    public DataUnion deployNewDataUnion(String name, String admin, BigInteger adminFee, List<String> agents) throws Exception {
+        ArrayList<Address> agentAddresses = new ArrayList<Address>(agents.size());
+        for (String agent : agents) {
+            agentAddresses.add(new Address(agent));
+        }
+        Utf8String duname = new Utf8String(name);
+        factoryMainnet().deployNewDataUnion(
+                new Address(admin),
+                new Uint256(adminFee),
+                new DynamicArray<Address>(Address.class, agentAddresses),
+                duname
+        ).send();
+        Address mainnetAddress = factoryMainnet().mainnetAddress(new Address(mainnetCred.getAddress()), duname).send();
+        String sidechainAddress = factoryMainnet().sidechainAddress(mainnetAddress).send().getValue();
+        return new DataUnion(mainnetDU(mainnetAddress.getValue()), sidechainDU(sidechainAddress));
+    }
+
+    public DataUnion dataUnionFromName(String name) throws Exception {
+        String address = factoryMainnet().mainnetAddress(new Address(mainnetCred.getAddress()), new Utf8String(name)).send().getValue();
+        return dataUnionFromMainnetAddress(address);
+    }
+
+
+    public DataUnion dataUnionFromMainnetAddress(String mainnetAddress) throws Exception {
+        DataUnionMainnet main =  mainnetDU(mainnetAddress);
+        DataUnionSidechain side = sidechainDU(factoryMainnet().sidechainAddress(new Address(main.getContractAddress())).send().getValue());
+        return new DataUnion(main, side);
+    }
+
     public DataUnionMainnet mainnetDU(String address) {
         return DataUnionMainnet.load(address, mainnet, mainnetCred, mainnetGasProvider());
     }
@@ -113,30 +141,20 @@ public class DataUnionClient {
     }
 
 
-
-    public String waitForSidechainContract(String sidechainAddress, long sleeptime, long timeout) throws Exception {
-        return waitForCodeAtAddress(sidechainAddress, sidechain, sleeptime, timeout);
-    }
-
-    public BigInteger waitForSidechainEarningsChange(final BigInteger initialBalance, DataUnionSidechain duSidechain, long sleeptime, long timeout) throws Exception {
-        Condition earningsChange = new Condition(){
-            @Override
-            public Object check() throws Exception {
-                BigInteger bal = duSidechain.totalEarnings().send().getValue();
-                if(!bal.equals(initialBalance))
-                    return bal;
-                return null;
-            }
-        };
-        return (BigInteger) waitForCondition(earningsChange, sleeptime, timeout);
-    }
-
-    public BigInteger waitForSidechainAMBAffirmations(final Bytes32 msgId, long sleeptime, long timeout) throws Exception {
+    /**
+     *
+     * @param msgHash
+     * @param sleeptime
+     * @param timeout
+     * @return number of signatures if complete or null if incomplete
+     * @throws Exception
+     */
+    public BigInteger waitForSidechainAMBAffirmations(final Bytes32 msgHash, long sleeptime, long timeout) throws Exception {
         Condition affirmationsChange = new Condition(){
             @Override
             public Object check() throws Exception {
                 BigInteger requiredSignatures = sidechainAMB().requiredSignatures().send().getValue();
-                BigInteger signatures = sidechainAMB().numMessagesSigned(msgId).send().getValue();
+                BigInteger signatures = sidechainAMB().numMessagesSigned(msgHash).send().getValue();
                 //bit 255 is set in AMB to indicate completion. should the same as signatures >= reqd
                 boolean complete = signatures.testBit(255);
                 signatures = signatures.clearBit(255);
@@ -175,6 +193,8 @@ public class DataUnionClient {
     * next 32 * X bytes are s components of signatures.
 
     java byte is signed, so we use short to support 0-255
+
+    should only be called on an AMB message that has required # signatures
     */
     public void portTxToMainnet(Bytes32 mhash, short collectedSignatures, Credentials cred) throws Exception {
         if(collectedSignatures > 255)
@@ -193,23 +213,25 @@ public class DataUnionClient {
         mainnetAMB(cred).executeSignatures(message, new DynamicBytes(signatures)).send();
     }
 
-    public void portTxsToMainnet(TransactionReceipt withdraw) throws Exception {
+    public void portTxsToMainnet(TransactionReceipt withdraw, Credentials mainnetSender) throws Exception {
         List<Bytes32[]> msgs = extractAmbMessagesIdAndHash(withdraw);
         for(Bytes32[] msg : msgs){
             Bytes32 id = msg[0];
             Bytes32 hash = msg[1];
+            //check if message has already been sent
             if(mainnetAMB().messageCallStatus(id).send().getValue() ||
                     !mainnetAMB().failedMessageSender(id).send().toUint().getValue().equals(BigInteger.ZERO)){
                 log.warn("ForeignAMB has already seen msgId " + id + ". skipping");
                 continue;
             }
+            //wait until required signatures are present
             BigInteger signatures = waitForSidechainAMBAffirmations(hash, 10000, 600000);
             if(signatures == null){
                 log.warn("Couldnt find affimation for AMB msgId " + id);
                 continue;
             }
             log.info("Porting msgId " + id);
-            portTxToMainnet(hash, signatures.shortValueExact(), mainnetCred);
+            portTxToMainnet(hash, signatures.shortValueExact(), mainnetSender);
         }
     }
 
@@ -218,31 +240,17 @@ public class DataUnionClient {
 
     //utility functions:
 
-    //create unsigned blob. must be signed to submit
-    public byte[] createWithdrawAllRequest(String from, String to, String sidechainDUAddress) throws Exception {
-        return createWithdrawRequest(from, to, sidechainDUAddress, BigInteger.ZERO);
-    }
 
-    public byte[] createWithdrawRequest(String from, String to, String sidechainDUAddress, BigInteger amount) throws Exception {
-        Uint256 withdrawn = sidechainDU(sidechainDUAddress).getWithdrawn(new Address(from)).send();
-        //TypeEncode doesnt expose a non-padding encode() :(
-        String messageHex = TypeEncoder.encode(new Address(to)).substring(24) +
-                TypeEncoder.encode(new Uint256(amount)) +
-                TypeEncoder.encode(new Address(sidechainDUAddress)).substring(24) +
-                TypeEncoder.encode(withdrawn);
-        return Numeric.hexStringToByteArray(messageHex);
-    }
-
-    public byte[] signWithdraw(Credentials account, byte[] req) throws Exception {
+    public static byte[] signWithdraw(Credentials account, byte[] req) throws Exception {
         Sign.SignatureData sig = Sign.signPrefixedMessage(req, account.getEcKeyPair());
         return toBytes65(sig);
     }
 
-    public static boolean isMemberActive(DataUnionSidechain dus, Address member) throws Exception {
-        return STATUS_ACTIVE == dus.memberData(member).send().component1().getValue().longValue();
-    }
-
-
+    /**
+     *
+     * @param tx
+     * @return a list of [msgId, msgHash] for the AMB messages generated by sidechain withdrawal tx
+     */
 
     public static List<Bytes32[]> extractAmbMessagesIdAndHash(TransactionReceipt tx){
         ArrayList<Bytes32[]> msgs = new ArrayList<Bytes32[]>();

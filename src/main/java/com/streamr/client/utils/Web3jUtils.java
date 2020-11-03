@@ -92,8 +92,7 @@ public class Web3jUtils {
     }
 
     public static String waitForCodeAtAddress(String address, Web3j connector, long sleeptime, long timeout) throws Exception {
-        Object o = waitForCondition(new CodePresent(address, connector), sleeptime, timeout);
-        return o == null ? null : (String) o;
+        return (String) waitForCondition(new CodePresent(address, connector), sleeptime, timeout);
     }
 
     public static Boolean waitForTx(Web3j web3j, String txhash, long sleeptime, long timeout) throws Exception {
