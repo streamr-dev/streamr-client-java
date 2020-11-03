@@ -35,11 +35,11 @@ jobs:
 #          - 4.4.1
 #          - 4.3.1
 #          - 4.2.1
-          - 4.1
-          - 4.0.2
-          - 3.5.1
-          - 3.4.1
-          - 3.3
+#          - 4.1
+#          - 4.0.2
+#          - 3.5.1
+#          - 3.4.1
+#          - 3.3
           - 3.2.1
           - 3.1      # current version
     runs-on: ubuntu-latest
@@ -79,3 +79,25 @@ jobs:
           arguments: integrationTest --stacktrace --info
           build-root-directory: streamr-client-java
           gradle-version: ${{ matrix.gradle }}
+      - name: Checkout Streamr Client Testing
+        uses:  actions/checkout@v2
+        with:
+          repository: streamr-dev/streamr-client-testing
+          path: streamr-client-testing
+      - name: cross-client test
+        run: |
+          ./gradlew fatjar
+          cd streamr-client-testing
+          mkdir client-jar
+          mv build/libs/$(ls build/libs) ./client-jar/
+          sed -i -E "s/compile 'com.streamr:client:.*'/compile fileTree(dir: 'client-jar', include: '*.jar')/g" build.gradle
+          sed -i -E "s/\"streamr-client\": \".*\"/\"streamr-client\": \"latest\"/g" package.json
+          npm install
+          ./gradlew fatjar
+          java -jar build/libs/client_testing-1.0-SNAPSHOT.jar -s stream-cleartext-unsigned -c config/default-ci.conf && \
+          java -jar build/libs/client_testing-1.0-SNAPSHOT.jar -s stream-cleartext-signed -c config/default-ci.conf && \
+          # TODO: change the following to default-ci.conf once JS client works too
+          java -jar build/libs/client_testing-1.0-SNAPSHOT.jar -s stream-encrypted-shared-signed -c config/java-only-ci.conf && \
+          java -jar build/libs/client_testing-1.0-SNAPSHOT.jar -s stream-encrypted-shared-rotating-signed -c config/java-only-ci.conf && \
+          java -jar build/libs/client_testing-1.0-SNAPSHOT.jar -s stream-encrypted-exchanged-rotating-signed -c config/java-only-ci.conf && \
+          java -jar build/libs/client_testing-1.0-SNAPSHOT.jar -s stream-encrypted-exchanged-rotating-revoking-signed -c config/java-only-ci.conf
