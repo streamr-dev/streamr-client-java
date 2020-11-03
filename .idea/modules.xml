@@ -2,10 +2,10 @@
 <project version="4">
   <component name="ProjectModuleManager">
     <modules>
-      <module fileurl="file://$PROJECT_DIR$/.idea/modules/streamr-client-java.iml" filepath="$PROJECT_DIR$/.idea/modules/streamr-client-java.iml" group="streamr-client-java" />
-      <module fileurl="file://$PROJECT_DIR$/.idea/modules/streamr-client-java_integrationTest.iml" filepath="$PROJECT_DIR$/.idea/modules/streamr-client-java_integrationTest.iml" group="streamr-client-java" />
-      <module fileurl="file://$PROJECT_DIR$/.idea/modules/streamr-client-java_main.iml" filepath="$PROJECT_DIR$/.idea/modules/streamr-client-java_main.iml" group="streamr-client-java" />
-      <module fileurl="file://$PROJECT_DIR$/.idea/modules/streamr-client-java_test.iml" filepath="$PROJECT_DIR$/.idea/modules/streamr-client-java_test.iml" group="streamr-client-java" />
+      <module fileurl="file://$PROJECT_DIR$/.idea/modules/streamr-client-java.iml" filepath="$PROJECT_DIR$/.idea/modules/streamr-client-java.iml" />
+      <module fileurl="file://$PROJECT_DIR$/.idea/modules/streamr-client-java.integrationTest.iml" filepath="$PROJECT_DIR$/.idea/modules/streamr-client-java.integrationTest.iml" />
+      <module fileurl="file://$PROJECT_DIR$/.idea/modules/streamr-client-java.main.iml" filepath="$PROJECT_DIR$/.idea/modules/streamr-client-java.main.iml" />
+      <module fileurl="file://$PROJECT_DIR$/.idea/modules/streamr-client-java.test.iml" filepath="$PROJECT_DIR$/.idea/modules/streamr-client-java.test.iml" />
     </modules>
   </component>
 </project>
