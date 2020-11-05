@@ -79,8 +79,7 @@ dependencies {
 jar {
 	manifest {
 		attributes(
-			'Class-Path': configurations.compile.collect { it.getName() }.join(' '),
-			'Main-Class': 'streamr.client.StreamrClient'
+				'Implementation-Version': version
 		)
 	}
 }
@@ -101,8 +100,9 @@ artifacts {
 
 task fatJar(type: Jar) {
 	manifest {
-		attributes 'Implementation-Version': version,
-				'Main-Class': 'streamr.client.StreamrClient'
+		attributes(
+				'Implementation-Version': version
+		)
 	}
 	from { configurations.compile.collect { it.isDirectory() ? it : zipTree(it) } }
 	with jar
