@@ -78,7 +78,7 @@ public class Web3jUtils {
 
     public static Object waitForCondition(Condition condition, long sleeptime, long timeout) throws Exception {
         if(sleeptime <= 0 || timeout <= 0)
-            return null;
+            return condition.check();
         long slept = 0;
         while(slept < timeout){
             Object o = condition.check();

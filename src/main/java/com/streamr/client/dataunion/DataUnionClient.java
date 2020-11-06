@@ -12,6 +12,7 @@ import org.web3j.abi.datatypes.Utf8String;
 import org.web3j.abi.datatypes.generated.Bytes32;
 import org.web3j.abi.datatypes.generated.Uint256;
 import org.web3j.crypto.Credentials;
+import org.web3j.crypto.ECKeyPair;
 import org.web3j.crypto.Hash;
 import org.web3j.crypto.Sign;
 import org.web3j.protocol.Web3j;
@@ -23,6 +24,8 @@ import org.web3j.protocol.http.HttpService;
 import java.math.BigInteger;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.NoSuchElementException;
+import java.util.Optional;
 
 import static com.streamr.client.utils.Web3jUtils.*;
 import static org.web3j.tx.Contract.staticExtractEventParameters;
@@ -65,18 +68,6 @@ public class DataUnionClient {
         return new EstimatedGasProvider(sidechain);
     }
 
-
-    public Web3j getMainnetConnector(){
-        return mainnet;
-    }
-    public Web3j getSidechainConnector(){
-        return sidechain;
-    }
-
-    public DataUnionFactoryMainnet factoryMainnet() {
-        return DataUnionFactoryMainnet.load(mainnetFactory, mainnet, mainnetCred, mainnetGasProvider());
-    }
-
     public DataUnion deployNewDataUnion(String name, String admin, BigInteger adminFee, List<String> agents) throws Exception {
         ArrayList<Address> agentAddresses = new ArrayList<Address>(agents.size());
         for (String agent : agents) {
@@ -106,36 +97,48 @@ public class DataUnionClient {
         return new DataUnion(main, side);
     }
 
-    public DataUnionMainnet mainnetDU(String address) {
+    protected DataUnionFactoryMainnet factoryMainnet() {
+        return DataUnionFactoryMainnet.load(mainnetFactory, mainnet, mainnetCred, mainnetGasProvider());
+    }
+
+    protected DataUnionMainnet mainnetDU(String address) {
         return DataUnionMainnet.load(address, mainnet, mainnetCred, mainnetGasProvider());
     }
-    public DataUnionFactorySidechain factorySidechain() {
+    protected DataUnionFactorySidechain factorySidechain() {
         return DataUnionFactorySidechain.load(sidechainFactory, sidechain, sidechainCred, sidechainGasProvider());
     }
-    public DataUnionSidechain sidechainDU(String address) {
+    protected DataUnionSidechain sidechainDU(String address) {
         return DataUnionSidechain.load(address, sidechain, sidechainCred, sidechainGasProvider());
     }
 
-    public IERC20 mainnetToken() throws Exception {
+    public String mainnetTokenAddress() throws Exception {
+        return  factoryMainnet().token().send().getValue();
+    }
+
+    public String sidechainTokenAddress() throws Exception {
+        return  factorySidechain().token().send().getValue();
+    }
+
+    protected IERC20 mainnetToken() throws Exception {
         String tokenAddress = factoryMainnet().token().send().getValue();
         return IERC20.load(tokenAddress, mainnet, mainnetCred, mainnetGasProvider());
     }
 
-    public IERC20 sidechainToken() throws Exception {
+    protected IERC20 sidechainToken() throws Exception {
         String tokenAddress = factorySidechain().token().send().getValue();
         return IERC20.load(tokenAddress, sidechain, sidechainCred, sidechainGasProvider());
     }
 
-    public ForeignAMB mainnetAMB(Credentials cred) throws Exception {
+    protected ForeignAMB mainnetAMB(Credentials cred) throws Exception {
         String amb = factoryMainnet().amb().send().getValue();
         return ForeignAMB.load(amb, mainnet, cred, mainnetGasProvider());
     }
 
-    public ForeignAMB mainnetAMB() throws Exception {
+    protected ForeignAMB mainnetAMB() throws Exception {
         return mainnetAMB(mainnetCred);
     }
 
-    public HomeAMB sidechainAMB() throws Exception {
+    protected HomeAMB sidechainAMB() throws Exception {
         String amb = factorySidechain().amb().send().getValue();
         return HomeAMB.load(amb, sidechain, sidechainCred, sidechainGasProvider());
     }
@@ -149,7 +152,7 @@ public class DataUnionClient {
      * @return number of signatures if complete or null if incomplete
      * @throws Exception
      */
-    public BigInteger waitForSidechainAMBAffirmations(final Bytes32 msgHash, long sleeptime, long timeout) throws Exception {
+    protected BigInteger waitForSidechainAMBAffirmations(final Bytes32 msgHash, long sleeptime, long timeout) throws Exception {
         Condition affirmationsChange = new Condition(){
             @Override
             public Object check() throws Exception {
@@ -196,7 +199,7 @@ public class DataUnionClient {
 
     should only be called on an AMB message that has required # signatures
     */
-    public void portTxToMainnet(Bytes32 mhash, short collectedSignatures, Credentials cred) throws Exception {
+    protected void portTxToMainnet(Bytes32 mhash, short collectedSignatures, Credentials cred) throws Exception {
         if(collectedSignatures > 255)
             throw new UnsupportedOperationException("collectedSignatures cannot be greater than 255");
 
@@ -213,7 +216,24 @@ public class DataUnionClient {
         mainnetAMB(cred).executeSignatures(message, new DynamicBytes(signatures)).send();
     }
 
-    public void portTxsToMainnet(TransactionReceipt withdraw, Credentials mainnetSender) throws Exception {
+    public void portTxsToMainnet(EthereumTransactionReceipt withdrawalTransaction, String mainnetSenderPrivateKey) throws Exception {
+        portTxsToMainnet(withdrawalTransaction.tr, Credentials.create(mainnetSenderPrivateKey));
+    }
+
+    public void portTxsToMainnet(EthereumTransactionReceipt withdrawalTransaction, BigInteger mainnetSenderPrivateKey) throws Exception {
+        portTxsToMainnet(withdrawalTransaction.tr, Credentials.create(ECKeyPair.create(mainnetSenderPrivateKey)));
+    }
+
+
+    public void portTxsToMainnet(String withdrawTxHash, String mainnetSenderPrivateKey) throws Exception {
+        Optional<TransactionReceipt> optional = sidechain.ethGetTransactionReceipt(withdrawTxHash).send().getTransactionReceipt();
+        if(!optional.isPresent())
+            throw new NoSuchElementException("No sidechain transaction found for txhash " + withdrawTxHash);
+        TransactionReceipt withdraw = optional.get();
+        portTxsToMainnet(withdraw, Credentials.create(mainnetSenderPrivateKey));
+    }
+
+    protected void portTxsToMainnet(TransactionReceipt withdraw, Credentials mainnetSenderCredentials) throws Exception {
         List<Bytes32[]> msgs = extractAmbMessagesIdAndHash(withdraw);
         for(Bytes32[] msg : msgs){
             Bytes32 id = msg[0];
@@ -231,7 +251,7 @@ public class DataUnionClient {
                 continue;
             }
             log.info("Porting msgId " + id);
-            portTxToMainnet(hash, signatures.shortValueExact(), mainnetSender);
+            portTxToMainnet(hash, signatures.shortValueExact(), mainnetSenderCredentials);
         }
     }
 
@@ -239,7 +259,6 @@ public class DataUnionClient {
 
 
     //utility functions:
-
 
     public static byte[] signWithdraw(Credentials account, byte[] req) throws Exception {
         Sign.SignatureData sig = Sign.signPrefixedMessage(req, account.getEcKeyPair());
@@ -252,7 +271,7 @@ public class DataUnionClient {
      * @return a list of [msgId, msgHash] for the AMB messages generated by sidechain withdrawal tx
      */
 
-    public static List<Bytes32[]> extractAmbMessagesIdAndHash(TransactionReceipt tx){
+    protected static List<Bytes32[]> extractAmbMessagesIdAndHash(TransactionReceipt tx){
         ArrayList<Bytes32[]> msgs = new ArrayList<Bytes32[]>();
         for(Log l : tx.getLogs()){
             EventValues vals = staticExtractEventParameters(HomeAMB.USERREQUESTFORSIGNATURE_EVENT, l);
