@@ -38,7 +38,7 @@ public class Web3jUtils {
         public Object check() throws IOException {
             log.info("Checking for code at " + address);
             String code = connector.ethGetCode(address, DefaultBlockParameterName.LATEST).send().getCode();
-            if(code != null && code != "0x"){
+            if(code != null && !code.equals("0x")){
                 log.info("Found code at " + address);
                 return code;
             }
@@ -83,10 +83,11 @@ public class Web3jUtils {
             Object o = condition.check();
             if(o != null)
                 return o;
-            log.info("sleeping " + timeout + "ms");
+            log.info("sleeping " + sleeptime + "ms");
             Thread.sleep(sleeptime);
             slept += sleeptime;
         }
+        log.info("Timed out after " + timeout+ "ms");
         return null;
     }
 

@@ -54,17 +54,17 @@ public class DataUnionClient {
 
     public DataUnionClient(String mainnet_url,
                            String mainnetFactory_,
-                           Credentials mainnetAdmin,
+                           String mainnetAdminPrvKey,
                            String sidechain_url,
                            String sidechainFactory_,
-                           Credentials sidechainAdmin
+                           String sidechainAdminPrvKey
                            ) {
         mainnet = Web3j.build(new HttpService(mainnet_url));
         mainnetFactory = mainnetFactory_;
-        mainnetCred = mainnetAdmin;
+        mainnetCred = Credentials.create(mainnetAdminPrvKey);
         sidechain = Web3j.build(new HttpService(sidechain_url));
         sidechainFactory = sidechainFactory_;
-        sidechainCred = sidechainAdmin;
+        sidechainCred = Credentials.create(sidechainAdminPrvKey);
     }
 
     public long getBridgePollInterval(){

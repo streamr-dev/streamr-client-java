@@ -347,13 +347,13 @@ public class StreamrClient extends StreamrRESTClient {
         return keyStore;
     }
 
-    public DataUnionClient dataUnionClient(Credentials mainnetCred, Credentials sidechainCred) {
+    public DataUnionClient dataUnionClient(String mainnetAdminPrvKey, String sidechainAdminPrvKey) {
         return new DataUnionClient(options.getMainnetRpcUrl(),
                 options.getMainnetFactoryAddress(),
-                mainnetCred,
+                mainnetAdminPrvKey,
                 options.getSidechainRpcUrl(),
                 options.getSidechainFactoryAddress(),
-                sidechainCred);
+                sidechainAdminPrvKey);
     }
 
     /*

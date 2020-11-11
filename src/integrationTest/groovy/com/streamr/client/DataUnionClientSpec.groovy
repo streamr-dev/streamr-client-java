@@ -38,7 +38,7 @@ class DataUnionClientSpec extends StreamrIntegrationSpecification{
         for(int i=0; i < testrpc_keys.length; i++){
             wallets[i] = Credentials.create(testrpc_keys[i]);
         }
-        client = devChainDataUnionClient(wallets[0], wallets[0])
+        client = devChainDataUnionClient(testrpc_keys[0], testrpc_keys[0])
         du = client.dataUnionFromName(duname);
         //    public static IERC20 load(String contractAddress, Web3j web3j, Credentials credentials, ContractGasProvider contractGasProvider)
         Web3j mainnet = Web3j.build(new HttpService(DEV_MAINCHAIN_RPC))

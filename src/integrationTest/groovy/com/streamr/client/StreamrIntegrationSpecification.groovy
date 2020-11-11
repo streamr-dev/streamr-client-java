@@ -26,13 +26,13 @@ class StreamrIntegrationSpecification extends Specification {
         return Hex.encodeHexString(array)
     }
 
-    protected static DataUnionClient devChainDataUnionClient(Credentials mainnetCred, Credentials sidechainCred) {
+    protected static DataUnionClient devChainDataUnionClient(String mainnetAdminPrvKey, String sidechainAdminPrvKey) {
         StreamrClientOptions opts = new StreamrClientOptions(null, SigningOptions.getDefault(), EncryptionOptions.getDefault(), DEFAULT_WEBSOCKET_URL, DEFAULT_REST_URL)
         opts.setSidechainRpcUrl(DEV_SIDECHAIN_RPC)
         opts.setMainnetRpcUrl(DEV_MAINCHAIN_RPC)
         opts.setMainnetFactoryAddress(DEV_MAINCHAIN_FACTORY)
         opts.setSidechainFactoryAddress(DEV_SIDECHAIN_FACTORY)
-        return new StreamrClient(opts).dataUnionClient(mainnetCred, sidechainCred)
+        return new StreamrClient(opts).dataUnionClient(mainnetAdminPrvKey, sidechainAdminPrvKey)
     }
 
     protected static StreamrClient createUnauthenticatedClient() {
