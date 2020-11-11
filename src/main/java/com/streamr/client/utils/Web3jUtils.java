@@ -6,6 +6,8 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.web3j.abi.FunctionEncoder;
 import org.web3j.abi.FunctionReturnDecoder;
+import org.web3j.abi.datatypes.Address;
+import org.web3j.abi.datatypes.DynamicArray;
 import org.web3j.abi.datatypes.Function;
 import org.web3j.abi.datatypes.Type;
 import org.web3j.crypto.Sign;
@@ -18,10 +20,7 @@ import org.web3j.protocol.core.methods.response.TransactionReceipt;
 import java.io.IOException;
 import java.lang.reflect.InvocationTargetException;
 import java.math.BigInteger;
-import java.util.Arrays;
-import java.util.Collections;
-import java.util.List;
-import java.util.Optional;
+import java.util.*;
 
 public class Web3jUtils {
     private static final Logger log = LoggerFactory.getLogger(Web3jUtils.class);
@@ -76,7 +75,7 @@ public class Web3jUtils {
         }
     }
 
-    public static Object waitForCondition(Condition condition, long sleeptime, long timeout) throws Exception {
+    public static Object waitForCondition(Condition condition, final long sleeptime, final long timeout) throws Exception {
         if(sleeptime <= 0 || timeout <= 0)
             return condition.check();
         long slept = 0;
@@ -90,6 +89,15 @@ public class Web3jUtils {
         }
         return null;
     }
+
+    public static DynamicArray<org.web3j.abi.datatypes.Address> asDynamicAddressArray(String[] addresses){
+        ArrayList<org.web3j.abi.datatypes.Address> addressList = new ArrayList<org.web3j.abi.datatypes.Address>(addresses.length);
+        for (String address : addresses) {
+            addressList.add(new org.web3j.abi.datatypes.Address(address));
+        }
+        return new DynamicArray<org.web3j.abi.datatypes.Address>(Address.class, addressList);
+    }
+
 
     public static String waitForCodeAtAddress(String address, Web3j connector, long sleeptime, long timeout) throws Exception {
         return (String) waitForCondition(new CodePresent(address, connector), sleeptime, timeout);

@@ -36,7 +36,13 @@ import org.web3j.utils.Numeric;
 
 
 /**
- * client for DU2
+ * client for DU2. functions include
+ * 1. interact with DataUnionFactories: create DataUnion, load DataUnion.
+ * 2. perform bridge functions: portTxsToMainnet
+ * 3. util functions: waitForTx
+ *
+ * use DataUnion to perform functions on a particular DU.
+ *
  */
 public class DataUnionClient {
     private static final Logger log = LoggerFactory.getLogger(DataUnionClient.class);
@@ -44,6 +50,7 @@ public class DataUnionClient {
     private Web3j mainnet, sidechain;
     private Credentials mainnetCred, sidechainCred;
     private String sidechainFactory, mainnetFactory;
+    private long bridgePollInterval = 10000, bridgePollTimeout = 600000;
 
     public DataUnionClient(String mainnet_url,
                            String mainnetFactory_,
@@ -58,6 +65,22 @@ public class DataUnionClient {
         sidechain = Web3j.build(new HttpService(sidechain_url));
         sidechainFactory = sidechainFactory_;
         sidechainCred = sidechainAdmin;
+    }
+
+    public long getBridgePollInterval(){
+        return bridgePollInterval;
+    }
+
+    public long getBridgePollTimeout(){
+        return bridgePollTimeout;
+    }
+
+    public void setBridgePollInterval(long bridgePollInterval){
+        this.bridgePollInterval = bridgePollInterval;
+    }
+
+    public void setBridgePollTimeout(long bridgePollTimeout){
+        this.bridgePollTimeout = bridgePollTimeout;
     }
 
     protected ContractGasProvider mainnetGasProvider() {
@@ -245,7 +268,7 @@ public class DataUnionClient {
                 continue;
             }
             //wait until required signatures are present
-            BigInteger signatures = waitForSidechainAMBAffirmations(hash, 10000, 600000);
+            BigInteger signatures = waitForSidechainAMBAffirmations(hash, bridgePollInterval, bridgePollTimeout);
             if(signatures == null){
                 log.warn("Couldnt find affimation for AMB msgId " + id);
                 continue;
@@ -259,11 +282,6 @@ public class DataUnionClient {
 
 
     //utility functions:
-
-    public static byte[] signWithdraw(Credentials account, byte[] req) throws Exception {
-        Sign.SignatureData sig = Sign.signPrefixedMessage(req, account.getEcKeyPair());
-        return toBytes65(sig);
-    }
 
     /**
      *

@@ -12,6 +12,7 @@ import org.web3j.abi.datatypes.*;
 import org.web3j.abi.datatypes.generated.Uint256;
 import org.web3j.crypto.Credentials;
 import org.web3j.crypto.ECKeyPair;
+import org.web3j.crypto.Sign;
 import org.web3j.protocol.Web3j;
 import org.web3j.protocol.core.methods.response.TransactionReceipt;
 import org.web3j.tx.Contract;
@@ -23,9 +24,7 @@ import java.lang.reflect.Field;
 import java.math.BigInteger;
 import java.util.ArrayList;
 
-import static com.streamr.client.dataunion.DataUnionClient.signWithdraw;
-import static com.streamr.client.utils.Web3jUtils.waitForCodeAtAddress;
-import static com.streamr.client.utils.Web3jUtils.waitForCondition;
+import static com.streamr.client.utils.Web3jUtils.*;
 
 public class DataUnion {
     private static final Logger log = LoggerFactory.getLogger(DataUnion.class);
@@ -85,14 +84,18 @@ public class DataUnion {
             }
         };
         return (BigInteger) waitForCondition(earningsChange, sleeptime, timeout);
-   }
+    }
+
+    public EthereumTransactionReceipt addJoinPartAgents(String ... agents) throws Exception {
+        return new EthereumTransactionReceipt(sidechain.addJoinPartAgents(asDynamicAddressArray(agents)).send());
+    }
+
+    public EthereumTransactionReceipt partMembers(String ... members) throws Exception {
+        return new EthereumTransactionReceipt(sidechain.partMembers(asDynamicAddressArray(members)).send());
+    }
 
     public EthereumTransactionReceipt joinMembers(String ... members) throws Exception {
-        ArrayList<Address> memberAddresses = new ArrayList<Address>(members.length);
-        for (String member : members) {
-            memberAddresses.add(new Address(member));
-        }
-        return new EthereumTransactionReceipt(sidechain.addMembers(new DynamicArray<Address>(Address.class, memberAddresses)).send());
+        return new EthereumTransactionReceipt(sidechain.addMembers(asDynamicAddressArray(members)).send());
     }
 
     //amount == 0 means withdrawAll!
@@ -106,7 +109,8 @@ public class DataUnion {
 
     protected EthereumTransactionReceipt withdraw(Credentials from, String to, BigInteger amount) throws Exception {
         byte[] req = createWithdrawRequest(from.getAddress(), to, amount);
-        byte[] sig = signWithdraw(from, req);
+        byte[] sig = toBytes65(Sign.signPrefixedMessage(req, from.getEcKeyPair()));
+
         if(amount.equals(BigInteger.ZERO))
             return new EthereumTransactionReceipt(sidechain.withdrawAllToSigned(new Address(from.getAddress()), new Address(to), new Bool(true), new DynamicBytes(sig)).send());
         else
@@ -163,4 +167,5 @@ public class DataUnion {
     public boolean isMemberActive(String member) throws Exception {
         return STATUS_ACTIVE == sidechain.memberData(new Address(member)).send().component1().getValue().longValue();
     }
+
 }
