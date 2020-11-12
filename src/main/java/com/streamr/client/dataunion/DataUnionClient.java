@@ -91,7 +91,13 @@ public class DataUnionClient {
         return new EstimatedGasProvider(sidechain);
     }
 
-    public DataUnion deployNewDataUnion(String name, String admin, BigInteger adminFee, List<String> agents) throws Exception {
+    public DataUnion deployNewDataUnion(String name, String admin, double adminFeeFraction, List<String> agents) throws Exception {
+        if(adminFeeFraction < 0 || adminFeeFraction > 1)
+            throw new NumberFormatException("adminFeeFraction must be between 0 and 1");
+        return deployNewDataUnion(name, admin, toWei(adminFeeFraction), agents);
+    }
+
+    public DataUnion deployNewDataUnion(String name, String admin, BigInteger adminFeeFractionWei, List<String> agents) throws Exception {
         ArrayList<Address> agentAddresses = new ArrayList<Address>(agents.size());
         for (String agent : agents) {
             agentAddresses.add(new Address(agent));
@@ -99,13 +105,13 @@ public class DataUnionClient {
         Utf8String duname = new Utf8String(name);
         factoryMainnet().deployNewDataUnion(
                 new Address(admin),
-                new Uint256(adminFee),
+                new Uint256(adminFeeFractionWei),
                 new DynamicArray<Address>(Address.class, agentAddresses),
                 duname
         ).send();
         Address mainnetAddress = factoryMainnet().mainnetAddress(new Address(mainnetCred.getAddress()), duname).send();
         String sidechainAddress = factoryMainnet().sidechainAddress(mainnetAddress).send().getValue();
-        return new DataUnion(mainnetDU(mainnetAddress.getValue()), sidechainDU(sidechainAddress));
+        return new DataUnion(mainnetDU(mainnetAddress.getValue()), mainnet, sidechainDU(sidechainAddress), sidechain);
     }
 
     public DataUnion dataUnionFromName(String name) throws Exception {
@@ -117,7 +123,7 @@ public class DataUnionClient {
     public DataUnion dataUnionFromMainnetAddress(String mainnetAddress) throws Exception {
         DataUnionMainnet main =  mainnetDU(mainnetAddress);
         DataUnionSidechain side = sidechainDU(factoryMainnet().sidechainAddress(new Address(main.getContractAddress())).send().getValue());
-        return new DataUnion(main, side);
+        return new DataUnion(main, mainnet, side, sidechain);
     }
 
     protected DataUnionFactoryMainnet factoryMainnet() {

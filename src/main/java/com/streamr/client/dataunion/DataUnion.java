@@ -28,31 +28,22 @@ import static com.streamr.client.utils.Web3jUtils.*;
 
 public class DataUnion {
     private static final Logger log = LoggerFactory.getLogger(DataUnion.class);
-    protected static final long STATUS_NONE = 0;
-    protected static final long STATUS_ACTIVE = 1;
-    protected static final long STATUS_INACTIVE = 2;
-
-    // Contract.web3j is protected, so need to access with reflection. more bad web3j design!
-    private static Web3j getWeb3j(Contract c) {
-        try {
-            return (Web3j) FieldUtils.readField(c, "web3j", true);
-        } catch (Exception e) {
-            log.error(e.getMessage());
-            throw new RuntimeException(e);
-        }
-    }
+    public enum ActiveStatus{none, active, inactive};
 
     private DataUnionMainnet mainnet;
     private DataUnionSidechain sidechain;
+    private Web3j mainnetConnector, sidechainConnector;
 
     //use DataUnionClient to instantiate
-    protected DataUnion(DataUnionMainnet mainnet, DataUnionSidechain sidechain) {
+    protected DataUnion(DataUnionMainnet mainnet, Web3j mainnetConnector, DataUnionSidechain sidechain, Web3j sidechainConnector) {
         this.mainnet = mainnet;
         this.sidechain = sidechain;
+        this.mainnetConnector = mainnetConnector;
+        this.sidechainConnector = sidechainConnector;
     }
 
     public boolean waitForDeployment(long sleeptime, long timeout) throws Exception {
-        String code = waitForCodeAtAddress(sidechain.getContractAddress(), getWeb3j(sidechain), sleeptime, timeout);
+        String code = waitForCodeAtAddress(sidechain.getContractAddress(), sidechainConnector, sleeptime, timeout);
         return code != null && !code.equals("0x");
     }
 
@@ -165,7 +156,7 @@ public class DataUnion {
     }
 
     public boolean isMemberActive(String member) throws Exception {
-        return STATUS_ACTIVE == sidechain.memberData(new Address(member)).send().component1().getValue().longValue();
+        return ActiveStatus.active.ordinal() == sidechain.memberData(new Address(member)).send().component1().getValue().longValue();
     }
 
 }

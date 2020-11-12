@@ -19,6 +19,7 @@ import org.web3j.protocol.core.methods.response.TransactionReceipt;
 
 import java.io.IOException;
 import java.lang.reflect.InvocationTargetException;
+import java.math.BigDecimal;
 import java.math.BigInteger;
 import java.util.*;
 
@@ -188,5 +189,9 @@ public class Web3jUtils {
         byte[] s = Arrays.copyOfRange(bytes, 32, 64);
         byte[] v = Arrays.copyOfRange(bytes, 64, 65);
         return new Sign.SignatureData(v,r,s);
+    }
+
+    public static BigInteger toWei(double ether){
+        return new BigDecimal(BigInteger.TEN.pow(18)).multiply(BigDecimal.valueOf(ether)).toBigInteger();
     }
 }
