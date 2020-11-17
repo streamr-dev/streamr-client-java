@@ -101,9 +101,6 @@ public class StreamrClientOptions {
         sidechainRpcUrl = url;
     }
 
-
-
-
     public void setRestApiUrl(String restApiUrl) {
         this.restApiUrl = restApiUrl;
     }

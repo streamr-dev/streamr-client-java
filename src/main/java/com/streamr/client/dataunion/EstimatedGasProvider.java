@@ -22,9 +22,7 @@ https://github.com/web3j/web3j/pull/973/files#diff-90867613c5138fd20f7eb93c98f0d
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.web3j.protocol.Web3j;
-import org.web3j.protocol.core.methods.request.Transaction;
 import org.web3j.tx.gas.ContractGasProvider;
-
 import java.io.IOException;
 import java.math.BigInteger;
 

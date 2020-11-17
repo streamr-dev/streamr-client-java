@@ -111,7 +111,7 @@ public class DataUnionClient {
         ).send();
         Address mainnetAddress = factoryMainnet().mainnetAddress(new Address(mainnetCred.getAddress()), duname).send();
         String sidechainAddress = factoryMainnet().sidechainAddress(mainnetAddress).send().getValue();
-        return new DataUnion(mainnetDU(mainnetAddress.getValue()), mainnet, sidechainDU(sidechainAddress), sidechain);
+        return new DataUnion(mainnetDU(mainnetAddress.getValue()), mainnet, mainnetCred, sidechainDU(sidechainAddress), sidechain, sidechainCred);
     }
 
     public DataUnion dataUnionFromName(String name) throws Exception {
@@ -123,7 +123,7 @@ public class DataUnionClient {
     public DataUnion dataUnionFromMainnetAddress(String mainnetAddress) throws Exception {
         DataUnionMainnet main =  mainnetDU(mainnetAddress);
         DataUnionSidechain side = sidechainDU(factoryMainnet().sidechainAddress(new Address(main.getContractAddress())).send().getValue());
-        return new DataUnion(main, mainnet, side, sidechain);
+        return new DataUnion(main, mainnet, mainnetCred, side, sidechain, sidechainCred);
     }
 
     protected DataUnionFactoryMainnet factoryMainnet() {
@@ -216,28 +216,34 @@ public class DataUnionClient {
 
 
 
-    /*
-    from foreign AMB hasEnoughValidSignatures(): Need to construct this binary blob:
-    * @param _signatures bytes blob with signatures to be validated.
+    /**
+     * port an AMB message that has required # signatures.
+     *
+     *
+     * @param msgHash AMB message hash
+     * @param collectedSignatures
+     * @param cred
+     * @throws Exception
+     *
+     * from foreign AMB hasEnoughValidSignatures(): Need to construct this binary blob:
     * First byte X is a number of signatures in a blob,
     * next X bytes are v components of signatures,
     * next 32 * X bytes are r components of signatures,
     * next 32 * X bytes are s components of signatures.
-
     java byte is signed, so we use short to support 0-255
 
-    should only be called on an AMB message that has required # signatures
-    */
-    protected void portTxToMainnet(Bytes32 mhash, short collectedSignatures, Credentials cred) throws Exception {
+     */
+
+    protected void portTxToMainnet(Bytes32 msgHash, short collectedSignatures, Credentials cred) throws Exception {
         if(collectedSignatures > 255)
             throw new UnsupportedOperationException("collectedSignatures cannot be greater than 255");
 
-        DynamicBytes message = sidechainAMB().message(mhash).send();
+        DynamicBytes message = sidechainAMB().message(msgHash).send();
         byte[] signatures = new byte[1 + (65*collectedSignatures)];
         signatures[0] = (byte) collectedSignatures;
         //collect signatures one by one from sidechain, add to blob
         for(short i = 0; i < collectedSignatures; i++){
-            Sign.SignatureData sig = fromBytes65(sidechainAMB().signature(mhash, new Uint256(i)).send().getValue());
+            Sign.SignatureData sig = fromBytes65(sidechainAMB().signature(msgHash, new Uint256(i)).send().getValue());
             signatures[i+1] = sig.getV()[0];
             System.arraycopy(sig.getR(), 0, signatures, 1+collectedSignatures+(i*32), 32);
             System.arraycopy(sig.getS(), 0, signatures, 1+(collectedSignatures*33)+(i*32), 32);

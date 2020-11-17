@@ -66,7 +66,7 @@ class DataUnionClientSpec extends StreamrIntegrationSpecification{
         tr = du.joinMembers(wallets[1].getAddress())
 
         then:
-        client.waitForSidechainTx(tr.txHash(), 10000, 600000)
+        client.waitForSidechainTx(tr.getTransactionHash(), 10000, 600000)
         du.activeMemberCount().equals(BigInteger.ONE)
         du.isMemberActive(wallets[1].getAddress())
     }
@@ -91,7 +91,7 @@ class DataUnionClientSpec extends StreamrIntegrationSpecification{
         client.portTxsToMainnet(tr, wallets[0].getEcKeyPair().getPrivateKey())
 
         then:
-        client.waitForSidechainTx(tr.txHash(), 10000, 600000)
+        client.waitForSidechainTx(tr.getTransactionHash(), 10000, 600000)
         client.waitForMainnetBalanceChange(recipientBal,recipient, 10000, 600000 ) != null
     }
 }

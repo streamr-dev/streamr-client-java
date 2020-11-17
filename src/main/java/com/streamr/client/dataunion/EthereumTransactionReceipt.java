@@ -11,7 +11,7 @@ public class EthereumTransactionReceipt {
     protected EthereumTransactionReceipt(TransactionReceipt tr){
         this.tr = tr;
     }
-    public String txHash(){
+    public String getTransactionHash(){
         return tr.getTransactionHash();
     }
 
