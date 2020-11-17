@@ -187,6 +187,10 @@ public class DataUnion {
         return sidechain.activeMemberCount().send().getValue();
     }
 
+    public BigInteger inactiveMemberCount() throws Exception {
+        return sidechain.inactiveMemberCount().send().getValue();
+    }
+
     public BigInteger lifetimeMemberEarnings() throws Exception {
         return sidechain.lifetimeMemberEarnings().send().getValue();
     }
