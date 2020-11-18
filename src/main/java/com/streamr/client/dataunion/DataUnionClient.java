@@ -91,7 +91,7 @@ public class DataUnionClient {
         return new EstimatedGasProvider(sidechain);
     }
 
-    public DataUnion deployNewDataUnion(String name, String admin, double adminFeeFraction, List<String> agents) throws Exception {
+    public DataUnion deployDataUnion(String name, String admin, double adminFeeFraction, List<String> agents) throws Exception {
         if(adminFeeFraction < 0 || adminFeeFraction > 1)
             throw new NumberFormatException("adminFeeFraction must be between 0 and 1");
         return deployNewDataUnion(name, admin, toWei(adminFeeFraction), agents);
@@ -290,11 +290,7 @@ public class DataUnionClient {
         }
     }
 
-
-
-
     //utility functions:
-
     /**
      *
      * @param tx
@@ -305,8 +301,9 @@ public class DataUnionClient {
         ArrayList<Bytes32[]> msgs = new ArrayList<Bytes32[]>();
         for(Log l : tx.getLogs()){
             EventValues vals = staticExtractEventParameters(HomeAMB.USERREQUESTFORSIGNATURE_EVENT, l);
-            if(vals == null)
+            if(vals == null) {
                 continue;
+            }
             //event UserRequestForSignature(bytes32 indexed messageId, bytes encodedData);
             Bytes32[] idAndHash = new Bytes32[2];
             idAndHash[0] = (Bytes32) vals.getIndexedValues().get(0);

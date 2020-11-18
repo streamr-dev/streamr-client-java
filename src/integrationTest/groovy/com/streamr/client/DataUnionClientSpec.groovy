@@ -48,7 +48,7 @@ class DataUnionClientSpec extends StreamrIntegrationSpecification{
     void "create DU"() {
         //Address deployer = new Address(wallets[0].getAddress())
         when:
-        du = client.deployNewDataUnion(
+        du = client.deployDataUnion(
                 duname,
                 wallets[0].getAddress(),
                 BigInteger.ZERO,
@@ -74,7 +74,7 @@ class DataUnionClientSpec extends StreamrIntegrationSpecification{
     void "test transfer and sidechain stats"() {
         BigInteger sidechainEarnings = du.totalEarnings()
         when:
-        TransactionReceipt tr = mainnetToken.transfer(new Address(du.mainnetAddress()), new Uint256(testSendAmount)).send()
+        TransactionReceipt tr = mainnetToken.transfer(new Address(du.getMainnetContractAddress()), new Uint256(testSendAmount)).send()
         client.waitForMainnetTx(tr.getTransactionHash(), 10000, 600000)
         du.sendTokensToBridge();
         then:

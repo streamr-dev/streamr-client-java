@@ -26,8 +26,6 @@ import org.java_websocket.exceptions.WebsocketNotConnectedException;
 import org.java_websocket.handshake.ServerHandshake;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import org.web3j.crypto.Credentials;
-
 import javax.annotation.Nullable;
 import java.io.IOException;
 import java.net.URI;

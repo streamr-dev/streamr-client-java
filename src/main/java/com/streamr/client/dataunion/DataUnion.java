@@ -2,9 +2,7 @@ package com.streamr.client.dataunion;
 
 import com.streamr.client.dataunion.contracts.DataUnionMainnet;
 import com.streamr.client.dataunion.contracts.DataUnionSidechain;
-import com.streamr.client.dataunion.contracts.IERC20;
 import com.streamr.client.utils.Web3jUtils;
-import org.apache.commons.lang3.reflect.FieldUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.web3j.abi.TypeEncoder;
@@ -14,21 +12,13 @@ import org.web3j.crypto.Credentials;
 import org.web3j.crypto.ECKeyPair;
 import org.web3j.crypto.Sign;
 import org.web3j.protocol.Web3j;
-import org.web3j.protocol.core.methods.response.TransactionReceipt;
-import org.web3j.tx.Contract;
-import org.web3j.tx.ManagedTransaction;
 import org.web3j.utils.Numeric;
-
-import java.io.IOException;
-import java.lang.reflect.Field;
 import java.math.BigInteger;
-import java.util.ArrayList;
-
 import static com.streamr.client.utils.Web3jUtils.*;
 
 public class DataUnion {
     private static final Logger log = LoggerFactory.getLogger(DataUnion.class);
-    public enum ActiveStatus{none, active, inactive};
+    public enum ActiveStatus{NONE, ACTIVE, INACTIVE};
 
     private DataUnionMainnet mainnet;
     private DataUnionSidechain sidechain;
@@ -50,11 +40,11 @@ public class DataUnion {
         return code != null && !code.equals("0x");
     }
 
-    public String mainnetAddress(){
+    public String getMainnetContractAddress(){
         return mainnet.getContractAddress();
     }
 
-    public String sidechainAddress(){
+    public String getSidechainContractAddress(){
         return sidechain.getContractAddress();
     }
 
@@ -227,7 +217,7 @@ public class DataUnion {
     }
 
     public boolean isMemberActive(String member) throws Exception {
-        return ActiveStatus.active.ordinal() == sidechain.memberData(new Address(member)).send().component1().getValue().longValue();
+        return ActiveStatus.ACTIVE.ordinal() == sidechain.memberData(new Address(member)).send().component1().getValue().longValue();
     }
 
 }

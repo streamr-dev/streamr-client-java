@@ -42,6 +42,7 @@ public class EstimatedGasProvider implements ContractGasProvider {
     }
 
     @Override
+    @Deprecated
     public BigInteger getGasPrice() {
         try {
             return web3j.ethGasPrice().send().getGasPrice();
@@ -61,6 +62,7 @@ public class EstimatedGasProvider implements ContractGasProvider {
     }
 
     @Override
+    @Deprecated
     public BigInteger getGasLimit() {
         return gasLimit;
     }
