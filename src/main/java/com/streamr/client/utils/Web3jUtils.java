@@ -1,7 +1,5 @@
 package com.streamr.client.utils;
 
-import com.streamr.client.dataunion.DataUnionClient;
-import com.streamr.client.dataunion.contracts.IERC20;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.web3j.abi.FunctionEncoder;
@@ -16,7 +14,6 @@ import org.web3j.protocol.core.DefaultBlockParameterName;
 import org.web3j.protocol.core.methods.request.Transaction;
 import org.web3j.protocol.core.methods.response.EthCall;
 import org.web3j.protocol.core.methods.response.TransactionReceipt;
-
 import java.io.IOException;
 import java.lang.reflect.InvocationTargetException;
 import java.math.BigDecimal;
@@ -53,9 +50,9 @@ public class Web3jUtils {
     }
 
     public static class Erc20BalanceChanged implements Condition {
-        private Web3j connector;
-        private String tokenAddress, balanceAddress;
-        private BigInteger initialBalance;
+        private final Web3j connector;
+        private final String tokenAddress, balanceAddress;
+        private final BigInteger initialBalance;
 
         @Override
         public Object check() throws Exception {
@@ -77,13 +74,15 @@ public class Web3jUtils {
     }
 
     public static Object waitForCondition(Condition condition, final long sleeptime, final long timeout) throws Exception {
-        if(sleeptime <= 0 || timeout <= 0)
+        if(sleeptime <= 0 || timeout <= 0) {
             return condition.check();
+        }
         long slept = 0;
         while(slept < timeout){
             Object o = condition.check();
-            if(o != null)
+            if(o != null) {
                 return o;
+            }
             log.info("sleeping " + sleeptime + "ms");
             Thread.sleep(sleeptime);
             slept += sleeptime;
@@ -110,8 +109,9 @@ public class Web3jUtils {
             @Override
             public Object check() throws Exception {
                 Optional<TransactionReceipt> tr = web3j.ethGetTransactionReceipt(txhash).send().getTransactionReceipt();
-                if(!tr.isPresent())
+                if(!tr.isPresent()) {
                     return null;
+                }
                 return tr.get().isStatusOK();
             }
         };
@@ -129,7 +129,6 @@ public class Web3jUtils {
      * @return new balance, or null if balance didnt change in waiting period
      * @throws Exception
      */
-
     public static BigInteger waitForErc20BalanceChange(BigInteger initialBalance, String tokenAddress, String balanceAddress, Web3j connector, long sleeptime, long timeout) throws Exception {
         Object o = waitForCondition(new Erc20BalanceChanged(initialBalance, tokenAddress, balanceAddress, connector), sleeptime, timeout);
         return o == null ? null : (BigInteger) o;

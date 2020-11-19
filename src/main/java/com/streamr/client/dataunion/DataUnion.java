@@ -20,10 +20,10 @@ public class DataUnion {
     private static final Logger log = LoggerFactory.getLogger(DataUnion.class);
     public enum ActiveStatus{NONE, ACTIVE, INACTIVE};
 
-    private DataUnionMainnet mainnet;
-    private DataUnionSidechain sidechain;
-    private Web3j mainnetConnector, sidechainConnector;
-    private Credentials mainnetCred, sidechainCred;
+    private final DataUnionMainnet mainnet;
+    private final DataUnionSidechain sidechain;
+    private final Web3j mainnetConnector, sidechainConnector;
+    private final Credentials mainnetCred, sidechainCred;
 
     //use DataUnionClient to instantiate
     protected DataUnion(DataUnionMainnet mainnet, Web3j mainnetConnector, Credentials mainnetCred, DataUnionSidechain sidechain, Web3j sidechainConnector, Credentials sidechainCred) {
