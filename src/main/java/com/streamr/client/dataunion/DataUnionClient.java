@@ -50,19 +50,19 @@ public class DataUnionClient {
     private String sidechainFactory, mainnetFactory;
     private long bridgePollInterval = 10000, bridgePollTimeout = 600000;
 
-    public DataUnionClient(String mainnet_url,
-                           String mainnetFactory_,
+    public DataUnionClient(String mainnetUrl,
+                           String mainnetFactory,
                            String mainnetAdminPrvKey,
-                           String sidechain_url,
-                           String sidechainFactory_,
+                           String sidechainUrl,
+                           String sidechainFactory,
                            String sidechainAdminPrvKey
                            ) {
-        mainnet = Web3j.build(new HttpService(mainnet_url));
-        mainnetFactory = mainnetFactory_;
-        mainnetCred = Credentials.create(mainnetAdminPrvKey);
-        sidechain = Web3j.build(new HttpService(sidechain_url));
-        sidechainFactory = sidechainFactory_;
-        sidechainCred = Credentials.create(sidechainAdminPrvKey);
+        this.mainnet = Web3j.build(new HttpService(mainnetUrl));
+        this.mainnetFactory = mainnetFactory;
+        this.mainnetCred = Credentials.create(mainnetAdminPrvKey);
+        this.sidechain = Web3j.build(new HttpService(sidechainUrl));
+        this.sidechainFactory = sidechainFactory;
+        this.sidechainCred = Credentials.create(sidechainAdminPrvKey);
     }
 
     public long getBridgePollInterval(){
