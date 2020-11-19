@@ -155,16 +155,6 @@ public class Web3jUtils {
         return (BigInteger) ret.iterator().next().getValue();
     }
 
-    public static String callAddressGetterFunction(String contract, String functionName, Web3j connection) throws ClassNotFoundException, NoSuchMethodException, InvocationTargetException, InstantiationException, IllegalAccessException, IOException {
-        Function fn = FunctionEncoder.makeFunction(functionName,
-                Collections.<String>emptyList(),
-                Collections.emptyList(),
-                Arrays.<String>asList("address")
-        );
-        List<Type> ret = callFunction(contract, fn, connection);
-        return (String) ret.iterator().next().getValue();
-    }
-
     public static List<Type> callFunction(String contract, Function fn, Web3j connection) throws IOException {
         log.info("Calling view function " + fn + " on contract " + contract);
         EthCall response = connection.ethCall(
