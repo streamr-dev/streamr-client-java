@@ -43,9 +43,9 @@ public class Web3jUtils {
             return null;
         }
 
-        public CodePresent(String address_, Web3j connector_){
-            address = address_;
-            connector = connector_;
+        public CodePresent(String address, Web3j connector){
+            this.address = address;
+            this.connector = connector;
         }
     }
 
