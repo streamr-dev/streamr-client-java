@@ -65,11 +65,11 @@ public class Web3jUtils {
             return null;
         }
 
-        public Erc20BalanceChanged(BigInteger initialBalance_, String tokenAddress_, String balanceAddress_, Web3j connector_){
-            initialBalance = initialBalance_;
-            tokenAddress = tokenAddress_;
-            balanceAddress = balanceAddress_;
-            connector = connector_;
+        public Erc20BalanceChanged(BigInteger initialBalance, String tokenAddress, String balanceAddress, Web3j connector){
+            this.initialBalance = initialBalance;
+            this.tokenAddress = tokenAddress;
+            this.balanceAddress = balanceAddress;
+            this.connector = connector;
         }
     }
 
