@@ -63,18 +63,18 @@ class DataUnionClientSpec extends StreamrIntegrationSpecification{
     void "add members"() {
         EthereumTransactionReceipt tr;
         when:
-        tr = du.joinMembers(wallets[1].getAddress())
+        tr = du.addMembers(wallets[1].getAddress(), wallets[2].getAddress())
 
         then:
         client.waitForSidechainTx(tr.getTransactionHash(), 10000, 600000)
-        du.activeMemberCount().equals(BigInteger.ONE)
+        du.activeMemberCount().equals(BigInteger.valueOf(2))
         du.isMemberActive(wallets[1].getAddress())
     }
 
     void "test transfer and sidechain stats"() {
         BigInteger sidechainEarnings = du.totalEarnings()
         when:
-        TransactionReceipt tr = mainnetToken.transfer(new Address(du.getMainnetContractAddress()), new Uint256(testSendAmount)).send()
+        TransactionReceipt tr = mainnetToken.transfer(new Address(du.getMainnetContractAddress()), new Uint256(testSendAmount.multiply(BigInteger.valueOf(2)))).send()
         client.waitForMainnetTx(tr.getTransactionHash(), 10000, 600000)
         du.sendTokensToBridge();
         then:
@@ -82,16 +82,29 @@ class DataUnionClientSpec extends StreamrIntegrationSpecification{
         du.getEarnings(wallets[1].getAddress()).equals(testSendAmount)
     }
 
+    void "withdraw member as admin"() {
+        String recipient = wallets[2].getAddress();
+        BigInteger recipientBal = mainnetToken.balanceOf(new Address(recipient)).send().getValue();
+        EthereumTransactionReceipt tr;
+        when:
+        tr = du.withdrawAllTokensForSelfOrAsAdmin(recipient)
+        client.portTxsToMainnet(tr, wallets[0].getEcKeyPair().getPrivateKey())
+
+        then:
+        client.waitForSidechainTx(tr.getTransactionHash(), 10000, 600000)
+        client.waitForMainnetBalanceChange(recipientBal,recipient, 10000, 600000 ) == recipientBal.add(testSendAmount)
+    }
+
     void "signed withdrawal for another"() {
         String recipient = wallets[2].getAddress();
         BigInteger recipientBal = mainnetToken.balanceOf(new Address(recipient)).send().getValue();
         EthereumTransactionReceipt tr;
         when:
-        tr = du.withdraw(wallets[1].getEcKeyPair().getPrivateKey(), recipient, BigInteger.ZERO)
+        tr = du.withdrawAllTokensForMember(wallets[1].getEcKeyPair().getPrivateKey(), recipient)
         client.portTxsToMainnet(tr, wallets[0].getEcKeyPair().getPrivateKey())
 
         then:
         client.waitForSidechainTx(tr.getTransactionHash(), 10000, 600000)
-        client.waitForMainnetBalanceChange(recipientBal,recipient, 10000, 600000 ) != null
+        client.waitForMainnetBalanceChange(recipientBal,recipient, 10000, 600000 ) == recipientBal.add(testSendAmount)
     }
 }

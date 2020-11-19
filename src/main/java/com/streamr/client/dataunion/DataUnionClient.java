@@ -4,7 +4,6 @@ import com.streamr.client.dataunion.contracts.*;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.web3j.abi.EventValues;
-import org.web3j.abi.TypeEncoder;
 import org.web3j.abi.datatypes.Address;
 import org.web3j.abi.datatypes.DynamicArray;
 import org.web3j.abi.datatypes.DynamicBytes;
@@ -16,7 +15,6 @@ import org.web3j.crypto.ECKeyPair;
 import org.web3j.crypto.Hash;
 import org.web3j.crypto.Sign;
 import org.web3j.protocol.Web3j;
-import org.web3j.protocol.core.methods.request.Transaction;
 import org.web3j.protocol.core.methods.response.Log;
 import org.web3j.protocol.core.methods.response.TransactionReceipt;
 import org.web3j.protocol.http.HttpService;
@@ -94,10 +92,10 @@ public class DataUnionClient {
     public DataUnion deployDataUnion(String name, String admin, double adminFeeFraction, List<String> agents) throws Exception {
         if(adminFeeFraction < 0 || adminFeeFraction > 1)
             throw new NumberFormatException("adminFeeFraction must be between 0 and 1");
-        return deployNewDataUnion(name, admin, toWei(adminFeeFraction), agents);
+        return deployDataUnion(name, admin, toWei(adminFeeFraction), agents);
     }
 
-    public DataUnion deployNewDataUnion(String name, String admin, BigInteger adminFeeFractionWei, List<String> agents) throws Exception {
+    public DataUnion deployDataUnion(String name, String admin, BigInteger adminFeeFractionWei, List<String> agents) throws Exception {
         ArrayList<Address> agentAddresses = new ArrayList<Address>(agents.size());
         for (String agent : agents) {
             agentAddresses.add(new Address(agent));
@@ -111,7 +109,7 @@ public class DataUnionClient {
         ).send();
         Address mainnetAddress = factoryMainnet().mainnetAddress(new Address(mainnetCred.getAddress()), duname).send();
         String sidechainAddress = factoryMainnet().sidechainAddress(mainnetAddress).send().getValue();
-        return new DataUnion(mainnetDU(mainnetAddress.getValue()), mainnet, mainnetCred, sidechainDU(sidechainAddress), sidechain, sidechainCred);
+        return new DataUnion(mainnetDataUnion(mainnetAddress.getValue()), mainnet, mainnetCred, sidechainDataUnion(sidechainAddress), sidechain, sidechainCred);
     }
 
     public DataUnion dataUnionFromName(String name) throws Exception {
@@ -121,8 +119,8 @@ public class DataUnionClient {
 
 
     public DataUnion dataUnionFromMainnetAddress(String mainnetAddress) throws Exception {
-        DataUnionMainnet main =  mainnetDU(mainnetAddress);
-        DataUnionSidechain side = sidechainDU(factoryMainnet().sidechainAddress(new Address(main.getContractAddress())).send().getValue());
+        DataUnionMainnet main =  mainnetDataUnion(mainnetAddress);
+        DataUnionSidechain side = sidechainDataUnion(factoryMainnet().sidechainAddress(new Address(main.getContractAddress())).send().getValue());
         return new DataUnion(main, mainnet, mainnetCred, side, sidechain, sidechainCred);
     }
 
@@ -130,13 +128,15 @@ public class DataUnionClient {
         return DataUnionFactoryMainnet.load(mainnetFactory, mainnet, mainnetCred, mainnetGasProvider());
     }
 
-    protected DataUnionMainnet mainnetDU(String address) {
+    protected DataUnionMainnet mainnetDataUnion(String address) {
         return DataUnionMainnet.load(address, mainnet, mainnetCred, mainnetGasProvider());
     }
+
     protected DataUnionFactorySidechain factorySidechain() {
         return DataUnionFactorySidechain.load(sidechainFactory, sidechain, sidechainCred, sidechainGasProvider());
     }
-    protected DataUnionSidechain sidechainDU(String address) {
+
+    protected DataUnionSidechain sidechainDataUnion(String address) {
         return DataUnionSidechain.load(address, sidechain, sidechainCred, sidechainGasProvider());
     }
 
@@ -276,7 +276,7 @@ public class DataUnionClient {
             //check if message has already been sent
             if(mainnetAMB().messageCallStatus(id).send().getValue() ||
                     !mainnetAMB().failedMessageSender(id).send().toUint().getValue().equals(BigInteger.ZERO)){
-                log.warn("ForeignAMB has already seen msgId " + id + ". skipping");
+                log.warn("ForeignAMB has already seen msgId " + Numeric.toHexString(id.getValue()) + ". skipping");
                 continue;
             }
             //wait until required signatures are present
