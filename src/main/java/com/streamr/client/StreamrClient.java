@@ -3,6 +3,7 @@ package com.streamr.client;
 import com.streamr.client.authentication.ApiKeyAuthenticationMethod;
 import com.streamr.client.authentication.AuthenticationMethod;
 import com.streamr.client.authentication.EthereumAuthenticationMethod;
+import com.streamr.client.dataunion.DataUnionClient;
 import com.streamr.client.exceptions.ConnectionTimeoutException;
 import com.streamr.client.exceptions.MalformedMessageException;
 import com.streamr.client.exceptions.PartitionNotSpecifiedException;
@@ -25,7 +26,6 @@ import org.java_websocket.exceptions.WebsocketNotConnectedException;
 import org.java_websocket.handshake.ServerHandshake;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-
 import javax.annotation.Nullable;
 import java.io.IOException;
 import java.net.URI;
@@ -343,6 +343,15 @@ public class StreamrClient extends StreamrRESTClient {
 
     public GroupKeyStore getKeyStore() {
         return keyStore;
+    }
+
+    public DataUnionClient dataUnionClient(String mainnetAdminPrvKey, String sidechainAdminPrvKey) {
+        return new DataUnionClient(options.getMainnetRpcUrl(),
+                options.getDataUnionMainnetFactoryAddress(),
+                mainnetAdminPrvKey,
+                options.getSidechainRpcUrl(),
+                options.getDataUnionSidechainFactoryAddress(),
+                sidechainAdminPrvKey);
     }
 
     /*

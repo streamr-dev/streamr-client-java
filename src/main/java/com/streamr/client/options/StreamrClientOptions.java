@@ -16,6 +16,13 @@ public class StreamrClientOptions {
             "?controlLayerVersion=" + ControlMessage.LATEST_VERSION +
             "&messageLayerVersion=" + StreamMessage.LATEST_VERSION;
     private String restApiUrl = "https://www.streamr.com/api/v1";
+
+    private String mainnetRpcUrl = "http://localhost:8545";
+    private String sidechainRpcUrl = "http://localhost:8546";
+    private String dataUnionSidechainFactoryAddress = "0x4081B7e107E59af8E82756F96C751174590989FE";
+    private String dataUnionMainnetFactoryAddress = "0x5E959e5d5F3813bE5c6CeA996a286F734cc9593b";
+
+
     private long connectionTimeoutMillis = 10 * 1000;
     private long reconnectRetryInterval = 10 * 1000;
     private int propagationTimeout = 5000;
@@ -75,6 +82,22 @@ public class StreamrClientOptions {
 
     public String getRestApiUrl() {
         return restApiUrl;
+    }
+
+    public String getMainnetRpcUrl() {
+        return mainnetRpcUrl;
+    }
+
+    public void setMainnetRpcUrl(String mainnetRpcUrl) {
+        this.mainnetRpcUrl = mainnetRpcUrl;
+    }
+
+    public String getSidechainRpcUrl() {
+        return sidechainRpcUrl;
+    }
+
+    public void setSidechainRpcUrl(String sidechainRpcUrl) {
+        this.sidechainRpcUrl = sidechainRpcUrl;
     }
 
     public void setRestApiUrl(String restApiUrl) {
@@ -150,5 +173,21 @@ public class StreamrClientOptions {
             }
             return result;
         }
+    }
+
+    public String getDataUnionSidechainFactoryAddress() {
+        return dataUnionSidechainFactoryAddress;
+    }
+
+    public void setDataUnionSidechainFactoryAddress(String dataUnionSidechainFactoryAddress) {
+        this.dataUnionSidechainFactoryAddress = dataUnionSidechainFactoryAddress;
+    }
+
+    public String getDataUnionMainnetFactoryAddress() {
+        return dataUnionMainnetFactoryAddress;
+    }
+
+    public void setDataUnionMainnetFactoryAddress(String dataUnionMainnetFactoryAddress) {
+        this.dataUnionMainnetFactoryAddress = dataUnionMainnetFactoryAddress;
     }
 }
