@@ -318,9 +318,9 @@ By subscribing to streams, your application gets immediately notified about new 
 ```java
 Subscription sub = client.subscribe(stream, new MessageHandler() {
     @Override
-    void onMessage(Subscription s, StreamMessage message) {
+    public void onMessage(Subscription s, StreamMessage message) {
         // Here you can react to the latest message
-        System.out.println(message.getContent().toString());
+        System.out.println(message.getParsedContent().toString());
     }
 });
 ```
