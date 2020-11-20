@@ -11,7 +11,7 @@ import org.web3j.codegen.SolidityFunctionWrapperGenerator;
 
 import java.io.*;
 
-public class JavaWrapperUtil {
+class JavaWrapperUtil {
     private static final Logger log = LoggerFactory.getLogger(JavaWrapperUtil.class);
 
     /*

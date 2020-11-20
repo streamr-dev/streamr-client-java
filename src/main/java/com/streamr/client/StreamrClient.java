@@ -347,10 +347,10 @@ public class StreamrClient extends StreamrRESTClient {
 
     public DataUnionClient dataUnionClient(String mainnetAdminPrvKey, String sidechainAdminPrvKey) {
         return new DataUnionClient(options.getMainnetRpcUrl(),
-                options.getMainnetFactoryAddress(),
+                options.getDataUnionMainnetFactoryAddress(),
                 mainnetAdminPrvKey,
                 options.getSidechainRpcUrl(),
-                options.getSidechainFactoryAddress(),
+                options.getDataUnionSidechainFactoryAddress(),
                 sidechainAdminPrvKey);
     }
 

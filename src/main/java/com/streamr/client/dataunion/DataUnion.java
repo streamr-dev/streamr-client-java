@@ -18,12 +18,20 @@ import static com.streamr.client.utils.Web3jUtils.*;
 
 public class DataUnion {
     private static final Logger log = LoggerFactory.getLogger(DataUnion.class);
+    private static final BigInteger MAX_UINT256 = BigInteger.valueOf(2).pow(256).subtract(BigInteger.ONE);
     public enum ActiveStatus{NONE, ACTIVE, INACTIVE};
 
     private final DataUnionMainnet mainnet;
     private final DataUnionSidechain sidechain;
     private final Web3j mainnetConnector, sidechainConnector;
     private final Credentials mainnetCred, sidechainCred;
+
+
+    protected static class RangeException extends Exception{
+        public RangeException(String msg){
+            super(msg);
+        }
+    };
 
     //use DataUnionClient to instantiate
     protected DataUnion(DataUnionMainnet mainnet, Web3j mainnetConnector, Credentials mainnetCred, DataUnionSidechain sidechain, Web3j sidechainConnector, Credentials sidechainCred) {
@@ -83,6 +91,11 @@ public class DataUnion {
         return new EthereumTransactionReceipt(sidechain.addMembers(asDynamicAddressArray(members)).send());
     }
 
+    protected void checkRange(BigInteger x, BigInteger min, BigInteger max) throws RangeException {
+        if(x.compareTo(min) < 0 || x.compareTo(max) > 0){
+            throw new RangeException("Amount must be between " + min + " and " + max);
+        }
+    }
 
     /**
      *
@@ -94,6 +107,7 @@ public class DataUnion {
      * @throws Exception
      */
     public EthereumTransactionReceipt withdrawTokensForSelfOrAsAdmin(String member, BigInteger amount) throws Exception {
+        checkRange(amount, BigInteger.ONE, MAX_UINT256);
         return new EthereumTransactionReceipt(sidechain.withdraw(new Address(member), new Uint256(amount), new Bool(true)).send());
     }
     public EthereumTransactionReceipt withdrawAllTokensForSelfOrAsAdmin(String member) throws Exception {
@@ -134,6 +148,8 @@ public class DataUnion {
 
     //amount == 0 means withdrawAll
     protected EthereumTransactionReceipt withdrawTokensForMember(Credentials member, String to, BigInteger amount) throws Exception {
+        //0 is allowed in this protected method
+        checkRange(amount, BigInteger.ZERO, MAX_UINT256);
         byte[] req = createWithdrawRequest(member.getAddress(), to, amount);
         byte[] sig = toBytes65(Sign.signPrefixedMessage(req, member.getEcKeyPair()));
         if(amount.equals(BigInteger.ZERO)){

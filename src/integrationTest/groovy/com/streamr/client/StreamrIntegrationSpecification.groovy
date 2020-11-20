@@ -7,7 +7,6 @@ import com.streamr.client.options.EncryptionOptions
 import com.streamr.client.options.SigningOptions
 import com.streamr.client.options.StreamrClientOptions
 import org.apache.commons.codec.binary.Hex
-import org.web3j.crypto.Credentials
 import spock.lang.Specification
 
 class StreamrIntegrationSpecification extends Specification {
@@ -30,8 +29,8 @@ class StreamrIntegrationSpecification extends Specification {
         StreamrClientOptions opts = new StreamrClientOptions(null, SigningOptions.getDefault(), EncryptionOptions.getDefault(), DEFAULT_WEBSOCKET_URL, DEFAULT_REST_URL)
         opts.setSidechainRpcUrl(DEV_SIDECHAIN_RPC)
         opts.setMainnetRpcUrl(DEV_MAINCHAIN_RPC)
-        opts.setMainnetFactoryAddress(DEV_MAINCHAIN_FACTORY)
-        opts.setSidechainFactoryAddress(DEV_SIDECHAIN_FACTORY)
+        opts.setDataUnionMainnetFactoryAddress(DEV_MAINCHAIN_FACTORY)
+        opts.setDataUnionSidechainFactoryAddress(DEV_SIDECHAIN_FACTORY)
         return new StreamrClient(opts).dataUnionClient(mainnetAdminPrvKey, sidechainAdminPrvKey)
     }
 

@@ -20,8 +20,8 @@ public class StreamrClientOptions {
 
     private String mainnetRpcUrl = "http://localhost:8545";
     private String sidechainRpcUrl = "http://localhost:8546";
-    private String sidechainFactoryAddress = "0x4081B7e107E59af8E82756F96C751174590989FE";
-    private String mainnetFactoryAddress = "0x5E959e5d5F3813bE5c6CeA996a286F734cc9593b";
+    private String dataUnionSidechainFactoryAddress = "0x4081B7e107E59af8E82756F96C751174590989FE";
+    private String dataUnionMainnetFactoryAddress = "0x5E959e5d5F3813bE5c6CeA996a286F734cc9593b";
 
 
     private long connectionTimeoutMillis = 10 * 1000;
@@ -176,19 +176,19 @@ public class StreamrClientOptions {
         }
     }
 
-    public String getSidechainFactoryAddress() {
-        return sidechainFactoryAddress;
+    public String getDataUnionSidechainFactoryAddress() {
+        return dataUnionSidechainFactoryAddress;
     }
 
-    public void setSidechainFactoryAddress(String sidechainFactoryAddress) {
-        this.sidechainFactoryAddress = sidechainFactoryAddress;
+    public void setDataUnionSidechainFactoryAddress(String dataUnionSidechainFactoryAddress) {
+        this.dataUnionSidechainFactoryAddress = dataUnionSidechainFactoryAddress;
     }
 
-    public String getMainnetFactoryAddress() {
-        return mainnetFactoryAddress;
+    public String getDataUnionMainnetFactoryAddress() {
+        return dataUnionMainnetFactoryAddress;
     }
 
-    public void setMainnetFactoryAddress(String mainnetFactoryAddress) {
-        this.mainnetFactoryAddress = mainnetFactoryAddress;
+    public void setDataUnionMainnetFactoryAddress(String dataUnionMainnetFactoryAddress) {
+        this.dataUnionMainnetFactoryAddress = dataUnionMainnetFactoryAddress;
     }
 }
