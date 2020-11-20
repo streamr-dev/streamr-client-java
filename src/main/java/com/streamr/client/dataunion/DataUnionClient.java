@@ -29,7 +29,6 @@ import static com.streamr.client.utils.Web3jUtils.*;
 import static org.web3j.tx.Contract.staticExtractEventParameters;
 
 import com.streamr.client.utils.Web3jUtils.Condition;
-import org.web3j.tx.gas.ContractGasProvider;
 import org.web3j.utils.Numeric;
 
 
@@ -45,10 +44,16 @@ import org.web3j.utils.Numeric;
 public class DataUnionClient {
     private static final Logger log = LoggerFactory.getLogger(DataUnionClient.class);
 
-    private Web3j mainnet, sidechain;
-    private Credentials mainnetCred, sidechainCred;
-    private String sidechainFactory, mainnetFactory;
-    private long bridgePollInterval = 10000, bridgePollTimeout = 600000;
+    private final Web3j mainnet;
+    private final Web3j sidechain;
+    private final Credentials mainnetCred;
+    private final Credentials sidechainCred;
+    private final String sidechainFactory;
+    private final String mainnetFactory;
+    private long bridgePollInterval = 10000;
+    private long bridgePollTimeout = 600000;
+    private EstimatedGasProvider mainnetGasProvider;
+    private EstimatedGasProvider sidechainGasProvider;
 
     public DataUnionClient(String mainnetUrl,
                            String mainnetFactory,
@@ -63,6 +68,8 @@ public class DataUnionClient {
         this.sidechain = Web3j.build(new HttpService(sidechainUrl));
         this.sidechainFactory = sidechainFactory;
         this.sidechainCred = Credentials.create(sidechainAdminPrvKey);
+        mainnetGasProvider = new EstimatedGasProvider(mainnet);
+        sidechainGasProvider = new EstimatedGasProvider(sidechain);
     }
 
     public long getBridgePollInterval(){
@@ -79,14 +86,6 @@ public class DataUnionClient {
 
     public void setBridgePollTimeout(long bridgePollTimeout){
         this.bridgePollTimeout = bridgePollTimeout;
-    }
-
-    protected ContractGasProvider mainnetGasProvider() {
-        return new EstimatedGasProvider(mainnet);
-    }
-
-    protected ContractGasProvider sidechainGasProvider() {
-        return new EstimatedGasProvider(sidechain);
     }
 
     public DataUnion deployDataUnion(String name, String admin, double adminFeeFraction, List<String> agents) throws Exception {
@@ -126,19 +125,19 @@ public class DataUnionClient {
     }
 
     protected DataUnionFactoryMainnet factoryMainnet() {
-        return DataUnionFactoryMainnet.load(mainnetFactory, mainnet, mainnetCred, mainnetGasProvider());
+        return DataUnionFactoryMainnet.load(mainnetFactory, mainnet, mainnetCred, mainnetGasProvider);
     }
 
     protected DataUnionMainnet mainnetDataUnion(String address) {
-        return DataUnionMainnet.load(address, mainnet, mainnetCred, mainnetGasProvider());
+        return DataUnionMainnet.load(address, mainnet, mainnetCred, mainnetGasProvider);
     }
 
     protected DataUnionFactorySidechain factorySidechain() {
-        return DataUnionFactorySidechain.load(sidechainFactory, sidechain, sidechainCred, sidechainGasProvider());
+        return DataUnionFactorySidechain.load(sidechainFactory, sidechain, sidechainCred, sidechainGasProvider);
     }
 
     protected DataUnionSidechain sidechainDataUnion(String address) {
-        return DataUnionSidechain.load(address, sidechain, sidechainCred, sidechainGasProvider());
+        return DataUnionSidechain.load(address, sidechain, sidechainCred, sidechainGasProvider);
     }
 
     public String mainnetTokenAddress() throws Exception {
@@ -151,17 +150,17 @@ public class DataUnionClient {
 
     protected IERC20 mainnetToken() throws Exception {
         String tokenAddress = factoryMainnet().token().send().getValue();
-        return IERC20.load(tokenAddress, mainnet, mainnetCred, mainnetGasProvider());
+        return IERC20.load(tokenAddress, mainnet, mainnetCred, mainnetGasProvider);
     }
 
     protected IERC20 sidechainToken() throws Exception {
         String tokenAddress = factorySidechain().token().send().getValue();
-        return IERC20.load(tokenAddress, sidechain, sidechainCred, sidechainGasProvider());
+        return IERC20.load(tokenAddress, sidechain, sidechainCred, sidechainGasProvider);
     }
 
     protected ForeignAMB mainnetAMB(Credentials cred) throws Exception {
         String amb = factoryMainnet().amb().send().getValue();
-        return ForeignAMB.load(amb, mainnet, cred, mainnetGasProvider());
+        return ForeignAMB.load(amb, mainnet, cred, mainnetGasProvider);
     }
 
     protected ForeignAMB mainnetAMB() throws Exception {
@@ -170,11 +169,13 @@ public class DataUnionClient {
 
     protected HomeAMB sidechainAMB() throws Exception {
         String amb = factorySidechain().amb().send().getValue();
-        return HomeAMB.load(amb, sidechain, sidechainCred, sidechainGasProvider());
+        return HomeAMB.load(amb, sidechain, sidechainCred, sidechainGasProvider);
     }
 
 
     /**
+     *
+     * waits until AMB message has been confirmed
      *
      * @param msgHash
      * @param sleeptime
@@ -235,9 +236,9 @@ public class DataUnionClient {
 
      */
     protected void portTxToMainnet(Bytes32 msgHash, short collectedSignatures, Credentials cred) throws Exception {
-        if(collectedSignatures > 255)
+        if(collectedSignatures > 255) {
             throw new UnsupportedOperationException("collectedSignatures cannot be greater than 255");
-
+        }
         DynamicBytes message = sidechainAMB().message(msgHash).send();
         byte[] signatures = new byte[1 + (65*collectedSignatures)];
         signatures[0] = (byte) collectedSignatures;
@@ -262,8 +263,9 @@ public class DataUnionClient {
 
     public void portTxsToMainnet(String withdrawTxHash, String mainnetSenderPrivateKey) throws Exception {
         Optional<TransactionReceipt> optional = sidechain.ethGetTransactionReceipt(withdrawTxHash).send().getTransactionReceipt();
-        if(!optional.isPresent())
+        if(!optional.isPresent()) {
             throw new NoSuchElementException("No sidechain transaction found for txhash " + withdrawTxHash);
+        }
         TransactionReceipt withdraw = optional.get();
         portTxsToMainnet(withdraw, Credentials.create(mainnetSenderPrivateKey));
     }

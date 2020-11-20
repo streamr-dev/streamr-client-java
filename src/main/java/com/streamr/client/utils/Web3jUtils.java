@@ -29,8 +29,8 @@ public class Web3jUtils {
     }
 
     public static class CodePresent implements Condition {
-        private Web3j connector;
-        private String address;
+        private final Web3j connector;
+        private final String address;
 
         @Override
         public Object check() throws IOException {
@@ -119,6 +119,8 @@ public class Web3jUtils {
     }
 
     /**
+     *
+     * waits until ERC20 balance changes from initialBalance
      *
      * @param initialBalance
      * @param tokenAddress

@@ -5,7 +5,6 @@ import com.streamr.client.authentication.EthereumAuthenticationMethod;
 import com.streamr.client.exceptions.InvalidOptionsException;
 import com.streamr.client.protocol.control_layer.ControlMessage;
 import com.streamr.client.protocol.message_layer.StreamMessage;
-import org.web3j.crypto.Credentials;
 
 public class StreamrClientOptions {
 

@@ -23,8 +23,10 @@ public class DataUnion {
 
     private final DataUnionMainnet mainnet;
     private final DataUnionSidechain sidechain;
-    private final Web3j mainnetConnector, sidechainConnector;
-    private final Credentials mainnetCred, sidechainCred;
+    private final Web3j mainnetConnector;
+    private final Web3j sidechainConnector;
+    private final Credentials mainnetCred;
+    private final Credentials sidechainCred;
 
 
     protected static class RangeException extends Exception{
