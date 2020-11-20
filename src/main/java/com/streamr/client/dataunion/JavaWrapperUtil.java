@@ -18,7 +18,7 @@ public class JavaWrapperUtil {
      have to subclass SolidityFunctionWrapperGenerator because they made the constructor protected
      bad design!
      */
-    public static class Gen extends SolidityFunctionWrapperGenerator {
+    static class Gen extends SolidityFunctionWrapperGenerator {
         public Gen(File binFile, File abiFile, File destinationDir, String contractName, String basePackageName, boolean useJavaNativeTypes, boolean useJavaPrimitiveTypes, int addressLength) {
             super(binFile, abiFile, destinationDir, contractName, basePackageName, useJavaNativeTypes, useJavaPrimitiveTypes, addressLength);
         }

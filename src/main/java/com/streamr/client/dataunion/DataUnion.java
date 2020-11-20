@@ -93,7 +93,7 @@ public class DataUnion {
      * @return
      * @throws Exception
      */
-    public EthereumTransactionReceipt withdrawAllTokensForSelfOrAsAdmin(String member, BigInteger amount) throws Exception {
+    public EthereumTransactionReceipt withdrawTokensForSelfOrAsAdmin(String member, BigInteger amount) throws Exception {
         return new EthereumTransactionReceipt(sidechain.withdraw(new Address(member), new Uint256(amount), new Bool(true)).send());
     }
     public EthereumTransactionReceipt withdrawAllTokensForSelfOrAsAdmin(String member) throws Exception {
