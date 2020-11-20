@@ -89,16 +89,16 @@ public class StreamrClientOptions {
         return mainnetRpcUrl;
     }
 
-    public void setMainnetRpcUrl(String url) {
-        mainnetRpcUrl = url;
+    public void setMainnetRpcUrl(String mainnetRpcUrl) {
+        this.mainnetRpcUrl = mainnetRpcUrl;
     }
 
     public String getSidechainRpcUrl() {
         return sidechainRpcUrl;
     }
 
-    public void setSidechainRpcUrl(String url) {
-        sidechainRpcUrl = url;
+    public void setSidechainRpcUrl(String sidechainRpcUrl) {
+        this.sidechainRpcUrl = sidechainRpcUrl;
     }
 
     public void setRestApiUrl(String restApiUrl) {
