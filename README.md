@@ -106,8 +106,8 @@ StreamrClientOptions(
   EncryptionOptions encryptionOptions,
   String websocketApiUrl,
   String restApiUrl,
-  int gapFillTimeout,
-  int retryResendAfter,
+  int propagationTimeout,
+  int resendTimeout,
   boolean skipGapsOnFullQueue
 )
 ```
@@ -196,7 +196,7 @@ client.publish(stream, payload, groupKey); // Publish as usual
 Subscribers normally obtain the `GroupKey` via an automatic key exchange mechanism, which is triggered if the subscriber receives messages for which they don't have the key. As an alternative, keys can also be pre-shared manually and configured on the client like this:
 
 ```
-client.getKeyStore().add(streamId, new GroupKey(keyId, groupKeyHex));
+client.getKeyStore().add(Stream, new GroupKey(keyId, groupKeyHex));
 ```
 
 We also need a way to revoke subscribers whose subscription has expired. This is accomplished with a rekey, which means that a new group key is chosen by the publisher and sent to the remaining valid subscribers but not to the revoked ones. The rekey is a fairly intensive operation which should be used only when necessary.
@@ -214,13 +214,13 @@ EncryptionOptions encryptionOptions = new EncryptionOptions(autoRevoke);
 StreamrClient client = new StreamrClient(new StreamrClientOptions(...)); // passing the encryptionOptions here
 
 GroupKey key = GroupKey.generate()
-client.publish("streamId", payload, key); // publishing some message with an initial key
+client.publish(Stream, payload, key); // publishing some message with an initial key
 
 // You can trigger a rekey of the stream at any moment to revoke any expired subscribers from the next message.
-key = client.rekey("streamId");
+key = client.rekey(Stream);
 
 // Publish with the new key generated during the rekey.
-client.publish("streamId", payload, key); 
+client.publish(Stream, payload, key); 
 ```
 
 <a name="other-options"></a>
@@ -232,8 +232,8 @@ Option | Default value | Description
 :------ | :------------- | :-----------
 websocketApiUrl | wss://streamr.network/api/v1/ws | Address of the websocket endpoint to connect to.
 restApiUrl | https://streamr.network/api/v1 | Base URL of the Streamr REST API.
-gapFillTimeout | 5 seconds | When a gap between two received events is detected, a resend request is sent periodically until the gap is resolved. This option determines that period. 
-retryResendAfter | 5 seconds | When subscribing with a resend option (See [this](#subscribing-unsubscribing) section), the messages requested by a first resend request might not be available yet. This option determines after how much time, the resend must be requested a second time.
+propagationTimeout | 5 seconds | When a gap between two received events is detected, a resend request is sent periodically until the gap is resolved. This option determines that period. 
+resendTimeout | 5 seconds | When subscribing with a resend option (See [this](#subscribing-unsubscribing) section), the messages requested by a first resend request might not be available yet. This option determines after how much time, the resend must be requested a second time.
 skipGapsOnFullQueue | true | Determine behaviour in the case of gap filling failure. Default behaviour (`true`) is to clear the internal queue of messages and start immediately processing new incoming messages. This means that any queued messages are effectively ignored and skipped. If it is more important that messages be processed at the expense of latency, this should be set to `false`. This will mean that in the case of gap filling failure, the next messages (and potential gaps) in the queue will be processed in order. This comes at the expense of the real-time.
 
 <a name="handling-errors"></a>
