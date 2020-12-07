@@ -63,6 +63,10 @@ public class DataUnion {
         return waitForDeployment(0,0);
     }
 
+    public void refreshRevenue() throws Exception {
+        sidechain.refreshRevenue().send();
+    }
+
     public void sendTokensToBridge() throws Exception {
         mainnet.sendTokensToBridge().send();
     }
