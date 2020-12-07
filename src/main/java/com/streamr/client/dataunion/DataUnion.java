@@ -64,7 +64,7 @@ public class DataUnion {
     }
 
     public void refreshRevenue() throws Exception {
-//        sidechain.rerefreshRevenue().send();
+        sidechain.refreshRevenue().send();
     }
 
     public void sendTokensToBridge() throws Exception {
