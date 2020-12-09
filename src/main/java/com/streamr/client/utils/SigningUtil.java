@@ -6,8 +6,8 @@ import com.streamr.client.protocol.message_layer.StreamMessage;
 import org.apache.commons.codec.DecoderException;
 import org.apache.commons.codec.binary.Hex;
 import org.ethereum.crypto.ECKey;
-import org.ethereum.crypto.HashUtil;
 import org.ethereum.util.ByteUtil;
+import org.web3j.crypto.Hash;
 
 import java.nio.charset.StandardCharsets;
 import java.security.SignatureException;
@@ -29,12 +29,14 @@ public class SigningUtil {
         signStreamMessage(msg, StreamMessage.SignatureType.ETH);
     }
 
-    public static String sign(String data, ECKey account){
-        ECKey.ECDSASignature sig = account.sign(calculateMessageHash(data));
-        return "0x" + Hex.encodeHexString(ByteUtil.merge(
-                ByteUtil.bigIntegerToBytes(sig.r, 32),
-                ByteUtil.bigIntegerToBytes(sig.s, 32),
-                new byte[]{sig.v}));
+    public static String sign(String data, ECKey account) {
+        byte[] hash = calculateMessageHash(data);
+        ECKey.ECDSASignature sig = account.sign(hash);
+        byte[] r = ByteUtil.bigIntegerToBytes(sig.r, 32);
+        byte[] s = ByteUtil.bigIntegerToBytes(sig.s, 32);
+        byte[] v = { sig.v };
+        byte[] bytes = ByteUtil.merge(r, s, v);
+        return "0x" + Hex.encodeHexString(bytes);
     }
 
     public static boolean hasValidSignature(StreamMessage msg) {
@@ -78,10 +80,10 @@ public class SigningUtil {
     }
 
     private static byte[] calculateMessageHash(String message){
-        byte[] messageBytes = message.getBytes(StandardCharsets.UTF_8);
-        String prefix = SIGN_MAGIC + messageBytes.length;
-        byte[] toHash = ByteUtil.merge(prefix.getBytes(), messageBytes);
-        return HashUtil.sha3(toHash);
+        int msgLen = message.getBytes(StandardCharsets.UTF_8).length;
+        String s = String.format("%s%d%s", SIGN_MAGIC, msgLen, message);
+        byte[] bytes = s.getBytes(StandardCharsets.UTF_8);
+        return Hash.sha3(bytes);
     }
 
     private static boolean verify(String data, String signature, Address address) throws SignatureException, DecoderException {
