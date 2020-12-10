@@ -58,10 +58,10 @@ dependencies {
 	compile 'org.objenesis:objenesis:3.0.1'
 	compile 'org.ethereum:ethereumj-core:1.11.0-RELEASE'
 	compile "org.java-websocket:Java-WebSocket:1.4.1"
-	compile "org.cache2k:cache2k-api:1.2.1.Final"
-	compile "org.cache2k:cache2k-core:1.2.1.Final"
-	compile "org.web3j:core:5.0.0"
-	compile "org.web3j:codegen:5.0.0"
+	compile 'org.cache2k:cache2k-api:1.2.1.Final'
+	compile 'org.cache2k:cache2k-core:1.2.1.Final'
+	compile 'org.web3j:core:5.0.0'
+	compile 'org.web3j:codegen:5.0.0'
 
 	// Same dependencies for unit and integration tests
 	def testDependencies = [
