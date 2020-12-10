@@ -46,7 +46,7 @@ repositories {
 }
 
 dependencies {
-	compile group: 'org.slf4j', name: 'slf4j-api', version: '1.7.30'
+	compile 'org.slf4j:slf4j-api:1.7.30'
 	compile group: 'com.squareup.okhttp3', name: 'okhttp', version: '3.10.0'
 	compile group: 'com.squareup.moshi', name: 'moshi', version: '1.6.0'
 	compile group: 'com.squareup.moshi', name: 'moshi-adapters', version: '1.6.0'
