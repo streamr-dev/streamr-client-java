@@ -54,8 +54,6 @@ dependencies {
 	compile 'commons-codec:commons-codec:1.6'
 	compile 'commons-lang:commons-lang:2.6'
 	compile 'org.apache.commons:commons-lang3:3.1'
-	compile 'cglib:cglib:3.2.10'
-	compile 'org.objenesis:objenesis:3.0.1'
 	compile 'org.ethereum:ethereumj-core:1.11.0-RELEASE'
 	compile "org.java-websocket:Java-WebSocket:1.4.1"
 	compile "org.cache2k:cache2k-api:1.2.1.Final"
@@ -65,6 +63,8 @@ dependencies {
 
 	// Same dependencies for unit and integration tests
 	def testDependencies = [
+			'cglib:cglib-nodep:3.2.12',
+			'org.objenesis:objenesis:3.1',
 			// to get logging in tests, plug in log4j as a logger implementation
 			[group: 'org.apache.logging.log4j', name: 'log4j-api', version: '2.13.3'],
 			[group: 'org.apache.logging.log4j', name: 'log4j-core', version: '2.13.3'],
