@@ -25,7 +25,6 @@ import java.security.interfaces.RSAPrivateKey;
 import java.security.interfaces.RSAPublicKey;
 import java.security.spec.PKCS8EncodedKeySpec;
 import java.security.spec.X509EncodedKeySpec;
-import java.util.Arrays;
 
 public class EncryptionUtil {
     private static final Logger log = LoggerFactory.getLogger(EncryptionUtil.class);
