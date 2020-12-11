@@ -26,7 +26,7 @@ jobs:
     - "$TRAVIS_BUILD_DIR/streamr-docker-dev/streamr-docker-dev/bin.sh log -f engine-and-editor broker-node-storage-1 broker-node-no-storage-1 broker-node-no-storage-2 &"
     - "$TRAVIS_BUILD_DIR/streamr-docker-dev/streamr-docker-dev/bin.sh wait"
     - "./gradlew integrationTest --stacktrace --info"
-#  - stage: Tests
-#    name: Cross-client tests
-#    script:
-#    - ".travis_scripts/cross-client-tests.sh"
+  - stage: Tests
+    name: Cross-client tests
+    script:
+    - ".travis_scripts/cross-client-tests.sh"
