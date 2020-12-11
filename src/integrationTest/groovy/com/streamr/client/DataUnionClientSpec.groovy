@@ -32,15 +32,15 @@ class DataUnionClientSpec extends StreamrIntegrationSpecification{
         "0x2c326a4c139eced39709b235fffa1fde7c252f3f7b505103f7b251586c35d543"
     ]
     private BigInteger testSendAmount = BigInteger.valueOf(1000000000000000000l)
-    private Credentials[] wallets;
-    private DataUnion du;
-    private IERC20 mainnetToken;
-    private static final String duname = "test"+System.currentTimeMillis();
+    private Credentials[] wallets
+    private DataUnion du
+    private IERC20 mainnetToken
+    private static final String duname = "test"+System.currentTimeMillis()
 
     void setup() {
-        wallets = new Credentials[testrpc_keys.length];
+        wallets = new Credentials[testrpc_keys.length]
         for(int i=0; i < testrpc_keys.length; i++){
-            wallets[i] = Credentials.create(testrpc_keys[i]);
+            wallets[i] = Credentials.create(testrpc_keys[i])
         }
         StreamrClientOptions opts = new StreamrClientOptions(
                 null,
@@ -55,7 +55,7 @@ class DataUnionClientSpec extends StreamrIntegrationSpecification{
         opts.setDataUnionSidechainFactoryAddress(DEV_SIDECHAIN_FACTORY)
         streamrClient = new StreamrClient(opts)
         client = streamrClient.dataUnionClient(testrpc_keys[0], testrpc_keys[0])
-        du = client.dataUnionFromName(duname);
+        du = client.dataUnionFromName(duname)
         //    public static IERC20 load(String contractAddress, Web3j web3j, Credentials credentials, ContractGasProvider contractGasProvider)
         Web3j mainnet = Web3j.build(new HttpService(DEV_MAINCHAIN_RPC))
         mainnetToken = IERC20.load(client.mainnetTokenAddress(), mainnet, wallets[0], new EstimatedGasProvider(mainnet))
@@ -83,7 +83,7 @@ class DataUnionClientSpec extends StreamrIntegrationSpecification{
     }
 
     void "add members"() {
-        EthereumTransactionReceipt tr;
+        EthereumTransactionReceipt tr
         when:
         tr = du.addMembers(wallets[1].getAddress(), wallets[2].getAddress())
 
@@ -98,16 +98,16 @@ class DataUnionClientSpec extends StreamrIntegrationSpecification{
         when:
         TransactionReceipt tr = mainnetToken.transfer(new Address(du.getMainnetContractAddress()), new Uint256(testSendAmount.multiply(BigInteger.valueOf(2)))).send()
         client.waitForMainnetTx(tr.getTransactionHash(), 10000, 600000)
-        du.sendTokensToBridge();
+        du.sendTokensToBridge()
         then:
         du.waitForEarningsChange(sidechainEarnings, 10000, 600000) != null
         du.getEarnings(wallets[1].getAddress()).equals(testSendAmount)
     }
 
     void "withdraw member as admin"() {
-        String recipient = wallets[2].getAddress();
-        BigInteger recipientBal = mainnetToken.balanceOf(new Address(recipient)).send().getValue();
-        EthereumTransactionReceipt tr;
+        String recipient = wallets[2].getAddress()
+        BigInteger recipientBal = mainnetToken.balanceOf(new Address(recipient)).send().getValue()
+        EthereumTransactionReceipt tr
         when:
         tr = du.withdrawAllTokensForSelfOrAsAdmin(recipient)
         client.portTxsToMainnet(tr, wallets[0].getEcKeyPair().getPrivateKey())
@@ -118,9 +118,9 @@ class DataUnionClientSpec extends StreamrIntegrationSpecification{
     }
 
     void "signed withdrawal for another"() {
-        String recipient = wallets[2].getAddress();
-        BigInteger recipientBal = mainnetToken.balanceOf(new Address(recipient)).send().getValue();
-        EthereumTransactionReceipt tr;
+        String recipient = wallets[2].getAddress()
+        BigInteger recipientBal = mainnetToken.balanceOf(new Address(recipient)).send().getValue()
+        EthereumTransactionReceipt tr
         when:
         tr = du.withdrawAllTokensForMember(wallets[1].getEcKeyPair().getPrivateKey(), recipient)
         client.portTxsToMainnet(tr, wallets[0].getEcKeyPair().getPrivateKey())
