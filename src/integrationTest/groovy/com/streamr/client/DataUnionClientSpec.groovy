@@ -5,7 +5,10 @@ import com.streamr.client.dataunion.DataUnionClient
 import com.streamr.client.dataunion.EstimatedGasProvider
 import com.streamr.client.dataunion.EthereumTransactionReceipt
 import com.streamr.client.dataunion.contracts.IERC20
-import org.web3j.abi.datatypes.*
+import com.streamr.client.options.EncryptionOptions
+import com.streamr.client.options.SigningOptions
+import com.streamr.client.options.StreamrClientOptions
+import org.web3j.abi.datatypes.Address
 import org.web3j.abi.datatypes.generated.Uint256
 import org.web3j.crypto.Credentials
 import org.web3j.protocol.Web3j
@@ -13,6 +16,7 @@ import org.web3j.protocol.core.methods.response.TransactionReceipt
 import org.web3j.protocol.http.HttpService
 
 class DataUnionClientSpec extends StreamrIntegrationSpecification{
+    private StreamrClient streamrClient
     private DataUnionClient client
     //truffle keys mnemonic "testrpc"
     private String[] testrpc_keys = [
@@ -38,11 +42,29 @@ class DataUnionClientSpec extends StreamrIntegrationSpecification{
         for(int i=0; i < testrpc_keys.length; i++){
             wallets[i] = Credentials.create(testrpc_keys[i]);
         }
-        client = devChainDataUnionClient(testrpc_keys[0], testrpc_keys[0])
+        StreamrClientOptions opts = new StreamrClientOptions(
+                null,
+                SigningOptions.getDefault(),
+                EncryptionOptions.getDefault(),
+                DEFAULT_WEBSOCKET_URL,
+                DEFAULT_REST_URL
+        )
+        opts.setSidechainRpcUrl(DEV_SIDECHAIN_RPC)
+        opts.setMainnetRpcUrl(DEV_MAINCHAIN_RPC)
+        opts.setDataUnionMainnetFactoryAddress(DEV_MAINCHAIN_FACTORY)
+        opts.setDataUnionSidechainFactoryAddress(DEV_SIDECHAIN_FACTORY)
+        streamrClient = new StreamrClient(opts)
+        client = streamrClient.dataUnionClient(testrpc_keys[0], testrpc_keys[0])
         du = client.dataUnionFromName(duname);
         //    public static IERC20 load(String contractAddress, Web3j web3j, Credentials credentials, ContractGasProvider contractGasProvider)
         Web3j mainnet = Web3j.build(new HttpService(DEV_MAINCHAIN_RPC))
         mainnetToken = IERC20.load(client.mainnetTokenAddress(), mainnet, wallets[0], new EstimatedGasProvider(mainnet))
+    }
+
+    void cleanup() {
+        if (streamrClient != null) {
+            streamrClient.disconnect()
+        }
     }
 
     void "create DU"() {
