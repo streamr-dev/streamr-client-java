@@ -5,7 +5,7 @@ import com.streamr.client.authentication.EthereumAuthenticationMethod
 import com.streamr.client.options.EncryptionOptions
 import com.streamr.client.options.SigningOptions
 import com.streamr.client.options.StreamrClientOptions
-import org.apache.commons.codec.binary.Hex
+import org.web3j.utils.Numeric
 import spock.lang.Specification
 
 class StreamrIntegrationSpecification extends Specification {
@@ -19,7 +19,7 @@ class StreamrIntegrationSpecification extends Specification {
     protected static String generatePrivateKey() {
         byte[] array = new byte[32]
         new Random().nextBytes(array)
-        return Hex.encodeHexString(array)
+        return Numeric.toHexString(array)
     }
 
     protected static StreamrClient createUnauthenticatedClient() {
