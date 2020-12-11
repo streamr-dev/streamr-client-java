@@ -15,7 +15,7 @@ import org.web3j.protocol.Web3j
 import org.web3j.protocol.core.methods.response.TransactionReceipt
 import org.web3j.protocol.http.HttpService
 
-class DataUnionClientSpec extends StreamrIntegrationSpecification{
+class DataUnionClientSpec extends StreamrIntegrationSpecification {
     private StreamrClient streamrClient
     private DataUnionClient client
     //truffle keys mnemonic "testrpc"
@@ -35,11 +35,11 @@ class DataUnionClientSpec extends StreamrIntegrationSpecification{
     private Credentials[] wallets
     private DataUnion du
     private IERC20 mainnetToken
-    private static final String duname = "test"+System.currentTimeMillis()
+    private static final String duname = "test" + System.currentTimeMillis()
 
     void setup() {
         wallets = new Credentials[testrpc_keys.length]
-        for(int i=0; i < testrpc_keys.length; i++){
+        for (int i = 0; i < testrpc_keys.length; i++) {
             wallets[i] = Credentials.create(testrpc_keys[i])
         }
         StreamrClientOptions opts = new StreamrClientOptions(
@@ -95,8 +95,10 @@ class DataUnionClientSpec extends StreamrIntegrationSpecification{
 
     void "test transfer and sidechain stats"() {
         BigInteger sidechainEarnings = du.totalEarnings()
+        Address address = new Address(du.getMainnetContractAddress())
+        Uint256 amount = new Uint256(testSendAmount.multiply(BigInteger.valueOf(2)))
         when:
-        TransactionReceipt tr = mainnetToken.transfer(new Address(du.getMainnetContractAddress()), new Uint256(testSendAmount.multiply(BigInteger.valueOf(2)))).send()
+        TransactionReceipt tr = mainnetToken.transfer(address, amount).send()
         client.waitForMainnetTx(tr.getTransactionHash(), 10000, 600000)
         du.sendTokensToBridge()
         then:
