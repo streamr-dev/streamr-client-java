@@ -71,6 +71,10 @@ public class DataUnion {
         mainnet.sendTokensToBridge().send();
     }
 
+    public void setNewMemberEth(BigInteger amountWei) throws Exception {
+        sidechain.setNewMemberEth(new Uint256(amountWei)).send();
+    }
+
     public BigInteger waitForEarningsChange(final BigInteger initialBalance, long pollInterval, long timeout) throws Exception {
         Web3jUtils.Condition earningsChange = new Web3jUtils.Condition(){
             @Override
