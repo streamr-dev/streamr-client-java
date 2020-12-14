@@ -63,19 +63,10 @@ dependencies {
 	compile "org.web3j:core:5.0.0"
 	compile "org.web3j:codegen:5.0.0"
 
-	// Same dependencies for unit and integration tests
-	def testDependencies = [
-			// to get logging in tests, plug in log4j as a logger implementation
-			[group: 'org.apache.logging.log4j', name: 'log4j-api', version: '2.13.3'],
-			[group: 'org.apache.logging.log4j', name: 'log4j-core', version: '2.13.3'],
-			[group: 'org.apache.logging.log4j', name: 'log4j-slf4j-impl', version: '2.13.3'],
-
-			[group: 'org.spockframework', name: 'spock-core', version: '1.1-groovy-2.4']
-	]
-	testDependencies.each {
-		testCompile it
-		integrationTestCompile it
-	}
+	testCompile 'org.apache.logging.log4j:log4j-api:2.14.0'
+	testCompile 'org.apache.logging.log4j:log4j-core:2.14.0'
+	testCompile 'org.apache.logging.log4j:log4j-slf4j-impl:2.14.0'
+	testCompile 'org.spockframework:spock-core:1.1-groovy-2.4'
 }
 
 configurations {
