@@ -14,17 +14,21 @@ import com.streamr.client.utils.EncryptionUtil
 import com.streamr.client.utils.GroupKey
 import com.streamr.client.utils.InMemoryGroupKeyStore
 import com.streamr.client.utils.KeyExchangeUtil
+import spock.lang.Shared
 import spock.util.concurrent.PollingConditions
 
 class StreamrClientSpec extends StreamrSpecification {
-
-    private static TestWebSocketServer server = new TestWebSocketServer("localhost", 6000)
+    private final String serverHost = "localhost"
+    private final int serverPort = 0
+    @Shared
+    private TestWebSocketServer server = new TestWebSocketServer(serverHost, serverPort)
 
     TestingStreamrClient client
     int gapFillTimeout = 500
     int retryResendAfter = 500
 
-    static Stream stream
+    @Shared
+    Stream stream
 
     void setupSpec() {
         server.start()
@@ -261,7 +265,7 @@ class StreamrClientSpec extends StreamrSpecification {
         Thread serverRestart = new Thread() {
             void run() {
                 server.stop()
-                server = new TestWebSocketServer("localhost", 6000)
+                server = new TestWebSocketServer(serverHost, serverPort)
                 sleep(2000)
                 server.start()
                 sleep(2000)
@@ -303,7 +307,7 @@ class StreamrClientSpec extends StreamrSpecification {
         Thread serverRestart = new Thread() {
             void run(){
                 server.stop()
-                server = new TestWebSocketServer("localhost", 6000)
+                server = new TestWebSocketServer(serverHost, serverPort)
                 server.start()
             }
         }
@@ -349,7 +353,7 @@ class StreamrClientSpec extends StreamrSpecification {
 
         when:
         server.stop()
-        server = new TestWebSocketServer("localhost", 6000)
+        server = new TestWebSocketServer(serverHost, serverPort)
         sleep(4000)
         server.start()
         sleep(10000)
