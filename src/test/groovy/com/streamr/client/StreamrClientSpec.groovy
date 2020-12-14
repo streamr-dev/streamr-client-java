@@ -1,6 +1,5 @@
 package com.streamr.client
 
-
 import com.streamr.client.authentication.AuthenticationMethod
 import com.streamr.client.authentication.EthereumAuthenticationMethod
 import com.streamr.client.options.*
@@ -366,7 +365,6 @@ class StreamrClientSpec extends StreamrSpecification {
 
         then:
         new PollingConditions().eventually {
-            println "Checking received messages: ${client.getReceivedStreamMessages().size()}"
             client.getReceivedStreamMessages().size() == 2
         }
     }

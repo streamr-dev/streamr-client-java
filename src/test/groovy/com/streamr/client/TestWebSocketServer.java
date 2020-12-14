@@ -106,7 +106,6 @@ public class TestWebSocketServer extends WebSocketServer {
         log.info("stop");
         super.stop();
         while (!isAvailable(getPort())) {
-            System.out.println("DEBUG: waiting for port to become available");
             Thread.sleep(5);
         }
     }
