@@ -54,8 +54,6 @@ dependencies {
 	compile 'commons-codec:commons-codec:1.6'
 	compile 'commons-lang:commons-lang:2.6'
 	compile 'org.apache.commons:commons-lang3:3.1'
-	compile 'cglib:cglib:3.2.10'
-	compile 'org.objenesis:objenesis:3.0.1'
 	compile 'org.ethereum:ethereumj-core:1.11.0-RELEASE'
 	compile "org.java-websocket:Java-WebSocket:1.4.1"
 	compile "org.cache2k:cache2k-api:1.2.1.Final"
@@ -67,6 +65,8 @@ dependencies {
 	testCompile 'org.apache.logging.log4j:log4j-core:2.14.0'
 	testCompile 'org.apache.logging.log4j:log4j-slf4j-impl:2.14.0'
 	testCompile 'org.spockframework:spock-core:1.1-groovy-2.4'
+	testCompile 'cglib:cglib-nodep:3.2.12'
+	testCompile 'org.objenesis:objenesis:3.1'
 }
 
 configurations {
