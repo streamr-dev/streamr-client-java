@@ -8,9 +8,10 @@ import com.streamr.client.exceptions.AuthenticationException;
 import com.streamr.client.exceptions.ResourceNotFoundException;
 import com.streamr.client.options.StreamrClientOptions;
 import com.streamr.client.rest.*;
-import com.streamr.client.utils.HttpUtils;
 import com.streamr.client.utils.Address;
+import com.streamr.client.utils.HttpUtils;
 import okhttp3.*;
+import okio.BufferedSource;
 
 import java.io.IOException;
 import java.util.List;
@@ -63,14 +64,32 @@ public abstract class StreamrRESTClient extends AbstractStreamrClient {
         OkHttpClient client = new OkHttpClient();
 
         // Execute the request and retrieve the response.
-        Response response = client.newCall(request).execute();
+        Call call = client.newCall(request);
+        Response response = call.execute();
+        ResponseBody body = null;
+        BufferedSource source = null;
         try {
             HttpUtils.assertSuccessful(response);
 
             // Deserialize HTTP response to concrete type.
-            return adapter == null ? null : adapter.fromJson(response.body().source());
+            if (adapter == null) {
+                return null;
+            } else {
+                body = response.body();
+                source = body.source();
+                T result = adapter.fromJson(source);
+                return result;
+            }
         } finally {
-            response.close();
+            if (source != null) {
+                source.close();
+            }
+            if (body != null) {
+                body.close();
+            }
+            if (response != null) {
+                response.close();
+            }
         }
     }
 

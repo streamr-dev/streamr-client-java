@@ -3,6 +3,8 @@ package com.streamr.client.authentication;
 import com.squareup.moshi.JsonAdapter;
 import com.streamr.client.utils.HttpUtils;
 import okhttp3.Response;
+import okhttp3.ResponseBody;
+import okio.BufferedSource;
 
 import java.io.IOException;
 
@@ -20,10 +22,21 @@ public class ApiKeyAuthenticationMethod extends AuthenticationMethod {
     @Override
     protected LoginResponse login(String restApiUrl) throws IOException {
         Response response = null;
+        ResponseBody body = null;
+        BufferedSource source = null;
         try {
             response = post(restApiUrl + "/login/apikey", adapter.toJson(new ApiKeyLoginRequest(apiKey)));
-            return parse(response.body().source());
+            body = response.body();
+            source = body.source();
+            LoginResponse loginResponse = parse(source);
+            return loginResponse;
         } finally {
+            if (source != null) {
+                source.close();
+            }
+            if (body != null) {
+                body.close();
+            }
             if (response != null) {
                 response.close();
             }
