@@ -631,5 +631,8 @@ class StreamrWebsocketSpec extends StreamrIntegrationSpecification {
 			publishedByPublisher1 == receivedFromPublisher1 && publishedByPublisher2 == receivedFromPublisher2
 		}
 		unableToDecryptCount == 0
+
+		cleanup:
+		publisher2.disconnect()
 	}
 }
