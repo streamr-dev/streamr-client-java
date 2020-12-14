@@ -18,10 +18,8 @@ import spock.lang.Shared
 import spock.util.concurrent.PollingConditions
 
 class StreamrClientSpec extends StreamrSpecification {
-    private final String serverHost = "localhost"
-    private final int serverPort = 0
     @Shared
-    private TestWebSocketServer server = new TestWebSocketServer(serverHost, serverPort)
+    private TestWebSocketServer server = new TestWebSocketServer("localhost", 6000)
 
     TestingStreamrClient client
     int gapFillTimeout = 500
@@ -265,7 +263,7 @@ class StreamrClientSpec extends StreamrSpecification {
         Thread serverRestart = new Thread() {
             void run() {
                 server.stop()
-                server = new TestWebSocketServer(serverHost, serverPort)
+                server = new TestWebSocketServer("localhost", 6000)
                 sleep(2000)
                 server.start()
                 sleep(2000)
@@ -307,7 +305,7 @@ class StreamrClientSpec extends StreamrSpecification {
         Thread serverRestart = new Thread() {
             void run(){
                 server.stop()
-                server = new TestWebSocketServer(serverHost, serverPort)
+                server = new TestWebSocketServer("localhost", 6000)
                 server.start()
             }
         }
@@ -353,7 +351,7 @@ class StreamrClientSpec extends StreamrSpecification {
 
         when:
         server.stop()
-        server = new TestWebSocketServer(serverHost, serverPort)
+        server = new TestWebSocketServer("localhost", 6000)
         sleep(4000)
         server.start()
         sleep(10000)
