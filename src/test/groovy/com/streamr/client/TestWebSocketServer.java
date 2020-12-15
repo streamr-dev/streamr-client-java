@@ -17,7 +17,6 @@ import org.slf4j.LoggerFactory;
 
 import java.io.IOException;
 import java.net.InetSocketAddress;
-import java.net.ServerSocket;
 import java.util.*;
 
 public class TestWebSocketServer extends WebSocketServer {
@@ -105,17 +104,6 @@ public class TestWebSocketServer extends WebSocketServer {
     public void stop() throws IOException, InterruptedException {
         log.info("stop");
         super.stop();
-        while (!isAvailable(getPort())) {
-            Thread.sleep(5);
-        }
-    }
-
-    private boolean isAvailable(int port) {
-        try (ServerSocket ignored = new ServerSocket(port)) {
-            return true;
-        } catch (IOException e) {
-            return false;
-        }
     }
 
     public void clear() {
