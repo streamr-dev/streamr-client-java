@@ -23,9 +23,9 @@ jobs:
           key: ${{ runner.os }}-gradle-${{ hashFiles('**/*.gradle') }}
           restore-keys: ${{ runner.os }}-gradle
       - name: Build
-        run: ./gradlew assemble -x signArchives
+        run: make -f Makefile.ci build
       - name: Unit Test
-        run: ./gradlew test --stacktrace --info
+        run: make -f Makefile.ci test-unit
       - name: Checkout Streamr Docker Dev
         uses:  actions/checkout@v2
         with:
@@ -43,5 +43,5 @@ jobs:
           ./streamr-docker-dev/bin.sh wait
         working-directory: streamr-docker-dev
       - name: Integration Test
-        run: ./gradlew integrationTest --stacktrace --info
+        run: make -f Makefile.ci test-integration
 
