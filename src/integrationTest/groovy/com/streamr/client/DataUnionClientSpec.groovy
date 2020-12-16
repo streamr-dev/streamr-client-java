@@ -8,12 +8,19 @@ import com.streamr.client.dataunion.contracts.IERC20
 import com.streamr.client.options.EncryptionOptions
 import com.streamr.client.options.SigningOptions
 import com.streamr.client.options.StreamrClientOptions
+import okhttp3.OkHttpClient
 import org.web3j.abi.datatypes.Address
 import org.web3j.abi.datatypes.generated.Uint256
 import org.web3j.crypto.Credentials
 import org.web3j.protocol.Web3j
 import org.web3j.protocol.core.methods.response.TransactionReceipt
 import org.web3j.protocol.http.HttpService
+import org.web3j.tx.gas.ContractGasProvider
+
+import java.util.logging.Handler
+import java.util.logging.Level
+import java.util.logging.LogManager
+import java.util.logging.Logger
 
 class DataUnionClientSpec extends StreamrIntegrationSpecification {
     private StreamrClient streamrClient
@@ -38,6 +45,15 @@ class DataUnionClientSpec extends StreamrIntegrationSpecification {
     private static final String duname = "test" + System.currentTimeMillis()
 
     void setup() {
+        /*
+        Logger rootLogger = LogManager.getLogManager().getLogger("");
+        rootLogger.setLevel(Level.FINE);
+        for (Handler h : rootLogger.getHandlers()) {
+            h.setLevel(Level.FINE);
+        }
+        */
+        Logger.getLogger(OkHttpClient.class.getName()).setLevel(Level.FINEST);
+
         wallets = new Credentials[testrpc_keys.length]
         for (int i = 0; i < testrpc_keys.length; i++) {
             wallets[i] = Credentials.create(testrpc_keys[i])

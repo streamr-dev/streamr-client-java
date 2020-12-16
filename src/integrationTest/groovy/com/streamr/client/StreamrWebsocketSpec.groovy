@@ -1,6 +1,5 @@
 package com.streamr.client
 
-import com.streamr.client.authentication.EthereumAuthenticationMethod
 import com.streamr.client.exceptions.UnableToDecryptException
 import com.streamr.client.options.ResendFromOption
 import com.streamr.client.options.ResendLastOption
@@ -10,11 +9,14 @@ import com.streamr.client.rest.Permission
 import com.streamr.client.rest.Stream
 import com.streamr.client.subs.Subscription
 import com.streamr.client.utils.GroupKey
+import okhttp3.OkHttpClient
 import org.java_websocket.enums.ReadyState
 import spock.util.concurrent.PollingConditions
 
-class StreamrWebsocketSpec extends StreamrIntegrationSpecification {
+import java.util.logging.Level
+import java.util.logging.Logger
 
+class StreamrWebsocketSpec extends StreamrIntegrationSpecification {
 	private String publisherPrivateKey
 	private String subscriberPrivateKey
 	private StreamrClient publisher
@@ -23,6 +25,8 @@ class StreamrWebsocketSpec extends StreamrIntegrationSpecification {
 	PollingConditions within10sec = new PollingConditions(timeout: 10)
 
 	void setup() {
+		Logger.getLogger(OkHttpClient.class.getName()).setLevel(Level.FINEST);
+
 		publisherPrivateKey = generatePrivateKey()
 		subscriberPrivateKey = generatePrivateKey()
 		publisher = createClientWithPrivateKey(publisherPrivateKey)
