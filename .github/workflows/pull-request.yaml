@@ -28,7 +28,7 @@ jobs:
           path: ~/.gradle/caches
           key: ${{ runner.os }}-gradle-${{ hashFiles('**/*.gradle') }}
           restore-keys: ${{ runner.os }}-gradle
-      - name: Gradle Build
+      - name: Build
         run: ./gradlew build -x signArchives
       - name: Unit Test
         run: ./gradlew test --stacktrace --info
