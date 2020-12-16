@@ -76,12 +76,6 @@ configurations {
 	integrationTestRuntime.extendsFrom testRuntime
 }
 
-test {
-	testLogging {
-		events "skipped", "failed"
-	}
-}
-
 jar {
 	manifest {
 		attributes(
