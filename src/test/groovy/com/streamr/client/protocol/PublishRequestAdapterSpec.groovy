@@ -2,10 +2,10 @@ package com.streamr.client.protocol
 
 import com.streamr.client.protocol.control_layer.ControlMessage
 import com.streamr.client.protocol.control_layer.PublishRequest
-import com.streamr.client.protocol.message_layer.StreamMessage
 import spock.lang.Specification
 
-import static com.streamr.client.protocol.StreamMessageExamples.InvalidSignature.*
+import static com.streamr.client.protocol.StreamMessageExamples.InvalidSignature.helloWorld
+import static com.streamr.client.protocol.StreamMessageExamples.InvalidSignature.helloWorldSerialized32
 
 class PublishRequestAdapterSpec extends Specification {
 
