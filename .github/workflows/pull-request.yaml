@@ -3,10 +3,6 @@ name: Pull Request
 on:
   pull_request:
 
-defaults:
-  run:
-    working-directory: streamr-client-java
-
 jobs:
   build:
     name: Build PR
@@ -16,8 +12,6 @@ jobs:
     steps:
       - name: Checkout Streamr Client Java
         uses: actions/checkout@v2
-        with:
-          path: streamr-client-java
       - name: Set up JDK 1.8
         uses: actions/setup-java@v1
         with:
