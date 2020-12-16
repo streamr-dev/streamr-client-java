@@ -22,6 +22,8 @@ jobs:
         uses: actions/setup-java@v1
         with:
           java-version: 1.8
+      - name: Gradle Build
+        run: ./gradlew build -x signArchives
       - name: Unit Test
         uses: eskatos/gradle-command-action@v1
         with:
@@ -38,8 +40,6 @@ jobs:
           sudo sysctl fs.inotify.max_user_watches=524288
           sudo sysctl -p
           sudo ifconfig docker0 10.200.10.1/24
-      - name: Gradle Assemble
-        run: ./gradlew assemble -x signArchives
         working-directory: streamr-client-java
       - name: Start Streamr Docker Stack
         run: |
