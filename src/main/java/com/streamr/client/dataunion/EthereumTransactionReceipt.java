@@ -2,7 +2,6 @@ package com.streamr.client.dataunion;
 
 import org.web3j.protocol.core.methods.response.TransactionReceipt;
 
-
 /**
  * wrapper to avoid exposing web3j TransactionReceipt
  */
