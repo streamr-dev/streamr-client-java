@@ -264,15 +264,12 @@ class StreamrClientSpec extends StreamrSpecification {
             void run() {
                 server.stop()
                 server = new TestWebSocketServer("localhost", 6000)
-                sleep(2000)
                 server.start()
-                sleep(2000)
             }
         }
 
         when:
         client.publish(stream, ["test": 1])
-        Thread.sleep(200)
         client.publish(stream, ["test": 2])
 
         then:
@@ -284,11 +281,8 @@ class StreamrClientSpec extends StreamrSpecification {
         serverRestart.start()
         Thread.sleep(200)
         client.publish(stream, ["test": 3])
-        Thread.sleep(200)
         client.publish(stream, ["test": 4])
-        Thread.sleep(200)
         client.publish(stream, ["test": 5])
-        Thread.sleep(200)
         client.publish(stream, ["test": 6])
 
         then:
@@ -339,6 +333,13 @@ class StreamrClientSpec extends StreamrSpecification {
     }
 
     void "subscribed client reconnects if server is temporarily down"() {
+        Thread serverRestart = new Thread() {
+            void run() {
+                server.stop()
+                server = new TestWebSocketServer("localhost", 6000)
+                server.start()
+            }
+        }
         subscribeClient()
 
         when:
@@ -350,11 +351,8 @@ class StreamrClientSpec extends StreamrSpecification {
         }
 
         when:
-        server.stop()
-        server = new TestWebSocketServer("localhost", 6000)
-        sleep(4000)
-        server.start()
-        sleep(10000)
+        serverRestart.start()
+        sleep(2000)
 
         then:
         // Client should have resubscribed to its key exchange stream and the actual stream
