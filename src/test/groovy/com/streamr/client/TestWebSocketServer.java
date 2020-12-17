@@ -23,7 +23,7 @@ import java.util.*;
 public class TestWebSocketServer extends WebSocketServer {
     private static final Logger log = LoggerFactory.getLogger(TestWebSocketServer.class);
     private final MessageCreationUtil msgCreationUtil = new MessageCreationUtil(new Address("publisherId"), null);
-    private final LinkedList<ReceivedControlMessage> receivedControlMessages = new LinkedList<>();
+    private final List<ReceivedControlMessage> receivedControlMessages = Collections.synchronizedList(new LinkedList<>());
     private final String wsUrl;
     private int checkedControlMessages = 0;
 
