@@ -38,6 +38,8 @@ import java.util.Map;
 import java.util.concurrent.Executors;
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.TimeUnit;
+import java.util.concurrent.locks.ReadWriteLock;
+import java.util.concurrent.locks.ReentrantReadWriteLock;
 import java.util.function.BiConsumer;
 import java.util.stream.Collectors;
 
@@ -50,6 +52,7 @@ public class StreamrClient extends StreamrRESTClient {
 
     // Underlying websocket implementation
     private WebSocketClient websocket;
+    private final ReadWriteLock websocketRwLock = new ReentrantReadWriteLock();
 
     protected final Subscriptions subs = new Subscriptions();
 
@@ -67,8 +70,8 @@ public class StreamrClient extends StreamrRESTClient {
 
     private ErrorMessageHandler errorMessageHandler;
     private boolean keepConnected = false;
+    private final ReadWriteLock keepConnectedRwLock = new ReentrantReadWriteLock();
     private final ScheduledExecutorService executorService = Executors.newSingleThreadScheduledExecutor();
-    private final Object stateChangeLock = new Object();
     private int requestCounter = 0;
 
     public StreamrClient(StreamrClientOptions options) {
@@ -152,6 +155,7 @@ public class StreamrClient extends StreamrRESTClient {
     }
 
     private void initWebsocket() {
+        this.websocketRwLock.writeLock().lock();
         try {
             this.websocket = new WebSocketClient(new URI(options.getWebsocketApiUrl())) {
                 @Override
@@ -193,6 +197,8 @@ public class StreamrClient extends StreamrRESTClient {
             };
         } catch (URISyntaxException e) {
             throw new RuntimeException(e);
+        } finally {
+            this.websocketRwLock.writeLock().unlock();
         }
     }
 
@@ -207,7 +213,12 @@ public class StreamrClient extends StreamrRESTClient {
     public void onError(Exception ex) {}
 
     public WebSocketClient getWebsocket() {
-        return websocket;
+        this.websocketRwLock.readLock().lock();
+        try {
+            return this.websocket;
+        } finally {
+            this.websocketRwLock.readLock().unlock();
+        }
     }
 
     /**
@@ -218,35 +229,49 @@ public class StreamrClient extends StreamrRESTClient {
             return;
         }
 
-        synchronized (stateChangeLock) {
-            if (!keepConnected) {
+        if (!keepConnected) {
+            this.keepConnectedRwLock.writeLock().lock();
+            try {
                 keepConnected = true;
-                log.info("Connecting to " + options.getWebsocketApiUrl() + "...");
-                executorService.scheduleAtFixedRate(() -> {
-                            if (keepConnected) {
-                                if (getState() != ReadyState.OPEN) {
-                                    boolean isReconnect = this.websocket != null;
-                                    log.info("Not connected. Attempting to " + (isReconnect ? "reconnect" : "connect"));
-                                    if (isReconnect) {
-                                        this.websocket.closeConnection(0, "");
-                                    }
-                                    initWebsocket();
-                                    this.websocket.connect();
-                                }
-                            } else {
-                                if (getState() != ReadyState.CLOSED) {
-                                    log.info("Closing connection");
-                                    websocket.closeConnection(0, "");
-                                    websocket = null;
-                                    executorService.shutdown();
-                                }
-                            }
-                        },
-                        0,
-                        options.getReconnectRetryInterval(),
-                        TimeUnit.MILLISECONDS
-                );
+            } finally {
+                this.keepConnectedRwLock.writeLock().unlock();
             }
+            log.info("Connecting to " + options.getWebsocketApiUrl() + "...");
+            executorService.scheduleAtFixedRate(() -> {
+                        if (keepConnected) {
+                            if (getState() != ReadyState.OPEN) {
+                                boolean isReconnect;
+                                this.websocketRwLock.readLock().lock();
+                                try {
+                                    isReconnect = this.websocket != null;
+                                } finally {
+                                    this.websocketRwLock.readLock().unlock();
+                                }
+                                log.info("Not connected. Attempting to " + (isReconnect ? "reconnect" : "connect"));
+                                if (isReconnect) {
+                                    this.websocket.closeConnection(0, "");
+                                }
+                                initWebsocket();
+                                this.websocket.connect();
+                            }
+                        } else {
+                            if (getState() != ReadyState.CLOSED) {
+                                log.info("Closing connection");
+                                websocket.closeConnection(0, "");
+                                this.websocketRwLock.writeLock().lock();
+                                try {
+                                    this.websocket = null;
+                                } finally {
+                                    this.websocketRwLock.writeLock().unlock();
+                                }
+                                executorService.shutdown();
+                            }
+                        }
+                    },
+                    0L,
+                    options.getReconnectRetryInterval(),
+                    TimeUnit.MILLISECONDS
+            );
         }
 
         waitForState(ReadyState.OPEN);
@@ -294,8 +319,11 @@ public class StreamrClient extends StreamrRESTClient {
             return;
         }
 
-        synchronized (stateChangeLock) {
+        this.keepConnectedRwLock.writeLock().lock();
+        try {
             keepConnected = false;
+        } finally {
+            this.keepConnectedRwLock.writeLock().unlock();
         }
         waitForState(ReadyState.CLOSED);
         ReadyState state = getState();
@@ -326,7 +354,14 @@ public class StreamrClient extends StreamrRESTClient {
 
     private void send(ControlMessage message) {
         log.trace("[{}] >> {}", publisherId != null ? publisherId.toString().substring(0, 6) : null, message);
-        if (this.websocket != null) {
+        boolean websocketNotNull;
+        this.websocketRwLock.readLock().lock();
+        try {
+            websocketNotNull = this.websocket != null;
+        } finally {
+            this.websocketRwLock.readLock().unlock();
+        }
+        if (websocketNotNull) {
             this.websocket.send(message.toJson());
         } else {
             log.warn("send: websocket is null, not sending message {}", message);
@@ -334,7 +369,17 @@ public class StreamrClient extends StreamrRESTClient {
     }
 
     public ReadyState getState() {
-        return this.websocket == null ? ReadyState.CLOSED : this.websocket.getReadyState();
+        boolean websocketNotNull;
+        this.websocketRwLock.readLock().lock();
+        try {
+            websocketNotNull = this.websocket == null;
+        } finally {
+            this.websocketRwLock.readLock().unlock();
+        }
+        if (websocketNotNull) {
+            return ReadyState.CLOSED;
+        }
+        return this.websocket.getReadyState();
     }
 
     public Address getPublisherId() {
@@ -493,8 +538,8 @@ public class StreamrClient extends StreamrRESTClient {
      * Subscribe
      */
     public Subscription subscribe(Stream stream, MessageHandler handler) {
-        Integer nbPartitions = stream.getPartitions();
-        if (nbPartitions != null && nbPartitions > 1) {
+        final int partitions = stream.getPartitions();
+        if (partitions > 1) {
             throw new PartitionNotSpecifiedException(stream.getId(), stream.getPartitions());
         }
         return subscribe(stream, 0, handler, null, false);
@@ -588,7 +633,14 @@ public class StreamrClient extends StreamrRESTClient {
             ResendOption resendOption = sub.getResendOption();
             ControlMessage req = resendOption.toRequest(newRequestId("resend"), res.getStreamId(), res.getStreamPartition(), this.getSessionToken());
             send(req);
-            OneTimeResend resend = new OneTimeResend(websocket, req, options.getResendTimeout(), sub);
+            WebSocketClient webSocketClient;
+            this.websocketRwLock.readLock().lock();
+            try {
+                webSocketClient = this.websocket;
+            } finally {
+                this.websocketRwLock.readLock().unlock();
+            }
+            OneTimeResend resend = new OneTimeResend(webSocketClient, req, options.getResendTimeout(), sub);
             secondResends.put(sub.getId(), resend);
             resend.start();
         }
