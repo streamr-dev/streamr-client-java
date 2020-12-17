@@ -312,7 +312,7 @@ class StreamrClientSpec extends StreamrSpecification {
 
         List errors = Collections.synchronizedList([])
         List<Thread> threads = []
-        for (int i = 4; i < 1000; ++i) {
+        for (int i = 4; i < 100; ++i) {
             threads.add(new Thread() {
                 void run() {
                     try {
@@ -332,7 +332,7 @@ class StreamrClientSpec extends StreamrSpecification {
         threads.each { it.start() }
 
         then:
-        new PollingConditions().within(200) {
+        new PollingConditions().within(60) {
             threads.find { it.alive } == null
         }
         errors == []
