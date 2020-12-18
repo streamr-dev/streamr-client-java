@@ -32,7 +32,10 @@ import java.io.IOException;
 import java.net.URI;
 import java.net.URISyntaxException;
 import java.nio.channels.NotYetConnectedException;
-import java.util.*;
+import java.util.Date;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
 import java.util.concurrent.Executors;
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.TimeUnit;
@@ -72,6 +75,8 @@ public class StreamrClient extends StreamrRESTClient {
     private ErrorMessageHandler errorMessageHandler;
     private boolean keepConnected = false;
     private final ReadWriteLock keepConnectedRwLock = new ReentrantReadWriteLock();
+    private final Lock keepConnectedWLock = this.keepConnectedRwLock.writeLock();
+    private final Lock keepConnectedRLock = this.keepConnectedRwLock.readLock();
     private final ScheduledExecutorService executorService = Executors.newSingleThreadScheduledExecutor();
     private int requestCounter = 0;
 
@@ -178,7 +183,14 @@ public class StreamrClient extends StreamrRESTClient {
                 @Override
                 public void onClose(int code, String reason, boolean remote) {
                     log.info("Connection closed! Code: " + code + ", Reason: " + reason);
-                    if (!keepConnected) {
+                    boolean b;
+                    keepConnectedRLock.lock();
+                    try {
+                        b = !keepConnected;
+                    } finally {
+                        keepConnectedRLock.unlock();
+                    }
+                    if (b) {
                         StreamrClient.this.onClose();
                     }
                 }
@@ -231,15 +243,22 @@ public class StreamrClient extends StreamrRESTClient {
         }
 
         if (!keepConnected) {
-            this.keepConnectedRwLock.writeLock().lock();
+            keepConnectedWLock.lock();
             try {
                 keepConnected = true;
             } finally {
-                this.keepConnectedRwLock.writeLock().unlock();
+                keepConnectedWLock.unlock();
             }
             log.info("Connecting to " + options.getWebsocketApiUrl() + "...");
             executorService.scheduleAtFixedRate(() -> {
-                        if (keepConnected) {
+                        boolean b;
+                        keepConnectedRLock.lock();
+                        try {
+                            b = keepConnected;
+                        } finally {
+                            keepConnectedRLock.unlock();
+                        }
+                        if (b) {
                             if (getState() != ReadyState.OPEN) {
                                 boolean isReconnect;
                                 websocketRLock.lock();
@@ -320,11 +339,11 @@ public class StreamrClient extends StreamrRESTClient {
             return;
         }
 
-        this.keepConnectedRwLock.writeLock().lock();
+        keepConnectedWLock.lock();
         try {
             keepConnected = false;
         } finally {
-            this.keepConnectedRwLock.writeLock().unlock();
+            keepConnectedWLock.unlock();
         }
         waitForState(ReadyState.CLOSED);
         ReadyState state = getState();
