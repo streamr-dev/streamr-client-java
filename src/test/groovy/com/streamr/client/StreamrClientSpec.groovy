@@ -323,6 +323,7 @@ class StreamrClientSpec extends StreamrSpecification {
         client.publish(stream, ["test": 2])
         client.publish(stream, ["test": 3])
         serverRestart.start()
+        sleep(1000)
         threads.each { it.start() }
 
         then:
