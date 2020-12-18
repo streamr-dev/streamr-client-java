@@ -26,18 +26,17 @@ import org.java_websocket.exceptions.WebsocketNotConnectedException;
 import org.java_websocket.handshake.ServerHandshake;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+
 import javax.annotation.Nullable;
 import java.io.IOException;
 import java.net.URI;
 import java.net.URISyntaxException;
 import java.nio.channels.NotYetConnectedException;
-import java.util.Date;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
+import java.util.*;
 import java.util.concurrent.Executors;
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.TimeUnit;
+import java.util.concurrent.locks.Lock;
 import java.util.concurrent.locks.ReadWriteLock;
 import java.util.concurrent.locks.ReentrantReadWriteLock;
 import java.util.function.BiConsumer;
@@ -51,8 +50,10 @@ public class StreamrClient extends StreamrRESTClient {
     private static final Logger log = LoggerFactory.getLogger(StreamrClient.class);
 
     // Underlying websocket implementation
-    private WebSocketClient websocket;
+    private WebSocketClient websocket = null;
     private final ReadWriteLock websocketRwLock = new ReentrantReadWriteLock();
+    private final Lock websocketRLock = this.websocketRwLock.readLock();
+    private final Lock websocketWLock = this.websocketRwLock.writeLock();
 
     protected final Subscriptions subs = new Subscriptions();
 
@@ -155,7 +156,7 @@ public class StreamrClient extends StreamrRESTClient {
     }
 
     private void initWebsocket() {
-        this.websocketRwLock.writeLock().lock();
+        websocketWLock.lock();
         try {
             this.websocket = new WebSocketClient(new URI(options.getWebsocketApiUrl())) {
                 @Override
@@ -198,7 +199,7 @@ public class StreamrClient extends StreamrRESTClient {
         } catch (URISyntaxException e) {
             throw new RuntimeException(e);
         } finally {
-            this.websocketRwLock.writeLock().unlock();
+            websocketWLock.unlock();
         }
     }
 
@@ -213,11 +214,11 @@ public class StreamrClient extends StreamrRESTClient {
     public void onError(Exception ex) {}
 
     public WebSocketClient getWebsocket() {
-        this.websocketRwLock.readLock().lock();
+        websocketRLock.lock();
         try {
             return this.websocket;
         } finally {
-            this.websocketRwLock.readLock().unlock();
+            websocketRLock.unlock();
         }
     }
 
@@ -241,11 +242,11 @@ public class StreamrClient extends StreamrRESTClient {
                         if (keepConnected) {
                             if (getState() != ReadyState.OPEN) {
                                 boolean isReconnect;
-                                this.websocketRwLock.readLock().lock();
+                                websocketRLock.lock();
                                 try {
                                     isReconnect = this.websocket != null;
                                 } finally {
-                                    this.websocketRwLock.readLock().unlock();
+                                    websocketRLock.unlock();
                                 }
                                 log.info("Not connected. Attempting to " + (isReconnect ? "reconnect" : "connect"));
                                 if (isReconnect) {
@@ -258,11 +259,11 @@ public class StreamrClient extends StreamrRESTClient {
                             if (getState() != ReadyState.CLOSED) {
                                 log.info("Closing connection");
                                 websocket.closeConnection(0, "");
-                                this.websocketRwLock.writeLock().lock();
+                                websocketWLock.lock();
                                 try {
                                     this.websocket = null;
                                 } finally {
-                                    this.websocketRwLock.writeLock().unlock();
+                                    websocketWLock.unlock();
                                 }
                                 executorService.shutdown();
                             }
@@ -355,11 +356,11 @@ public class StreamrClient extends StreamrRESTClient {
     private void send(ControlMessage message) {
         log.trace("[{}] >> {}", publisherId != null ? publisherId.toString().substring(0, 6) : null, message);
         boolean websocketNotNull;
-        this.websocketRwLock.readLock().lock();
+        websocketRLock.lock();
         try {
             websocketNotNull = this.websocket != null;
         } finally {
-            this.websocketRwLock.readLock().unlock();
+            websocketRLock.unlock();
         }
         if (websocketNotNull) {
             this.websocket.send(message.toJson());
@@ -369,12 +370,14 @@ public class StreamrClient extends StreamrRESTClient {
     }
 
     public ReadyState getState() {
-        boolean websocketNotNull;
-        this.websocketRwLock.readLock().lock();
+        boolean websocketNotNull = false;
+        websocketRLock.lock();
         try {
-            websocketNotNull = this.websocket == null;
+            if (this.websocket == null) {
+                websocketNotNull = true;
+            }
         } finally {
-            this.websocketRwLock.readLock().unlock();
+            websocketRLock.unlock();
         }
         if (websocketNotNull) {
             return ReadyState.CLOSED;
@@ -634,11 +637,11 @@ public class StreamrClient extends StreamrRESTClient {
             ControlMessage req = resendOption.toRequest(newRequestId("resend"), res.getStreamId(), res.getStreamPartition(), this.getSessionToken());
             send(req);
             WebSocketClient webSocketClient;
-            this.websocketRwLock.readLock().lock();
+            websocketRLock.lock();
             try {
                 webSocketClient = this.websocket;
             } finally {
-                this.websocketRwLock.readLock().unlock();
+                websocketRLock.unlock();
             }
             OneTimeResend resend = new OneTimeResend(webSocketClient, req, options.getResendTimeout(), sub);
             secondResends.put(sub.getId(), resend);
