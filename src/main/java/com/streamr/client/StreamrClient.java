@@ -242,7 +242,14 @@ public class StreamrClient extends StreamrRESTClient {
             return;
         }
 
-        if (!keepConnected) {
+        boolean notKeepConnected;
+        keepConnectedRLock.lock();
+        try {
+            notKeepConnected = !keepConnected;
+        } finally {
+            keepConnectedRLock.unlock();
+        }
+        if (notKeepConnected) {
             keepConnectedWLock.lock();
             try {
                 keepConnected = true;
