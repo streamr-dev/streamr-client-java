@@ -198,4 +198,23 @@ class StreamEndpointsSpec extends StreamrIntegrationSpecification {
         isValid1
         !isValid2
     }
+
+    void "not same token used after logout()"() {
+        when:
+        client.getUserInfo() // fetches sessionToken1 and requests endpoint
+        String sessionToken1 = client.getSessionToken()
+        client.logout()
+        client.getUserInfo() // requests with sessionToken1, receives 401, fetches sessionToken2 and requests endpoint
+        String sessionToken2 = client.getSessionToken()
+        then:
+        sessionToken1 != sessionToken2
+    }
+
+    void "throws if logout() when already logged out"() {
+        when:
+        client.logout()
+        client.logout() // does not retry with a new session token after receiving 401
+        then:
+        thrown(AuthenticationException)
+    }
 }
