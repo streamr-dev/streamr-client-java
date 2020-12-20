@@ -396,17 +396,13 @@ public class StreamrClient extends StreamrRESTClient {
     }
 
     public ReadyState getState() {
-        boolean websocketNotNull = false;
         websocketRLock.lock();
         try {
             if (this.websocket == null) {
-                websocketNotNull = true;
+                return ReadyState.CLOSED;
             }
         } finally {
             websocketRLock.unlock();
-        }
-        if (websocketNotNull) {
-            return ReadyState.CLOSED;
         }
         return this.websocket.getReadyState();
     }
