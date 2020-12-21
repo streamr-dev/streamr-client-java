@@ -48,7 +48,10 @@ public class StreamMessageAdapter extends JsonAdapter<StreamMessage> {
     }
 
     public static StreamMessage deserialize(String json) throws MalformedMessageException {
-        JsonReader reader = JsonReader.of(new Buffer().writeString(json, StandardCharsets.UTF_8));
+        final JsonReader reader;
+        try (final Buffer buffer = new Buffer()) {
+            reader = JsonReader.of(buffer.writeString(json, StandardCharsets.UTF_8));
+        }
         try {
             return staticAdapter.fromJson(reader);
         } catch (Exception e) {

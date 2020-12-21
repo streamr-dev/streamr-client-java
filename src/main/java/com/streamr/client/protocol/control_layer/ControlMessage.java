@@ -31,19 +31,25 @@ public abstract class ControlMessage {
     }
 
     public String toJson() {
-        Buffer buffer = new Buffer();
-        JsonWriter writer = JsonWriter.of(buffer);
-        try {
-            adapter.toJson(writer, this);
+        JsonWriter writer;
+        try (final Buffer buffer = new Buffer()) {
+            writer = JsonWriter.of(buffer);
+            try {
+                adapter.toJson(writer, this);
+            } catch (IOException e) {
+                log.error("Failed to serialize ControlMessage to JSON", e);
+                return null;
+            }
             return buffer.readUtf8();
-        } catch (IOException e) {
-            log.error("Failed to serialize ControlMessage to JSON", e);
-            return null;
         }
     }
 
     public static ControlMessage fromJson(String json) throws IOException {
-        JsonReader reader = JsonReader.of(new Buffer().writeString(json, StandardCharsets.UTF_8));
+        final JsonReader reader;
+        try (final Buffer buffer = new Buffer()) {
+            final Buffer source = buffer.writeString(json, StandardCharsets.UTF_8);
+            reader = JsonReader.of(source);
+        }
         return adapter.fromJson(reader);
     }
 
