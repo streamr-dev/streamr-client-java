@@ -4,8 +4,8 @@ import org.jetbrains.annotations.NotNull;
 import java.util.Date;
 
 public class MessageRef implements Comparable<MessageRef>{
-    private long timestamp;
-    private long sequenceNumber;
+    private final long timestamp;
+    private final long sequenceNumber;
 
     public MessageRef(Long timestamp, long sequenceNumber) {
         this.timestamp = timestamp;
