@@ -12,6 +12,7 @@ public class Address {
         this("0x" + Hex.encodeHexString(bytes));
     }
 
+    // TODO: Use checksum case
     public Address(String address) {
         this.address = address.toLowerCase();
     }
