@@ -64,9 +64,9 @@ public abstract class StreamrRESTClient extends AbstractStreamrClient {
         OkHttpClient client = new OkHttpClient();
 
         // Execute the request and retrieve the response.
-        Call call = client.newCall(request);
-        Response response = call.execute();
-        ResponseBody body = null;
+        final Call call = client.newCall(request);
+        final Response response = call.execute();
+        final ResponseBody body;
         BufferedSource source = null;
         try {
             HttpUtils.assertSuccessful(response);
@@ -76,20 +76,17 @@ public abstract class StreamrRESTClient extends AbstractStreamrClient {
                 return null;
             } else {
                 body = response.body();
-                source = body.source();
-                T result = adapter.fromJson(source);
+                if (body != null) {
+                    source = body.source();
+                }
+                T result = null;
+                if (source != null) {
+                    result = adapter.fromJson(source);
+                }
                 return result;
             }
         } finally {
-            if (source != null) {
-                source.close();
-            }
-            if (body != null) {
-                body.close();
-            }
-            if (response != null) {
-                response.close();
-            }
+            response.close(); // closing response will also close source and body
         }
     }
 
