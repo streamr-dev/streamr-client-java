@@ -161,58 +161,14 @@ public class StreamrClient extends StreamrRESTClient {
     }
 
     private void initWebsocket() {
-        websocketWLock.lock();
+        final URI uri;
         try {
-            this.websocket = new WebSocketClient(new URI(options.getWebsocketApiUrl())) {
-                @Override
-                public void onOpen(ServerHandshake handshakedata) {
-                    log.info("Connection established");
-                    StreamrClient.this.onOpen();
-                    try {
-                        StreamrClient.this.subs.forEach(StreamrClient.this::resubscribe);
-                    } catch (WebsocketNotConnectedException e) {
-                        log.error("Failed to resubscribe", e);
-                    }
-                }
-
-                @Override
-                public void onMessage(String message) {
-                    handleMessage(message);
-                }
-
-                @Override
-                public void onClose(int code, String reason, boolean remote) {
-                    log.info("Connection closed! Code: " + code + ", Reason: " + reason);
-                    boolean b;
-                    keepConnectedRLock.lock();
-                    try {
-                        b = !keepConnected;
-                    } finally {
-                        keepConnectedRLock.unlock();
-                    }
-                    if (b) {
-                        StreamrClient.this.onClose();
-                    }
-                }
-
-                @Override
-                public void onError(Exception ex) {
-                    log.error("WebSocketClient#onError called", ex);
-                    if (!(ex instanceof IOException)) {
-                        StreamrClient.this.onError(ex);
-                    }
-                }
-
-                @Override
-                public void send(String text) throws NotYetConnectedException {
-                    super.send(text);
-                }
-            };
+            final String websocketApiUrl = options.getWebsocketApiUrl();
+            uri = new URI(websocketApiUrl);
         } catch (URISyntaxException e) {
             throw new RuntimeException(e);
-        } finally {
-            websocketWLock.unlock();
         }
+        this.setWebsocket(new StreamrWebSocketClient(this, uri));
     }
 
     /*
@@ -221,6 +177,9 @@ public class StreamrClient extends StreamrRESTClient {
 
     public void onOpen() {}
     public void onClose() {
+        if (!isKeepConnected()) {
+            return;
+        }
         streamMessageValidator.clearAndClose();
     }
     public void onError(Exception ex) {}
@@ -242,55 +201,25 @@ public class StreamrClient extends StreamrRESTClient {
             return;
         }
 
-        boolean notKeepConnected;
-        keepConnectedRLock.lock();
-        try {
-            notKeepConnected = !keepConnected;
-        } finally {
-            keepConnectedRLock.unlock();
-        }
-        if (notKeepConnected) {
-            keepConnectedWLock.lock();
-            try {
-                keepConnected = true;
-            } finally {
-                keepConnectedWLock.unlock();
-            }
+        if (!isKeepConnected()) {
+            setKeepConnected(true);
             log.info("Connecting to " + options.getWebsocketApiUrl() + "...");
             executorService.scheduleAtFixedRate(() -> {
-                        boolean b;
-                        keepConnectedRLock.lock();
-                        try {
-                            b = keepConnected;
-                        } finally {
-                            keepConnectedRLock.unlock();
-                        }
-                        if (b) {
+                        if (isKeepConnected()) {
                             if (getState() != ReadyState.OPEN) {
-                                boolean isReconnect;
-                                websocketRLock.lock();
-                                try {
-                                    isReconnect = this.websocket != null;
-                                } finally {
-                                    websocketRLock.unlock();
-                                }
+                                final boolean isReconnect = !isWebsocketNull();
                                 log.info("Not connected. Attempting to " + (isReconnect ? "reconnect" : "connect"));
                                 if (isReconnect) {
-                                    this.websocket.closeConnection(0, "");
+                                    this.getWebsocket().closeConnection(0, "");
                                 }
                                 initWebsocket();
-                                this.websocket.connect();
+                                this.getWebsocket().connect();
                             }
                         } else {
                             if (getState() != ReadyState.CLOSED) {
                                 log.info("Closing connection");
-                                websocket.closeConnection(0, "");
-                                websocketWLock.lock();
-                                try {
-                                    this.websocket = null;
-                                } finally {
-                                    websocketWLock.unlock();
-                                }
+                                getWebsocket().closeConnection(0, "");
+                                this.setWebsocket(null);
                                 executorService.shutdown();
                             }
                         }
@@ -325,7 +254,7 @@ public class StreamrClient extends StreamrRESTClient {
                             keyExchangeUtil.handleGroupKeyAnnounce(message);
                         } else if (message.getMessageType().equals(StreamMessage.MessageType.GROUP_KEY_ERROR_RESPONSE)) {
                             Map<String, Object> content = message.getParsedContent();
-                            log.warn("Received error of type " + content.get("code") + " from " + message.getPublisherId() + ": " + content.get("message"));
+                            log.warn("Received error of type {} from {}: {}", content.get("code"), message.getPublisherId(), content.get("message"));
                         } else {
                             throw new MalformedMessageException("Unexpected message type on key exchange stream: " + message.getMessageType());
                         }
@@ -345,13 +274,7 @@ public class StreamrClient extends StreamrRESTClient {
         if (getState() == ReadyState.CLOSED) {
             return;
         }
-
-        keepConnectedWLock.lock();
-        try {
-            keepConnected = false;
-        } finally {
-            keepConnectedWLock.unlock();
-        }
+        setKeepConnected(false);
         waitForState(ReadyState.CLOSED);
         ReadyState state = getState();
         if (state != ReadyState.CLOSED) {
@@ -381,30 +304,27 @@ public class StreamrClient extends StreamrRESTClient {
 
     private void send(ControlMessage message) {
         log.trace("[{}] >> {}", publisherId != null ? publisherId.toString().substring(0, 6) : null, message);
-        boolean websocketNotNull;
-        websocketRLock.lock();
-        try {
-            websocketNotNull = this.websocket != null;
-        } finally {
-            websocketRLock.unlock();
-        }
-        if (websocketNotNull) {
-            this.websocket.send(message.toJson());
+        if (!isWebsocketNull()) {
+            this.getWebsocket().send(message.toJson());
         } else {
             log.warn("send: websocket is null, not sending message {}", message);
         }
     }
 
-    public ReadyState getState() {
+    private boolean isWebsocketNull() {
         websocketRLock.lock();
         try {
-            if (this.websocket == null) {
-                return ReadyState.CLOSED;
-            }
+            return (this.getWebsocket() == null);
         } finally {
             websocketRLock.unlock();
         }
-        return this.websocket.getReadyState();
+    }
+
+    public ReadyState getState() {
+        if (isWebsocketNull()) {
+            return ReadyState.CLOSED;
+        }
+        return this.getWebsocket().getReadyState();
     }
 
     public Address getPublisherId() {
@@ -658,14 +578,7 @@ public class StreamrClient extends StreamrRESTClient {
             ResendOption resendOption = sub.getResendOption();
             ControlMessage req = resendOption.toRequest(newRequestId("resend"), res.getStreamId(), res.getStreamPartition(), this.getSessionToken());
             send(req);
-            WebSocketClient webSocketClient;
-            websocketRLock.lock();
-            try {
-                webSocketClient = this.websocket;
-            } finally {
-                websocketRLock.unlock();
-            }
-            OneTimeResend resend = new OneTimeResend(webSocketClient, req, options.getResendTimeout(), sub);
+            OneTimeResend resend = new OneTimeResend(getWebsocket(), req, options.getResendTimeout(), sub);
             secondResends.put(sub.getId(), resend);
             resend.start();
         }
@@ -703,5 +616,79 @@ public class StreamrClient extends StreamrRESTClient {
 
     private String newRequestId(String prefix) {
         return String.format("%s.%s.%d", prefix, IdGenerator.get(), requestCounter++);
+    }
+
+    public boolean isKeepConnected() {
+        boolean result;
+        keepConnectedRLock.lock();
+        try {
+            result = this.keepConnected;
+        } finally {
+            keepConnectedRLock.unlock();
+        }
+        return result;
+    }
+
+    public void setKeepConnected(boolean keepConnected) {
+        keepConnectedWLock.lock();
+        try {
+            this.keepConnected = keepConnected;
+        } finally {
+            keepConnectedWLock.unlock();
+        }
+    }
+
+    public void setWebsocket(WebSocketClient websocket) {
+        websocketWLock.lock();
+        try {
+            this.websocket = websocket;
+        } finally {
+            websocketWLock.unlock();
+        }
+    }
+
+    private static class StreamrWebSocketClient extends WebSocketClient {
+        private final Logger log = LoggerFactory.getLogger(StreamrWebSocketClient.class);
+        private final StreamrClient streamrClient;
+
+        public StreamrWebSocketClient(final StreamrClient streamrClient, final URI websocketApiUrl) {
+            super(websocketApiUrl);
+            this.streamrClient = streamrClient;
+        }
+
+        @Override
+        public void onOpen(ServerHandshake handshakedata) {
+            log.info("Connection established");
+            streamrClient.onOpen();
+            try {
+                streamrClient.subs.forEach(streamrClient::resubscribe);
+            } catch (WebsocketNotConnectedException e) {
+                log.error("Failed to resubscribe", e);
+            }
+        }
+
+        @Override
+        public void onMessage(String message) {
+            this.streamrClient.handleMessage(message);
+        }
+
+        @Override
+        public void onClose(int code, String reason, boolean remote) {
+            log.info("Connection closed! Code: " + code + ", Reason: " + reason);
+            this.streamrClient.onClose();
+        }
+
+        @Override
+        public void onError(Exception ex) {
+            log.error("StreamrWebSocketClient#onError called", ex);
+            if (!(ex instanceof IOException)) {
+                this.streamrClient.onError(ex);
+            }
+        }
+
+        @Override
+        public void send(String text) throws NotYetConnectedException {
+            super.send(text);
+        }
     }
 }
