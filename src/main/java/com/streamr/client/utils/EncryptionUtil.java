@@ -93,7 +93,7 @@ public class EncryptionUtil {
             rsaCipher.get().init(Cipher.ENCRYPT_MODE, rsaPublicKey);
             return Hex.encodeHexString(rsaCipher.get().doFinal(plaintext));
         } catch (Exception e) {
-            log.error("Failed to encrypt plaintext: " + plaintext, e);
+            log.error("Failed to encrypt plaintext: " + Arrays.toString(plaintext), e);
             throw new RuntimeException(e);
         }
     }
