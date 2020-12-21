@@ -6,15 +6,15 @@ import org.apache.commons.codec.binary.Hex;
  * For making sure that Ethereum addresses are always treated similarly everywhere (e.g. lower-cased)
  */
 public class Address {
-    private final String address;
+    private final String value;
 
     public Address(byte[] bytes) {
         this("0x" + Hex.encodeHexString(bytes));
     }
 
     // TODO: Use checksum case
-    public Address(String address) {
-        this.address = address.toLowerCase();
+    public Address(String value) {
+        this.value = value.toLowerCase();
     }
 
     @Override
@@ -24,16 +24,16 @@ public class Address {
 
         Address address1 = (Address) o;
 
-        return address.equals(address1.address);
+        return value.equals(address1.value);
     }
 
     @Override
     public int hashCode() {
-        return address.hashCode();
+        return value.hashCode();
     }
 
     @Override
     public String toString() {
-        return address;
+        return value;
     }
 }
