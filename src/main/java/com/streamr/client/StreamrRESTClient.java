@@ -66,8 +66,6 @@ public abstract class StreamrRESTClient extends AbstractStreamrClient {
         // Execute the request and retrieve the response.
         final Call call = client.newCall(request);
         final Response response = call.execute();
-        final ResponseBody body;
-        BufferedSource source = null;
         try {
             HttpUtils.assertSuccessful(response);
 
@@ -75,7 +73,8 @@ public abstract class StreamrRESTClient extends AbstractStreamrClient {
             if (adapter == null) {
                 return null;
             } else {
-                body = response.body();
+                final ResponseBody body = response.body();
+                BufferedSource source = null;
                 if (body != null) {
                     source = body.source();
                 }
