@@ -1,11 +1,11 @@
 package com.streamr.client.utils;
 
 import com.streamr.client.exceptions.GapFillFailedException;
-import com.streamr.client.protocol.message_layer.MessageRef;
 import com.streamr.client.protocol.message_layer.StreamMessage;
 
 import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.Map;
 import java.util.function.Consumer;
 import java.util.function.Function;
 
@@ -18,7 +18,7 @@ public class OrderingUtil {
     private long propagationTimeout;
     private long resendTimeout;
     private boolean skipGapsOnFullQueue = false;
-    private HashMap<String, OrderedMsgChain> chains = new HashMap<>();
+    private Map<String, OrderedMsgChain> chains = new HashMap<>();
 
     public OrderingUtil(
             String streamId,

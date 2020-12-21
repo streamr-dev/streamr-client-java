@@ -30,9 +30,9 @@ public class MessageCreationUtil {
     private final String msgChainId;
     private final SigningUtil signingUtil;
 
-    private final HashMap<String, MessageRef> refsPerStreamAndPartition = new HashMap<>();
+    private final Map<String, MessageRef> refsPerStreamAndPartition = new HashMap<>();
 
-    private final HashMap<String, Integer> cachedHashes = new HashMap<>();
+    private final Map<String, Integer> cachedHashes = new HashMap<>();
 
     public MessageCreationUtil(Address publisherId, SigningUtil signingUtil) {
         this.publisherId = publisherId;

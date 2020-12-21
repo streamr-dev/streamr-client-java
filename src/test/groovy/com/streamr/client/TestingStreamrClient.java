@@ -10,15 +10,12 @@ import com.streamr.client.rest.UserInfo;
 import com.streamr.client.subs.Subscription;
 
 import java.io.IOException;
-import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.LinkedHashMap;
-import java.util.List;
+import java.util.*;
 
 public class TestingStreamrClient extends StreamrClient {
 
     List<StreamMessage> receivedStreamMessages = new ArrayList<>();
-    HashMap<String, Stream> mockStreams = new LinkedHashMap<>();
+    Map<String, Stream> mockStreams = new LinkedHashMap<>();
 
     public TestingStreamrClient(StreamrClientOptions options) {
         super(options);

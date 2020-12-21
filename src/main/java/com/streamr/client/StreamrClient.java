@@ -70,7 +70,7 @@ public class StreamrClient extends StreamrRESTClient {
     private Stream keyExchangeStream;
     private Subscription keyExchangeSub;
 
-    private final HashMap<String, OneTimeResend> secondResends = new HashMap<>();
+    private final Map<String, OneTimeResend> secondResends = new HashMap<>();
 
     private ErrorMessageHandler errorMessageHandler;
     private boolean keepConnected = false;

@@ -11,14 +11,15 @@ import org.slf4j.Logger;
 
 import java.util.*;
 import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.ConcurrentMap;
 import java.util.stream.Collectors;
 
 public abstract class BasicSubscription extends Subscription {
     public static final int MAX_NB_GROUP_KEY_REQUESTS = 10;
 
     protected OrderingUtil orderingUtil;
-    private final ConcurrentHashMap<String, Timer> pendingGroupKeyRequests = new ConcurrentHashMap<>();
-    private final ConcurrentHashMap<String, Integer> nbGroupKeyRequestsCalls = new ConcurrentHashMap<>();
+    private final ConcurrentMap<String, Timer> pendingGroupKeyRequests = new ConcurrentHashMap<>();
+    private final ConcurrentMap<String, Integer> nbGroupKeyRequestsCalls = new ConcurrentHashMap<>();
     private final HashSet<String> alreadyFailedToDecrypt = new HashSet<>();
 
     protected final DecryptionQueues decryptionQueues;

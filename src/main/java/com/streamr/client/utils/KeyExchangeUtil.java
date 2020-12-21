@@ -32,7 +32,7 @@ public class KeyExchangeUtil {
     private final Consumer<StreamMessage> publishFunction;
     private final OnNewKeysFunction onNewKeysFunction;
     private Instant lastCallToCheckRevocation = Instant.MIN;
-    private final HashMap<Address, String> publicKeys = new HashMap<>();
+    private final Map<Address, String> publicKeys = new HashMap<>();
 
     public static final String KEY_EXCHANGE_STREAM_PREFIX = "SYSTEM/keyexchange/";
 
@@ -65,10 +65,10 @@ public class KeyExchangeUtil {
         log.debug("Subscriber {} is querying group keys for stream {}: {}. Key storage content is {}",
                 streamMessage.getPublisherId(), streamId, request.getGroupKeyIds(), keyStore);
 
-        ArrayList<GroupKey> foundKeys = new ArrayList<>();
-        ArrayList<GroupKey> notFoundKeys = new ArrayList<>();
-        for (String groupKeyId : request.getGroupKeyIds()) {
-            GroupKey key = keyStore.get(request.getStreamId(), groupKeyId);
+        final List<GroupKey> foundKeys = new ArrayList<>();
+        final List<GroupKey> notFoundKeys = new ArrayList<>();
+        for (final String groupKeyId : request.getGroupKeyIds()) {
+            final GroupKey key = keyStore.get(request.getStreamId(), groupKeyId);
             if (key != null) {
                 foundKeys.add(key);
             } else {
@@ -195,7 +195,7 @@ public class KeyExchangeUtil {
         return new Address(keyExchangeStreamId.substring(KEY_EXCHANGE_STREAM_PREFIX.length()));
     }
 
-    public HashMap<Address, String> getKnownPublicKeysByPublisher() {
+    public Map<Address, String> getKnownPublicKeysByPublisher() {
         return publicKeys;
     }
 
