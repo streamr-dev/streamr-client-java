@@ -240,7 +240,7 @@ public class StreamrClient extends StreamrRESTClient {
                 @Override
                 public void onMessage(Subscription sub, StreamMessage message) {
                     try {
-                        if (message.getMessageType().equals(StreamMessage.MessageType.GROUP_KEY_REQUEST)) {
+                        if (message.getMessageType() == StreamMessage.MessageType.GROUP_KEY_REQUEST) {
                             try {
                                 keyExchangeUtil.handleGroupKeyRequest(message);
                             } catch (Exception e) {
@@ -248,11 +248,11 @@ public class StreamrClient extends StreamrRESTClient {
                                 StreamMessage errorMessage = msgCreationUtil.createGroupKeyErrorResponse(message.getPublisherId(), groupKeyRequest, e);
                                 publish(errorMessage); //sending the error to the sender of 'message'
                             }
-                        } else if (message.getMessageType().equals(StreamMessage.MessageType.GROUP_KEY_RESPONSE)) {
+                        } else if (message.getMessageType() == StreamMessage.MessageType.GROUP_KEY_RESPONSE) {
                             keyExchangeUtil.handleGroupKeyResponse(message);
-                        } else if (message.getMessageType().equals(StreamMessage.MessageType.GROUP_KEY_ANNOUNCE)) {
+                        } else if (message.getMessageType() == StreamMessage.MessageType.GROUP_KEY_ANNOUNCE) {
                             keyExchangeUtil.handleGroupKeyAnnounce(message);
-                        } else if (message.getMessageType().equals(StreamMessage.MessageType.GROUP_KEY_ERROR_RESPONSE)) {
+                        } else if (message.getMessageType() == StreamMessage.MessageType.GROUP_KEY_ERROR_RESPONSE) {
                             Map<String, Object> content = message.getParsedContent();
                             log.warn("Received error of type {} from {}: {}", content.get("code"), message.getPublisherId(), content.get("message"));
                         } else {
