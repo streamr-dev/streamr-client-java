@@ -70,7 +70,7 @@ dependencies {
 	testCompile 'org.apache.logging.log4j:log4j-api:2.14.0'
 	testCompile 'org.apache.logging.log4j:log4j-core:2.14.0'
 	testCompile 'org.apache.logging.log4j:log4j-slf4j-impl:2.14.0'
-	testCompile 'org.spockframework:spock-core:1.1-groovy-2.4'
+	testCompile 'org.spockframework:spock-core:2.0-M4-groovy-3.0'
 	testCompile 'cglib:cglib-nodep:3.2.12'
 	testCompile 'org.objenesis:objenesis:3.1'
 }
