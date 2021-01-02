@@ -7,13 +7,23 @@ import com.streamr.client.exceptions.AmbiguousResultsException;
 import com.streamr.client.exceptions.AuthenticationException;
 import com.streamr.client.exceptions.ResourceNotFoundException;
 import com.streamr.client.options.StreamrClientOptions;
-import com.streamr.client.rest.*;
-import com.streamr.client.utils.HttpUtils;
+import com.streamr.client.rest.Permission;
+import com.streamr.client.rest.Publishers;
+import com.streamr.client.rest.Stream;
+import com.streamr.client.rest.Subscribers;
+import com.streamr.client.rest.UserInfo;
 import com.streamr.client.utils.Address;
-import okhttp3.*;
-
+import com.streamr.client.utils.HttpUtils;
 import java.io.IOException;
 import java.util.List;
+import okhttp3.Call;
+import okhttp3.HttpUrl;
+import okhttp3.OkHttpClient;
+import okhttp3.Request;
+import okhttp3.RequestBody;
+import okhttp3.Response;
+import okhttp3.ResponseBody;
+import okio.BufferedSource;
 
 /**
  * This class exposes the RESTful API endpoints.
@@ -62,14 +72,28 @@ public abstract class StreamrRESTClient extends AbstractStreamrClient {
         OkHttpClient client = new OkHttpClient();
 
         // Execute the request and retrieve the response.
-        Response response = client.newCall(request).execute();
+        final Call call = client.newCall(request);
+        final Response response = call.execute();
         try {
             HttpUtils.assertSuccessful(response);
 
             // Deserialize HTTP response to concrete type.
-            return adapter == null ? null : adapter.fromJson(response.body().source());
+            if (adapter == null) {
+                return null;
+            } else {
+                final ResponseBody body = response.body();
+                BufferedSource source = null;
+                if (body != null) {
+                    source = body.source();
+                }
+                T result = null;
+                if (source != null) {
+                    result = adapter.fromJson(source);
+                }
+                return result;
+            }
         } finally {
-            response.close();
+            response.close(); // closing response will also close source and body
         }
     }
 
