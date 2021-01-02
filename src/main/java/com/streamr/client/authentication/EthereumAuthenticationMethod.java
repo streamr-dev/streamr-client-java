@@ -40,10 +40,21 @@ public class EthereumAuthenticationMethod extends AuthenticationMethod {
         String signature = signChallenge(challenge.challenge);
         ChallengeResponse response = new ChallengeResponse(challenge, signature, address);
         Response resp = null;
+        ResponseBody body = null;
+        BufferedSource source = null;
         try {
             resp = post(restApiUrl + "/login/response", challengeResponseAdapter.toJson(response));
-            return parse(resp.body().source());
+            body = resp.body();
+            source = body.source();
+            LoginResponse result = parse(source);
+            return result;
         } finally {
+            if (source != null) {
+                source.close();
+            }
+            if (body != null) {
+                body.close();
+            }
             if (resp != null) {
                 resp.close();
             }
@@ -52,10 +63,21 @@ public class EthereumAuthenticationMethod extends AuthenticationMethod {
 
     public Challenge getChallenge(String restApiUrl) throws IOException {
         Response response = null;
+        ResponseBody body = null;
+        BufferedSource source = null;
         try {
             response = post(restApiUrl + "/login/challenge/"+address, "");
-            return challengeAdapter.fromJson(response.body().source());
+            body = response.body();
+            source = body.source();
+            Challenge result = challengeAdapter.fromJson(source);
+            return result;
         } finally {
+            if (source != null) {
+                source.close();
+            }
+            if (body != null) {
+                body.close();
+            }
             if (response != null) {
                 response.close();
             }
