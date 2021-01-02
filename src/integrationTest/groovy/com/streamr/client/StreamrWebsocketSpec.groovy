@@ -371,7 +371,7 @@ class StreamrWebsocketSpec extends StreamrIntegrationSpecification {
 		subscriber.resend(stream, 0, new MessageHandler() {
 			@Override
 			void onMessage(Subscription s, StreamMessage message) {
-				receivedMsg.push(message.getParsedContent())
+				receivedMsg.add(message.getParsedContent())
 			}
 			void done(Subscription sub) {
 				done = true
@@ -411,7 +411,7 @@ class StreamrWebsocketSpec extends StreamrIntegrationSpecification {
 		subscriber.resend(stream, 0, new MessageHandler() {
 			@Override
 			void onMessage(Subscription s, StreamMessage message) {
-				receivedMsg.push(message.getParsedContent())
+				receivedMsg.add(message.getParsedContent())
 			}
 			void done(Subscription sub) {
 				done = true
@@ -455,7 +455,7 @@ class StreamrWebsocketSpec extends StreamrIntegrationSpecification {
 		subscriber.resend(stream, 0, new MessageHandler() {
 			@Override
 			void onMessage(Subscription s, StreamMessage message) {
-				receivedMsg.push(message.getParsedContent())
+				receivedMsg.add(message.getParsedContent())
 			}
 			void done(Subscription sub) {
 				done = true
@@ -501,7 +501,7 @@ class StreamrWebsocketSpec extends StreamrIntegrationSpecification {
             subscriber.resend(stream, 0, new MessageHandler() {
                 @Override
                 void onMessage(Subscription s, StreamMessage message) {
-                    receivedMsg.push(message.getParsedContent())
+                    receivedMsg.add(message.getParsedContent())
                 }
 
                 void done(Subscription sub) {
