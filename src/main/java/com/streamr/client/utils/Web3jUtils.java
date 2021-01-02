@@ -142,6 +142,7 @@ public class Web3jUtils {
                 Collections.emptyList(),
                 Arrays.<String>asList("uint256")
         );
+        @SuppressWarnings("rawtypes")
         List<Type> ret = callFunction(contract, fn, connection);
         return (BigInteger) ret.iterator().next().getValue();
     }
@@ -152,10 +153,12 @@ public class Web3jUtils {
                 Arrays.asList(balanceAddress),
                 Arrays.<String>asList("uint256")
         );
+        @SuppressWarnings("rawtypes")
         List<Type> ret = callFunction(contract, fn, connection);
         return (BigInteger) ret.iterator().next().getValue();
     }
 
+    @SuppressWarnings("rawtypes")
     public static List<Type> callFunction(String contract, Function fn, Web3j connection) throws IOException {
         log.info("Calling view function " + fn + " on contract " + contract);
         EthCall response = connection.ethCall(
