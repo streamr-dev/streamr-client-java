@@ -112,7 +112,7 @@ public class OrderedMsgChain {
             gap.cancel();
             gap.purge();
             gap = null;
-            if (gapException != null) {
+            if (gapException != null) { // TODO: gapException is always null
                 throw gapException;
             }
         }
