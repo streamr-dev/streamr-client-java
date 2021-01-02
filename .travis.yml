@@ -1,12 +1,12 @@
 language: java
 jdk:
-- openjdk8
-dist: trusty
+  - openjdk8
+dist: xenial
 sudo: true
 branches:
   only:
-  - master
-  - "/^v\\d+\\.\\d+(\\.\\d+)?(-\\S*)?$/"
+    - master
+    - "/^v\\d+\\.\\d+(\\.\\d+)?(-\\S*)?$/"
 before_cache:
   - rm -f  $HOME/.gradle/caches/modules-2/modules-2.lock
   - rm -fr $HOME/.gradle/caches/*/plugin-resolution/
@@ -37,7 +37,7 @@ jobs:
   - stage: Tests
     name: Source formatting
     script:
-      - ./gradlew --console plain --info spotlessCheck
+    - ./gradlew --console plain --info spotlessCheck
 #  - stage: Tests
 #    name: Cross-client tests
 #    script:
