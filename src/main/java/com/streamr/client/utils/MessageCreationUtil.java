@@ -1,19 +1,32 @@
 package com.streamr.client.utils;
 
-import com.streamr.client.exceptions.*;
-import com.streamr.client.protocol.message_layer.*;
+import com.streamr.client.exceptions.InvalidGroupKeyException;
+import com.streamr.client.exceptions.InvalidGroupKeyRequestException;
+import com.streamr.client.exceptions.InvalidGroupKeyResponseException;
+import com.streamr.client.exceptions.MalformedMessageException;
+import com.streamr.client.exceptions.SigningRequiredException;
+import com.streamr.client.protocol.message_layer.GroupKeyAnnounce;
+import com.streamr.client.protocol.message_layer.GroupKeyErrorResponse;
+import com.streamr.client.protocol.message_layer.GroupKeyRequest;
+import com.streamr.client.protocol.message_layer.GroupKeyResponse;
+import com.streamr.client.protocol.message_layer.MessageID;
+import com.streamr.client.protocol.message_layer.MessageRef;
+import com.streamr.client.protocol.message_layer.StreamMessage;
 import com.streamr.client.rest.Stream;
-import org.apache.commons.lang3.RandomStringUtils;
-import org.apache.commons.lang3.tuple.Pair;
-
-import javax.annotation.Nullable;
 import java.nio.ByteBuffer;
 import java.nio.charset.StandardCharsets;
 import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
 import java.security.interfaces.RSAPublicKey;
-import java.util.*;
+import java.util.Date;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+import java.util.UUID;
 import java.util.stream.Collectors;
+import javax.annotation.Nullable;
+import org.apache.commons.lang3.RandomStringUtils;
+import org.apache.commons.lang3.tuple.Pair;
 
 /**
  * A stateful helper class to create StreamMessages, with the following responsibilities:
@@ -30,9 +43,9 @@ public class MessageCreationUtil {
     private final String msgChainId;
     private final SigningUtil signingUtil;
 
-    private final HashMap<String, MessageRef> refsPerStreamAndPartition = new HashMap<>();
+    private final Map<String, MessageRef> refsPerStreamAndPartition = new HashMap<>();
 
-    private final HashMap<String, Integer> cachedHashes = new HashMap<>();
+    private final Map<String, Integer> cachedHashes = new HashMap<>();
 
     public MessageCreationUtil(Address publisherId, SigningUtil signingUtil) {
         this.publisherId = publisherId;

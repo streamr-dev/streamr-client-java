@@ -6,19 +6,33 @@ import com.streamr.client.exceptions.UnableToDecryptException;
 import com.streamr.client.exceptions.UnsupportedMessageException;
 import com.streamr.client.protocol.message_layer.MessageRef;
 import com.streamr.client.protocol.message_layer.StreamMessage;
-import com.streamr.client.utils.*;
-import org.slf4j.Logger;
-
-import java.util.*;
+import com.streamr.client.utils.Address;
+import com.streamr.client.utils.DecryptionQueues;
+import com.streamr.client.utils.EncryptionUtil;
+import com.streamr.client.utils.GroupKey;
+import com.streamr.client.utils.GroupKeyStore;
+import com.streamr.client.utils.KeyExchangeUtil;
+import com.streamr.client.utils.OrderedMsgChain;
+import com.streamr.client.utils.OrderingUtil;
+import java.util.ArrayList;
+import java.util.Collection;
+import java.util.Collections;
+import java.util.HashSet;
+import java.util.List;
+import java.util.Set;
+import java.util.Timer;
+import java.util.TimerTask;
 import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.ConcurrentMap;
 import java.util.stream.Collectors;
+import org.slf4j.Logger;
 
 public abstract class BasicSubscription extends Subscription {
     public static final int MAX_NB_GROUP_KEY_REQUESTS = 10;
 
     protected OrderingUtil orderingUtil;
-    private final ConcurrentHashMap<String, Timer> pendingGroupKeyRequests = new ConcurrentHashMap<>();
-    private final ConcurrentHashMap<String, Integer> nbGroupKeyRequestsCalls = new ConcurrentHashMap<>();
+    private final ConcurrentMap<String, Timer> pendingGroupKeyRequests = new ConcurrentHashMap<>();
+    private final ConcurrentMap<String, Integer> nbGroupKeyRequestsCalls = new ConcurrentHashMap<>();
     private final HashSet<String> alreadyFailedToDecrypt = new HashSet<>();
 
     protected final DecryptionQueues decryptionQueues;

@@ -7,9 +7,10 @@ import com.streamr.client.exceptions.UnsupportedMessageException;
 
 import java.io.IOException;
 import java.util.HashMap;
+import java.util.Map;
 
 public class ControlMessageAdapter extends JsonAdapter<ControlMessage> {
-    private static final HashMap<Integer, ControlLayerAdapter<? extends ControlMessage>> adapters = new HashMap<>();
+    private static final Map<Integer, ControlLayerAdapter<? extends ControlMessage>> adapters = new HashMap<>();
 
     public ControlMessageAdapter() {
         adapters.put(BroadcastMessage.TYPE, new BroadcastMessageAdapter());

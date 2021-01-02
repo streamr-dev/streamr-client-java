@@ -1,16 +1,27 @@
 package com.streamr.client.utils;
 
 import com.streamr.client.exceptions.KeyAlreadyExistsException;
-import com.streamr.client.protocol.message_layer.*;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-
+import com.streamr.client.protocol.message_layer.AbstractGroupKeyMessage;
+import com.streamr.client.protocol.message_layer.GroupKeyAnnounce;
+import com.streamr.client.protocol.message_layer.GroupKeyRequest;
+import com.streamr.client.protocol.message_layer.GroupKeyResponse;
+import com.streamr.client.protocol.message_layer.StreamMessage;
 import java.time.Clock;
 import java.time.Duration;
 import java.time.Instant;
-import java.util.*;
+import java.util.ArrayList;
+import java.util.Collection;
+import java.util.Collections;
+import java.util.HashMap;
+import java.util.HashSet;
+import java.util.List;
+import java.util.Map;
+import java.util.Objects;
+import java.util.Set;
 import java.util.function.Consumer;
 import java.util.stream.Collectors;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 /**
  * This is a helper class for key exchange.
@@ -32,7 +43,7 @@ public class KeyExchangeUtil {
     private final Consumer<StreamMessage> publishFunction;
     private final OnNewKeysFunction onNewKeysFunction;
     private Instant lastCallToCheckRevocation = Instant.MIN;
-    private final HashMap<Address, String> publicKeys = new HashMap<>();
+    private final Map<Address, String> publicKeys = new HashMap<>();
 
     public static final String KEY_EXCHANGE_STREAM_PREFIX = "SYSTEM/keyexchange/";
 
@@ -65,10 +76,10 @@ public class KeyExchangeUtil {
         log.debug("Subscriber {} is querying group keys for stream {}: {}. Key storage content is {}",
                 streamMessage.getPublisherId(), streamId, request.getGroupKeyIds(), keyStore);
 
-        ArrayList<GroupKey> foundKeys = new ArrayList<>();
-        ArrayList<GroupKey> notFoundKeys = new ArrayList<>();
-        for (String groupKeyId : request.getGroupKeyIds()) {
-            GroupKey key = keyStore.get(request.getStreamId(), groupKeyId);
+        final List<GroupKey> foundKeys = new ArrayList<>();
+        final List<GroupKey> notFoundKeys = new ArrayList<>();
+        for (final String groupKeyId : request.getGroupKeyIds()) {
+            final GroupKey key = keyStore.get(request.getStreamId(), groupKeyId);
             if (key != null) {
                 foundKeys.add(key);
             } else {
@@ -195,7 +206,7 @@ public class KeyExchangeUtil {
         return new Address(keyExchangeStreamId.substring(KEY_EXCHANGE_STREAM_PREFIX.length()));
     }
 
-    public HashMap<Address, String> getKnownPublicKeysByPublisher() {
+    public Map<Address, String> getKnownPublicKeysByPublisher() {
         return publicKeys;
     }
 
