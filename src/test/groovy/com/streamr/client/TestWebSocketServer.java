@@ -17,14 +17,20 @@ import org.slf4j.LoggerFactory;
 
 import java.io.IOException;
 import java.net.InetSocketAddress;
-import java.util.*;
+import java.net.ServerSocket;
+import java.util.Collections;
+import java.util.Date;
+import java.util.LinkedList;
+import java.util.List;
+import java.util.Map;
+import java.util.concurrent.atomic.AtomicInteger;
 
 public class TestWebSocketServer extends WebSocketServer {
     private static final Logger log = LoggerFactory.getLogger(TestWebSocketServer.class);
     private final MessageCreationUtil msgCreationUtil = new MessageCreationUtil(new Address("publisherId"), null);
-    private final LinkedList<ReceivedControlMessage> receivedControlMessages = new LinkedList<>();
+    private final List<ReceivedControlMessage> receivedControlMessages = Collections.synchronizedList(new LinkedList<>());
     private final String wsUrl;
-    private int checkedControlMessages = 0;
+    private final AtomicInteger checkedControlMessages = new AtomicInteger(0);
 
     public TestWebSocketServer(String host, int port) {
         super(new InetSocketAddress(host, port));
@@ -104,37 +110,48 @@ public class TestWebSocketServer extends WebSocketServer {
     public void stop() throws IOException, InterruptedException {
         log.info("stop");
         super.stop();
+        while (!isAvailable(getPort())) {
+            Thread.sleep(5);
+        }
+    }
+
+    private boolean isAvailable(int port) {
+        try (ServerSocket ignored = new ServerSocket(port)) {
+            return true;
+        } catch (IOException e) {
+            return false;
+        }
     }
 
     public void clear() {
         receivedControlMessages.clear();
-        checkedControlMessages = 0;
+        checkedControlMessages.set(0);
     }
 
     public void expect(ControlMessage expected) {
-        if (receivedControlMessages.size() == checkedControlMessages) {
+        if (receivedControlMessages.size() == checkedControlMessages.get()) {
             try {
                 Thread.sleep(100); // give time to the client to send the expected request
             } catch (InterruptedException e) {
                 e.printStackTrace();
             }
         }
-        if (receivedControlMessages.size() == checkedControlMessages) {
+        if (receivedControlMessages.size() == checkedControlMessages.get()) {
             throw new AssertionFailedError("Expected message was not received at all: " + expected.toJson());
         }
 
         // Get first unchecked message
-        ControlMessage received = receivedControlMessages.get(checkedControlMessages).getMessage();
+        ControlMessage received = receivedControlMessages.get(checkedControlMessages.get()).getMessage();
 
         if (received == null || !received.equals(expected)) {
             throw new AssertionFailedError("\nExpected: "+expected.toJson()+"\nReceived: "+received.toJson());
         } else {
-            checkedControlMessages++;
+            checkedControlMessages.getAndIncrement();
         }
     }
 
     public void noOtherMessagesReceived() {
-        if (receivedControlMessages.size() > checkedControlMessages) {
+        if (receivedControlMessages.size() > checkedControlMessages.get()) {
             StringBuilder sb = new StringBuilder("Unexpected received messages:");
 
             for (ReceivedControlMessage msg: receivedControlMessages) {
