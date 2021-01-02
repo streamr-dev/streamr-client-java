@@ -34,32 +34,32 @@ public class EthereumAuthenticationMethod extends AuthenticationMethod {
         return ethereumPrivateKey;
     }
 
-    @Override
-    protected LoginResponse login(String restApiUrl) throws IOException {
-        Challenge challenge = getChallenge(restApiUrl);
-        String signature = signChallenge(challenge.challenge);
-        ChallengeResponse response = new ChallengeResponse(challenge, signature, address);
-        Response resp = null;
-        ResponseBody body = null;
-        BufferedSource source = null;
-        try {
-            resp = post(restApiUrl + "/login/response", challengeResponseAdapter.toJson(response));
-            body = resp.body();
-            source = body.source();
-            LoginResponse result = parse(source);
-            return result;
-        } finally {
-            if (source != null) {
-                source.close();
-            }
-            if (body != null) {
-                body.close();
-            }
-            if (resp != null) {
-                resp.close();
-            }
-        }
+  @Override
+  protected LoginResponse login(String restApiUrl) throws IOException {
+    Challenge challenge = getChallenge(restApiUrl);
+    String signature = signChallenge(challenge.challenge);
+    ChallengeResponse response = new ChallengeResponse(challenge, signature, address);
+    Response resp = null;
+    ResponseBody body = null;
+    BufferedSource source = null;
+    try {
+      resp = post(restApiUrl + "/login/response", challengeResponseAdapter.toJson(response));
+      body = resp.body();
+      source = body.source();
+      LoginResponse result = parse(source);
+      return result;
+    } finally {
+      if (source != null) {
+        source.close();
+      }
+      if (body != null) {
+        body.close();
+      }
+      if (resp != null) {
+        resp.close();
+      }
     }
+  }
 
     public Challenge getChallenge(String restApiUrl) throws IOException {
         Response response = null;
@@ -84,33 +84,33 @@ public class EthereumAuthenticationMethod extends AuthenticationMethod {
         }
     }
 
-    public String getAddress() {
-        return address;
-    }
+  public String getAddress() {
+    return address;
+  }
 
     public ECKeyPair getAccount() {
         return account;
     }
 
-    private String signChallenge(String challengeToSign){
-        return SigningUtil.sign(challengeToSign, account);
-    }
+  private String signChallenge(String challengeToSign) {
+    return SigningUtil.sign(challengeToSign, account);
+  }
 
-    static class Challenge {
-        String id;
-        String challenge;
-        Date expires;
-    }
+  static class Challenge {
+    String id;
+    String challenge;
+    Date expires;
+  }
 
-    static class ChallengeResponse {
-        Challenge challenge;
-        String signature;
-        String address;
+  static class ChallengeResponse {
+    Challenge challenge;
+    String signature;
+    String address;
 
-        public ChallengeResponse(Challenge challenge, String signature, String address) {
-            this.challenge = challenge;
-            this.signature = signature;
-            this.address = address;
-        }
+    public ChallengeResponse(Challenge challenge, String signature, String address) {
+      this.challenge = challenge;
+      this.signature = signature;
+      this.address = address;
     }
+  }
 }
