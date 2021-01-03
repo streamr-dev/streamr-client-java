@@ -63,8 +63,16 @@ public class DataUnion {
         return waitForDeployment(0,0);
     }
 
+    public void refreshRevenue() throws Exception {
+        sidechain.refreshRevenue().send();
+    }
+
     public void sendTokensToBridge() throws Exception {
         mainnet.sendTokensToBridge().send();
+    }
+
+    public void setNewMemberEth(BigInteger amountWei) throws Exception {
+        sidechain.setNewMemberEth(new Uint256(amountWei)).send();
     }
 
     public BigInteger waitForEarningsChange(final BigInteger initialBalance, long pollInterval, long timeout) throws Exception {
