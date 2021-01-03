@@ -8,7 +8,7 @@ gradle := gradlew --console plain --info --stacktrace
 
 .PHONY: build
 build:
-	$(gradle) --exclude-task test --exclude-task integrationTest build
+	$(gradle) --exclude-task signArchives --exclude-task test --exclude-task integrationTest build
 
 .PHONY: test-unit
 test-unit:
