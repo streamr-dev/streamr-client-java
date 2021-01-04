@@ -46,36 +46,31 @@ repositories {
 }
 
 dependencies {
-	compile group: 'org.slf4j', name: 'slf4j-api', version: '1.7.30'
-	compile group: 'com.squareup.okhttp3', name: 'okhttp', version: '3.10.0'
-	compile group: 'com.squareup.moshi', name: 'moshi', version: '1.6.0'
-	compile group: 'com.squareup.moshi', name: 'moshi-adapters', version: '1.6.0'
-	compile group: 'com.squareup.okio', name: 'okio', version: '2.2.0'
+	compile 'org.slf4j:slf4j-api:1.7.30'
+	compile 'com.squareup.okhttp3:okhttp:4.9.0'
+	compile 'com.squareup.moshi:moshi:1.11.0'
+	compile 'com.squareup.moshi:moshi-adapters:1.11.0'
+	compile 'com.squareup.okio:okio:2.9.0'
 	compile 'commons-codec:commons-codec:1.6'
-	compile 'commons-lang:commons-lang:2.6'
 	compile 'org.apache.commons:commons-lang3:3.1'
-	compile 'cglib:cglib:3.2.10'
-	compile 'org.objenesis:objenesis:3.0.1'
 	compile 'org.ethereum:ethereumj-core:1.11.0-RELEASE'
 	compile 'org.java-websocket:Java-WebSocket:1.5.1'
-	compile 'org.cache2k:cache2k-api:1.2.1.Final'
-	compile 'org.cache2k:cache2k-core:1.2.1.Final'
+	compile 'org.cache2k:cache2k-api:1.6.0.Final'
+	compile 'org.cache2k:cache2k-core:1.6.0.Final'
 	compile 'org.web3j:core:5.0.0'
 	compile 'org.web3j:codegen:5.0.0'
 
-	// Same dependencies for unit and integration tests
-	def testDependencies = [
-			// to get logging in tests, plug in log4j as a logger implementation
-			[group: 'org.apache.logging.log4j', name: 'log4j-api', version: '2.13.3'],
-			[group: 'org.apache.logging.log4j', name: 'log4j-core', version: '2.13.3'],
-			[group: 'org.apache.logging.log4j', name: 'log4j-slf4j-impl', version: '2.13.3'],
+	testCompile 'org.apache.logging.log4j:log4j-api:2.14.0'
+	testCompile 'org.apache.logging.log4j:log4j-core:2.14.0'
+	testCompile 'org.apache.logging.log4j:log4j-slf4j-impl:2.14.0'
+	testCompile 'org.spockframework:spock-core:1.1-groovy-2.4'
+	testCompile 'cglib:cglib-nodep:3.2.12'
+	testCompile 'org.objenesis:objenesis:3.1'
+}
 
-			[group: 'org.spockframework', name: 'spock-core', version: '1.1-groovy-2.4']
-	]
-	testDependencies.each {
-		testCompile it
-		integrationTestCompile it
-	}
+configurations {
+	integrationTestCompile.extendsFrom testCompile
+	integrationTestRuntime.extendsFrom testRuntime
 }
 
 jar {

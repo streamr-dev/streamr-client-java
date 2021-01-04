@@ -1,6 +1,5 @@
 package com.streamr.client
 
-import com.streamr.client.authentication.ApiKeyAuthenticationMethod
 import com.streamr.client.authentication.EthereumAuthenticationMethod
 import com.streamr.client.dataunion.DataUnionClient
 import com.streamr.client.options.EncryptionOptions
@@ -40,14 +39,6 @@ class StreamrIntegrationSpecification extends Specification {
 
     protected static StreamrClient createClientWithPrivateKey(String privateKey = null) {
         return new StreamrClient(createOptionsWithPrivateKey(privateKey))
-    }
-
-    protected static StreamrClient createClientWithApiKey(String apiKey = null) {
-        return new StreamrClient(createOptionsWithApiKey(apiKey))
-    }
-
-    protected static StreamrClientOptions createOptionsWithApiKey(String apiKey = null) {
-        return new StreamrClientOptions(new ApiKeyAuthenticationMethod(apiKey), SigningOptions.getDefault(), EncryptionOptions.getDefault(), DEFAULT_WEBSOCKET_URL, DEFAULT_REST_URL)
     }
 
     protected static StreamrClientOptions createOptionsWithPrivateKey(String privateKey = null) {
