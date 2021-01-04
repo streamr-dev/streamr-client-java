@@ -59,6 +59,11 @@ dependencies {
 	compile 'org.cache2k:cache2k-core:1.6.0.Final'
 	compile 'org.web3j:core:5.0.0'
 	compile 'org.web3j:codegen:5.0.0'
+	compile 'com.madgag.spongycastle:core:1.58.0.0' // DO NOT USE! no recent updates
+	compile 'com.madgag.spongycastle:prov:1.58.0.0' // DO NOT USE! no recent updates
+	compile 'com.googlecode.json-simple:json-simple:1.1.1' // DO NOT USE! for building DU2
+	compile 'org.jetbrains:annotations:17.0.0'
+	compile 'com.google.code.findbugs:jsr305:3.0.2'
 
 	testCompile 'org.apache.logging.log4j:log4j-api:2.14.0'
 	testCompile 'org.apache.logging.log4j:log4j-core:2.14.0'
