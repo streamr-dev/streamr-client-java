@@ -42,7 +42,6 @@ public abstract class StreamrRESTClient extends AbstractStreamrClient {
 
     public StreamrRESTClient(StreamrClientOptions options) {
         super(options);
-        // publisher = new Publisher(this);
     }
 
     /*
