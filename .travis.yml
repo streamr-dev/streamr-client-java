@@ -8,7 +8,7 @@ branches:
   - master
   - "/^v\\d+\\.\\d+(\\.\\d+)?(-\\S*)?$/"
 install:
-  - ./gradlew assemble -x signArchives
+  - ./gradlew --console plain build --exclude-task test --exclude-task integrationTest build
 jobs:
   include:
   - stage: Tests
