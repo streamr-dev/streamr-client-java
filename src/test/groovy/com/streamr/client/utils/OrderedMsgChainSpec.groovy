@@ -211,7 +211,7 @@ class OrderedMsgChainSpec extends StreamrSpecification {
     }
 
     void "throws if the queue is full if skipGapsOnFullQueue is false"() {
-        final int received = 0;
+        int received = 0;
         OrderedMsgChain util = new OrderedMsgChain(publisherId, "msgChainId", new Consumer<StreamMessage>() {
             @Override
             void accept(StreamMessage streamMessage) {
