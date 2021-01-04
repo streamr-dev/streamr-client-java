@@ -7,6 +7,13 @@ branches:
   only:
   - master
   - "/^v\\d+\\.\\d+(\\.\\d+)?(-\\S*)?$/"
+before_cache:
+  - rm -f  $HOME/.gradle/caches/modules-2/modules-2.lock
+  - rm -fr $HOME/.gradle/caches/*/plugin-resolution/
+cache:
+  directories:
+    - $HOME/.gradle/caches/
+    - $HOME/.gradle/wrapper/
 install:
   - ./gradlew --console plain build --exclude-task test --exclude-task integrationTest build
 jobs:
@@ -31,6 +38,7 @@ jobs:
     name: Source formatting
     script:
       - ./gradlew --console plain --info spotlessCheck
+      - ./gradlew --console plain spotbugsMain
 #  - stage: Tests
 #    name: Cross-client tests
 #    script:
