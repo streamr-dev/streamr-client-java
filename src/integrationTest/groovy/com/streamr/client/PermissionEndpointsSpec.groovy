@@ -1,6 +1,5 @@
 package com.streamr.client
 
-
 import com.streamr.client.rest.Permission
 import com.streamr.client.rest.Stream
 

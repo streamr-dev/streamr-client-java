@@ -4,11 +4,10 @@ import com.streamr.client.protocol.StreamrSpecification
 import com.streamr.client.protocol.message_layer.MessageID
 import com.streamr.client.protocol.message_layer.MessageRef
 import com.streamr.client.protocol.message_layer.StreamMessage
-import org.apache.commons.codec.binary.Hex
-import org.ethereum.crypto.ECKey
+import org.web3j.crypto.ECKeyPair
 
 class SigningUtilSpec extends StreamrSpecification {
-    ECKey account
+    ECKeyPair account
     Address address
     SigningUtil signingUtil
     MessageID msgId
@@ -16,9 +15,9 @@ class SigningUtilSpec extends StreamrSpecification {
     void setup() {
         // The EthereumAuthenticationMethod accepts a private key with or without the '0x' prefix. It is removed if present to work with ECKey.fromPrivate.
         // Since we are testing an internal component (SigningUtil), the private key is without prefix.
-        String withoutPrefix = "23bead9b499af21c4c16e4511b3b6b08c3e22e76e0591f5ab5ba8d4c3a5b1820"
-        account = ECKey.fromPrivate(new BigInteger(withoutPrefix, 16))
-        address = new Address("0x" + Hex.encodeHexString(account.getAddress()))
+        BigInteger privateKey = new BigInteger("23bead9b499af21c4c16e4511b3b6b08c3e22e76e0591f5ab5ba8d4c3a5b1820", 16)
+        account = ECKeyPair.create(privateKey)
+        address = new Address(KeyUtil.toHex(account.getPublicKey()))
         assert address.toString() == "0xa5374e3C19f15E1847881979Dd0C6C9ffe846BD5".toLowerCase()
 
         signingUtil = new SigningUtil(account)

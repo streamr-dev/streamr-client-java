@@ -1,9 +1,7 @@
 package com.streamr.client.authentication;
 
 /**
- * Holds credentials for getting new sessionTokens, and holds the current sessionToken.
- * Currently only supports the API key. Support for Ethereum-based authentication needs to
- * be added later.
+ * Holds Ethereum authentication method for getting new sessionTokens, and holds the current sessionToken.
  */
 public class Session {
 

@@ -1,11 +1,22 @@
 package com.streamr.client
 
-
 import com.streamr.client.authentication.AuthenticationMethod
 import com.streamr.client.authentication.EthereumAuthenticationMethod
-import com.streamr.client.options.*
+import com.streamr.client.options.ResendOption
+import com.streamr.client.options.ResendLastOption
+import com.streamr.client.options.SigningOptions
+import com.streamr.client.options.StreamrClientOptions
+import com.streamr.client.options.EncryptionOptions
 import com.streamr.client.protocol.StreamrSpecification
-import com.streamr.client.protocol.control_layer.*
+import com.streamr.client.protocol.control_layer.BroadcastMessage
+import com.streamr.client.protocol.control_layer.ErrorResponse
+import com.streamr.client.protocol.control_layer.PublishRequest
+import com.streamr.client.protocol.control_layer.ResendLastRequest
+import com.streamr.client.protocol.control_layer.ResendRangeRequest
+import com.streamr.client.protocol.control_layer.ResendResponseResent
+import com.streamr.client.protocol.control_layer.SubscribeRequest
+import com.streamr.client.protocol.control_layer.SubscribeResponse
+import com.streamr.client.protocol.control_layer.UnicastMessage
 import com.streamr.client.protocol.message_layer.MessageID
 import com.streamr.client.protocol.message_layer.MessageRef
 import com.streamr.client.protocol.message_layer.StreamMessage
@@ -15,17 +26,18 @@ import com.streamr.client.utils.EncryptionUtil
 import com.streamr.client.utils.GroupKey
 import com.streamr.client.utils.InMemoryGroupKeyStore
 import com.streamr.client.utils.KeyExchangeUtil
+import spock.lang.Shared
 import spock.util.concurrent.PollingConditions
 
 class StreamrClientSpec extends StreamrSpecification {
-
-    private static TestWebSocketServer server = new TestWebSocketServer("localhost", 6000)
+    @Shared
+    private TestWebSocketServer server = new TestWebSocketServer("localhost", 6000)
+    @Shared
+    private Stream stream
 
     TestingStreamrClient client
     int gapFillTimeout = 500
     int retryResendAfter = 500
-
-    static Stream stream
 
     void setupSpec() {
         server.start()
@@ -263,15 +275,12 @@ class StreamrClientSpec extends StreamrSpecification {
             void run() {
                 server.stop()
                 server = new TestWebSocketServer("localhost", 6000)
-                sleep(2000)
                 server.start()
-                sleep(2000)
             }
         }
 
         when:
         client.publish(stream, ["test": 1])
-        Thread.sleep(200)
         client.publish(stream, ["test": 2])
 
         then:
@@ -283,11 +292,8 @@ class StreamrClientSpec extends StreamrSpecification {
         serverRestart.start()
         Thread.sleep(200)
         client.publish(stream, ["test": 3])
-        Thread.sleep(200)
         client.publish(stream, ["test": 4])
-        Thread.sleep(200)
         client.publish(stream, ["test": 5])
-        Thread.sleep(200)
         client.publish(stream, ["test": 6])
 
         then:
@@ -328,6 +334,7 @@ class StreamrClientSpec extends StreamrSpecification {
         client.publish(stream, ["test": 2])
         client.publish(stream, ["test": 3])
         serverRestart.start()
+        sleep(2000)
         threads.each { it.start() }
 
         then:
@@ -338,6 +345,13 @@ class StreamrClientSpec extends StreamrSpecification {
     }
 
     void "subscribed client reconnects if server is temporarily down"() {
+        Thread serverRestart = new Thread() {
+            void run() {
+                server.stop()
+                server = new TestWebSocketServer("localhost", 6000)
+                server.start()
+            }
+        }
         subscribeClient()
 
         when:
@@ -349,11 +363,8 @@ class StreamrClientSpec extends StreamrSpecification {
         }
 
         when:
-        server.stop()
-        server = new TestWebSocketServer("localhost", 6000)
-        sleep(4000)
-        server.start()
-        sleep(10000)
+        serverRestart.start()
+        sleep(2000)
 
         then:
         // Client should have resubscribed to its key exchange stream and the actual stream
@@ -366,7 +377,6 @@ class StreamrClientSpec extends StreamrSpecification {
 
         then:
         new PollingConditions().eventually {
-            println "Checking received messages: ${client.getReceivedStreamMessages().size()}"
             client.getReceivedStreamMessages().size() == 2
         }
     }
