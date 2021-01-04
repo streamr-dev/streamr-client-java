@@ -35,6 +35,7 @@ jobs:
     - $TRAVIS_BUILD_DIR/streamr-docker-dev/streamr-docker-dev/bin.sh wait
     - ./gradlew --console plain --info --stacktrace integrationTest
   - stage: Tests
+    if: tag IS NOT present
     name: Source formatting
     script:
     - ./gradlew --console plain --info spotlessCheck
