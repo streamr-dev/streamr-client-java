@@ -4,35 +4,35 @@ import com.squareup.moshi.JsonAdapter;
 import com.streamr.client.utils.HttpUtils;
 import com.streamr.client.utils.KeyUtil;
 import com.streamr.client.utils.SigningUtil;
+import java.io.IOException;
+import java.math.BigInteger;
+import java.util.Date;
 import okhttp3.Response;
 import okhttp3.ResponseBody;
 import okio.BufferedSource;
 import org.web3j.crypto.ECKeyPair;
 
-import java.io.IOException;
-import java.math.BigInteger;
-import java.util.Date;
-
 public class EthereumAuthenticationMethod extends AuthenticationMethod {
-    private final ECKeyPair account;
-    // address is prefixed with "0x"
-    private final String address;
-    private JsonAdapter<Challenge> challengeAdapter = HttpUtils.MOSHI.adapter(Challenge.class);
-    private JsonAdapter<ChallengeResponse> challengeResponseAdapter = HttpUtils.MOSHI.adapter(ChallengeResponse.class);
+  private final ECKeyPair account;
+  // address is prefixed with "0x"
+  private final String address;
+  private JsonAdapter<Challenge> challengeAdapter = HttpUtils.MOSHI.adapter(Challenge.class);
+  private JsonAdapter<ChallengeResponse> challengeResponseAdapter =
+      HttpUtils.MOSHI.adapter(ChallengeResponse.class);
 
-    public EthereumAuthenticationMethod(String ethereumPrivateKey) {
-        super();
-        String withoutPrefix = privateKeyWithoutPrefix(ethereumPrivateKey);
-        this.account = ECKeyPair.create(new BigInteger(withoutPrefix, 16));
-        this.address = KeyUtil.toHex(this.account.getPublicKey());
-    }
+  public EthereumAuthenticationMethod(String ethereumPrivateKey) {
+    super();
+    String withoutPrefix = privateKeyWithoutPrefix(ethereumPrivateKey);
+    this.account = ECKeyPair.create(new BigInteger(withoutPrefix, 16));
+    this.address = KeyUtil.toHex(this.account.getPublicKey());
+  }
 
-    private String privateKeyWithoutPrefix(String ethereumPrivateKey) {
-        if (ethereumPrivateKey.startsWith("0x")) {
-            return ethereumPrivateKey.substring(2);
-        }
-        return ethereumPrivateKey;
+  private String privateKeyWithoutPrefix(String ethereumPrivateKey) {
+    if (ethereumPrivateKey.startsWith("0x")) {
+      return ethereumPrivateKey.substring(2);
     }
+    return ethereumPrivateKey;
+  }
 
   @Override
   protected LoginResponse login(String restApiUrl) throws IOException {
@@ -61,36 +61,36 @@ public class EthereumAuthenticationMethod extends AuthenticationMethod {
     }
   }
 
-    public Challenge getChallenge(String restApiUrl) throws IOException {
-        Response response = null;
-        ResponseBody body = null;
-        BufferedSource source = null;
-        try {
-            response = post(restApiUrl + "/login/challenge/"+address, "");
-            body = response.body();
-            source = body.source();
-            Challenge result = challengeAdapter.fromJson(source);
-            return result;
-        } finally {
-            if (source != null) {
-                source.close();
-            }
-            if (body != null) {
-                body.close();
-            }
-            if (response != null) {
-                response.close();
-            }
-        }
+  public Challenge getChallenge(String restApiUrl) throws IOException {
+    Response response = null;
+    ResponseBody body = null;
+    BufferedSource source = null;
+    try {
+      response = post(restApiUrl + "/login/challenge/" + address, "");
+      body = response.body();
+      source = body.source();
+      Challenge result = challengeAdapter.fromJson(source);
+      return result;
+    } finally {
+      if (source != null) {
+        source.close();
+      }
+      if (body != null) {
+        body.close();
+      }
+      if (response != null) {
+        response.close();
+      }
     }
+  }
 
   public String getAddress() {
     return address;
   }
 
-    public ECKeyPair getAccount() {
-        return account;
-    }
+  public ECKeyPair getAccount() {
+    return account;
+  }
 
   private String signChallenge(String challengeToSign) {
     return SigningUtil.sign(challengeToSign, account);
