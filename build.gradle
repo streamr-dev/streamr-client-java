@@ -152,7 +152,6 @@ dependencies {
 	testImplementation 'net.bytebuddy:byte-buddy:1.9.16'
 	testImplementation 'org.objenesis:objenesis:3.1'
 	// End Spock
-	implementation('com.google.googlejavaformat:google-java-format:1.9')
 	testImplementation('org.junit.jupiter:junit-jupiter-api:5.7.0')
 	testImplementation('org.junit.jupiter:junit-jupiter-params:5.7.0')
 	testImplementation('org.junit.platform:junit-platform-commons:1.7.0')
