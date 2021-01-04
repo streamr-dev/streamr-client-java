@@ -1,7 +1,5 @@
-package com.streamr.client.protocol
+package com.streamr.client.protocol.control_layer
 
-import com.streamr.client.protocol.control_layer.ControlMessage
-import com.streamr.client.protocol.control_layer.ResendResponseResent
 import spock.lang.Specification
 
 class ResendResponseResentAdapterSpec extends Specification {
