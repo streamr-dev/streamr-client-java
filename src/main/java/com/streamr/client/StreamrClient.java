@@ -483,8 +483,8 @@ public class StreamrClient extends StreamrRESTClient {
      * Subscribe
      */
     public Subscription subscribe(Stream stream, MessageHandler handler) {
-        Integer nbPartitions = stream.getPartitions();
-        if (nbPartitions != null && nbPartitions > 1) {
+        final int partitions = stream.getPartitions();
+        if (partitions > 1) {
             throw new PartitionNotSpecifiedException(stream.getId(), stream.getPartitions());
         }
         return subscribe(stream, 0, handler, null, false);
