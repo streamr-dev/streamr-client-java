@@ -8,7 +8,7 @@ import com.streamr.client.protocol.message_layer.GroupKeyRequest
 import com.streamr.client.protocol.message_layer.MessageID
 import com.streamr.client.protocol.message_layer.StreamMessage
 import com.streamr.client.rest.Stream
-import org.ethereum.crypto.ECKey
+import org.web3j.crypto.ECKeyPair
 
 class StreamMessageValidatorSpec extends StreamrSpecification {
     StreamMessageValidator validator
@@ -16,8 +16,8 @@ class StreamMessageValidatorSpec extends StreamrSpecification {
     final GroupKey groupKey = GroupKey.generate()
     final EncryptionUtil encryptionUtil = new EncryptionUtil()
 
-    final MessageCreationUtil publisherMsgCreationUtil = new MessageCreationUtil(publisher, new SigningUtil(ECKey.fromPrivate(new BigInteger(publisherPrivateKey, 16))))
-    final MessageCreationUtil subscriberMsgCreationUtil = new MessageCreationUtil(subscriber, new SigningUtil(ECKey.fromPrivate(new BigInteger(subscriberPrivateKey, 16))))
+    final MessageCreationUtil publisherMsgCreationUtil = new MessageCreationUtil(publisher, new SigningUtil(ECKeyPair.create(new BigInteger(publisherPrivateKey, 16))))
+    final MessageCreationUtil subscriberMsgCreationUtil = new MessageCreationUtil(subscriber, new SigningUtil(ECKeyPair.create(new BigInteger(subscriberPrivateKey, 16))))
 
     StreamMessage msgSigned
     StreamMessage groupKeyRequest

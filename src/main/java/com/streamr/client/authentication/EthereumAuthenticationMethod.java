@@ -2,29 +2,36 @@ package com.streamr.client.authentication;
 
 import com.squareup.moshi.JsonAdapter;
 import com.streamr.client.utils.HttpUtils;
+import com.streamr.client.utils.KeyUtil;
+import com.streamr.client.utils.SigningUtil;
+import okhttp3.Response;
+import okhttp3.ResponseBody;
+import okio.BufferedSource;
+import org.web3j.crypto.ECKeyPair;
 
 import java.io.IOException;
 import java.math.BigInteger;
 import java.util.Date;
 
-import com.streamr.client.utils.SigningUtil;
-import okhttp3.Response;
-import org.apache.commons.codec.DecoderException;
-import org.ethereum.crypto.ECKey;
-import org.apache.commons.codec.binary.Hex;
-
 public class EthereumAuthenticationMethod extends AuthenticationMethod {
-
-    private final ECKey account;
+    private final ECKeyPair account;
+    // address is prefixed with "0x"
     private final String address;
     private JsonAdapter<Challenge> challengeAdapter = HttpUtils.MOSHI.adapter(Challenge.class);
     private JsonAdapter<ChallengeResponse> challengeResponseAdapter = HttpUtils.MOSHI.adapter(ChallengeResponse.class);
 
     public EthereumAuthenticationMethod(String ethereumPrivateKey) {
         super();
-        String withoutPrefix = ethereumPrivateKey.startsWith("0x") ? ethereumPrivateKey.substring(2) : ethereumPrivateKey;
-        this.account = ECKey.fromPrivate(new BigInteger(withoutPrefix, 16));
-        this.address = "0x" + Hex.encodeHexString(this.account.getAddress());
+        String withoutPrefix = privateKeyWithoutPrefix(ethereumPrivateKey);
+        this.account = ECKeyPair.create(new BigInteger(withoutPrefix, 16));
+        this.address = KeyUtil.toHex(this.account.getPublicKey());
+    }
+
+    private String privateKeyWithoutPrefix(String ethereumPrivateKey) {
+        if (ethereumPrivateKey.startsWith("0x")) {
+            return ethereumPrivateKey.substring(2);
+        }
+        return ethereumPrivateKey;
     }
 
     @Override
@@ -53,14 +60,13 @@ public class EthereumAuthenticationMethod extends AuthenticationMethod {
                 response.close();
             }
         }
-
     }
 
     public String getAddress() {
         return address;
     }
 
-    public ECKey getAccount() {
+    public ECKeyPair getAccount() {
         return account;
     }
 
