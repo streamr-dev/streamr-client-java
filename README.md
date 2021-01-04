@@ -196,7 +196,7 @@ client.publish(stream, payload, groupKey); // Publish as usual
 Subscribers normally obtain the `GroupKey` via an automatic key exchange mechanism, which is triggered if the subscriber receives messages for which they don't have the key. As an alternative, keys can also be pre-shared manually and configured on the client like this:
 
 ```
-client.getKeyStore().add(Stream, new GroupKey(keyId, groupKeyHex));
+client.getKeyStore().add(streamId, new GroupKey(keyId, groupKeyHex));
 ```
 
 We also need a way to revoke subscribers whose subscription has expired. This is accomplished with a rekey, which means that a new group key is chosen by the publisher and sent to the remaining valid subscribers but not to the revoked ones. The rekey is a fairly intensive operation which should be used only when necessary.
