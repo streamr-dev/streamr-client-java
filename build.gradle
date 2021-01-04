@@ -225,12 +225,42 @@ publishing {
 		mavenJava(MavenPublication) {
 			artifactId = 'client'
 			from components.java
+			versionMapping {
+				usage('java-api') {
+					fromResolutionOf('runtimeClasspath')
+				}
+				usage('java-runtime') {
+					fromResolutionResult()
+				}
+			}
+			pom {
+				name = 'Streamr Java Client Library'
+				description = 'A Java library to interact with Streamr'
+				url = 'https://streamr.network'
+				licenses {
+					license {
+						name = 'The Apache License, Version 2.0'
+						url = 'http://www.apache.org/licenses/LICENSE-2.0.txt'
+					}
+				}
+				developers {
+					developer {
+						id = 'hpihkala'
+						name = 'Henri Pihkala'
+						email = 'henri.pihkala@streamr.com'
+					}
+				}
+				scm {
+					connection = 'scm:git:git://github.com/streamr-dev/streamr-client-java'
+					developerConnection = 'scm:git:ssh://github.com/streamr-dev/streamr-client-javat'
+					url = 'https://github.com/streamr-dev/streamr-client-java'
+				}
+			}
 		}
 	}
 	repositories {
 		maven {
-			name = 'local'
-			url = "file://${buildDir}/repo"
+			url "https://oss.sonatype.org/service/local/staging/deploy/maven2"
 		}
 	}
 }
