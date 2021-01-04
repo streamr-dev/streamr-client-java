@@ -38,7 +38,6 @@ jobs:
     name: Source formatting
     script:
       - ./gradlew --console plain --info spotlessCheck
-      - ./gradlew --console plain spotbugsMain
 #  - stage: Tests
 #    name: Cross-client tests
 #    script:
