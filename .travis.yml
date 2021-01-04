@@ -29,8 +29,8 @@ jobs:
     - "./gradlew integrationTest --stacktrace --info"
   - stage: Tests
     name: Source formatting
-      script:
-        - ./gradlew --console plain --info spotlessCheck
+    script:
+      - ./gradlew --console plain --info spotlessCheck
 #  - stage: Tests
 #    name: Cross-client tests
 #    script:
