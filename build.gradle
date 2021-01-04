@@ -219,7 +219,7 @@ integrationTest {
 
 // https://docs.gradle.org/current/userguide/publishing_setup.html
 group = 'com.streamr'
-version = '2.0.3-alpha.1'
+version = 'DU2-alpha.2'
 publishing {
 	publications {
 		mavenJava(MavenPublication) {
