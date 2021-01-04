@@ -46,10 +46,9 @@ public abstract class AuthenticationMethod {
             .build();
 
     // Execute the request and retrieve the response.
-    try (Response response = client.newCall(request).execute()) {
-      HttpUtils.assertSuccessful(response);
-      return response;
-    }
+    Response response = client.newCall(request).execute();
+    HttpUtils.assertSuccessful(response);
+    return response;
   }
 
   protected LoginResponse parse(BufferedSource json) throws IOException {

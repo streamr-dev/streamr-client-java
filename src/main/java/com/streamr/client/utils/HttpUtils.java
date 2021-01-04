@@ -31,7 +31,7 @@ public class HttpUtils {
 
   public static final MediaType jsonType = MediaType.parse("application/json");
 
-  /** Make sure {@code response} is closed after calling {@code assertSuccessful()}. */
+  /** You might have to close {@code response} if {@code assertSuccessful()} fails. */
   public static void assertSuccessful(Response response) throws IOException {
     if (!response.isSuccessful()) {
       String action = response.request().method() + " " + response.request().url().toString();
