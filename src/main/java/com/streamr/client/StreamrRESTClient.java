@@ -121,7 +121,7 @@ public abstract class StreamrRESTClient extends AbstractStreamrClient {
       HttpUrl url, String requestBody, JsonAdapter<T> adapter, boolean retryIfSessionExpired)
       throws IOException {
     Request.Builder builder =
-        new Request.Builder().url(url).post(RequestBody.create(HttpUtils.jsonType, requestBody));
+        new Request.Builder().url(url).post(RequestBody.create(requestBody, HttpUtils.jsonType));
     return executeWithRetry(builder, adapter, retryIfSessionExpired);
   }
 

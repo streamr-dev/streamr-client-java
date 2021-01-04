@@ -42,7 +42,7 @@ public abstract class AuthenticationMethod {
     Request request =
         new Request.Builder()
             .url(endpoint)
-            .post(RequestBody.create(HttpUtils.jsonType, requestBody))
+            .post(RequestBody.create(requestBody, HttpUtils.jsonType))
             .build();
 
     // Execute the request and retrieve the response.
