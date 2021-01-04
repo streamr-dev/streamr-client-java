@@ -364,3 +364,17 @@ client.unsubscribe(sub);
 ## Contributions
 
 This library is officially developed and maintained by the Streamr core dev team, but community contributions are very welcome!
+
+## Development
+
+Streamr Java Client uses [Gradle](https://gradle.org) as a build tool.
+We use [Google Java Style Guide](https://google.github.io/styleguide/javaguide.html) as our coding standard.
+[Spotless](https://github.com/diffplug/spotless/tree/main/plugin-gradle) is used to verify consistent source code formatting.
+This standard is enforced with Spotless Gradle plugin and Continuous Integration server.
+Old unit tests were written with [Spock 1.3](http://spockframework.org/spock/docs/1.3/all_in_one.html), but new tests
+should be written with [Junit 5](https://junit.org/junit5/docs/current/user-guide/) possibly in combination
+with [Web3j-unit](https://github.com/web3j/web3j-unit).
+Before sending a PR:
+- Run `gradlew test` to run unit tests
+- Run `gradlew integrationTest` to run integration tests
+- Once tests pass and you are happy with your changes run `gradlew spotlessApply` to apply formatting to your changes

@@ -8,3 +8,7 @@ logs/
 *.ipr
 *.iws
 /out/
+/.classpath
+/.project
+/bin
+/.settings
