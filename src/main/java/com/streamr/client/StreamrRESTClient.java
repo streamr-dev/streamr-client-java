@@ -73,26 +73,22 @@ public abstract class StreamrRESTClient extends AbstractStreamrClient {
     // Execute the request and retrieve the response.
     final Call call = client.newCall(request);
     final Response response = call.execute();
-    try {
-      HttpUtils.assertSuccessful(response);
+    HttpUtils.assertSuccessful(response);
 
-      // Deserialize HTTP response to concrete type.
-      if (adapter == null) {
-        return null;
-      } else {
-        final ResponseBody body = response.body();
-        BufferedSource source = null;
-        if (body != null) {
-          source = body.source();
-        }
-        T result = null;
-        if (source != null) {
-          result = adapter.fromJson(source);
-        }
-        return result;
+    // Deserialize HTTP response to concrete type.
+    if (adapter == null) {
+      return null;
+    } else {
+      final ResponseBody body = response.body();
+      BufferedSource source = null;
+      if (body != null) {
+        source = body.source();
       }
-    } finally {
-      response.close(); // closing response will also close source and body
+      T result = null;
+      if (source != null) {
+        result = adapter.fromJson(source);
+      }
+      return result;
     }
   }
 
