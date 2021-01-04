@@ -15,7 +15,7 @@ cache:
     - $HOME/.gradle/caches/
     - $HOME/.gradle/wrapper/
 install:
-  - ./gradlew --console plain --exclude-task test --exclude-task integrationTest build
+  - ./gradlew --console plain --exclude-task check build
 jobs:
   include:
   - stage: Tests
