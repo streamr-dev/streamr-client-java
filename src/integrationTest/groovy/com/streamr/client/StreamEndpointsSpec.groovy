@@ -122,6 +122,9 @@ class StreamEndpointsSpec extends StreamrIntegrationSpecification {
 
         then:
         thrown(AuthenticationException)
+
+        cleanup:
+        unauthenticatedClient.disconnect()
     }
 
     void "getStream() throws StreamNotFoundException for non-existent streams"() {
@@ -147,6 +150,9 @@ class StreamEndpointsSpec extends StreamrIntegrationSpecification {
 
         then:
         thrown(PermissionDeniedException)
+
+        cleanup:
+        unauthenticatedClient.disconnect()
     }
 
     void "getUserInfo()"() {

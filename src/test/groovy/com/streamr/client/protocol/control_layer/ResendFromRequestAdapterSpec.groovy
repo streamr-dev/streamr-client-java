@@ -1,7 +1,5 @@
-package com.streamr.client.protocol
+package com.streamr.client.protocol.control_layer
 
-import com.streamr.client.protocol.control_layer.ControlMessage
-import com.streamr.client.protocol.control_layer.ResendFromRequest
 import com.streamr.client.protocol.message_layer.MessageRef
 import spock.lang.Specification
 

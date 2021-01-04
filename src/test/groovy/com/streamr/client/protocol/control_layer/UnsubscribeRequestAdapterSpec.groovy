@@ -1,8 +1,5 @@
-package com.streamr.client.protocol
+package com.streamr.client.protocol.control_layer
 
-
-import com.streamr.client.protocol.control_layer.ControlMessage
-import com.streamr.client.protocol.control_layer.UnsubscribeRequest
 import spock.lang.Specification
 
 class UnsubscribeRequestAdapterSpec extends Specification {

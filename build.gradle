@@ -6,8 +6,6 @@ plugins {
 	id 'idea'
 	id 'eclipse'
 	id 'maven-publish'
-	id 'signing'
-	id 'de.marcphilipp.nexus-publish' version '0.4.0'
 	id 'com.jfrog.bintray' version '1.8.5'
 	id 'com.github.ben-manes.versions' version '0.36.0'
 	id 'com.diffplug.spotless' version '5.8.2'
@@ -154,7 +152,6 @@ dependencies {
 	testImplementation 'net.bytebuddy:byte-buddy:1.9.16'
 	testImplementation 'org.objenesis:objenesis:3.1'
 	// End Spock
-	implementation('com.google.googlejavaformat:google-java-format:1.9')
 	testImplementation('org.junit.jupiter:junit-jupiter-api:5.7.0')
 	testImplementation('org.junit.jupiter:junit-jupiter-params:5.7.0')
 	testImplementation('org.junit.platform:junit-platform-commons:1.7.0')
@@ -222,45 +219,79 @@ group = 'com.streamr'
 version = '2.0.3-alpha.1'
 publishing {
 	publications {
-		mavenJava(MavenPublication) {
+		streamrClient(MavenPublication) {
 			artifactId = 'client'
+			groupId project.group
+			version project.version
 			from components.java
+			versionMapping {
+				usage('java-api') {
+					fromResolutionOf('runtimeClasspath')
+				}
+				usage('java-runtime') {
+					fromResolutionResult()
+				}
+			}
+			pom {
+				name = 'Streamr Java Client Library'
+				description = 'A Java library to interact with Streamr Network'
+				url = 'https://streamr.network'
+				licenses {
+					license {
+						name = 'The Apache License, Version 2.0'
+						url = 'http://www.apache.org/licenses/LICENSE-2.0.txt'
+					}
+				}
+				developers {
+					developer {
+						id = 'hpihkala'
+						name = 'Henri Pihkala'
+						email = 'henri.pihkala@streamr.com'
+					}
+					developer {
+						id = 'kare'
+						name = 'Kare Nuorteva'
+						email = 'kare.nuorteva@streamr.com'
+					}
+				}
+				scm {
+					connection = 'scm:git:git://github.com/streamr-dev/streamr-client-java'
+					developerConnection = 'scm:git:ssh://github.com/streamr-dev/streamr-client-javat'
+					url = 'https://github.com/streamr-dev/streamr-client-java'
+				}
+			}
 		}
 	}
 	repositories {
 		maven {
-			name = 'local'
-			url = "file://${buildDir}/repo"
-		}
-	}
-}
-// https://docs.gradle.org/current/userguide/publishing_signing.html
-signing {
-	sign publishing.publications.mavenJava
-	def signingKey = new File("streamr-client.asc")
-	if (signingKey.exists()) {
-		useInMemoryPgpKeys(signingKey.getText('UTF-8'), System.getenv('GPG_PASSPHRASE'))
-	}
-}
-// https://github.com/marcphilipp/nexus-publish-plugin
-nexusPublishing {
-	repositories {
-		sonatype {
-			username = System.getenv('SONATYPE_USERNAME')
-			password = System.getenv('SONATYPE_PASSWORD')
+			url 'https://dl.bintray.com/streamr/maven'
 		}
 	}
 }
 // https://github.com/bintray/gradle-bintray-plugin
 bintray {
-	user = System.getenv('BINTRAY_USER')
-	key = System.getenv('BINTRAY_API_KEY')
+	user = project.hasProperty('bintrayUser') ? project.property('bintrayUser') : System.getenv('BINTRAY_USER')
+	key = project.hasProperty('bintrayApiKey') ? project.property('bintrayApiKey') : System.getenv('BINTRAY_API_KEY')
+	publications = ['streamrClient']
 	pkg {
-		repo = 'generic'
-		name = 'gradle-project'
-		userOrg = 'bintray_user'
+		repo = 'maven'
+		name = 'streamr-client-java'
+		userOrg = 'streamr'
+		desc = 'A Java library to interact with Streamr Network'
 		licenses = ['Apache-2.0']
+		websiteUrl = 'https://github.com/streamr-dev/streamr-client-java'
+		issueTrackerUrl = 'https://github.com/streamr-dev/streamr-client-java/issues'
 		vcsUrl = 'https://github.com/streamr-dev/streamr-client-java.git'
+		githubRepo = 'streamr-dev/streamr-client-java'
+		//githubReleaseNotesFile = 'README.md'
+		version {
+			name = project.version
+			vcsTag = "v${project.version}"
+			released = new Date()
+			gpg {
+				sign = true
+			}
+		}
 	}
 }
 // https://github.com/diffplug/spotless/tree/main/plugin-gradle
