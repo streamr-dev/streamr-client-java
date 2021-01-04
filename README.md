@@ -120,10 +120,9 @@ The next subsections will cover every parameter of the `StreamrClientOptions` co
 
 <a name="authentication"></a>
 ## Authentication
-To authenticate as a Streamr user, provide an `AuthenticationMethod` instance. We have two concrete classes that extend `AuthenticationMethod`:
+To authenticate as a Streamr user, provide an `AuthenticationMethod` instance. We have one concrete class that extend `AuthenticationMethod`:
 
 - `EthereumAuthenticationMethod(String ethereumPrivateKey)`
-- `ApiKeyAuthenticationMethod(String apiKey)` (deprecated and will be removed in the future)
 
 To authenticate with an Ethereum account, create an `EthereumAuthenticationMethod` instance and pass it to the `StreamrClient` constructor:
 
