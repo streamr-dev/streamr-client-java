@@ -8,7 +8,7 @@ plugins {
 	id 'maven-publish'
 	id 'signing'
 	id 'de.marcphilipp.nexus-publish' version '0.4.0'
-	id 'com.jfrog.bintray' version '1.8.5'
+//	id 'com.jfrog.bintray' version '1.8.5'
 	id 'com.github.ben-manes.versions' version '0.36.0'
 	id 'com.diffplug.spotless' version '5.8.2'
 	id 'ru.vyarus.quality' version '4.4.0'
@@ -237,10 +237,6 @@ publishing {
 // https://docs.gradle.org/current/userguide/publishing_signing.html
 signing {
 	sign publishing.publications.mavenJava
-	def signingKey = new File("streamr-client.asc")
-	if (signingKey.exists()) {
-		useInMemoryPgpKeys(signingKey.getText('UTF-8'), System.getenv('GPG_PASSPHRASE'))
-	}
 }
 // https://github.com/marcphilipp/nexus-publish-plugin
 nexusPublishing {
@@ -252,6 +248,7 @@ nexusPublishing {
 	}
 }
 // https://github.com/bintray/gradle-bintray-plugin
+/*
 bintray {
 	user = System.getenv('BINTRAY_USER')
 	key = System.getenv('BINTRAY_API_KEY')
@@ -263,6 +260,7 @@ bintray {
 		vcsUrl = 'https://github.com/streamr-dev/streamr-client-java.git'
 	}
 }
+*/
 // https://github.com/diffplug/spotless/tree/main/plugin-gradle
 // https://github.com/google/google-java-format
 // https://google.github.io/styleguide/javaguide.html
