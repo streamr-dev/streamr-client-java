@@ -36,7 +36,7 @@ public class TestingStreamrClient extends StreamrClient {
 
     @Override
     public UserInfo getUserInfo() {
-        return new UserInfo("name", "username", "id");
+        return new UserInfo("name", "username");
     }
 
     @Override

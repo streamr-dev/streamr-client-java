@@ -159,16 +159,6 @@ class StreamEndpointsSpec extends StreamrIntegrationSpecification {
         info.getUsername() == method.address
     }
 
-    void "getUserInfo() with api key"() {
-        StreamrClient apiKeyClient = createClientWithApiKey("tester1-api-key")
-        when:
-        UserInfo info = apiKeyClient.getUserInfo()
-
-        then:
-        info.getName() == "Tester One"
-        info.getUsername() == "tester1@streamr.com"
-    }
-
     void "getPublishers()"() {
         Stream proto = new Stream(generateResourceName(), "This stream was created from an integration test")
         Stream createdResult = client.createStream(proto)
@@ -210,22 +200,20 @@ class StreamEndpointsSpec extends StreamrIntegrationSpecification {
     }
 
     void "not same token used after logout()"() {
-        StreamrClient apiKeyClient = createClientWithApiKey("tester1-api-key")
         when:
-        apiKeyClient.getUserInfo() // fetches sessionToken1 and requests endpoint
-        String sessionToken1 = apiKeyClient.getSessionToken()
-        apiKeyClient.logout()
-        apiKeyClient.getUserInfo() // requests with sessionToken1, receives 401, fetches sessionToken2 and requests endpoint
-        String sessionToken2 = apiKeyClient.getSessionToken()
+        client.getUserInfo() // fetches sessionToken1 and requests endpoint
+        String sessionToken1 = client.getSessionToken()
+        client.logout()
+        client.getUserInfo() // requests with sessionToken1, receives 401, fetches sessionToken2 and requests endpoint
+        String sessionToken2 = client.getSessionToken()
         then:
         sessionToken1 != sessionToken2
     }
 
     void "throws if logout() when already logged out"() {
-        StreamrClient apiKeyClient = createClientWithApiKey("tester1-api-key")
         when:
-        apiKeyClient.logout()
-        apiKeyClient.logout() // does not retry with a new session token after receiving 401
+        client.logout()
+        client.logout() // does not retry with a new session token after receiving 401
         then:
         thrown(AuthenticationException)
     }
