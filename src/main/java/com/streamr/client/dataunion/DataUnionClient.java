@@ -216,7 +216,17 @@ public class DataUnionClient {
         return waitForTx(sidechain, txhash, sleeptime, timeout);
     }
 
+    public void setNewDUInitialEth(BigInteger amountWei) throws Exception {
+        factorySidechain().setNewDUInitialEth(new Uint256(amountWei)).send();
+    }
 
+    public void setNewDUOwnerInitialEth(BigInteger amountWei) throws Exception {
+        factorySidechain().setNewDUOwnerInitialEth(new Uint256(amountWei)).send();
+    }
+
+    public void setNewMemberInitialEth(BigInteger amountWei) throws Exception {
+        factorySidechain().setNewMemberInitialEth(new Uint256(amountWei)).send();
+    }
 
     /**
      * port an AMB message that has required # signatures.

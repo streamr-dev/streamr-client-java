@@ -1,13 +1,11 @@
-package com.streamr.client.protocol
+package com.streamr.client.protocol.control_layer
 
-import com.streamr.client.protocol.control_layer.BroadcastMessage
-import com.streamr.client.protocol.control_layer.ControlMessage
 import spock.lang.Specification
 
 import static com.streamr.client.protocol.StreamMessageExamples.InvalidSignature.helloWorld
 import static com.streamr.client.protocol.StreamMessageExamples.InvalidSignature.helloWorldSerialized32
 
-class BroadcastMessageAdapterSpec extends Specification {
+class UnicastMessageAdapterSpec extends Specification {
 
 	def "serialization and deserialization"(String serializedMessage, ControlMessage message) {
 		expect:
@@ -15,7 +13,8 @@ class BroadcastMessageAdapterSpec extends Specification {
 		message.toJson() == serializedMessage
 
 		where:
-		serializedMessage | message
-		"[2,0,\"requestId\",${helloWorldSerialized32}]" | new BroadcastMessage("requestId", helloWorld)
+		serializedMessage                               | message
+		"[2,1,\"requestId\",${helloWorldSerialized32}]" | new UnicastMessage("requestId", helloWorld)
 	}
+
 }

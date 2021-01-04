@@ -1,179 +1,353 @@
-def VERSION = '2.0.2'
+import org.gradle.api.tasks.testing.logging.TestExceptionFormat
 
-group 'com.streamr'
-version VERSION
-
-buildscript {
-	repositories {
-		mavenLocal()
-		jcenter()
-		maven {
-			url "https://plugins.gradle.org/m2/"
-		}
-	}
-	dependencies {
-		classpath "com.netflix.nebula:nebula-project-plugin:3.4.0"
-	}
-}
-
-apply plugin: 'java'
-apply plugin: 'groovy'
-apply plugin: 'nebula.facet'                    // Healthy defaults for a standard project
-apply plugin: 'idea'
-apply plugin: 'maven'
-apply plugin: 'maven-publish'
-apply plugin: 'signing'
-
-sourceCompatibility = 1.8
-targetCompatibility = 1.8
-
-facets {
-	integrationTest
-}
-
-sourceSets {
-	test {
-		groovy
-	}
+plugins {
+	id 'java-library'
+	id 'groovy-gradle-plugin'
+	id 'idea'
+	id 'eclipse'
+	id 'maven-publish'
+	id 'com.jfrog.bintray' version '1.8.5'
+	id 'com.github.ben-manes.versions' version '0.36.0'
+	id 'com.diffplug.spotless' version '5.8.2'
+	id 'ru.vyarus.quality' version '4.4.0'
 }
 
 repositories {
-	mavenCentral()
+	jcenter()
 	// Ethereum Repository
 	maven {
 		url "https://dl.bintray.com/ethereum/maven/"
 	}
+	gradlePluginPortal()
 }
 
-dependencies {
-	compile group: 'org.slf4j', name: 'slf4j-api', version: '1.7.30'
-	compile group: 'com.squareup.okhttp3', name: 'okhttp', version: '3.10.0'
-	compile group: 'com.squareup.moshi', name: 'moshi', version: '1.6.0'
-	compile group: 'com.squareup.moshi', name: 'moshi-adapters', version: '1.6.0'
-	compile group: 'com.squareup.okio', name: 'okio', version: '2.2.0'
-	compile 'commons-codec:commons-codec:1.6'
-	compile 'commons-lang:commons-lang:2.6'
-	compile 'org.apache.commons:commons-lang3:3.1'
-	compile 'cglib:cglib:3.2.10'
-	compile 'org.objenesis:objenesis:3.0.1'
-	compile 'org.ethereum:ethereumj-core:1.11.0-RELEASE'
-	compile "org.java-websocket:Java-WebSocket:1.4.1"
-	compile "org.cache2k:cache2k-api:1.2.1.Final"
-	compile "org.cache2k:cache2k-core:1.2.1.Final"
-	compile "org.web3j:core:5.0.0"
-	compile "org.web3j:codegen:5.0.0"
-
-	// Same dependencies for unit and integration tests
-	def testDependencies = [
-			// to get logging in tests, plug in log4j as a logger implementation
-			[group: 'org.apache.logging.log4j', name: 'log4j-api', version: '2.13.3'],
-			[group: 'org.apache.logging.log4j', name: 'log4j-core', version: '2.13.3'],
-			[group: 'org.apache.logging.log4j', name: 'log4j-slf4j-impl', version: '2.13.3'],
-
-			[group: 'org.spockframework', name: 'spock-core', version: '1.1-groovy-2.4']
+sourceSets {
+	main {
+		java {
+			srcDirs = ['src/main/java']
+		}
+	}
+	test {
+		groovy {
+			srcDirs = ['src/test/groovy']
+		}
+		java {
+			srcDirs = ['src/test/java']
+		}
+	}
+	integrationTest {
+		groovy {
+			srcDirs = ['src/integrationTest/groovy']
+		}
+		compileClasspath += sourceSets.main.output
+		runtimeClasspath += sourceSets.main.output
+	}
+}
+java {
+	sourceCompatibility(JavaVersion.VERSION_1_8)
+	targetCompatibility(JavaVersion.VERSION_1_8)
+	withJavadocJar()
+	withSourcesJar()
+}
+def commonJavaOptions = [
+		'-Xlint:auxiliaryclass',
+		'-Xlint:cast',
+		'-Xlint:classfile',
+		'-Xlint:deprecation',
+		'-Xlint:dep-ann',
+		'-Xlint:divzero',
+		'-Xlint:empty',
+		'-Xlint:fallthrough',
+		'-Xlint:finally',
+		'-Xlint:options',
+		'-Xlint:overloads',
+		'-Xlint:overrides',
+		'-Xlint:path',
+		'-Xlint:processing',
+		'-Xlint:rawtypes',
+		'-Xlint:-serial',
+		'-Xlint:static',
+		'-Xlint:try',
+		'-Xlint:unchecked',
+		'-Xlint:varargs',
+]
+compileJava {
+	options.encoding = 'UTF-8'
+	options.compilerArgs += [
+			//'-Werror',
 	]
-	testDependencies.each {
-		testCompile it
-		integrationTestCompile it
+	options.compilerArgs.addAll(commonJavaOptions)
+}
+compileTestJava {
+	options.encoding = 'UTF-8'
+	options.compilerArgs += [
+			'-Werror',
+	]
+	options.compilerArgs.addAll(commonJavaOptions)
+}
+javadoc {
+	options.encoding = 'UTF-8'
+	if (JavaVersion.current().isJava9Compatible()) {
+		options.addBooleanOption('html5', true)
 	}
 }
 
+def jarManifest = [
+		'Implementation-Title': "Streamr Java Client v${version}",
+		'Implementation-Version': version,
+]
 jar {
 	manifest {
-		attributes(
-				'Implementation-Version': version
-		)
+		attributes(jarManifest)
 	}
 }
-
-task sourcesJar(type: Jar, dependsOn: classes) {
-	classifier = 'sources'
-	from sourceSets.main.allSource
-}
-
-task javadocJar(type: Jar, dependsOn: javadoc) {
-	classifier = 'javadoc'
-	from javadoc.destinationDir
-}
-
-artifacts {
-	archives javadocJar, sourcesJar
-}
-
+// https://docs.gradle.org/current/userguide/working_with_files.html#sec:creating_uber_jar_example
 task fatJar(type: Jar) {
+	description = 'Creates a Jar file with all dependencies included.'
+	group = 'build'
+	archiveClassifier = 'fat'
+
 	manifest {
-		attributes(
-				'Implementation-Version': version
-		)
+		attributes(jarManifest)
 	}
-	from { configurations.compile.collect { it.isDirectory() ? it : zipTree(it) } }
-	with jar
+	from sourceSets.main.output
+	dependsOn configurations.compileClasspath
+	from {
+		configurations.compileClasspath.findAll { it.name.endsWith('jar') }.collect { zipTree(it) }
+	}
+}
+// https://docs.gradle.org/current/userguide/java_library_plugin.html
+dependencies {
+	implementation('org.slf4j:slf4j-api:1.7.30')
+	implementation('com.squareup.okhttp3:okhttp:4.9.0')
+	implementation('com.squareup.moshi:moshi:1.11.0')
+	implementation('com.squareup.moshi:moshi-adapters:1.11.0')
+	implementation('com.squareup.okio:okio:2.9.0')
+	implementation('commons-codec:commons-codec:1.15')
+	implementation('org.apache.commons:commons-lang3:3.1')
+	implementation('org.java-websocket:Java-WebSocket:1.5.1') {
+		exclude group: 'org.slf4j', module: 'slf4j-api'
+	}
+	implementation('org.cache2k:cache2k-api:1.6.0.Final')
+	implementation('org.cache2k:cache2k-core:1.6.0.Final')
+	implementation('org.web3j:core:5.0.0') {
+		exclude group: 'com.squareup.okhttp3', module: 'okhttp'
+		exclude group: 'org.java-websocket', module: 'Java-WebSocket'
+		exclude group: 'org.slf4j', module: 'slf4j-api'
+	}
+	implementation('org.web3j:codegen:5.0.0')
+	implementation('com.google.code.findbugs:jsr305:3.0.2')
+	implementation('org.jetbrains:annotations:17.0.0')
+	// Transitive dependencies leaked from other dependencies
+	implementation('com.madgag.spongycastle:core:1.58.0.0') // DO NOT USE! no recent updates
+	implementation('com.madgag.spongycastle:prov:1.58.0.0') // DO NOT USE! no recent updates
+	implementation('com.googlecode.json-simple:json-simple:1.1.1') // DO NOT USE! This should be a build time dep
+
+	// Test dependencies below
+	testRuntimeOnly('org.slf4j:slf4j-simple:1.7.30')
+	testImplementation('nl.jqno.equalsverifier:equalsverifier:3.5')
+	// Spock
+	testImplementation 'org.codehaus.groovy:groovy-all:2.5.14'
+	testImplementation 'org.spockframework:spock-core:1.3-groovy-2.5'
+	testImplementation 'net.bytebuddy:byte-buddy:1.9.16'
+	testImplementation 'org.objenesis:objenesis:3.1'
+	// End Spock
+	testImplementation('org.junit.jupiter:junit-jupiter-api:5.7.0')
+	testImplementation('org.junit.jupiter:junit-jupiter-params:5.7.0')
+	testImplementation('org.junit.platform:junit-platform-commons:1.7.0')
+	testRuntimeOnly('org.junit.platform:junit-platform-launcher:1.7.0')
+	testRuntimeOnly('org.junit.jupiter:junit-jupiter-engine:5.7.0')
+	testRuntimeOnly('org.junit.vintage:junit-vintage-engine:5.7.0')
+}
+// https://docs.gradle.org/current/userguide/resolution_strategy_tuning.html
+//configurations.all {
+//	resolutionStrategy {
+//		failOnVersionConflict()
+//	}
+//}
+// https://docs.gradle.org/current/userguide/java_testing.html#sec:configuring_java_integration_tests
+configurations {
+	integrationTestImplementation.extendsFrom testImplementation
+	integrationTestRuntimeOnly.extendsFrom testRuntimeOnly
+}
+task integrationTest(type: Test) {
+	description = 'Runs integration tests.'
+	group = 'verification'
+
+	testClassesDirs = sourceSets.integrationTest.output.classesDirs
+	classpath = sourceSets.integrationTest.runtimeClasspath
+	shouldRunAfter test
+}
+check.dependsOn integrationTest
+test {
+	useJUnitPlatform {
+		//includeTags 'fast', 'smoke & feature-a'
+		//excludeTags 'slow', 'ci'
+		//includeEngines 'junit-jupiter'
+		//excludeEngines 'junit-vintage'
+	}
+	testLogging {
+		events = [
+				'passed',
+				'failed',
+				'skipped',
+		]
+		showStandardStreams = true
+		exceptionFormat = TestExceptionFormat.FULL
+	}
+}
+integrationTest {
+	useJUnitPlatform {
+		//includeTags 'fast', 'smoke & feature-a'
+		//excludeTags 'slow', 'ci'
+		//includeEngines 'junit-jupiter'
+		//excludeEngines 'junit-vintage'
+	}
+	testLogging {
+		events = [
+				'passed',
+				'failed',
+				'skipped',
+		]
+		showStandardStreams = true
+		exceptionFormat = TestExceptionFormat.FULL
+	}
 }
 
-archivesBaseName='client'
-
-signing {
-	sign configurations.archives
-}
-
+// https://docs.gradle.org/current/userguide/publishing_setup.html
+group = 'com.streamr'
+version = '2.0.3-alpha.1'
 publishing {
 	publications {
-		maven(MavenPublication) {
-			groupId = 'com.streamr'
+		streamrClient(MavenPublication) {
 			artifactId = 'client'
-			version = VERSION
-
+			groupId project.group
+			version project.version
 			from components.java
-		}
-	}
-	repositories {
-		mavenLocal()
-	}
-}
-
-/*
-uploadArchives {
-	repositories {
-		mavenDeployer {
-			beforeDeployment { MavenDeployment deployment -> signing.signPom(deployment) }
-
-			repository(url: "https://oss.sonatype.org/service/local/staging/deploy/maven2/") {
-				authentication(userName: ossrhUsername, password: ossrhPassword)
-			}
-
-			snapshotRepository(url: "https://oss.sonatype.org/content/repositories/snapshots/") {
-				authentication(userName: ossrhUsername, password: ossrhPassword)
-			}
-
-			pom.project {
-				name 'Streamr Java Client Library'
-				packaging 'jar'
-				// optionally artifactId can be defined here
-				description 'A Java library to interact with Streamr'
-				url 'https://www.streamr.com/'
-
-				scm {
-					connection 'scm:git:git://github.com/streamr-dev/streamr-client-java'
-					developerConnection 'scm:git:ssh://github.com/streamr-dev/streamr-client-java'
-					url 'https://github.com/streamr-dev/streamr-client-java'
+			versionMapping {
+				usage('java-api') {
+					fromResolutionOf('runtimeClasspath')
 				}
-
+				usage('java-runtime') {
+					fromResolutionResult()
+				}
+			}
+			pom {
+				name = 'Streamr Java Client Library'
+				description = 'A Java library to interact with Streamr Network'
+				url = 'https://streamr.network'
 				licenses {
 					license {
-						name 'The Apache License, Version 2.0'
-						url 'http://www.apache.org/licenses/LICENSE-2.0.txt'
+						name = 'The Apache License, Version 2.0'
+						url = 'http://www.apache.org/licenses/LICENSE-2.0.txt'
 					}
 				}
-
 				developers {
 					developer {
-						id 'hpihkala'
-						name 'Henri Pihkala'
-						email 'henri.pihkala@streamr.com'
+						id = 'hpihkala'
+						name = 'Henri Pihkala'
+						email = 'henri.pihkala@streamr.com'
 					}
+					developer {
+						id = 'kare'
+						name = 'Kare Nuorteva'
+						email = 'kare.nuorteva@streamr.com'
+					}
+				}
+				scm {
+					connection = 'scm:git:git://github.com/streamr-dev/streamr-client-java'
+					developerConnection = 'scm:git:ssh://github.com/streamr-dev/streamr-client-javat'
+					url = 'https://github.com/streamr-dev/streamr-client-java'
 				}
 			}
 		}
 	}
+	repositories {
+		maven {
+			url 'https://dl.bintray.com/streamr/maven'
+		}
+	}
 }
-*/
+// https://github.com/bintray/gradle-bintray-plugin
+bintray {
+	user = project.hasProperty('bintrayUser') ? project.property('bintrayUser') : System.getenv('BINTRAY_USER')
+	key = project.hasProperty('bintrayApiKey') ? project.property('bintrayApiKey') : System.getenv('BINTRAY_API_KEY')
+	publications = ['streamrClient']
+	pkg {
+		repo = 'maven'
+		name = 'streamr-client-java'
+		userOrg = 'streamr'
+		desc = 'A Java library to interact with Streamr Network'
+		licenses = ['Apache-2.0']
+		websiteUrl = 'https://github.com/streamr-dev/streamr-client-java'
+		issueTrackerUrl = 'https://github.com/streamr-dev/streamr-client-java/issues'
+		vcsUrl = 'https://github.com/streamr-dev/streamr-client-java.git'
+		githubRepo = 'streamr-dev/streamr-client-java'
+		//githubReleaseNotesFile = 'README.md'
+		version {
+			name = project.version
+			vcsTag = "v${project.version}"
+			released = new Date()
+			gpg {
+				sign = true
+			}
+		}
+	}
+}
+// https://github.com/diffplug/spotless/tree/main/plugin-gradle
+// https://github.com/google/google-java-format
+// https://google.github.io/styleguide/javaguide.html
+spotless {
+	ratchetFrom 'origin/master'
+	format 'misc', {
+		target '**/*.gradle', '.gitignore'
+
+		indentWithTabs()
+		trimTrailingWhitespace()
+		endWithNewline()
+	}
+	java {
+		target rootProject.fileTree('.') {
+			include 'src/*/java/**/*.java'
+			include 'src/*/groovy/**/*.java'
+			exclude 'src/main/java/com/streamr/client/dataunion/contracts/**'
+		}
+		googleJavaFormat()
+	}
+}
+// https://xvik.github.io/gradle-quality-plugin/
+quality {
+	strict = false
+	exclude = [
+			'src/main/java/com/streamr/client/dataunion/contracts/**',
+	]
+	lintOptions = [
+			'deprecation',
+			'unchecked',
+			'auxiliaryclass',
+			'cast',
+			'classfile',
+			'deprecation',
+			'dep-ann',
+			'divzero',
+			'empty',
+			'fallthrough',
+			'finally',
+			'options',
+			'overloads',
+			'overrides',
+			'path',
+			'processing',
+			'rawtypes',
+			'static',
+			'try',
+			'unchecked',
+			'varargs',
+	]
+	checkstyle = false
+	pmd = false
+	cpd = false
+	spotbugs = true
+	spotbugsEffort = 'min'
+	codenarc = false
+}
