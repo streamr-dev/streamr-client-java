@@ -263,7 +263,7 @@ public class StreamrClient extends StreamrRESTClient {
                             keyExchangeUtil.handleGroupKeyAnnounce(message);
                         } else if (message.getMessageType() == StreamMessage.MessageType.GROUP_KEY_ERROR_RESPONSE) {
                             Map<String, Object> content = message.getParsedContent();
-                            log.warn("Received error of type " + content.get("code") + " from " + message.getPublisherId() + ": " + content.get("message"));
+                            log.warn("Received error of type {} from {}: {}", content.get("code"), message.getPublisherId(), content.get("message"));
                         } else {
                             throw new MalformedMessageException("Unexpected message type on key exchange stream: " + message.getMessageType());
                         }
