@@ -54,11 +54,11 @@ dependencies {
 	compile 'commons-codec:commons-codec:1.15'
 	compile 'org.apache.commons:commons-lang3:3.1'
 	compile 'org.ethereum:ethereumj-core:1.11.0-RELEASE'
-	compile "org.java-websocket:Java-WebSocket:1.4.1"
-	compile "org.cache2k:cache2k-api:1.6.0.Final"
-	compile "org.cache2k:cache2k-core:1.6.0.Final"
-	compile "org.web3j:core:5.0.0"
-	compile "org.web3j:codegen:5.0.0"
+	compile 'org.java-websocket:Java-WebSocket:1.5.1'
+	compile 'org.cache2k:cache2k-api:1.6.0.Final'
+	compile 'org.cache2k:cache2k-core:1.6.0.Final'
+	compile 'org.web3j:core:5.0.0'
+	compile 'org.web3j:codegen:5.0.0'
 
 	testCompile 'org.apache.logging.log4j:log4j-api:2.14.0'
 	testCompile 'org.apache.logging.log4j:log4j-core:2.14.0'
