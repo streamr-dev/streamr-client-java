@@ -25,9 +25,6 @@ jobs:
         run: make -f Makefile.ci build
       - name: Unit Test
         run: make -f Makefile.ci test-unit
-      - name: Docker layer cache
-        uses: satackey/action-docker-layer-caching@v0.0.11
-        continue-on-error: true
       - name: Start Streamr Docker Stack
         uses: streamr-dev/streamr-docker-dev-action@v1.0.0-alpha.1
         with:
