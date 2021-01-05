@@ -1,6 +1,5 @@
 package com.streamr.client
 
-import com.streamr.client.authentication.EthereumAuthenticationMethod
 import com.streamr.client.exceptions.UnableToDecryptException
 import com.streamr.client.options.ResendFromOption
 import com.streamr.client.options.ResendLastOption
