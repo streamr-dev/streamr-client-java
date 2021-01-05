@@ -20,4 +20,4 @@ test-integration:
 
 .PHONY: fmt
 fmt:
-	$(gradle) --stacktrace spotlessCheck
+	$(gradle) --info --stacktrace spotlessCheck
