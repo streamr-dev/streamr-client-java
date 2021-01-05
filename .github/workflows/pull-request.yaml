@@ -10,6 +10,7 @@ jobs:
     steps:
       - name: Checkout Streamr Client Java
         uses: actions/checkout@v2.3.4
+      - name: Debug git
         run: |
           cd streamr-client-java
           cat .git/config
