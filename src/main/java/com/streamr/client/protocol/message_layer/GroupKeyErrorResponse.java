@@ -1,10 +1,10 @@
 package com.streamr.client.protocol.message_layer;
 
 import com.streamr.client.utils.ValidationUtil;
-
 import java.util.List;
+import java.util.Objects;
 
-public class GroupKeyErrorResponse extends AbstractGroupKeyMessage {
+public final class GroupKeyErrorResponse extends AbstractGroupKeyMessage {
     private final String requestId;
     private final String code;
     private final String message;
@@ -46,17 +46,16 @@ public class GroupKeyErrorResponse extends AbstractGroupKeyMessage {
     }
 
     @Override
-    public boolean equals(Object o) {
+    public boolean equals(final Object o) {
         if (this == o) return true;
         if (o == null || getClass() != o.getClass()) return false;
+        final GroupKeyErrorResponse that = (GroupKeyErrorResponse) o;
+        return Objects.equals(requestId, that.requestId) && Objects.equals(code, that.code) && Objects.equals(message, that.message) && Objects.equals(groupKeyIds, that.groupKeyIds) && Objects.equals(streamId, that.streamId);
+    }
 
-        GroupKeyErrorResponse that = (GroupKeyErrorResponse) o;
-
-        if (!streamId.equals(that.streamId)) return false;
-        if (!requestId.equals(that.requestId)) return false;
-        if (!code.equals(that.code)) return false;
-        if (!message.equals(that.message)) return false;
-        return groupKeyIds.equals(that.groupKeyIds);
+    @Override
+    public int hashCode() {
+        return Objects.hash(requestId, code, message, groupKeyIds, streamId);
     }
 
     @Override
