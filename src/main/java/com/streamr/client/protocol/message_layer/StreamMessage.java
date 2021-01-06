@@ -12,7 +12,6 @@ import java.util.Date;
 import java.util.Map;
 
 public class StreamMessage implements ITimestamped {
-
     public static final int LATEST_VERSION = 32;
 
     public enum MessageType {
@@ -137,7 +136,7 @@ public class StreamMessage implements ITimestamped {
     /**
      * Full constructor, creates a StreamMessage with all fields directly set to the provided values.
      */
-    public StreamMessage(
+    private StreamMessage(
             MessageID messageID,
             MessageRef previousMessageRef,
             MessageType messageType,
@@ -379,4 +378,76 @@ public class StreamMessage implements ITimestamped {
         return this.serialize().equals(that.serialize());
     }
 
+    public static final class Builder {
+        private MessageID messageID;
+        private MessageRef previousMessageRef;
+        private MessageType messageType = MessageType.STREAM_MESSAGE;
+        private String serializedContent;
+        private ContentType contentType = ContentType.JSON;
+        private EncryptionType encryptionType = EncryptionType.NONE;
+        private String groupKeyId = null;
+        private EncryptedGroupKey newGroupKey = null;
+        private SignatureType signatureType = SignatureType.NONE;
+        private String signature = null;
+        private Map<String, Object> content;
+
+        public Builder setMessageID(final MessageID messageID) {
+            this.messageID = messageID;
+            return this;
+        }
+
+        public Builder setPreviousMessageRef(final MessageRef previousMessageRef) {
+            this.previousMessageRef = previousMessageRef;
+            return this;
+        }
+
+        public Builder setMessageType(final MessageType messageType) {
+            this.messageType = messageType;
+            return this;
+        }
+
+        public Builder setSerializedContent(final String serializedContent) {
+            this.serializedContent = serializedContent;
+            return this;
+        }
+
+        public Builder setContentType(final ContentType contentType) {
+            this.contentType = contentType;
+            return this;
+        }
+
+        public Builder setEncryptionType(final EncryptionType encryptionType) {
+            this.encryptionType = encryptionType;
+            return this;
+        }
+
+        public Builder setGroupKeyId(final String groupKeyId) {
+            this.groupKeyId = groupKeyId;
+            return this;
+        }
+
+        public Builder setNewGroupKey(final EncryptedGroupKey newGroupKey) {
+            this.newGroupKey = newGroupKey;
+            return this;
+        }
+
+        public Builder setSignatureType(final SignatureType signatureType) {
+            this.signatureType = signatureType;
+            return this;
+        }
+
+        public Builder setSignature(final String signature) {
+            this.signature = signature;
+            return this;
+        }
+
+        public Builder setContent(final Map<String, Object> content) {
+            this.content = content;
+            return this;
+        }
+
+        public StreamMessage createStreamMessage() {
+            return new StreamMessage(messageID, previousMessageRef, messageType, serializedContent, contentType, encryptionType, groupKeyId, newGroupKey, signatureType, signature);
+        }
+    }
 }

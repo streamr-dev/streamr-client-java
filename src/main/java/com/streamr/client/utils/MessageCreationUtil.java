@@ -72,7 +72,7 @@ public class MessageCreationUtil {
 
     Pair<MessageID, MessageRef> pair =
         createMsgIdAndRef(stream.getId(), streamPartition, timestamp.getTime());
-    StreamMessage streamMessage = new StreamMessage(pair.getLeft(), pair.getRight(), payload);
+    StreamMessage streamMessage = new StreamMessage.Builder().setMessageID(pair.getLeft()).setPreviousMessageRef(pair.getRight()).setSerializedContent(HttpUtils.mapAdapter.toJson(payload)).createStreamMessage();
 
     // Encrypt content if the GroupKey is provided
     if (groupKey != null) {

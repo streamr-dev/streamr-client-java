@@ -16,18 +16,18 @@ class KeyExchangeUtilSpec extends StreamrSpecification {
     Consumer<StreamMessage> publish
     KeyExchangeUtil.OnNewKeysFunction onNewKeysFunction
     ArrayList<StreamMessage> published
-    StreamMessage response = new StreamMessage(
-            new MessageID("subscriberId", 0, 5145, 0, publisherId, ""),
-            null,
-            StreamMessage.MessageType.GROUP_KEY_RESPONSE,
-            "response",
-            StreamMessage.ContentType.JSON,
-            StreamMessage.EncryptionType.RSA,
-            null,
-            null,
-            StreamMessage.SignatureType.ETH,
-            "signature"
-    )
+    StreamMessage response = new StreamMessage.Builder()
+            .setMessageID(new MessageID("subscriberId", 0, 5145, 0, publisherId, ""))
+            .setMessageType(null)
+            .setMessageType(StreamMessage.MessageType.GROUP_KEY_RESPONSE)
+            .setSerializedContent("response")
+            .setContentType(StreamMessage.ContentType.JSON)
+            .setEncryptionType(StreamMessage.EncryptionType.RSA)
+            .setGroupKeyId(null)
+            .setNewGroupKey(null)
+            .setSignatureType(StreamMessage.SignatureType.ETH)
+            .setSignature("signature")
+            .createStreamMessage()
     EncryptionUtil encryptionUtil = new EncryptionUtil()
     AddressValidityUtil addressValidityUtil = new AddressValidityUtil({ String id -> new ArrayList<>()}, { String s1, String s2 -> s1 == "streamId" && s2 == "subscriberId"},
             { String id -> new ArrayList<>()}, { String s, String p -> true})

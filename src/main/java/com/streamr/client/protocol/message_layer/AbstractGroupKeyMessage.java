@@ -47,17 +47,7 @@ public abstract class AbstractGroupKeyMessage {
     }
 
     public StreamMessage toStreamMessage(MessageID messageID, MessageRef prevMsgRef) {
-        return new StreamMessage(
-                messageID,
-                prevMsgRef,
-                getMessageType(),
-                serialize(),
-                StreamMessage.ContentType.JSON,
-                StreamMessage.EncryptionType.NONE,
-                null,
-                null,
-                StreamMessage.SignatureType.NONE,
-                null);
+        return new StreamMessage.Builder().setMessageID(messageID).setPreviousMessageRef(prevMsgRef).setMessageType(getMessageType()).setSerializedContent(serialize()).setContentType(StreamMessage.ContentType.JSON).setEncryptionType(StreamMessage.EncryptionType.NONE).setGroupKeyId(null).setNewGroupKey(null).setSignatureType(StreamMessage.SignatureType.NONE).setSignature(null).createStreamMessage();
     }
 
 }
