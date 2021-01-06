@@ -2,21 +2,20 @@ package com.streamr.client.utils;
 
 import com.streamr.client.exceptions.InvalidGroupKeyException;
 import java.security.SecureRandom;
+import java.util.Objects;
 import javax.crypto.SecretKey;
 import org.web3j.utils.Numeric;
 
-public class GroupKey {
-
+public final class GroupKey {
   private static final SecureRandom defaultSecureRandom = new SecureRandom();
-
-  protected final String groupKeyId;
-  protected final String groupKeyHex;
-  private SecretKey cachedSecretKey;
+  private final String groupKeyId;
+  private final String groupKeyHex;
+  private final SecretKey cachedSecretKey;
 
   public GroupKey(String groupKeyId, String groupKeyHex) throws InvalidGroupKeyException {
     this.groupKeyId = groupKeyId;
     this.groupKeyHex = groupKeyHex;
-    cachedSecretKey = EncryptionUtil.getSecretKeyFromHexString(groupKeyHex);
+    this.cachedSecretKey = EncryptionUtil.getSecretKeyFromHexString(groupKeyHex);
   }
 
   public String getGroupKeyId() {
@@ -32,12 +31,22 @@ public class GroupKey {
   }
 
   @Override
-  public boolean equals(Object other) {
-    if (!(other instanceof GroupKey)) {
+  public boolean equals(final Object obj) {
+    if (obj == this) {
+      return true;
+    }
+    if ((obj == null) || (getClass() != obj.getClass())) {
       return false;
     }
-    GroupKey o = (GroupKey) other;
-    return groupKeyHex.equals(o.groupKeyHex) && groupKeyId.equals(o.groupKeyId);
+    GroupKey o = (GroupKey) obj;
+    return Objects.equals(groupKeyId, o.groupKeyId)
+        && Objects.equals(groupKeyHex, o.groupKeyHex)
+        && Objects.equals(cachedSecretKey, o.cachedSecretKey);
+  }
+
+  @Override
+  public int hashCode() {
+    return Objects.hash(groupKeyId, groupKeyHex, cachedSecretKey);
   }
 
   @Override
