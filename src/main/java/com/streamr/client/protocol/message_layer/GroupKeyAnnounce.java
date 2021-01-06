@@ -2,10 +2,10 @@ package com.streamr.client.protocol.message_layer;
 
 import com.streamr.client.utils.EncryptedGroupKey;
 import com.streamr.client.utils.ValidationUtil;
-
 import java.util.List;
+import java.util.Objects;
 
-public class GroupKeyAnnounce extends AbstractGroupKeyMessage {
+public final class GroupKeyAnnounce extends AbstractGroupKeyMessage {
     private final List<EncryptedGroupKey> groupKeys;
 
     public GroupKeyAnnounce(String streamId, List<EncryptedGroupKey> groupKeys) {
@@ -24,14 +24,16 @@ public class GroupKeyAnnounce extends AbstractGroupKeyMessage {
     }
 
     @Override
-    public boolean equals(Object o) {
-        if (this == o) return true;
-        if (o == null || getClass() != o.getClass()) return false;
+    public boolean equals(final Object obj) {
+        if (this == obj) return true;
+        if (obj == null || getClass() != obj.getClass()) return false;
+        final GroupKeyAnnounce that = (GroupKeyAnnounce) obj;
+        return Objects.equals(groupKeys, that.groupKeys) && Objects.equals(streamId, that.streamId);
+    }
 
-        GroupKeyAnnounce that = (GroupKeyAnnounce) o;
-
-        if (!streamId.equals(that.streamId)) return false;
-        return groupKeys.equals(that.groupKeys);
+    @Override
+    public int hashCode() {
+        return Objects.hash(groupKeys, streamId);
     }
 
     @Override
