@@ -1,9 +1,7 @@
-package com.streamr.client
+package com.streamr.client.dataunion
 
-import com.streamr.client.dataunion.DataUnion
-import com.streamr.client.dataunion.DataUnionClient
-import com.streamr.client.dataunion.EstimatedGasProvider
-import com.streamr.client.dataunion.EthereumTransactionReceipt
+import com.streamr.client.StreamrClient
+import com.streamr.client.StreamrIntegrationSpecification
 import com.streamr.client.dataunion.contracts.IERC20
 import com.streamr.client.options.EncryptionOptions
 import com.streamr.client.options.SigningOptions
