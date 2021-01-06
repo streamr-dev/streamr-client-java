@@ -3,13 +3,13 @@ package com.streamr.client.utils;
 import com.streamr.client.protocol.message_layer.EncryptedGroupKeyAdapter;
 
 import java.io.IOException;
+import java.util.Objects;
 
 /**
  * A container for encrypted group keys. Used to get compile-time checking
  * that encrypted and plaintext keys don't accidentally mix.
  */
-public class EncryptedGroupKey {
-
+public final class EncryptedGroupKey {
     private final String groupKeyId;
     private final String encryptedGroupKeyHex;
     private String serialized;
@@ -58,14 +58,16 @@ public class EncryptedGroupKey {
     }
 
     @Override
-    public boolean equals(Object o) {
-        if (this == o) return true;
-        if (o == null || getClass() != o.getClass()) return false;
+    public boolean equals(final Object obj) {
+        if (this == obj) return true;
+        if (obj == null || getClass() != obj.getClass()) return false;
+        final EncryptedGroupKey that = (EncryptedGroupKey) obj;
+        return Objects.equals(groupKeyId, that.groupKeyId) && Objects.equals(encryptedGroupKeyHex, that.encryptedGroupKeyHex);
+    }
 
-        EncryptedGroupKey that = (EncryptedGroupKey) o;
-
-        if (!groupKeyId.equals(that.groupKeyId)) return false;
-        return encryptedGroupKeyHex.equals(that.encryptedGroupKeyHex);
+    @Override
+    public int hashCode() {
+        return Objects.hash(groupKeyId, encryptedGroupKeyHex);
     }
 
     @Override
