@@ -2,10 +2,10 @@ package com.streamr.client.protocol.message_layer;
 
 import com.streamr.client.utils.EncryptedGroupKey;
 import com.streamr.client.utils.ValidationUtil;
-
 import java.util.List;
+import java.util.Objects;
 
-public class GroupKeyResponse extends AbstractGroupKeyMessage {
+public final class GroupKeyResponse extends AbstractGroupKeyMessage {
     private final String requestId;
     private final List<EncryptedGroupKey> keys;
 
@@ -34,15 +34,16 @@ public class GroupKeyResponse extends AbstractGroupKeyMessage {
     }
 
     @Override
-    public boolean equals(Object o) {
+    public boolean equals(final Object o) {
         if (this == o) return true;
         if (o == null || getClass() != o.getClass()) return false;
+        final GroupKeyResponse that = (GroupKeyResponse) o;
+        return Objects.equals(requestId, that.requestId) && Objects.equals(keys, that.keys) && Objects.equals(streamId, that.streamId);
+    }
 
-        GroupKeyResponse that = (GroupKeyResponse) o;
-
-        if (!requestId.equals(that.requestId)) return false;
-        if (!streamId.equals(that.streamId)) return false;
-        return keys.equals(that.keys);
+    @Override
+    public int hashCode() {
+        return Objects.hash(requestId, keys, streamId);
     }
 
     @Override
