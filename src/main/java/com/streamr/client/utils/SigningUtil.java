@@ -17,13 +17,14 @@ public class SigningUtil {
         this.account = account;
     }
 
-    public void signStreamMessage(StreamMessage msg, StreamMessage.SignatureType signatureType) {
+    private StreamMessage signStreamMessage(StreamMessage msg, StreamMessage.SignatureType signatureType) {
         String signature = sign(getPayloadToSignOrVerify(msg, signatureType), account);
         msg.setSignatureFields(signature, signatureType);
+        return msg;
     }
 
-    public void signStreamMessage(StreamMessage msg) {
-        signStreamMessage(msg, StreamMessage.SignatureType.ETH);
+    public StreamMessage signStreamMessage(StreamMessage msg) {
+        return signStreamMessage(msg, StreamMessage.SignatureType.ETH);
     }
 
     public static String sign(String data, ECKeyPair account) {

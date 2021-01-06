@@ -90,7 +90,7 @@ public class MessageCreationUtil {
 
     // Sign if signingUtil provided
     if (signingUtil != null) {
-      signingUtil.signStreamMessage(streamMessage);
+      streamMessage = signingUtil.signStreamMessage(streamMessage);
     }
     return streamMessage;
   }
@@ -110,7 +110,7 @@ public class MessageCreationUtil {
     StreamMessage streamMessage = request.toStreamMessage(pair.getLeft(), pair.getRight());
 
     // Never encrypt but always sign
-    signingUtil.signStreamMessage(streamMessage);
+    streamMessage = signingUtil.signStreamMessage(streamMessage);
     return streamMessage;
   }
 
@@ -142,7 +142,7 @@ public class MessageCreationUtil {
     streamMessage.setGroupKeyId(request.getPublicKey());
 
     // Always sign
-    signingUtil.signStreamMessage(streamMessage);
+    streamMessage = signingUtil.signStreamMessage(streamMessage);
     return streamMessage;
   }
 
@@ -172,7 +172,7 @@ public class MessageCreationUtil {
     streamMessage.setGroupKeyId(publicKey);
 
     // Always sign
-    signingUtil.signStreamMessage(streamMessage);
+    streamMessage = signingUtil.signStreamMessage(streamMessage);
     return streamMessage;
   }
 
@@ -196,7 +196,7 @@ public class MessageCreationUtil {
     StreamMessage streamMessage = response.toStreamMessage(pair.getLeft(), pair.getRight());
 
     // Never encrypt but always sign
-    signingUtil.signStreamMessage(streamMessage);
+    streamMessage = signingUtil.signStreamMessage(streamMessage);
     return streamMessage;
   }
 

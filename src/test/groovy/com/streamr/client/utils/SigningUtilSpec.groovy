@@ -36,7 +36,7 @@ class SigningUtilSpec extends StreamrSpecification {
         StreamMessage msg = new StreamMessage.Builder().setMessageID(msgId).setPreviousMessageRef(null).setSerializedContent(HttpUtils.mapAdapter.toJson([foo: 'bar'])).createStreamMessage()
         String expectedPayload = "streamId04252353150publisheridmsgChainId"+'{"foo":"bar"}'
         when:
-        signingUtil.signStreamMessage(msg)
+        msg = signingUtil.signStreamMessage(msg)
         then:
         msg.signatureType == StreamMessage.SignatureType.ETH
         msg.signature == SigningUtil.sign(expectedPayload, account)
@@ -46,7 +46,7 @@ class SigningUtilSpec extends StreamrSpecification {
         StreamMessage msg = new StreamMessage.Builder().setMessageID(msgId).setPreviousMessageRef(new MessageRef(100, 1)).setSerializedContent(HttpUtils.mapAdapter.toJson([foo: 'bar'])).createStreamMessage()
         String expectedPayload = "streamId04252353150publisheridmsgChainId1001"+'{"foo":"bar"}'
         when:
-        signingUtil.signStreamMessage(msg)
+        msg = signingUtil.signStreamMessage(msg)
         then:
         msg.signatureType == StreamMessage.SignatureType.ETH
         msg.signature == SigningUtil.sign(expectedPayload, account)
@@ -57,7 +57,7 @@ class SigningUtilSpec extends StreamrSpecification {
         msg.setNewGroupKey(new EncryptedGroupKey("groupKeyId", "keyHex"))
         String expectedPayload = "streamId04252353150publisheridmsgChainId1001"+'{"foo":"bar"}'+'["groupKeyId","keyHex"]'
         when:
-        signingUtil.signStreamMessage(msg)
+        msg = signingUtil.signStreamMessage(msg)
         then:
         msg.signatureType == StreamMessage.SignatureType.ETH
         msg.signature == SigningUtil.sign(expectedPayload, account)
@@ -81,7 +81,7 @@ class SigningUtilSpec extends StreamrSpecification {
     void "returns true if correct signature"() {
         MessageID msgId = new MessageID("streamId", 0, 425235315L, 0L, address, "msgChainId")
         StreamMessage msg = new StreamMessage.Builder().setMessageID(msgId).setPreviousMessageRef(null).setSerializedContent(HttpUtils.mapAdapter.toJson([foo: 'bar'])).createStreamMessage()
-        signingUtil.signStreamMessage(msg)
+        msg = signingUtil.signStreamMessage(msg)
 
         expect:
         SigningUtil.hasValidSignature(msg)
