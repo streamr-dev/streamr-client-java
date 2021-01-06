@@ -6,6 +6,7 @@ import com.streamr.client.protocol.message_layer.MessageRef
 import com.streamr.client.protocol.message_layer.StreamMessage
 import com.streamr.client.protocol.message_layer.StreamMessageAdapter
 import com.streamr.client.utils.EncryptedGroupKey
+import com.streamr.client.utils.HttpUtils
 
 class StreamMessageV32AdapterSpec extends StreamrSpecification {
 	private static final int VERSION = 32
@@ -35,7 +36,7 @@ class StreamMessageV32AdapterSpec extends StreamrSpecification {
 		msg.setGroupKeyId("groupKeyId")
 		msg.setSerializedContent("encrypted-content")
 		msg.setNewGroupKey(new EncryptedGroupKey("newGroupKeyId", "encryptedGroupKeyHex", "[\"newGroupKeyId\",\"encryptedGroupKeyHex-cached\"]"))
-		msg.setSignatureFields("signature", StreamMessage.SignatureType.ETH)
+		msg = new StreamMessage.Builder(msg).setSignature("signature").setSignatureType(StreamMessage.SignatureType.ETH).createStreamMessage()
 
 		expect:
 		adapter.serialize(msg, VERSION) == expectedJson

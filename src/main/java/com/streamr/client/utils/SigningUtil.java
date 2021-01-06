@@ -17,13 +17,13 @@ public class SigningUtil {
         this.account = account;
     }
 
-    private StreamMessage signStreamMessage(StreamMessage msg, StreamMessage.SignatureType signatureType) {
-        String signature = sign(getPayloadToSignOrVerify(msg, signatureType), account);
-        msg.setSignatureFields(signature, signatureType);
-        return msg;
+    private StreamMessage signStreamMessage(final StreamMessage msg, final StreamMessage.SignatureType signatureType) {
+        final String signature = sign(getPayloadToSignOrVerify(msg, signatureType), account);
+        final StreamMessage m = new StreamMessage.Builder(msg).setSignature(signature).setSignatureType(signatureType).createStreamMessage();
+        return m;
     }
 
-    public StreamMessage signStreamMessage(StreamMessage msg) {
+    public StreamMessage signStreamMessage(final StreamMessage msg) {
         return signStreamMessage(msg, StreamMessage.SignatureType.ETH);
     }
 

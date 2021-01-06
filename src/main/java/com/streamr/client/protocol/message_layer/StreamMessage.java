@@ -204,12 +204,6 @@ public class StreamMessage implements ITimestamped {
         return signature;
     }
 
-    public void setSignatureFields(String signature, SignatureType signatureType) {
-        // These go hand in hand
-        this.signature = signature;
-        this.signatureType = signatureType;
-    }
-
     @Override
     public Date getTimestampAsDate() {
         return new Date(getTimestamp());
@@ -288,11 +282,6 @@ public class StreamMessage implements ITimestamped {
         setSerializedContent(new String(serializedContent, StandardCharsets.UTF_8));
     }
 
-    public void setParsedContent(Map<String, Object> parsedContent) {
-        this.parsedContent = parsedContent;
-        this.serializedContent = HttpUtils.mapAdapter.toJson(parsedContent);
-    }
-
     public String serialize() {
         return StreamMessageAdapter.serialize(this);
     }
@@ -338,6 +327,21 @@ public class StreamMessage implements ITimestamped {
         private EncryptedGroupKey newGroupKey = null;
         private SignatureType signatureType = SignatureType.NONE;
         private String signature = null;
+
+        public Builder() {}
+
+        public Builder(final StreamMessage message) {
+            this.messageID = message.messageID;
+            this.previousMessageRef = message.previousMessageRef;
+            this.messageType = message.messageType;
+            this.serializedContent = message.serializedContent;
+            this.contentType = message.contentType;
+            this.encryptionType = message.encryptionType;
+            this.groupKeyId = message.groupKeyId;
+            this.newGroupKey = message.newGroupKey;
+            this.signatureType = message.signatureType;
+            this.signature = message.signature;
+        }
 
         public Builder setMessageID(final MessageID messageID) {
             this.messageID = messageID;

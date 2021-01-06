@@ -71,8 +71,10 @@ class SigningUtilSpec extends StreamrSpecification {
     }
 
     void "returns false if wrong signature"() {
-        StreamMessage msg = new StreamMessage.Builder().setMessageID(msgId).setPreviousMessageRef(null).setSerializedContent(HttpUtils.mapAdapter.toJson([foo: 'bar'])).createStreamMessage()
-        msg.setSignatureFields("0x787cd72924153c88350e808de68b68c88030cbc34d053a5c696a5893d5e6fec1687c1b6205ec99aeb3375a81bf5cb8857ae39c1b55a41b32ed6399ae8da456a61b", StreamMessage.SignatureType.ETH)
+        StreamMessage msg = new StreamMessage.Builder().setMessageID(msgId).setPreviousMessageRef(null).setSerializedContent(HttpUtils.mapAdapter.toJson([foo: 'bar']))
+                .setSignature("0x787cd72924153c88350e808de68b68c88030cbc34d053a5c696a5893d5e6fec1687c1b6205ec99aeb3375a81bf5cb8857ae39c1b55a41b32ed6399ae8da456a61b")
+                .setSignatureType(StreamMessage.SignatureType.ETH)
+                .createStreamMessage()
 
         expect:
         !SigningUtil.hasValidSignature(msg)
@@ -90,8 +92,10 @@ class SigningUtilSpec extends StreamrSpecification {
     void "returns true for correct signature of publisher address has upper and lower case letters"() {
         Address address1 = new Address("0x752C8dCAC0788759aCB1B4BB7A9103596BEe3e6c")
         MessageID msgId = new MessageID("ogzCJrTdQGuKQO7nkLd3Rw", 0, 1567003338767L, 2L, address1, "kxYyLiSUQO0SRvMx6gA1")
-        StreamMessage msg = new StreamMessage.Builder().setMessageID(msgId).setPreviousMessageRef(new MessageRef(1567003338767L, 1L)).setSerializedContent(HttpUtils.mapAdapter.toJson([numero: 86])).createStreamMessage()
-        msg.setSignatureFields("0xc97f1fbb4f506a53ecb838db59017f687892494a9073315f8a187846865bf8325333315b116f1142921a97e49e3881eced2b176c69f9d60666b98b7641ad11e01b", StreamMessage.SignatureType.ETH)
+        StreamMessage msg = new StreamMessage.Builder().setMessageID(msgId).setPreviousMessageRef(new MessageRef(1567003338767L, 1L)).setSerializedContent(HttpUtils.mapAdapter.toJson([numero: 86]))
+                .setSignature("0xc97f1fbb4f506a53ecb838db59017f687892494a9073315f8a187846865bf8325333315b116f1142921a97e49e3881eced2b176c69f9d60666b98b7641ad11e01b")
+                .setSignatureType(StreamMessage.SignatureType.ETH)
+                .createStreamMessage()
 
         expect:
         SigningUtil.hasValidSignature(msg)
