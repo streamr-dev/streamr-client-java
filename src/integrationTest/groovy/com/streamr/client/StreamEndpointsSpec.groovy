@@ -26,9 +26,10 @@ class StreamEndpointsSpec extends StreamrIntegrationSpecification {
 
     void "createStream() then getStream()"() {
         Stream proto = new Stream(generateResourceName(), "This stream was created from an integration test")
-        proto.setConfig(new StreamConfig()
-                            .addField(new FieldConfig("foo", FieldConfig.Type.NUMBER))
-                            .addField(new FieldConfig("bar", FieldConfig.Type.STRING)))
+        def fieldFoo = new FieldConfig("foo", FieldConfig.Type.NUMBER)
+        def fieldBar = new FieldConfig("bar", FieldConfig.Type.STRING)
+        def config = new StreamConfig(fieldFoo, fieldBar)
+        proto.setConfig(config)
 
         when:
         Stream createResult = client.createStream(proto)
