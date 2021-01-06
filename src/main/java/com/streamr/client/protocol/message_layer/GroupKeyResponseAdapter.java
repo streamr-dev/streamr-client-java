@@ -9,12 +9,15 @@ import java.io.IOException;
 import java.util.List;
 
 public class GroupKeyResponseAdapter extends AbstractGroupKeyMessageAdapter<GroupKeyResponse> {
-
     private static final Moshi MOSHI = HttpUtils.addDefaultAdapters.apply(new Moshi.Builder())
             .add(EncryptedGroupKey.class, new EncryptedGroupKeyAdapter())
             .build();
 
     JsonAdapter<List<EncryptedGroupKey>> keyListAdapter = MOSHI.adapter(Types.newParameterizedType(List.class, EncryptedGroupKey.class));
+
+    GroupKeyResponseAdapter() {
+        super(GroupKeyResponse.class);
+    }
 
     @Nullable
     @Override

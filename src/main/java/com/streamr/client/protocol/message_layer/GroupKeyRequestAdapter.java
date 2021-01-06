@@ -10,6 +10,10 @@ import java.util.List;
 
 public class GroupKeyRequestAdapter extends AbstractGroupKeyMessageAdapter<GroupKeyRequest> {
 
+    GroupKeyRequestAdapter() {
+        super(GroupKeyRequest.class);
+    }
+
     @Nullable
     @Override
     public GroupKeyRequest fromJson(JsonReader reader) throws IOException {
