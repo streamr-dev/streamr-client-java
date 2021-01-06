@@ -1,9 +1,6 @@
-package com.streamr.client
+package com.streamr.client.options
 
 import com.streamr.client.exceptions.InvalidRSAKeyException
-import com.streamr.client.options.EncryptionOptions
-import com.streamr.client.options.SigningOptions
-import com.streamr.client.options.StreamrClientOptions
 import com.streamr.client.protocol.control_layer.ControlMessage
 import com.streamr.client.protocol.message_layer.StreamMessage
 import com.streamr.client.utils.EncryptionUtil
