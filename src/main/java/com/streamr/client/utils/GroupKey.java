@@ -1,10 +1,9 @@
 package com.streamr.client.utils;
 
 import com.streamr.client.exceptions.InvalidGroupKeyException;
-import org.apache.commons.codec.binary.Hex;
-
-import javax.crypto.SecretKey;
 import java.security.SecureRandom;
+import javax.crypto.SecretKey;
+import org.web3j.utils.Numeric;
 
 public class GroupKey {
 
@@ -58,7 +57,7 @@ public class GroupKey {
         byte[] keyBytes = new byte[32];
         secureRandom.nextBytes(keyBytes);
         try {
-            return new GroupKey(id, Hex.encodeHexString(keyBytes));
+            return new GroupKey(id, Numeric.toHexStringNoPrefix(keyBytes));
         } catch (InvalidGroupKeyException e) {
             throw new RuntimeException(e);
         }
