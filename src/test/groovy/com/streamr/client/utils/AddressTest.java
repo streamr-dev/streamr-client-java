@@ -1,6 +1,7 @@
 package com.streamr.client.utils;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
+
 import nl.jqno.equalsverifier.EqualsVerifier;
 import org.junit.jupiter.api.Test;
 import org.web3j.utils.Numeric;
