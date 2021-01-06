@@ -67,7 +67,7 @@ class DataUnionClientSpec extends StreamrIntegrationSpecification {
         }
     }
 
-    @Timeout(unit = TimeUnit.MINUTES, value = 5)
+    @Timeout(unit = TimeUnit.MINUTES, value = 11)
     void "create DU"() {
         //Address deployer = new Address(wallets[0].getAddress())
         when:
@@ -83,7 +83,7 @@ class DataUnionClientSpec extends StreamrIntegrationSpecification {
         du.isDeployed()
     }
 
-    @Timeout(unit = TimeUnit.MINUTES, value = 5)
+    @Timeout(unit = TimeUnit.MINUTES, value = 11)
     void "add members"() {
         EthereumTransactionReceipt tr
         when:
@@ -95,7 +95,7 @@ class DataUnionClientSpec extends StreamrIntegrationSpecification {
         du.isMemberActive(wallets[1].getAddress())
     }
 
-    @Timeout(unit = TimeUnit.MINUTES, value = 5)
+    @Timeout(unit = TimeUnit.MINUTES, value = 11)
     void "test transfer and sidechain stats"() {
         BigInteger sidechainEarnings = du.totalEarnings()
         Address address = new Address(du.getMainnetContractAddress())
@@ -109,7 +109,7 @@ class DataUnionClientSpec extends StreamrIntegrationSpecification {
         du.getEarnings(wallets[1].getAddress()).equals(testSendAmount)
     }
 
-    @Timeout(unit = TimeUnit.MINUTES, value = 5)
+    @Timeout(unit = TimeUnit.MINUTES, value = 11)
     void "withdraw member as admin"() {
         String recipient = wallets[2].getAddress()
         BigInteger recipientBal = mainnetToken.balanceOf(new Address(recipient)).send().getValue()
@@ -123,7 +123,7 @@ class DataUnionClientSpec extends StreamrIntegrationSpecification {
         client.waitForMainnetBalanceChange(recipientBal,recipient, 10000, 600000 ) == recipientBal.add(testSendAmount)
     }
 
-    @Timeout(unit = TimeUnit.MINUTES, value = 5)
+    @Timeout(unit = TimeUnit.MINUTES, value = 11)
     void "signed withdrawal for another"() {
         String recipient = wallets[2].getAddress()
         BigInteger recipientBal = mainnetToken.balanceOf(new Address(recipient)).send().getValue()
