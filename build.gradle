@@ -312,7 +312,7 @@ spotless {
 			include 'src/*/groovy/**/*.java'
 			exclude 'src/main/java/com/streamr/client/dataunion/contracts/**'
 		}
-		googleJavaFormat()
+		googleJavaFormat('1.7')
 	}
 }
 // https://xvik.github.io/gradle-quality-plugin/
