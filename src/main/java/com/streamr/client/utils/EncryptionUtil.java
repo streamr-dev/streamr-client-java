@@ -19,17 +19,17 @@ import java.security.interfaces.RSAPublicKey;
 import java.security.spec.PKCS8EncodedKeySpec;
 import java.security.spec.X509EncodedKeySpec;
 import java.util.Arrays;
+import java.util.Base64;
 import javax.crypto.Cipher;
 import javax.crypto.SecretKey;
 import javax.crypto.spec.IvParameterSpec;
 import javax.crypto.spec.SecretKeySpec;
 import javax.xml.bind.DatatypeConverter;
-import org.apache.commons.codec.binary.Base64;
-import org.apache.commons.codec.binary.Hex;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.spongycastle.util.io.pem.PemObject;
 import org.spongycastle.util.io.pem.PemWriter;
+import org.web3j.utils.Numeric;
 
 public class EncryptionUtil {
   private static final Logger log = LoggerFactory.getLogger(EncryptionUtil.class);
@@ -97,7 +97,7 @@ public class EncryptionUtil {
   public static String encryptWithPublicKey(byte[] plaintext, RSAPublicKey rsaPublicKey) {
     try {
       rsaCipher.get().init(Cipher.ENCRYPT_MODE, rsaPublicKey);
-      return Hex.encodeHexString(rsaCipher.get().doFinal(plaintext));
+      return Numeric.toHexStringNoPrefix(rsaCipher.get().doFinal(plaintext));
     } catch (Exception e) {
       log.error("Failed to encrypt plaintext: {}", Arrays.toString(plaintext), e);
       throw new RuntimeException(e);
@@ -121,7 +121,7 @@ public class EncryptionUtil {
       IvParameterSpec ivspec = new IvParameterSpec(iv);
       aesCipher.get().init(Cipher.ENCRYPT_MODE, groupKey.toSecretKey(), ivspec);
       byte[] ciphertext = aesCipher.get().doFinal(plaintext);
-      return Hex.encodeHexString(iv) + Hex.encodeHexString(ciphertext);
+      return Numeric.toHexStringNoPrefix(iv) + Numeric.toHexStringNoPrefix(ciphertext);
     } catch (Exception e) {
       log.error("Failed to encrypt with groupKey", e);
     }
@@ -147,7 +147,8 @@ public class EncryptionUtil {
       throws Exception {
     return new GroupKey(
         keyToDecrypt.getGroupKeyId(),
-        Hex.encodeHexString(decrypt(keyToDecrypt.getEncryptedGroupKeyHex(), keyToDecryptWith)));
+        Numeric.toHexStringNoPrefix(
+            decrypt(keyToDecrypt.getEncryptedGroupKeyHex(), keyToDecryptWith)));
   }
 
   public static EncryptedGroupKey encryptWithPublicKey(
@@ -161,7 +162,7 @@ public class EncryptionUtil {
       throws UnableToDecryptException, InvalidGroupKeyException {
     return new GroupKey(
         keyToDecrypt.getGroupKeyId(),
-        Hex.encodeHexString(decryptWithPrivateKey(keyToDecrypt.getEncryptedGroupKeyHex())));
+        Numeric.toHexStringNoPrefix(decryptWithPrivateKey(keyToDecrypt.getEncryptedGroupKeyHex())));
   }
 
   /**
@@ -268,7 +269,7 @@ public class EncryptionUtil {
   public static RSAPublicKey getPublicKeyFromString(String publicKey) {
     publicKey = publicKey.replace("-----BEGIN PUBLIC KEY-----\n", "");
     publicKey = publicKey.replace("-----END PUBLIC KEY-----", "");
-    byte[] encoded = Base64.decodeBase64(publicKey);
+    byte[] encoded = Base64.getMimeDecoder().decode(publicKey);
     try {
       KeyFactory kf = KeyFactory.getInstance("RSA");
       return (RSAPublicKey) kf.generatePublic(new X509EncodedKeySpec(encoded));
@@ -281,7 +282,7 @@ public class EncryptionUtil {
   public static RSAPrivateKey getPrivateKeyFromString(String privateKey) {
     privateKey = privateKey.replace("-----BEGIN PRIVATE KEY-----\n", "");
     privateKey = privateKey.replace("-----END PRIVATE KEY-----", "");
-    byte[] encoded = Base64.decodeBase64(privateKey);
+    byte[] encoded = Base64.getMimeDecoder().decode(privateKey);
     try {
       KeyFactory kf = KeyFactory.getInstance("RSA");
       PKCS8EncodedKeySpec keySpec = new PKCS8EncodedKeySpec(encoded);
