@@ -6,14 +6,13 @@ import com.streamr.client.protocol.StreamrSpecification
 import com.streamr.client.protocol.message_layer.MessageID
 import com.streamr.client.protocol.message_layer.MessageRef
 import com.streamr.client.protocol.message_layer.StreamMessage
-import org.apache.commons.codec.binary.Hex
-
-import javax.xml.bind.DatatypeConverter
 import java.nio.charset.StandardCharsets
 import java.security.KeyPair
 import java.security.SecureRandom
 import java.security.interfaces.RSAPrivateKey
 import java.security.interfaces.RSAPublicKey
+import javax.xml.bind.DatatypeConverter
+import org.web3j.utils.Numeric
 
 class EncryptionUtilSpec extends StreamrSpecification {
 
@@ -43,7 +42,7 @@ class EncryptionUtilSpec extends StreamrSpecification {
 
     void "rsa decryption after encryption equals the initial plaintext (hex string)"() {
         when:
-        String ciphertext = EncryptionUtil.encryptWithPublicKey(Hex.encodeHexString(plaintextBytes), util.getPublicKeyAsPemString())
+        String ciphertext = EncryptionUtil.encryptWithPublicKey(Numeric.toHexStringNoPrefix(plaintextBytes), util.getPublicKeyAsPemString())
         then:
         util.decryptWithPrivateKey(ciphertext) == plaintextBytes
     }
@@ -154,7 +153,7 @@ class EncryptionUtilSpec extends StreamrSpecification {
         secureRandom.nextBytes(keyBytes)
 
         when:
-        EncryptionUtil.validateGroupKey(Hex.encodeHexString(keyBytes))
+        EncryptionUtil.validateGroupKey(Numeric.toHexStringNoPrefix(keyBytes))
         then:
         InvalidGroupKeyException e = thrown InvalidGroupKeyException
         e.message == "Group key must be 256 bits long, but got a key length of " + (30 * 8) + " bits."
@@ -164,7 +163,7 @@ class EncryptionUtilSpec extends StreamrSpecification {
         SecureRandom secureRandom = new SecureRandom()
         secureRandom.nextBytes(keyBytes)
         when:
-        EncryptionUtil.validateGroupKey(Hex.encodeHexString(keyBytes))
+        EncryptionUtil.validateGroupKey(Numeric.toHexStringNoPrefix(keyBytes))
         then:
         noExceptionThrown()
     }
