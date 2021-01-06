@@ -348,7 +348,6 @@ public class StreamMessage implements ITimestamped {
         private EncryptedGroupKey newGroupKey = null;
         private SignatureType signatureType = SignatureType.NONE;
         private String signature = null;
-        private Map<String, Object> content;
 
         public Builder setMessageID(final MessageID messageID) {
             this.messageID = messageID;
@@ -397,11 +396,6 @@ public class StreamMessage implements ITimestamped {
 
         public Builder setSignature(final String signature) {
             this.signature = signature;
-            return this;
-        }
-
-        public Builder setContent(final Map<String, Object> content) {
-            this.content = content;
             return this;
         }
 
