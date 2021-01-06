@@ -6,12 +6,14 @@ import com.streamr.client.dataunion.contracts.IERC20
 import com.streamr.client.options.EncryptionOptions
 import com.streamr.client.options.SigningOptions
 import com.streamr.client.options.StreamrClientOptions
+import java.util.concurrent.TimeUnit
 import org.web3j.abi.datatypes.Address
 import org.web3j.abi.datatypes.generated.Uint256
 import org.web3j.crypto.Credentials
 import org.web3j.protocol.Web3j
 import org.web3j.protocol.core.methods.response.TransactionReceipt
 import org.web3j.protocol.http.HttpService
+import spock.lang.Timeout
 
 class DataUnionClientSpec extends StreamrIntegrationSpecification {
     private StreamrClient streamrClient
@@ -65,6 +67,7 @@ class DataUnionClientSpec extends StreamrIntegrationSpecification {
         }
     }
 
+    @Timeout(unit = TimeUnit.MINUTES, value = 5)
     void "create DU"() {
         //Address deployer = new Address(wallets[0].getAddress())
         when:
@@ -80,6 +83,7 @@ class DataUnionClientSpec extends StreamrIntegrationSpecification {
         du.isDeployed()
     }
 
+    @Timeout(unit = TimeUnit.MINUTES, value = 5)
     void "add members"() {
         EthereumTransactionReceipt tr
         when:
@@ -91,6 +95,7 @@ class DataUnionClientSpec extends StreamrIntegrationSpecification {
         du.isMemberActive(wallets[1].getAddress())
     }
 
+    @Timeout(unit = TimeUnit.MINUTES, value = 5)
     void "test transfer and sidechain stats"() {
         BigInteger sidechainEarnings = du.totalEarnings()
         Address address = new Address(du.getMainnetContractAddress())
@@ -104,6 +109,7 @@ class DataUnionClientSpec extends StreamrIntegrationSpecification {
         du.getEarnings(wallets[1].getAddress()).equals(testSendAmount)
     }
 
+    @Timeout(unit = TimeUnit.MINUTES, value = 5)
     void "withdraw member as admin"() {
         String recipient = wallets[2].getAddress()
         BigInteger recipientBal = mainnetToken.balanceOf(new Address(recipient)).send().getValue()
@@ -117,6 +123,7 @@ class DataUnionClientSpec extends StreamrIntegrationSpecification {
         client.waitForMainnetBalanceChange(recipientBal,recipient, 10000, 600000 ) == recipientBal.add(testSendAmount)
     }
 
+    @Timeout(unit = TimeUnit.MINUTES, value = 5)
     void "signed withdrawal for another"() {
         String recipient = wallets[2].getAddress()
         BigInteger recipientBal = mainnetToken.balanceOf(new Address(recipient)).send().getValue()
