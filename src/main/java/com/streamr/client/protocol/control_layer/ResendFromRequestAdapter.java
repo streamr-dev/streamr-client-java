@@ -10,6 +10,10 @@ import java.io.IOException;
 public class ResendFromRequestAdapter extends ControlLayerAdapter<ResendFromRequest> {
     private static final MessageRefAdapter msgRefAdapter = new MessageRefAdapter();
 
+    ResendFromRequestAdapter() {
+        super(ResendFromRequest.class);
+    }
+
     @Override
     public ResendFromRequest fromJson(JsonReader reader) throws IOException {
         // Version and type already read

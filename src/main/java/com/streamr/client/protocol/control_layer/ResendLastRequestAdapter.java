@@ -7,6 +7,10 @@ import java.io.IOException;
 
 public class ResendLastRequestAdapter extends ControlLayerAdapter<ResendLastRequest> {
 
+    ResendLastRequestAdapter() {
+        super(ResendLastRequest.class);
+    }
+
     @Override
     public ResendLastRequest fromJson(JsonReader reader) throws IOException {
         // Version and type already read

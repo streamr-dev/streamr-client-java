@@ -11,6 +11,10 @@ public class UnicastMessageAdapter extends ControlLayerAdapter<UnicastMessage> {
 
     private static final StreamMessageAdapter streamMessageAdapter = new StreamMessageAdapter();
 
+    UnicastMessageAdapter() {
+        super(UnicastMessage.class);
+    }
+
     @Override
     public UnicastMessage fromJson(JsonReader reader) throws IOException {
         // Version and type already read

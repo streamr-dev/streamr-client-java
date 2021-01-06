@@ -11,6 +11,10 @@ import java.io.IOException;
 public class ResendRangeRequestAdapter extends ControlLayerAdapter<ResendRangeRequest> {
     private static final MessageRefAdapter msgRefAdapter = new MessageRefAdapter();
 
+    ResendRangeRequestAdapter() {
+        super(ResendRangeRequest.class);
+    }
+
     @Override
     public ResendRangeRequest fromJson(JsonReader reader) throws IOException {
         // Version and type already read

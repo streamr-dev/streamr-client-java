@@ -6,6 +6,9 @@ import com.squareup.moshi.JsonWriter;
 import java.io.IOException;
 
 public class ErrorResponseAdapter extends ControlLayerAdapter<ErrorResponse> {
+    ErrorResponseAdapter() {
+        super(ErrorResponse.class);
+    }
 
     @Override
     public ErrorResponse fromJson(JsonReader reader) throws IOException {

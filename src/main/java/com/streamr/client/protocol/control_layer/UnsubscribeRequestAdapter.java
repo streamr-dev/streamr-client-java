@@ -7,6 +7,10 @@ import java.io.IOException;
 
 public class UnsubscribeRequestAdapter extends ControlLayerAdapter<UnsubscribeRequest> {
 
+    UnsubscribeRequestAdapter() {
+        super(UnsubscribeRequest.class);
+    }
+
     @Override
     public UnsubscribeRequest fromJson(JsonReader reader) throws IOException {
         // Version and type already read

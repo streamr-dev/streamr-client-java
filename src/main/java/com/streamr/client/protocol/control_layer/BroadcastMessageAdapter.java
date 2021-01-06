@@ -8,8 +8,11 @@ import com.streamr.client.protocol.message_layer.StreamMessageAdapter;
 import java.io.IOException;
 
 public class BroadcastMessageAdapter extends ControlLayerAdapter<BroadcastMessage>{
-
     private static final StreamMessageAdapter streamMessageAdapter = new StreamMessageAdapter();
+
+    BroadcastMessageAdapter() {
+        super(BroadcastMessage.class);
+    }
 
     @Override
     public BroadcastMessage fromJson(JsonReader reader) throws IOException {

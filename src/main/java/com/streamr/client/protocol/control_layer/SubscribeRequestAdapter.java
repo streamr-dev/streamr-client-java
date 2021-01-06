@@ -7,6 +7,10 @@ import java.io.IOException;
 
 public class SubscribeRequestAdapter extends ControlLayerAdapter<SubscribeRequest> {
 
+    SubscribeRequestAdapter() {
+        super(SubscribeRequest.class);
+    }
+
     @Override
     public SubscribeRequest fromJson(JsonReader reader) throws IOException {
         // Version and type already read

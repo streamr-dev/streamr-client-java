@@ -8,9 +8,14 @@ import java.io.IOException;
 import java.util.function.Function;
 
 public abstract class ControlLayerAdapter<T extends ControlMessage> extends JsonAdapter<T> {
+    private final Class<T> messageClass;
+
+    ControlLayerAdapter(final Class<T> messageClass) {
+        this.messageClass = messageClass;
+    }
 
     public void controlMessagetoJson(JsonWriter writer, ControlMessage value) throws IOException {
-        toJson(writer, (T) value);
+        toJson(writer, messageClass.cast(value));
     }
 
     public <U> U nullSafe(JsonReader reader, CheckedFunction<JsonReader,U> readerFunction) throws IOException {

@@ -7,6 +7,10 @@ import java.io.IOException;
 
 public class ResendResponseNoResendAdapter extends ControlLayerAdapter<ResendResponseNoResend> {
 
+    ResendResponseNoResendAdapter() {
+        super(ResendResponseNoResend.class);
+    }
+
     @Override
     public ResendResponseNoResend fromJson(JsonReader reader) throws IOException {
         // Version and type already read
