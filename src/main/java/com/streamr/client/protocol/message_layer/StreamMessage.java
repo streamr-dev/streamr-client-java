@@ -160,47 +160,6 @@ public class StreamMessage implements ITimestamped {
         this.signature = signature;
     }
 
-    /**
-     * Convenience constructor. Serializes the provided Map to JSON and sets ContentType to JSON.
-     */
-    public StreamMessage(
-            MessageID messageID,
-            MessageRef previousMessageRef,
-            MessageType messageType,
-            Map<String, Object> content,
-            EncryptionType encryptionType,
-            String groupKeyId,
-            SignatureType signatureType,
-            String signature
-    ) {
-        this(messageID, previousMessageRef, messageType, HttpUtils.mapAdapter.toJson(content), ContentType.JSON, encryptionType, groupKeyId, null, signatureType, signature);
-    }
-
-    /**
-     * Convenience constructor. Serializes the provided Map to JSON and sets ContentType to JSON.
-     * Leaves the encryption and signature related fields at their default (empty/inactive) values.
-     */
-    public StreamMessage(
-            MessageID messageID,
-            MessageRef previousMessageRef,
-            MessageType messageType,
-            Map<String, Object> content
-    ) {
-        this(messageID, previousMessageRef, messageType, HttpUtils.mapAdapter.toJson(content), ContentType.JSON, EncryptionType.NONE, null, null, SignatureType.NONE, null);
-    }
-
-    /**
-     * Convenience constructor. Serializes the provided Map to JSON, sets ContentType to JSON, and MessageType to STREAM_MESSAGE.
-     * Leaves the encryption and signature related fields at their default (empty/inactive) values.
-     */
-    public StreamMessage(
-            MessageID messageID,
-            MessageRef previousMessageRef,
-            Map<String, Object> content
-    ) {
-        this(messageID, previousMessageRef, MessageType.STREAM_MESSAGE, HttpUtils.mapAdapter.toJson(content), ContentType.JSON, EncryptionType.NONE, null, null, SignatureType.NONE, null);
-    }
-
     public MessageID getMessageID() {
         return messageID;
     }

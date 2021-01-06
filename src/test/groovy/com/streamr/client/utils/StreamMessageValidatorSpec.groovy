@@ -29,15 +29,39 @@ class StreamMessageValidatorSpec extends StreamrSpecification {
     MessageID msgId = new MessageID("streamId", 0, 425235315L, 0L, publisherId, "msgChainId")
 
     // The signature of this message is invalid but still in a correct format
-    StreamMessage msgInvalid = new StreamMessage(msgId, null, StreamMessage.MessageType.STREAM_MESSAGE, [foo: 'bar'],
-            StreamMessage.EncryptionType.NONE, null, StreamMessage.SignatureType.ETH, signature)
+    StreamMessage msgInvalid = new StreamMessage.Builder()
+            .setMessageID(msgId)
+            .setPreviousMessageRef(null)
+            .setMessageType(StreamMessage.MessageType.STREAM_MESSAGE)
+            .setSerializedContent(HttpUtils.mapAdapter.toJson([foo: 'bar']))
+            .setEncryptionType(StreamMessage.EncryptionType.NONE)
+            .setGroupKeyId(null)
+            .setSignatureType(StreamMessage.SignatureType.ETH)
+            .setSignature(signature)
+            .createStreamMessage()
 
     // By checking that this message is verified without throwing, we ensure that the SigningUtil is not called because the signature is not in the correct form
-    StreamMessage msgWrongFormat = new StreamMessage(msgId, null, StreamMessage.MessageType.STREAM_MESSAGE, [foo: 'bar'],
-            StreamMessage.EncryptionType.NONE, null, StreamMessage.SignatureType.ETH, "wrong-signature")
+    StreamMessage msgWrongFormat = new StreamMessage.Builder()
+            .setMessageID(msgId)
+            .setPreviousMessageRef(null)
+            .setMessageType(StreamMessage.MessageType.STREAM_MESSAGE)
+            .setSerializedContent(HttpUtils.mapAdapter.toJson([foo: 'bar']))
+            .setEncryptionType(StreamMessage.EncryptionType.NONE)
+            .setGroupKeyId(null)
+            .setSignatureType(StreamMessage.SignatureType.ETH)
+            .setSignature("wrong-signature")
+            .createStreamMessage()
 
-    StreamMessage msgUnsigned = new StreamMessage(msgId, null, StreamMessage.MessageType.STREAM_MESSAGE, [foo: 'bar'],
-            StreamMessage.EncryptionType.NONE, null, StreamMessage.SignatureType.NONE, null)
+    StreamMessage msgUnsigned = new StreamMessage.Builder()
+            .setMessageID(msgId)
+            .setPreviousMessageRef(null)
+            .setMessageType(StreamMessage.MessageType.STREAM_MESSAGE)
+            .setSerializedContent(HttpUtils.mapAdapter.toJson([foo: 'bar']))
+            .setEncryptionType(StreamMessage.EncryptionType.NONE)
+            .setGroupKeyId(null)
+            .setSignatureType(StreamMessage.SignatureType.NONE)
+            .setSignature(null)
+            .createStreamMessage()
 
     List<Address> publishers
     List<Address> subscribers

@@ -7,7 +7,6 @@ import com.streamr.client.utils.HttpUtils
 import spock.lang.Specification
 
 class StreamMessageSpec extends Specification {
-
 	StreamMessage msg
 
 	void setup() {
@@ -19,14 +18,10 @@ class StreamMessageSpec extends Specification {
 		Map<String, Object> mapContent = HttpUtils.mapAdapter.fromJson(serializedContent)
 
 		when:
-		msg = new StreamMessage(
-				msg.getMessageID(),
-				msg.getMessageRef(),
-				mapContent)
+		msg = new StreamMessage.Builder(msg).setSerializedContent(HttpUtils.mapAdapter.toJson(mapContent)).createStreamMessage()
 		then:
 		msg.getParsedContent() == mapContent
 		msg.getSerializedContent() == serializedContent
-
 	}
 
 	void "getParsedContent() throws if message is AES encrypted"() {

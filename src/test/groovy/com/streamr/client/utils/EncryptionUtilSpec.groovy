@@ -25,10 +25,7 @@ class EncryptionUtilSpec extends StreamrSpecification {
     GroupKey key
 
     def setup() {
-        streamMessage = new StreamMessage(
-                new MessageID("stream-id", 0, 1L, 0L, publisherId, "msgChainId"),
-                new MessageRef(0L, 0L),
-                plaintextContent)
+        streamMessage = new StreamMessage.Builder().setMessageID(new MessageID("stream-id", 0, 1L, 0L, publisherId, "msgChainId")).setPreviousMessageRef(new MessageRef(0L, 0L)).setSerializedContent(HttpUtils.mapAdapter.toJson(plaintextContent)).createStreamMessage()
         util = new EncryptionUtil()
         key = GroupKey.generate()
     }
