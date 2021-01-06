@@ -315,17 +315,7 @@ public class StreamMessage implements ITimestamped {
 
     @Override
     public String toString() {
-        return messageType+"{" +
-                "messageID=" + messageID +
-                ", previousMessageRef=" + previousMessageRef +
-                ", content='" + serializedContent + '\'' +
-                ", contentType=" + contentType +
-                ", encryptionType=" + encryptionType +
-                ", groupKeyId='" + groupKeyId + '\'' +
-                ", newGroupKey='" + newGroupKey + '\'' +
-                ", signatureType=" + signatureType +
-                ", signature='" + signature + '\'' +
-                '}';
+        return String.format("%s{messageID=%s, previousMessageRef=%s, content='%s', contentType=%s, encryptionType=%s, groupKeyId='%s', newGroupKey='%s', signatureType=%s, signature='%s'}", messageType, messageID, previousMessageRef, serializedContent, contentType, encryptionType, groupKeyId, newGroupKey, signatureType, signature);
     }
 
     @Override
