@@ -60,7 +60,7 @@ class KeyExchangeUtilSpec extends StreamrSpecification {
 
         // Need to use Double because Moshi parser converts all JSON numbers to double
         GroupKeyRequest request = new GroupKeyRequest("requestId", "streamId", encryptionUtil.publicKeyAsPemString, [key1.groupKeyId, key2.groupKeyId])
-        StreamMessage streamMessage = request.toStreamMessage(id, null).createStreamMessage()
+        StreamMessage streamMessage = request.toStreamMessageBuilder(id, null).createStreamMessage()
 
         when:
         util.handleGroupKeyRequest(streamMessage)
@@ -88,7 +88,7 @@ class KeyExchangeUtilSpec extends StreamrSpecification {
         EncryptedGroupKey encryptedKey = EncryptionUtil.encryptWithPublicKey(key, encryptionUtil.publicKey)
 
         GroupKeyResponse response = new GroupKeyResponse("requestId", "streamId", [encryptedKey])
-        StreamMessage streamMessage = response.toStreamMessage(id, null)
+        StreamMessage streamMessage = response.toStreamMessageBuilder(id, null)
                 .withEncryptionType(StreamMessage.EncryptionType.RSA)
                 .createStreamMessage()
 
@@ -106,7 +106,7 @@ class KeyExchangeUtilSpec extends StreamrSpecification {
         EncryptedGroupKey encryptedKey = EncryptionUtil.encryptWithPublicKey(key, encryptionUtil.publicKey)
 
         GroupKeyAnnounce announce = new GroupKeyAnnounce("streamId", [encryptedKey])
-        StreamMessage streamMessage = announce.toStreamMessage(id, null)
+        StreamMessage streamMessage = announce.toStreamMessageBuilder(id, null)
                 .withEncryptionType(StreamMessage.EncryptionType.RSA)
                 .createStreamMessage()
 
@@ -125,7 +125,7 @@ class KeyExchangeUtilSpec extends StreamrSpecification {
         EncryptedGroupKey encryptedKey = EncryptionUtil.encryptGroupKey(keyToEncrypt, keyToEncryptWith)
 
         GroupKeyAnnounce announce = new GroupKeyAnnounce("streamId", [encryptedKey])
-        StreamMessage streamMessage = announce.toStreamMessage(id, null)
+        StreamMessage streamMessage = announce.toStreamMessageBuilder(id, null)
                 .withGroupKeyId(keyToEncryptWith.getGroupKeyId())
                 .withEncryptionType(StreamMessage.EncryptionType.AES)
                 .createStreamMessage()
@@ -211,10 +211,10 @@ class KeyExchangeUtilSpec extends StreamrSpecification {
                 publisherId,
                 "msgChainId")
         StreamMessage announce1 = new GroupKeyAnnounce("streamId", [])
-                .toStreamMessage(msgId, null)
+                .toStreamMessageBuilder(msgId, null)
                 .createStreamMessage()
         StreamMessage announce3 = new GroupKeyAnnounce("streamId", [])
-                .toStreamMessage(msgId, null)
+                .toStreamMessageBuilder(msgId, null)
                 .createStreamMessage()
 
         when:

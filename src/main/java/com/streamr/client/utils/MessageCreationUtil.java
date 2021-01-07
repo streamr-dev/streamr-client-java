@@ -117,7 +117,7 @@ public class MessageCreationUtil {
     String keyExchangeStreamId = KeyExchangeUtil.getKeyExchangeStreamId(publisherAddress);
     Pair<MessageID, MessageRef> pair = createDefaultMsgIdAndRef(keyExchangeStreamId);
     StreamMessage streamMessage =
-        request.toStreamMessage(pair.getLeft(), pair.getRight()).createStreamMessage();
+        request.toStreamMessageBuilder(pair.getLeft(), pair.getRight()).createStreamMessage();
 
     // Never encrypt but always sign
     streamMessage = signingUtil.signStreamMessage(streamMessage);
@@ -149,7 +149,7 @@ public class MessageCreationUtil {
     Pair<MessageID, MessageRef> pair = createDefaultMsgIdAndRef(keyExchangeStreamId);
     StreamMessage streamMessage =
         response
-            .toStreamMessage(pair.getLeft(), pair.getRight())
+            .toStreamMessageBuilder(pair.getLeft(), pair.getRight())
             .withEncryptionType(StreamMessage.EncryptionType.RSA)
             .withGroupKeyId(request.getPublicKey())
             .createStreamMessage();
@@ -182,7 +182,7 @@ public class MessageCreationUtil {
     Pair<MessageID, MessageRef> pair = createDefaultMsgIdAndRef(keyExchangeStreamId);
     StreamMessage streamMessage =
         announce
-            .toStreamMessage(pair.getLeft(), pair.getRight())
+            .toStreamMessageBuilder(pair.getLeft(), pair.getRight())
             .withEncryptionType(StreamMessage.EncryptionType.RSA)
             .withGroupKeyId(publicKey)
             .createStreamMessage();
@@ -210,7 +210,7 @@ public class MessageCreationUtil {
     String keyExchangeStreamId = KeyExchangeUtil.getKeyExchangeStreamId(destinationAddress);
     Pair<MessageID, MessageRef> pair = createDefaultMsgIdAndRef(keyExchangeStreamId);
     StreamMessage streamMessage =
-        response.toStreamMessage(pair.getLeft(), pair.getRight()).createStreamMessage();
+        response.toStreamMessageBuilder(pair.getLeft(), pair.getRight()).createStreamMessage();
 
     // Never encrypt but always sign
     streamMessage = signingUtil.signStreamMessage(streamMessage);

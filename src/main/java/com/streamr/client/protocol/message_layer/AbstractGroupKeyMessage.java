@@ -56,7 +56,7 @@ public abstract class AbstractGroupKeyMessage {
         streamMessage.getSerializedContent(), streamMessage.getMessageType());
   }
 
-  public StreamMessage.Builder toStreamMessage(
+  public StreamMessage.Builder toStreamMessageBuilder(
       final MessageID messageID, final MessageRef prevMsgRef) {
     return new StreamMessage.Builder()
         .withMessageId(messageID)
