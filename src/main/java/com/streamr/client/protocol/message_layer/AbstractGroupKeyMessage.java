@@ -1,6 +1,7 @@
 package com.streamr.client.protocol.message_layer;
 
 import com.streamr.client.exceptions.MalformedMessageException;
+import com.streamr.client.protocol.message_layer.StreamMessage.MessageType;
 import com.streamr.client.utils.ValidationUtil;
 import java.io.IOException;
 import java.util.HashMap;
@@ -10,19 +11,15 @@ public abstract class AbstractGroupKeyMessage {
   protected final String streamId;
 
   private static final Map<
-          StreamMessage.MessageType,
-          AbstractGroupKeyMessageAdapter<? extends AbstractGroupKeyMessage>>
+          MessageType, AbstractGroupKeyMessageAdapter<? extends AbstractGroupKeyMessage>>
       adapterByMessageType = new HashMap<>();
 
   static {
+    adapterByMessageType.put(MessageType.GROUP_KEY_REQUEST, new GroupKeyRequestAdapter());
+    adapterByMessageType.put(MessageType.GROUP_KEY_RESPONSE, new GroupKeyResponseAdapter());
     adapterByMessageType.put(
-        StreamMessage.MessageType.GROUP_KEY_REQUEST, new GroupKeyRequestAdapter());
-    adapterByMessageType.put(
-        StreamMessage.MessageType.GROUP_KEY_RESPONSE, new GroupKeyResponseAdapter());
-    adapterByMessageType.put(
-        StreamMessage.MessageType.GROUP_KEY_ERROR_RESPONSE, new GroupKeyErrorResponseAdapter());
-    adapterByMessageType.put(
-        StreamMessage.MessageType.GROUP_KEY_ANNOUNCE, new GroupKeyAnnounceAdapter());
+        MessageType.GROUP_KEY_ERROR_RESPONSE, new GroupKeyErrorResponseAdapter());
+    adapterByMessageType.put(MessageType.GROUP_KEY_ANNOUNCE, new GroupKeyAnnounceAdapter());
   }
 
   public AbstractGroupKeyMessage(String streamId) {
@@ -34,14 +31,13 @@ public abstract class AbstractGroupKeyMessage {
     return streamId;
   }
 
-  protected abstract StreamMessage.MessageType getMessageType();
+  protected abstract MessageType getMessageType();
 
   public String serialize() {
     return adapterByMessageType.get(getMessageType()).groupKeyMessageToJson(this);
   }
 
-  public static AbstractGroupKeyMessage deserialize(
-      String serialized, StreamMessage.MessageType messageType) {
+  public static AbstractGroupKeyMessage deserialize(String serialized, MessageType messageType) {
     try {
       return adapterByMessageType.get(messageType).fromJson(serialized);
     } catch (final IOException e) {
