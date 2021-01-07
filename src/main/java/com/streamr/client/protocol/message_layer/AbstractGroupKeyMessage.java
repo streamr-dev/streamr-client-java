@@ -48,16 +48,16 @@ public abstract class AbstractGroupKeyMessage {
 
     public StreamMessage.Builder toStreamMessage(final MessageID messageID, final MessageRef prevMsgRef) {
         return new StreamMessage.Builder()
-            .setMessageID(messageID)
-            .setPreviousMessageRef(prevMsgRef)
-            .setMessageType(getMessageType())
-            .setSerializedContent(serialize())
-            .setContentType(StreamMessage.ContentType.JSON)
-            .setEncryptionType(StreamMessage.EncryptionType.NONE)
-            .setGroupKeyId(null)
-            .setNewGroupKey(null)
-            .setSignatureType(StreamMessage.SignatureType.NONE)
-            .setSignature(null);
+            .withMessageId(messageID)
+            .withPreviousMessageRef(prevMsgRef)
+            .withMessageType(getMessageType())
+            .withSerializedContent(serialize())
+            .withContentType(StreamMessage.ContentType.JSON)
+            .withEncryptionType(StreamMessage.EncryptionType.NONE)
+            .withGroupKeyId(null)
+            .withNewGroupKey(null)
+            .withSignatureType(StreamMessage.SignatureType.NONE)
+            .withSignature(null);
     }
 
 }

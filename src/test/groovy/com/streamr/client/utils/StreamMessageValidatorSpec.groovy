@@ -30,37 +30,37 @@ class StreamMessageValidatorSpec extends StreamrSpecification {
 
     // The signature of this message is invalid but still in a correct format
     StreamMessage msgInvalid = new StreamMessage.Builder()
-            .setMessageID(msgId)
-            .setPreviousMessageRef(null)
-            .setMessageType(StreamMessage.MessageType.STREAM_MESSAGE)
-            .setSerializedContent(HttpUtils.mapAdapter.toJson([foo: 'bar']))
-            .setEncryptionType(StreamMessage.EncryptionType.NONE)
-            .setGroupKeyId(null)
-            .setSignatureType(StreamMessage.SignatureType.ETH)
-            .setSignature(signature)
+            .withMessageId(msgId)
+            .withPreviousMessageRef(null)
+            .withMessageType(StreamMessage.MessageType.STREAM_MESSAGE)
+            .withSerializedContent(HttpUtils.mapAdapter.toJson([foo: 'bar']))
+            .withEncryptionType(StreamMessage.EncryptionType.NONE)
+            .withGroupKeyId(null)
+            .withSignatureType(StreamMessage.SignatureType.ETH)
+            .withSignature(signature)
             .createStreamMessage()
 
     // By checking that this message is verified without throwing, we ensure that the SigningUtil is not called because the signature is not in the correct form
     StreamMessage msgWrongFormat = new StreamMessage.Builder()
-            .setMessageID(msgId)
-            .setPreviousMessageRef(null)
-            .setMessageType(StreamMessage.MessageType.STREAM_MESSAGE)
-            .setSerializedContent(HttpUtils.mapAdapter.toJson([foo: 'bar']))
-            .setEncryptionType(StreamMessage.EncryptionType.NONE)
-            .setGroupKeyId(null)
-            .setSignatureType(StreamMessage.SignatureType.ETH)
-            .setSignature("wrong-signature")
+            .withMessageId(msgId)
+            .withPreviousMessageRef(null)
+            .withMessageType(StreamMessage.MessageType.STREAM_MESSAGE)
+            .withSerializedContent(HttpUtils.mapAdapter.toJson([foo: 'bar']))
+            .withEncryptionType(StreamMessage.EncryptionType.NONE)
+            .withGroupKeyId(null)
+            .withSignatureType(StreamMessage.SignatureType.ETH)
+            .withSignature("wrong-signature")
             .createStreamMessage()
 
     StreamMessage msgUnsigned = new StreamMessage.Builder()
-            .setMessageID(msgId)
-            .setPreviousMessageRef(null)
-            .setMessageType(StreamMessage.MessageType.STREAM_MESSAGE)
-            .setSerializedContent(HttpUtils.mapAdapter.toJson([foo: 'bar']))
-            .setEncryptionType(StreamMessage.EncryptionType.NONE)
-            .setGroupKeyId(null)
-            .setSignatureType(StreamMessage.SignatureType.NONE)
-            .setSignature(null)
+            .withMessageId(msgId)
+            .withPreviousMessageRef(null)
+            .withMessageType(StreamMessage.MessageType.STREAM_MESSAGE)
+            .withSerializedContent(HttpUtils.mapAdapter.toJson([foo: 'bar']))
+            .withEncryptionType(StreamMessage.EncryptionType.NONE)
+            .withGroupKeyId(null)
+            .withSignatureType(StreamMessage.SignatureType.NONE)
+            .withSignature(null)
             .createStreamMessage()
 
     List<Address> publishers
@@ -179,7 +179,7 @@ class StreamMessageValidatorSpec extends StreamrSpecification {
                 .withRequireEncryptedData(true)
                 .createStream()
         msgSigned = new StreamMessage.Builder(msgSigned)
-                .setEncryptionType(StreamMessage.EncryptionType.AES)
+                .withEncryptionType(StreamMessage.EncryptionType.AES)
                 .createStreamMessage()
 
         when:
@@ -193,7 +193,7 @@ class StreamMessageValidatorSpec extends StreamrSpecification {
                 .withRequireEncryptedData(true)
                 .createStream()
         msgSigned = new StreamMessage.Builder(msgSigned)
-                .setEncryptionType(StreamMessage.EncryptionType.NONE)
+                .withEncryptionType(StreamMessage.EncryptionType.NONE)
                 .createStreamMessage()
 
         when:
@@ -217,8 +217,8 @@ class StreamMessageValidatorSpec extends StreamrSpecification {
 
     void "[GroupKeyRequest] rejects unsigned"() {
         groupKeyRequest = new StreamMessage.Builder(groupKeyRequest)
-                .setSignature(null)
-                .setSignatureType(StreamMessage.SignatureType.NONE)
+                .withSignature(null)
+                .withSignatureType(StreamMessage.SignatureType.NONE)
                 .createStreamMessage()
 
         when:
@@ -232,8 +232,8 @@ class StreamMessageValidatorSpec extends StreamrSpecification {
     void "[GroupKeyRequest] rejects invalid signatures"() {
         def signature = groupKeyRequest.getSignature().replace('a', 'b')
         groupKeyRequest = new StreamMessage.Builder(groupKeyRequest)
-                .setSignature(signature)
-                .setSignatureType(StreamMessage.SignatureType.ETH)
+                .withSignature(signature)
+                .withSignatureType(StreamMessage.SignatureType.ETH)
                 .createStreamMessage()
 
         when:
@@ -280,8 +280,8 @@ class StreamMessageValidatorSpec extends StreamrSpecification {
 
     void "[GroupKeyResponse] rejects unsigned"() {
         groupKeyResponse = new StreamMessage.Builder(groupKeyResponse)
-                .setSignature(null)
-                .setSignatureType(StreamMessage.SignatureType.NONE)
+                .withSignature(null)
+                .withSignatureType(StreamMessage.SignatureType.NONE)
                 .createStreamMessage()
 
         when:
@@ -295,8 +295,8 @@ class StreamMessageValidatorSpec extends StreamrSpecification {
     void "[GroupKeyResponse] rejects invalid signatures"() {
         def signature = groupKeyResponse.getSignature().replace('a', 'b')
         groupKeyResponse = new StreamMessage.Builder(groupKeyResponse)
-                .setSignature(signature)
-                .setSignatureType(StreamMessage.SignatureType.ETH)
+                .withSignature(signature)
+                .withSignatureType(StreamMessage.SignatureType.ETH)
                 .createStreamMessage()
 
         when:
@@ -343,8 +343,8 @@ class StreamMessageValidatorSpec extends StreamrSpecification {
 
     void "[GroupKeyAnnounce] rejects unsigned"() {
         groupKeyAnnounceRekey = new StreamMessage.Builder(groupKeyAnnounceRekey)
-                .setSignature(null)
-                .setSignatureType(StreamMessage.SignatureType.NONE)
+                .withSignature(null)
+                .withSignatureType(StreamMessage.SignatureType.NONE)
                 .createStreamMessage()
 
         when:
@@ -358,8 +358,8 @@ class StreamMessageValidatorSpec extends StreamrSpecification {
     void "[GroupKeyAnnounce] rejects invalid signatures"() {
         def signature = groupKeyAnnounceRekey.getSignature().replace('a', 'b')
         groupKeyAnnounceRekey = new StreamMessage.Builder(groupKeyAnnounceRekey)
-                .setSignature(signature)
-                .setSignatureType(StreamMessage.SignatureType.ETH)
+                .withSignature(signature)
+                .withSignatureType(StreamMessage.SignatureType.ETH)
                 .createStreamMessage()
 
         when:
@@ -406,8 +406,8 @@ class StreamMessageValidatorSpec extends StreamrSpecification {
 
     void "[GroupKeyErrorResponse] rejects unsigned"() {
         groupKeyErrorResponse = new StreamMessage.Builder(groupKeyErrorResponse)
-                .setSignature(null)
-                .setSignatureType(StreamMessage.SignatureType.NONE)
+                .withSignature(null)
+                .withSignatureType(StreamMessage.SignatureType.NONE)
                 .createStreamMessage()
 
         when:
@@ -421,8 +421,8 @@ class StreamMessageValidatorSpec extends StreamrSpecification {
     void "[GroupKeyErrorResponse] rejects invalid signatures"() {
         def signature = groupKeyErrorResponse.getSignature().replace('a', 'b')
         groupKeyErrorResponse = new StreamMessage.Builder(groupKeyErrorResponse)
-                .setSignature(signature)
-                .setSignatureType(StreamMessage.SignatureType.ETH)
+                .withSignature(signature)
+                .withSignatureType(StreamMessage.SignatureType.ETH)
                 .createStreamMessage()
 
         when:

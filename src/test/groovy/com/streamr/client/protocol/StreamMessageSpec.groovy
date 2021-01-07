@@ -19,7 +19,7 @@ class StreamMessageSpec extends Specification {
 
 		when:
 		msg = new StreamMessage.Builder(msg)
-				.setSerializedContent(HttpUtils.mapAdapter.toJson(mapContent))
+				.withSerializedContent(HttpUtils.mapAdapter.toJson(mapContent))
 				.createStreamMessage()
 		then:
 		msg.getParsedContent() == mapContent
@@ -29,7 +29,7 @@ class StreamMessageSpec extends Specification {
 	void "getParsedContent() throws if message is AES encrypted"() {
 		when:
 		msg = new StreamMessage.Builder(msg)
-				.setEncryptionType(EncryptionType.AES)
+				.withEncryptionType(EncryptionType.AES)
 				.createStreamMessage()
 		msg.getParsedContent()
 		then:

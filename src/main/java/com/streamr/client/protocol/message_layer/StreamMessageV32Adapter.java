@@ -46,7 +46,7 @@ public class StreamMessageV32Adapter extends JsonAdapter<StreamMessage> {
             String signature = nullSafeRead(reader, reader::nextString);
             // top-level array will be closed in StreamMessageAdapter
 
-            return new StreamMessage.Builder().setMessageID(messageID).setPreviousMessageRef(previousMessageRef).setMessageType(messageType).setSerializedContent(serializedContent).setContentType(contentType).setEncryptionType(encryptionType).setGroupKeyId(groupKeyId).setNewGroupKey(serializedNewGroupKey != null ? EncryptedGroupKey.deserialize(serializedNewGroupKey) : null).setSignatureType(signatureType).setSignature(signature).createStreamMessage();
+            return new StreamMessage.Builder().withMessageId(messageID).withPreviousMessageRef(previousMessageRef).withMessageType(messageType).withSerializedContent(serializedContent).withContentType(contentType).withEncryptionType(encryptionType).withGroupKeyId(groupKeyId).withNewGroupKey(serializedNewGroupKey != null ? EncryptedGroupKey.deserialize(serializedNewGroupKey) : null).withSignatureType(signatureType).withSignature(signature).createStreamMessage();
         } catch (Exception e) {
             log.error("Failed to parse StreamMessageV31", e);
             throw new MalformedMessageException("Malformed message: " + reader.toString(), e);

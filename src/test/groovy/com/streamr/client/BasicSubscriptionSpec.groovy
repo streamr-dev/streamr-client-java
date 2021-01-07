@@ -226,7 +226,7 @@ class BasicSubscriptionSpec extends StreamrSpecification {
         StreamMessage msg = createMessage()
         msg = EncryptionUtil.encryptStreamMessage(msg, oldKey)
         msg = new StreamMessage.Builder(msg)
-                .setNewGroupKey(EncryptionUtil.encryptGroupKey(newKey, oldKey))
+                .withNewGroupKey(EncryptionUtil.encryptGroupKey(newKey, oldKey))
                 .createStreamMessage()
 
         when:

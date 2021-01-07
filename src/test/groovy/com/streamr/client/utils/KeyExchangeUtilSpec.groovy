@@ -17,16 +17,16 @@ class KeyExchangeUtilSpec extends StreamrSpecification {
     KeyExchangeUtil.OnNewKeysFunction onNewKeysFunction
     ArrayList<StreamMessage> published
     StreamMessage response = new StreamMessage.Builder()
-            .setMessageID(new MessageID("subscriberId", 0, 5145, 0, publisherId, ""))
-            .setMessageType(null)
-            .setMessageType(StreamMessage.MessageType.GROUP_KEY_RESPONSE)
-            .setSerializedContent("response")
-            .setContentType(StreamMessage.ContentType.JSON)
-            .setEncryptionType(StreamMessage.EncryptionType.RSA)
-            .setGroupKeyId(null)
-            .setNewGroupKey(null)
-            .setSignatureType(StreamMessage.SignatureType.ETH)
-            .setSignature("signature")
+            .withMessageId(new MessageID("subscriberId", 0, 5145, 0, publisherId, ""))
+            .withMessageType(null)
+            .withMessageType(StreamMessage.MessageType.GROUP_KEY_RESPONSE)
+            .withSerializedContent("response")
+            .withContentType(StreamMessage.ContentType.JSON)
+            .withEncryptionType(StreamMessage.EncryptionType.RSA)
+            .withGroupKeyId(null)
+            .withNewGroupKey(null)
+            .withSignatureType(StreamMessage.SignatureType.ETH)
+            .withSignature("signature")
             .createStreamMessage()
     EncryptionUtil encryptionUtil = new EncryptionUtil()
     AddressValidityUtil addressValidityUtil = new AddressValidityUtil({ String id -> new ArrayList<>()}, { String s1, String s2 -> s1 == "streamId" && s2 == "subscriberId"},
@@ -89,7 +89,7 @@ class KeyExchangeUtilSpec extends StreamrSpecification {
 
         GroupKeyResponse response = new GroupKeyResponse("requestId", "streamId", [encryptedKey])
         StreamMessage streamMessage = response.toStreamMessage(id, null)
-                .setEncryptionType(StreamMessage.EncryptionType.RSA)
+                .withEncryptionType(StreamMessage.EncryptionType.RSA)
                 .createStreamMessage()
 
         when:
@@ -107,7 +107,7 @@ class KeyExchangeUtilSpec extends StreamrSpecification {
 
         GroupKeyAnnounce announce = new GroupKeyAnnounce("streamId", [encryptedKey])
         StreamMessage streamMessage = announce.toStreamMessage(id, null)
-                .setEncryptionType(StreamMessage.EncryptionType.RSA)
+                .withEncryptionType(StreamMessage.EncryptionType.RSA)
                 .createStreamMessage()
 
         when:
@@ -126,8 +126,8 @@ class KeyExchangeUtilSpec extends StreamrSpecification {
 
         GroupKeyAnnounce announce = new GroupKeyAnnounce("streamId", [encryptedKey])
         StreamMessage streamMessage = announce.toStreamMessage(id, null)
-                .setGroupKeyId(keyToEncryptWith.getGroupKeyId())
-                .setEncryptionType(StreamMessage.EncryptionType.AES)
+                .withGroupKeyId(keyToEncryptWith.getGroupKeyId())
+                .withEncryptionType(StreamMessage.EncryptionType.AES)
                 .createStreamMessage()
 
         when:

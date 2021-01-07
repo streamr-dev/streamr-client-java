@@ -278,7 +278,7 @@ public final class StreamMessage implements ITimestamped {
 
     @Override
     public String toString() {
-        return String.format("%s{messageID=%s, previousMessageRef=%s, content='%s', contentType=%s, encryptionType=%s, groupKeyId='%s', newGroupKey='%s', signatureType=%s, signature='%s'}", messageType, messageID, previousMessageRef, serializedContent, contentType, encryptionType, groupKeyId, newGroupKey, signatureType, signature);
+        return String.format("%s{messageId=%s, previousMessageRef=%s, content='%s', contentType=%s, encryptionType=%s, groupKeyId='%s', newGroupKey='%s', signatureType=%s, signature='%s'}", messageType, messageID, previousMessageRef, serializedContent, contentType, encryptionType, groupKeyId, newGroupKey, signatureType, signature);
     }
 
     @Override
@@ -295,7 +295,7 @@ public final class StreamMessage implements ITimestamped {
     }
 
     public static final class Builder {
-        private MessageID messageID;
+        private MessageID messageId;
         private MessageRef previousMessageRef;
         private MessageType messageType = MessageType.STREAM_MESSAGE;
         private String serializedContent;
@@ -309,7 +309,7 @@ public final class StreamMessage implements ITimestamped {
         public Builder() {}
 
         public Builder(final StreamMessage message) {
-            this.messageID = message.messageID;
+            this.messageId = message.messageID;
             this.previousMessageRef = message.previousMessageRef;
             this.messageType = message.messageType;
             this.serializedContent = message.serializedContent;
@@ -321,47 +321,47 @@ public final class StreamMessage implements ITimestamped {
             this.signature = message.signature;
         }
 
-        public Builder setMessageID(final MessageID messageID) {
-            this.messageID = messageID;
+        public Builder withMessageId(final MessageID messageId) {
+            this.messageId = messageId;
             return this;
         }
 
-        public Builder setPreviousMessageRef(final MessageRef previousMessageRef) {
+        public Builder withPreviousMessageRef(final MessageRef previousMessageRef) {
             this.previousMessageRef = previousMessageRef;
             return this;
         }
 
-        public Builder setMessageType(final MessageType messageType) {
+        public Builder withMessageType(final MessageType messageType) {
             this.messageType = messageType;
             return this;
         }
 
-        public Builder setSerializedContent(final String serializedContent) {
+        public Builder withSerializedContent(final String serializedContent) {
             this.serializedContent = serializedContent;
             return this;
         }
 
-        public Builder setSerializedContent(final byte[] serializedContent) {
+        public Builder withSerializedContent(final byte[] serializedContent) {
             this.serializedContent = new String(serializedContent, StandardCharsets.UTF_8);
             return this;
         }
 
-        public Builder setContentType(final ContentType contentType) {
+        public Builder withContentType(final ContentType contentType) {
             this.contentType = contentType;
             return this;
         }
 
-        public Builder setEncryptionType(final EncryptionType encryptionType) {
+        public Builder withEncryptionType(final EncryptionType encryptionType) {
             this.encryptionType = encryptionType;
             return this;
         }
 
-        public Builder setGroupKeyId(final String groupKeyId) {
+        public Builder withGroupKeyId(final String groupKeyId) {
             this.groupKeyId = groupKeyId;
             return this;
         }
 
-        public Builder setNewGroupKey(final EncryptedGroupKey newGroupKey) {
+        public Builder withNewGroupKey(final EncryptedGroupKey newGroupKey) {
             if ((newGroupKey != null) && newGroupKey.getGroupKeyId().equals(groupKeyId)) {
                 final String msg = String.format("newGroupKey isn't new - it matches the groupKeyId of the message: %s", newGroupKey.getGroupKeyId());
                 throw new IllegalArgumentException(msg);
@@ -370,18 +370,18 @@ public final class StreamMessage implements ITimestamped {
             return this;
         }
 
-        public Builder setSignatureType(final SignatureType signatureType) {
+        public Builder withSignatureType(final SignatureType signatureType) {
             this.signatureType = signatureType;
             return this;
         }
 
-        public Builder setSignature(final String signature) {
+        public Builder withSignature(final String signature) {
             this.signature = signature;
             return this;
         }
 
         public StreamMessage createStreamMessage() {
-            return new StreamMessage(messageID, previousMessageRef, messageType, serializedContent, contentType, encryptionType, groupKeyId, newGroupKey, signatureType, signature);
+            return new StreamMessage(messageId, previousMessageRef, messageType, serializedContent, contentType, encryptionType, groupKeyId, newGroupKey, signatureType, signature);
         }
     }
 }

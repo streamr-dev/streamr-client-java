@@ -73,9 +73,9 @@ public class MessageCreationUtil {
     Pair<MessageID, MessageRef> pair =
         createMsgIdAndRef(stream.getId(), streamPartition, timestamp.getTime());
     StreamMessage streamMessage = new StreamMessage.Builder()
-        .setMessageID(pair.getLeft())
-        .setPreviousMessageRef(pair.getRight())
-        .setSerializedContent(HttpUtils.mapAdapter.toJson(payload))
+        .withMessageId(pair.getLeft())
+        .withPreviousMessageRef(pair.getRight())
+        .withSerializedContent(HttpUtils.mapAdapter.toJson(payload))
         .createStreamMessage();
 
     // Encrypt content if the GroupKey is provided
@@ -90,7 +90,7 @@ public class MessageCreationUtil {
       if (newGroupKey != null) {
         final EncryptedGroupKey newGroup = EncryptionUtil.encryptGroupKey(newGroupKey, groupKey);
         streamMessage = new StreamMessage.Builder(streamMessage)
-            .setNewGroupKey(newGroup)
+            .withNewGroupKey(newGroup)
             .createStreamMessage();
       }
     }
@@ -145,8 +145,8 @@ public class MessageCreationUtil {
     String keyExchangeStreamId = KeyExchangeUtil.getKeyExchangeStreamId(subscriberAddress);
     Pair<MessageID, MessageRef> pair = createDefaultMsgIdAndRef(keyExchangeStreamId);
     StreamMessage streamMessage = response.toStreamMessage(pair.getLeft(), pair.getRight())
-        .setEncryptionType(StreamMessage.EncryptionType.RSA)
-        .setGroupKeyId(request.getPublicKey())
+        .withEncryptionType(StreamMessage.EncryptionType.RSA)
+        .withGroupKeyId(request.getPublicKey())
         .createStreamMessage();
 
     // Always sign
@@ -176,8 +176,8 @@ public class MessageCreationUtil {
     String keyExchangeStreamId = KeyExchangeUtil.getKeyExchangeStreamId(subscriberAddress);
     Pair<MessageID, MessageRef> pair = createDefaultMsgIdAndRef(keyExchangeStreamId);
     StreamMessage streamMessage = announce.toStreamMessage(pair.getLeft(), pair.getRight())
-        .setEncryptionType(StreamMessage.EncryptionType.RSA)
-        .setGroupKeyId(publicKey)
+        .withEncryptionType(StreamMessage.EncryptionType.RSA)
+        .withGroupKeyId(publicKey)
         .createStreamMessage();
 
     // Always sign

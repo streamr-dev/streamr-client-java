@@ -19,7 +19,7 @@ public class SigningUtil {
 
     private StreamMessage signStreamMessage(final StreamMessage msg, final StreamMessage.SignatureType signatureType) {
         final String signature = sign(getPayloadToSignOrVerify(msg, signatureType), account);
-        final StreamMessage m = new StreamMessage.Builder(msg).setSignature(signature).setSignatureType(signatureType).createStreamMessage();
+        final StreamMessage m = new StreamMessage.Builder(msg).withSignature(signature).withSignatureType(signatureType).createStreamMessage();
         return m;
     }
 

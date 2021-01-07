@@ -72,8 +72,8 @@ public final class EncryptionUtil {
       throw new IllegalArgumentException("Given StreamMessage is not encrypted with RSA!");
     }
     return new StreamMessage.Builder(msg)
-        .setEncryptionType(StreamMessage.EncryptionType.NONE)
-        .setSerializedContent(decryptWithPrivateKey(msg.getSerializedContent()))
+        .withEncryptionType(StreamMessage.EncryptionType.NONE)
+        .withSerializedContent(decryptWithPrivateKey(msg.getSerializedContent()))
         .createStreamMessage();
   }
 
@@ -88,9 +88,9 @@ public final class EncryptionUtil {
   private static StreamMessage encryptWithPublicKey(final StreamMessage msg, final String publicKey) {
     final String content = encryptWithPublicKey(msg.getSerializedContentAsBytes(), publicKey);
     return new StreamMessage.Builder(msg)
-        .setEncryptionType(StreamMessage.EncryptionType.RSA)
-        .setGroupKeyId(publicKey)
-        .setSerializedContent(content)
+        .withEncryptionType(StreamMessage.EncryptionType.RSA)
+        .withGroupKeyId(publicKey)
+        .withSerializedContent(content)
         .createStreamMessage();
   }
 
@@ -178,9 +178,9 @@ public final class EncryptionUtil {
       throws InvalidGroupKeyException {
     final String content = encrypt(streamMessage.getSerializedContentAsBytes(), groupKey);
     return new StreamMessage.Builder(streamMessage)
-        .setSerializedContent(content)
-        .setEncryptionType(StreamMessage.EncryptionType.AES)
-        .setGroupKeyId(groupKey.getGroupKeyId())
+        .withSerializedContent(content)
+        .withEncryptionType(StreamMessage.EncryptionType.AES)
+        .withGroupKeyId(groupKey.getGroupKeyId())
         .createStreamMessage();
   }
 
@@ -194,8 +194,8 @@ public final class EncryptionUtil {
     try {
       final byte[] decryptedContent = decrypt(streamMessage.getSerializedContent(), groupKey);
       return new StreamMessage.Builder(streamMessage)
-          .setSerializedContent(decryptedContent)
-          .setEncryptionType(StreamMessage.EncryptionType.NONE)
+          .withSerializedContent(decryptedContent)
+          .withEncryptionType(StreamMessage.EncryptionType.NONE)
           .createStreamMessage();
     } catch (Exception e) {
       if (groupKey == null) {
