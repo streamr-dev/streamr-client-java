@@ -3,8 +3,9 @@ import com.streamr.client.exceptions.MalformedMessageException;
 import com.streamr.client.utils.Address;
 
 import java.util.Date;
+import java.util.Objects;
 
-public class MessageID {
+public final class MessageID {
     private final String streamId;
     private final int streamPartition;
     private final long timestamp;
@@ -12,7 +13,7 @@ public class MessageID {
     private final Address publisherId;
     private final String msgChainId;
 
-    public MessageID(String streamId, int streamPartition, long timestamp, long sequenceNumber, Address publisherId, String msgChainId) {
+    public MessageID(String streamId, final int streamPartition, final long timestamp, final long sequenceNumber, final Address publisherId, final String msgChainId) {
         if (streamId == null) {
             throw new MalformedMessageException("'streamId' cannot be null.");
         }
@@ -59,14 +60,20 @@ public class MessageID {
     }
 
     @Override
+    public boolean equals(final Object o) {
+        if (this == o) return true;
+        if (o == null || getClass() != o.getClass()) return false;
+        final MessageID messageID = (MessageID) o;
+        return streamPartition == messageID.streamPartition && timestamp == messageID.timestamp && sequenceNumber == messageID.sequenceNumber && Objects.equals(streamId, messageID.streamId) && Objects.equals(publisherId, messageID.publisherId) && Objects.equals(msgChainId, messageID.msgChainId);
+    }
+
+    @Override
+    public int hashCode() {
+        return Objects.hash(streamId, streamPartition, timestamp, sequenceNumber, publisherId, msgChainId);
+    }
+
+    @Override
     public String toString() {
-        return "MessageID{" +
-                "streamId='" + streamId + '\'' +
-                ", streamPartition=" + streamPartition +
-                ", timestamp=" + timestamp +
-                ", sequenceNumber=" + sequenceNumber +
-                ", publisherId='" + publisherId + '\'' +
-                ", msgChainId='" + msgChainId + '\'' +
-                '}';
+        return String.format("MessageID{streamId='%s', streamPartition=%d, timestamp=%d, sequenceNumber=%d, publisherId='%s', msgChainId='%s'}", streamId, streamPartition, timestamp, sequenceNumber, publisherId, msgChainId);
     }
 }

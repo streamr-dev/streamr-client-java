@@ -1,13 +1,14 @@
 package com.streamr.client.protocol.message_layer;
-import org.jetbrains.annotations.NotNull;
 
 import java.util.Date;
+import java.util.Objects;
+import org.jetbrains.annotations.NotNull;
 
-public class MessageRef implements Comparable<MessageRef>{
-    private long timestamp;
-    private long sequenceNumber;
+public final class MessageRef implements Comparable<MessageRef>{
+    private final long timestamp;
+    private final long sequenceNumber;
 
-    public MessageRef(Long timestamp, long sequenceNumber) {
+    public MessageRef(final long timestamp, final long sequenceNumber) {
         this.timestamp = timestamp;
         this.sequenceNumber = sequenceNumber;
     }
@@ -22,6 +23,19 @@ public class MessageRef implements Comparable<MessageRef>{
 
     public long getSequenceNumber() {
         return sequenceNumber;
+    }
+
+    @Override
+    public boolean equals(final Object o) {
+        if (this == o) return true;
+        if (o == null || getClass() != o.getClass()) return false;
+        final MessageRef that = (MessageRef) o;
+        return timestamp == that.timestamp && sequenceNumber == that.sequenceNumber;
+    }
+
+    @Override
+    public int hashCode() {
+        return Objects.hash(timestamp, sequenceNumber);
     }
 
     @Override
