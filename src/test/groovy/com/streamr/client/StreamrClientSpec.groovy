@@ -43,9 +43,14 @@ class StreamrClientSpec extends StreamrSpecification {
     void setupSpec() {
         server.start()
 
-        stream = new Stream("", "")
-        stream.setId("test-stream")
-        stream.setPartitions(1)
+        stream = new Stream.Builder()
+                .withName("")
+                .withDescription("")
+                .withId("test-stream")
+                .withPartitions(1)
+                .withRequireSignedData(false)
+                .withRequireEncryptedData(false)
+                .createStream()
     }
 
     void cleanupSpec() {

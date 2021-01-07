@@ -78,12 +78,14 @@ class StreamMessageValidatorSpec extends StreamrSpecification {
     }
 
     void setup() {
-        stream = new Stream("test-stream", "")
-        stream.setId("streamId")
-        stream.setPartitions(1)
-        stream.setRequireSignedData(false)
-        stream.setRequireEncryptedData(false)
-
+        stream = new Stream.Builder()
+                .withName("test-stream")
+                .withDescription("")
+                .withId("streamId")
+                .withPartitions(1)
+                .withRequireSignedData(false)
+                .withRequireEncryptedData(false)
+                .createStream()
         msgSigned = StreamMessage.deserialize('[31,["tagHE6nTQ9SJV2wPoCxBFw",0,1587141844396,0,"0x6807295093ac5da6fb2a10f7dedc5edd620804fb","k000EDTMtqOTLM8sirFj"],[1587141844312,0],27,0,"{\\"eventType\\":\\"trade\\",\\"eventTime\\":1587141844398,\\"symbol\\":\\"ETHBTC\\",\\"tradeId\\":172530352,\\"price\\":0.02415,\\"quantity\\":0.296,\\"buyerOrderId\\":687544144,\\"sellerOrderId\\":687544104,\\"time\\":1587141844396,\\"maker\\":false,\\"ignored\\":true}",2,"0x6ad42041804c34902aaf7f07780b3e468ec2faec84eda2ff504d5fc26377d5556481d133d7f3f112c63cd48ee9081172013fb0ae1a61b45ee9ca89e057b099591b"]')
 
         groupKeyRequest = subscriberMsgCreationUtil.createGroupKeyRequest(publisher, stream.getId(), encryptionUtil.publicKeyAsPemString, [groupKey.getGroupKeyId()])
@@ -153,7 +155,9 @@ class StreamMessageValidatorSpec extends StreamrSpecification {
     }
 
     void "should throw if policy is 'auto', signature is not present, and stream requires signed data"() {
-        stream.setRequireSignedData(true)
+        stream = new Stream.Builder(stream)
+                .withRequireSignedData(true)
+                .createStream()
         validator = getValidator(SignatureVerificationPolicy.AUTO)
         when:
         validator.validate(msgUnsigned)
@@ -171,7 +175,9 @@ class StreamMessageValidatorSpec extends StreamrSpecification {
     }
 
     void "accepts valid encrypted messages"() {
-        stream.setRequireEncryptedData(true)
+        stream = new Stream.Builder(stream)
+                .withRequireEncryptedData(true)
+                .createStream()
         msgSigned = new StreamMessage.Builder(msgSigned)
                 .setEncryptionType(StreamMessage.EncryptionType.AES)
                 .createStreamMessage()
@@ -183,7 +189,9 @@ class StreamMessageValidatorSpec extends StreamrSpecification {
     }
 
     void "rejects unencrypted messages if encryption is required"() {
-        stream.setRequireEncryptedData(true)
+        stream = new Stream.Builder(stream)
+                .withRequireEncryptedData(true)
+                .createStream()
         msgSigned = new StreamMessage.Builder(msgSigned)
                 .setEncryptionType(StreamMessage.EncryptionType.NONE)
                 .createStreamMessage()

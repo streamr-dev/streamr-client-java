@@ -25,11 +25,14 @@ class StreamEndpointsSpec extends StreamrIntegrationSpecification {
     }
 
     void "createStream() then getStream()"() {
-        Stream proto = new Stream(generateResourceName(), "This stream was created from an integration test")
         def fieldFoo = new FieldConfig("foo", FieldConfig.Type.NUMBER)
         def fieldBar = new FieldConfig("bar", FieldConfig.Type.STRING)
         def config = new StreamConfig(fieldFoo, fieldBar)
-        proto.setConfig(config)
+        Stream proto = new Stream.Builder()
+                .withName(generateResourceName())
+                .withDescription("This stream was created from an integration test")
+                .withConfig(config)
+                .createStream()
 
         when:
         Stream createResult = client.createStream(proto)
@@ -56,9 +59,12 @@ class StreamEndpointsSpec extends StreamrIntegrationSpecification {
     }
 
     void "createStream() then getStream() setting requireSignedData"() {
-        Stream proto = new Stream(generateResourceName(), "This stream was created from an integration test")
-        proto.requireSignedData = true
-        proto.setConfig(new StreamConfig())
+        Stream proto = new Stream.Builder()
+                .withName(generateResourceName())
+                .withDescription("This stream was created from an integration test")
+                .withRequireSignedData(true)
+                .withConfig(new StreamConfig())
+                .createStream()
 
         when:
         Stream createResult = client.createStream(proto)
@@ -74,7 +80,10 @@ class StreamEndpointsSpec extends StreamrIntegrationSpecification {
     }
 
     void "createStream() then getStreamByName()"() {
-        Stream proto = new Stream(generateResourceName(), "This stream was created from an integration test")
+        Stream proto = new Stream.Builder()
+                .withName(generateResourceName())
+                .withDescription("This stream was created from an integration test")
+                .createStream()
 
         when:
         Stream createResult = client.createStream(proto)
@@ -101,7 +110,10 @@ class StreamEndpointsSpec extends StreamrIntegrationSpecification {
     }
 
     void "getStreamByName() throws AmbiguousResultsException if multiple matching streams are found"() {
-        Stream proto = new Stream(generateResourceName(), "This stream was created from an integration test")
+        Stream proto = new Stream.Builder()
+                .withName(generateResourceName())
+                .withDescription("This stream was created from an integration test")
+                .createStream()
 
         // Create 2 streams with same name
         client.createStream(proto)
@@ -115,7 +127,10 @@ class StreamEndpointsSpec extends StreamrIntegrationSpecification {
     }
 
     void "createStream() throws AuthenticationException if the client is unauthenticated"() {
-        Stream proto = new Stream(generateResourceName(), "This stream was created from an integration test")
+        Stream proto = new Stream.Builder()
+                .withName(generateResourceName())
+                .withDescription("This stream was created from an integration test")
+                .createStream()
         StreamrClient unauthenticatedClient = createUnauthenticatedClient()
 
         when:
@@ -137,7 +152,10 @@ class StreamEndpointsSpec extends StreamrIntegrationSpecification {
     }
 
     void "getStream() throws PermissionDeniedException for streams which the user can not access"() {
-        Stream proto = new Stream(generateResourceName(), "This stream was created from an integration test")
+        Stream proto = new Stream.Builder()
+                .withName(generateResourceName())
+                .withDescription("This stream was created from an integration test")
+                .createStream()
         StreamrClient unauthenticatedClient = createUnauthenticatedClient()
 
         when:
@@ -167,7 +185,10 @@ class StreamEndpointsSpec extends StreamrIntegrationSpecification {
     }
 
     void "getPublishers()"() {
-        Stream proto = new Stream(generateResourceName(), "This stream was created from an integration test")
+        Stream proto = new Stream.Builder()
+                .withName(generateResourceName())
+                .withDescription("This stream was created from an integration test")
+                .createStream()
         Stream createdResult = client.createStream(proto)
         when:
         List<String> publishers = client.getPublishers(createdResult.id)
@@ -176,7 +197,10 @@ class StreamEndpointsSpec extends StreamrIntegrationSpecification {
     }
 
     void "isPublisher()"() {
-        Stream proto = new Stream(generateResourceName(), "This stream was created from an integration test")
+        Stream proto = new Stream.Builder()
+                .withName(generateResourceName())
+                .withDescription("This stream was created from an integration test")
+                .createStream()
         Stream createdResult = client.createStream(proto)
         when:
         boolean isValid1 = client.isPublisher(createdResult.id, client.getPublisherId())
@@ -187,7 +211,10 @@ class StreamEndpointsSpec extends StreamrIntegrationSpecification {
     }
 
     void "getSubscribers()"() {
-        Stream proto = new Stream(generateResourceName(), "This stream was created from an integration test")
+        Stream proto = new Stream.Builder()
+                .withName(generateResourceName())
+                .withDescription("This stream was created from an integration test")
+                .createStream()
         Stream createdResult = client.createStream(proto)
         when:
         List<String> subscribers = client.getSubscribers(createdResult.id)
@@ -196,7 +223,10 @@ class StreamEndpointsSpec extends StreamrIntegrationSpecification {
     }
 
     void "isSubscriber()"() {
-        Stream proto = new Stream(generateResourceName(), "This stream was created from an integration test")
+        Stream proto = new Stream.Builder()
+                .withName(generateResourceName())
+                .withDescription("This stream was created from an integration test")
+                .createStream()
         Stream createdResult = client.createStream(proto)
         when:
         boolean isValid1 = client.isSubscriber(createdResult.id, client.getPublisherId().toString())

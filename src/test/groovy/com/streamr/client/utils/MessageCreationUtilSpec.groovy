@@ -19,9 +19,14 @@ class MessageCreationUtilSpec extends StreamrSpecification {
     Map message
 
     void setup() {
-        stream = new Stream("test-stream", "")
-        stream.id = "stream-id"
-        stream.partitions = 1
+        stream = new Stream.Builder()
+                .withName("test-stream")
+                .withDescription("")
+                .withId("stream-id")
+                .withPartitions(1)
+                .withRequireSignedData(false)
+                .withRequireEncryptedData(false)
+                .createStream()
         secureRandom = new SecureRandom()
         message = [foo: "bar"]
 
@@ -132,7 +137,9 @@ class MessageCreationUtilSpec extends StreamrSpecification {
 
     void "createStreamMessage() with same timestamps on different partitions chains messages with sequenceNumber always zero"() {
         Date timestamp = new Date()
-        stream.partitions = 10
+        stream = new Stream.Builder(stream)
+                .withPartitions(10)
+                .createStream()
 
         when:
         // Messages should go to different partitions
@@ -153,7 +160,9 @@ class MessageCreationUtilSpec extends StreamrSpecification {
 
     void "createStreamMessage() correctly assigns partitions based on the given partitionKey"() {
         when:
-        stream.partitions = 10
+        stream = new Stream.Builder(stream)
+                .withPartitions(10)
+                .createStream()
         int[] partitions = [6, 7, 4, 4, 9, 1, 8, 0, 6, 6, 7, 6, 7, 3, 2, 2, 0, 9, 4, 9, 9, 5, 5, 1, 7, 3,
                             0, 6, 5, 6, 3, 6, 3, 5, 6, 2, 3, 6, 7, 2, 1, 3, 2, 7, 1, 1, 5, 1, 4, 0, 1, 9,
                             7, 4, 2, 3, 2, 9, 7, 7, 4, 3, 5, 4, 5, 3, 9, 0, 4, 8, 1, 7, 4, 8, 1, 2, 9, 9,
