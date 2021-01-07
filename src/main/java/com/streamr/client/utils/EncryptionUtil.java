@@ -209,10 +209,10 @@ public final class EncryptionUtil {
     }
   }
 
-  public static void validateGroupKey(String groupKeyHex) throws InvalidGroupKeyException {
-    String without0x = groupKeyHex.startsWith("0x") ? groupKeyHex.substring(2) : groupKeyHex;
-    if (without0x.length() != 64) { // the key must be 256 bits long
-      throw new InvalidGroupKeyException(without0x.length() * 4);
+  public static void validateGroupKey(final String groupKeyHex) throws InvalidGroupKeyException {
+    final String withoutPrefix = Numeric.cleanHexPrefix(groupKeyHex);
+    if (withoutPrefix.length() != 64) { // the key must be 256 bits long
+      throw new InvalidGroupKeyException(withoutPrefix.length() * 4);
     }
   }
 
