@@ -44,9 +44,11 @@ public abstract class AbstractGroupKeyMessage {
       String serialized, StreamMessage.MessageType messageType) {
     try {
       return adapterByMessageType.get(messageType).fromJson(serialized);
-    } catch (IOException e) {
-      throw new MalformedMessageException(
-          "Failed to parse GroupKeyMessage: " + serialized + " as messageType " + messageType, e);
+    } catch (final IOException e) {
+      final String message =
+          String.format(
+              "Failed to parse GroupKeyMessage: %s as messageType %s", serialized, messageType);
+      throw new MalformedMessageException(message, e);
     }
   }
 
