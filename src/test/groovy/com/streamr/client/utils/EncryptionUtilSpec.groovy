@@ -97,7 +97,7 @@ class EncryptionUtilSpec extends StreamrSpecification {
     }
     void "encryptStreamMessage() encrypts the message"() {
         when:
-        EncryptionUtil.encryptStreamMessage(streamMessage, key)
+        streamMessage = EncryptionUtil.encryptStreamMessage(streamMessage, key)
 
         then:
         streamMessage.serializedContent != serializedPlaintextContent
@@ -105,7 +105,7 @@ class EncryptionUtilSpec extends StreamrSpecification {
     }
     void "encryptStreamMessage, then decryptStreamMessage() equals original message "() {
         when:
-        EncryptionUtil.encryptStreamMessage(streamMessage, key)
+        streamMessage = EncryptionUtil.encryptStreamMessage(streamMessage, key)
         streamMessage = EncryptionUtil.decryptStreamMessage(streamMessage, key)
 
         then:

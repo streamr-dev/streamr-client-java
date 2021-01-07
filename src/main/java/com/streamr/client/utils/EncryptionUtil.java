@@ -174,12 +174,14 @@ public final class EncryptionUtil {
    * Sets the content of 'streamMessage' with the encryption result of the old content with
    * 'groupKey'.
    */
-  public static void encryptStreamMessage(StreamMessage streamMessage, GroupKey groupKey)
+  public static StreamMessage encryptStreamMessage(final StreamMessage streamMessage, final GroupKey groupKey)
       throws InvalidGroupKeyException {
-    streamMessage.setSerializedContent(
-        encrypt(streamMessage.getSerializedContentAsBytes(), groupKey));
-    streamMessage.setEncryptionType(StreamMessage.EncryptionType.AES);
-    streamMessage.setGroupKeyId(groupKey.getGroupKeyId());
+    final String content = encrypt(streamMessage.getSerializedContentAsBytes(), groupKey);
+    return new StreamMessage.Builder(streamMessage)
+        .setSerializedContent(content)
+        .setEncryptionType(StreamMessage.EncryptionType.AES)
+        .setGroupKeyId(groupKey.getGroupKeyId())
+        .createStreamMessage();
   }
 
   /** Decrypts the serialized content of 'streamMessage' with 'groupKey'. */

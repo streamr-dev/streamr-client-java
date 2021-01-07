@@ -9,7 +9,12 @@ import com.streamr.client.subs.BasicSubscription
 import com.streamr.client.subs.BasicSubscription.GroupKeyRequestFunction
 import com.streamr.client.subs.RealTimeSubscription
 import com.streamr.client.subs.Subscription
-import com.streamr.client.utils.*
+import com.streamr.client.utils.Address
+import com.streamr.client.utils.EncryptionUtil
+import com.streamr.client.utils.GroupKey
+import com.streamr.client.utils.GroupKeyStore
+import com.streamr.client.utils.KeyExchangeUtil
+import com.streamr.client.utils.OrderedMsgChain
 
 /**
  * BasicSubscription is abstract, but contains most of the code for RealtimeSubscription and
@@ -205,7 +210,7 @@ class BasicSubscriptionSpec extends StreamrSpecification {
         Map plaintext = [foo: 'bar']
         StreamMessage msg1 = createMessage(plaintext)
 
-        EncryptionUtil.encryptStreamMessage(msg1, groupKey)
+        msg1 = EncryptionUtil.encryptStreamMessage(msg1, groupKey)
 
         when:
         sub.handleRealTimeMessage(msg1)
@@ -219,7 +224,7 @@ class BasicSubscriptionSpec extends StreamrSpecification {
         GroupKey oldKey = GroupKey.generate()
         GroupKey newKey = GroupKey.generate()
         StreamMessage msg = createMessage()
-        EncryptionUtil.encryptStreamMessage(msg, oldKey)
+        msg = EncryptionUtil.encryptStreamMessage(msg, oldKey)
         msg.setNewGroupKey(EncryptionUtil.encryptGroupKey(newKey, oldKey))
 
         when:
@@ -232,7 +237,7 @@ class BasicSubscriptionSpec extends StreamrSpecification {
 
     void "calls key request function if the key is not in the key store (multiple times if there's no response)"() {
         GroupKey groupKey = GroupKey.generate()
-        EncryptionUtil.encryptStreamMessage(msg, groupKey)
+        msg = EncryptionUtil.encryptStreamMessage(msg, groupKey)
 
         Address receivedPublisherId = null
         int nbCalls = 0
@@ -268,7 +273,7 @@ class BasicSubscriptionSpec extends StreamrSpecification {
 
     void "calls key request function MAX_NB_GROUP_KEY_REQUESTS times"() {
         GroupKey groupKey = GroupKey.generate()
-        EncryptionUtil.encryptStreamMessage(msg, groupKey)
+        msg = EncryptionUtil.encryptStreamMessage(msg, groupKey)
 
         int nbCalls = 0
         int timeout = 200
@@ -294,8 +299,8 @@ class BasicSubscriptionSpec extends StreamrSpecification {
         StreamMessage msg2 = createMessage(2, [foo: 'bar2'])
 
         GroupKey groupKey = GroupKey.generate()
-        EncryptionUtil.encryptStreamMessage(msg1, groupKey)
-        EncryptionUtil.encryptStreamMessage(msg2, groupKey)
+        msg1 = EncryptionUtil.encryptStreamMessage(msg1, groupKey)
+        msg2 = EncryptionUtil.encryptStreamMessage(msg2, groupKey)
 
         when:
         // Cannot decrypt msg1, queues it and calls the key request function
@@ -338,8 +343,11 @@ class BasicSubscriptionSpec extends StreamrSpecification {
         GroupKey groupKeyPub1 = GroupKey.generate()
         GroupKey groupKeyPub2 = GroupKey.generate()
 
-        [msg1pub1, msg2pub1].each { EncryptionUtil.encryptStreamMessage(it, groupKeyPub1) }
-        [msg1pub2, msg2pub2].each { EncryptionUtil.encryptStreamMessage(it, groupKeyPub2) }
+        msg1pub1 = EncryptionUtil.encryptStreamMessage(msg1pub1, groupKeyPub1)
+        msg2pub1 = EncryptionUtil.encryptStreamMessage(msg2pub1, groupKeyPub1)
+
+        msg1pub2 = EncryptionUtil.encryptStreamMessage(msg1pub2, groupKeyPub2)
+        msg2pub2 = EncryptionUtil.encryptStreamMessage(msg2pub2, groupKeyPub2)
 
         when:
         // Cannot decrypt msg1pub1, queues it and calls the key request function
@@ -404,8 +412,13 @@ class BasicSubscriptionSpec extends StreamrSpecification {
         GroupKey groupKeyPub1 = GroupKey.generate()
         GroupKey groupKeyPub2 = GroupKey.generate()
 
-        [msg1pub1, msg2pub1, msg3pub1].each { EncryptionUtil.encryptStreamMessage(it, groupKeyPub1) }
-        [msg1pub2, msg2pub2].each { EncryptionUtil.encryptStreamMessage(it, groupKeyPub2) }
+        [msg1pub1, msg2pub1, msg3pub1].each {it = EncryptionUtil.encryptStreamMessage(it, groupKeyPub1) }
+        msg1pub1 = EncryptionUtil.encryptStreamMessage(msg1pub1, groupKeyPub1)
+        msg2pub1 = EncryptionUtil.encryptStreamMessage(msg2pub1, groupKeyPub1)
+        msg3pub1 = EncryptionUtil.encryptStreamMessage(msg3pub1, groupKeyPub1)
+
+        msg1pub2 = EncryptionUtil.encryptStreamMessage(msg1pub2, groupKeyPub2)
+        msg2pub2 = EncryptionUtil.encryptStreamMessage(msg2pub2, groupKeyPub2)
 
         when:
         sub.handleRealTimeMessage(msg1pub1)
@@ -479,8 +492,11 @@ class BasicSubscriptionSpec extends StreamrSpecification {
         GroupKey key1 = GroupKey.generate()
         GroupKey key2 = GroupKey.generate()
 
-        [key1msg1, key1msg2].each { EncryptionUtil.encryptStreamMessage(it, key1) }
-        [key2msg1, key2msg2].each { EncryptionUtil.encryptStreamMessage(it, key2) }
+        key1msg1 = EncryptionUtil.encryptStreamMessage(key1msg1, key1)
+        key1msg2 = EncryptionUtil.encryptStreamMessage(key1msg2, key1)
+
+        key2msg1 = EncryptionUtil.encryptStreamMessage(key2msg1, key2)
+        key2msg2 = EncryptionUtil.encryptStreamMessage(key2msg2, key2)
 
         when:
         sub.handleRealTimeMessage(key1msg1)
@@ -530,7 +546,7 @@ class BasicSubscriptionSpec extends StreamrSpecification {
         GroupKey correctGroupKey = GroupKey.generate()
         GroupKey incorrectGroupKeyWithCorrectId = new GroupKey(correctGroupKey.getGroupKeyId(), GroupKey.generate().getGroupKeyHex())
 
-        EncryptionUtil.encryptStreamMessage(msg, correctGroupKey)
+        msg = EncryptionUtil.encryptStreamMessage(msg, correctGroupKey)
 
         when:
         sub.handleRealTimeMessage(msg) // queues message
@@ -545,7 +561,7 @@ class BasicSubscriptionSpec extends StreamrSpecification {
         GroupKey correctGroupKey = GroupKey.generate()
         GroupKey otherKey = GroupKey.generate()
 
-        EncryptionUtil.encryptStreamMessage(msg, correctGroupKey)
+        msg = EncryptionUtil.encryptStreamMessage(msg, correctGroupKey)
 
         when:
         sub.handleRealTimeMessage(msg) // queues message

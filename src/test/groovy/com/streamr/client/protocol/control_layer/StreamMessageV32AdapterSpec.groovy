@@ -34,9 +34,10 @@ class StreamMessageV32AdapterSpec extends StreamrSpecification {
 		msg.setPreviousMessageRef(new MessageRef(122L, 0))
 		msg.setEncryptionType(StreamMessage.EncryptionType.AES);
 		msg.setGroupKeyId("groupKeyId")
-		msg.setSerializedContent("encrypted-content")
 		msg.setNewGroupKey(new EncryptedGroupKey("newGroupKeyId", "encryptedGroupKeyHex", "[\"newGroupKeyId\",\"encryptedGroupKeyHex-cached\"]"))
-		msg = new StreamMessage.Builder(msg).setSignature("signature").setSignatureType(StreamMessage.SignatureType.ETH).createStreamMessage()
+		msg = new StreamMessage.Builder(msg).setSignature("signature").setSignatureType(StreamMessage.SignatureType.ETH)
+				.setSerializedContent("encrypted-content")
+				.createStreamMessage()
 
 		expect:
 		adapter.serialize(msg, VERSION) == expectedJson

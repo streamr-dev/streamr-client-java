@@ -77,7 +77,7 @@ public class MessageCreationUtil {
     // Encrypt content if the GroupKey is provided
     if (groupKey != null) {
       try {
-        EncryptionUtil.encryptStreamMessage(streamMessage, groupKey);
+        streamMessage = EncryptionUtil.encryptStreamMessage(streamMessage, groupKey);
       } catch (InvalidGroupKeyException e) {
         throw new RuntimeException(e);
       }

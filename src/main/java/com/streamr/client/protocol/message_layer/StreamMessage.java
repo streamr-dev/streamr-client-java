@@ -274,10 +274,6 @@ public class StreamMessage implements ITimestamped {
         this.newGroupKey = newGroupKey;
     }
 
-    public void setSerializedContent(String serializedContent) {
-        this.serializedContent = serializedContent;
-    }
-
     public String serialize() {
         return StreamMessageAdapter.serialize(this);
     }
