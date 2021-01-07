@@ -64,8 +64,8 @@ public class DataUnionClientTest implements StreamrConstant {
 
   @Test
   void testDataUnion() throws Exception {
-//  @Test
-//  void createDU() throws Exception {
+    //  @Test
+    //  void createDU() throws Exception {
     du =
         client.deployDataUnion(
             duname,
