@@ -107,7 +107,7 @@ public class MessageCreationUtil {
 
     String keyExchangeStreamId = KeyExchangeUtil.getKeyExchangeStreamId(publisherAddress);
     Pair<MessageID, MessageRef> pair = createDefaultMsgIdAndRef(keyExchangeStreamId);
-    StreamMessage streamMessage = request.toStreamMessage(pair.getLeft(), pair.getRight());
+    StreamMessage streamMessage = request.toStreamMessage(pair.getLeft(), pair.getRight()).createStreamMessage();
 
     // Never encrypt but always sign
     streamMessage = signingUtil.signStreamMessage(streamMessage);
@@ -137,9 +137,10 @@ public class MessageCreationUtil {
 
     String keyExchangeStreamId = KeyExchangeUtil.getKeyExchangeStreamId(subscriberAddress);
     Pair<MessageID, MessageRef> pair = createDefaultMsgIdAndRef(keyExchangeStreamId);
-    StreamMessage streamMessage = response.toStreamMessage(pair.getLeft(), pair.getRight());
-    streamMessage.setEncryptionType(StreamMessage.EncryptionType.RSA);
-    streamMessage.setGroupKeyId(request.getPublicKey());
+    StreamMessage streamMessage = response.toStreamMessage(pair.getLeft(), pair.getRight())
+        .setEncryptionType(StreamMessage.EncryptionType.RSA)
+        .setGroupKeyId(request.getPublicKey())
+        .createStreamMessage();
 
     // Always sign
     streamMessage = signingUtil.signStreamMessage(streamMessage);
@@ -167,9 +168,10 @@ public class MessageCreationUtil {
 
     String keyExchangeStreamId = KeyExchangeUtil.getKeyExchangeStreamId(subscriberAddress);
     Pair<MessageID, MessageRef> pair = createDefaultMsgIdAndRef(keyExchangeStreamId);
-    StreamMessage streamMessage = announce.toStreamMessage(pair.getLeft(), pair.getRight());
-    streamMessage.setEncryptionType(StreamMessage.EncryptionType.RSA);
-    streamMessage.setGroupKeyId(publicKey);
+    StreamMessage streamMessage = announce.toStreamMessage(pair.getLeft(), pair.getRight())
+        .setEncryptionType(StreamMessage.EncryptionType.RSA)
+        .setGroupKeyId(publicKey)
+        .createStreamMessage();
 
     // Always sign
     streamMessage = signingUtil.signStreamMessage(streamMessage);
@@ -193,7 +195,7 @@ public class MessageCreationUtil {
 
     String keyExchangeStreamId = KeyExchangeUtil.getKeyExchangeStreamId(destinationAddress);
     Pair<MessageID, MessageRef> pair = createDefaultMsgIdAndRef(keyExchangeStreamId);
-    StreamMessage streamMessage = response.toStreamMessage(pair.getLeft(), pair.getRight());
+    StreamMessage streamMessage = response.toStreamMessage(pair.getLeft(), pair.getRight()).createStreamMessage();
 
     // Never encrypt but always sign
     streamMessage = signingUtil.signStreamMessage(streamMessage);
