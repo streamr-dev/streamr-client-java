@@ -1,23 +1,25 @@
 package com.streamr.client.dataunion;
 
+import static com.streamr.client.utils.Web3jUtils.asDynamicAddressArray;
+import static com.streamr.client.utils.Web3jUtils.toBytes65;
+import static com.streamr.client.utils.Web3jUtils.waitForCodeAtAddress;
+import static com.streamr.client.utils.Web3jUtils.waitForCondition;
 import com.streamr.client.dataunion.contracts.DataUnionMainnet;
 import com.streamr.client.dataunion.contracts.DataUnionSidechain;
 import com.streamr.client.utils.Web3jUtils;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
+import java.math.BigInteger;
 import org.web3j.abi.TypeEncoder;
-import org.web3j.abi.datatypes.*;
+import org.web3j.abi.datatypes.Address;
+import org.web3j.abi.datatypes.Bool;
+import org.web3j.abi.datatypes.DynamicBytes;
 import org.web3j.abi.datatypes.generated.Uint256;
 import org.web3j.crypto.Credentials;
 import org.web3j.crypto.ECKeyPair;
 import org.web3j.crypto.Sign;
 import org.web3j.protocol.Web3j;
 import org.web3j.utils.Numeric;
-import java.math.BigInteger;
-import static com.streamr.client.utils.Web3jUtils.*;
 
 public class DataUnion {
-    private static final Logger log = LoggerFactory.getLogger(DataUnion.class);
     private static final BigInteger MAX_UINT256 = BigInteger.valueOf(2).pow(256).subtract(BigInteger.ONE);
     public enum ActiveStatus{NONE, ACTIVE, INACTIVE};
 
