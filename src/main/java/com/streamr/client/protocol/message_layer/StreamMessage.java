@@ -5,7 +5,6 @@ import com.streamr.client.exceptions.UnsupportedMessageException;
 import com.streamr.client.utils.Address;
 import com.streamr.client.utils.EncryptedGroupKey;
 import com.streamr.client.utils.HttpUtils;
-
 import java.io.IOException;
 import java.nio.charset.StandardCharsets;
 import java.util.Date;
@@ -23,7 +22,7 @@ public class StreamMessage implements ITimestamped {
 
         private final byte id;
 
-        MessageType(byte id) {
+        MessageType(final byte id) {
             this.id = id;
         }
 
@@ -31,7 +30,7 @@ public class StreamMessage implements ITimestamped {
             return this.id;
         }
 
-        public static MessageType fromId(byte id) {
+        public static MessageType fromId(final byte id) {
             if (id == STREAM_MESSAGE.id) {
                 return STREAM_MESSAGE;
             } else if (id == GROUP_KEY_REQUEST.id) {
@@ -52,7 +51,7 @@ public class StreamMessage implements ITimestamped {
 
         private final byte id;
 
-        ContentType(byte id) {
+        ContentType(final byte id) {
             this.id = id;
         }
 
@@ -60,7 +59,7 @@ public class StreamMessage implements ITimestamped {
             return this.id;
         }
 
-        public static ContentType fromId(byte id) {
+        public static ContentType fromId(final byte id) {
             if (id == JSON.id) {
                 return JSON;
             }
@@ -75,7 +74,7 @@ public class StreamMessage implements ITimestamped {
 
         private final byte id;
 
-        SignatureType(byte id) {
+        SignatureType(final byte id) {
             this.id = id;
         }
 
@@ -83,7 +82,7 @@ public class StreamMessage implements ITimestamped {
             return this.id;
         }
 
-        public static SignatureType fromId(byte id) {
+        public static SignatureType fromId(final byte id) {
             if (id == NONE.id) {
                 return NONE;
             } else if (id == ETH_LEGACY.id) {
@@ -102,7 +101,7 @@ public class StreamMessage implements ITimestamped {
 
         private final byte id;
 
-        EncryptionType(byte id) {
+        EncryptionType(final byte id) {
             this.id = id;
         }
 
@@ -110,7 +109,7 @@ public class StreamMessage implements ITimestamped {
             return this.id;
         }
 
-        public static EncryptionType fromId(byte id) {
+        public static EncryptionType fromId(final byte id) {
             if (id == NONE.id) {
                 return NONE;
             } else if (id == RSA.id) {
@@ -122,31 +121,32 @@ public class StreamMessage implements ITimestamped {
         }
     }
     private final MessageID messageID;
-    private MessageRef previousMessageRef;
+    private final MessageRef previousMessageRef;
     private final MessageType messageType;
-    private Map<String, Object> parsedContent; // Might need to change to Object when non-JSON contentTypes are introduced
-    private String serializedContent;
+    // Might need to change parsedContent to Object when non-JSON contentTypes are introduced
+    private Map<String, Object> parsedContent;
+    private final String serializedContent;
     private final ContentType contentType;
-    private EncryptionType encryptionType;
-    private String groupKeyId;
-    private EncryptedGroupKey newGroupKey;
-    private SignatureType signatureType;
-    private String signature;
+    private final EncryptionType encryptionType;
+    private final String groupKeyId;
+    private final EncryptedGroupKey newGroupKey;
+    private final SignatureType signatureType;
+    private final String signature;
 
     /**
      * Full constructor, creates a StreamMessage with all fields directly set to the provided values.
      */
     private StreamMessage(
-            MessageID messageID,
-            MessageRef previousMessageRef,
-            MessageType messageType,
-            String serializedContent,
-            ContentType contentType,
-            EncryptionType encryptionType,
-            String groupKeyId,
-            EncryptedGroupKey newGroupKey,
-            SignatureType signatureType,
-            String signature
+            final MessageID messageID,
+            final MessageRef previousMessageRef,
+            final MessageType messageType,
+            final String serializedContent,
+            final ContentType contentType,
+            final EncryptionType encryptionType,
+            final String groupKeyId,
+            final EncryptedGroupKey newGroupKey,
+            final SignatureType signatureType,
+            final String signature
     ) {
         this.messageID = messageID;
         this.previousMessageRef = previousMessageRef;
