@@ -85,10 +85,13 @@ public final class EncryptionUtil {
     return exportKeyAsPemString(this.publicKey, true);
   }
 
-  public static void encryptWithPublicKey(StreamMessage msg, String publicKey) {
-    msg.setEncryptionType(StreamMessage.EncryptionType.RSA);
-    msg.setGroupKeyId(publicKey);
-    msg.setSerializedContent(encryptWithPublicKey(msg.getSerializedContentAsBytes(), publicKey));
+  private static StreamMessage encryptWithPublicKey(final StreamMessage msg, final String publicKey) {
+    final String content = encryptWithPublicKey(msg.getSerializedContentAsBytes(), publicKey);
+    return new StreamMessage.Builder(msg)
+        .setEncryptionType(StreamMessage.EncryptionType.RSA)
+        .setGroupKeyId(publicKey)
+        .setSerializedContent(content)
+        .createStreamMessage();
   }
 
   public static String encryptWithPublicKey(byte[] plaintext, String publicKey) {

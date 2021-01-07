@@ -46,7 +46,7 @@ class EncryptionUtilSpec extends StreamrSpecification {
 
     void "rsa decryption after encryption equals the initial plaintext (StreamMessage)"() {
         when:
-        EncryptionUtil.encryptWithPublicKey(streamMessage, util.getPublicKeyAsPemString())
+        streamMessage = EncryptionUtil.encryptWithPublicKey(streamMessage, util.getPublicKeyAsPemString())
         then:
         streamMessage.getSerializedContent() != serializedPlaintextContent
         streamMessage.getEncryptionType() == StreamMessage.EncryptionType.RSA
