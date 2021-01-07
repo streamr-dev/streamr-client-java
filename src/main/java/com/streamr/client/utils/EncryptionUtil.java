@@ -31,7 +31,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.web3j.utils.Numeric;
 
-public class EncryptionUtil {
+public final class EncryptionUtil {
   private static final Logger log = LoggerFactory.getLogger(EncryptionUtil.class);
   private static final SecureRandom SRAND = new SecureRandom();
   private static final ThreadLocal<Cipher> aesCipher =
@@ -67,12 +67,14 @@ public class EncryptionUtil {
     }
   }
 
-  public void decryptWithPrivateKey(StreamMessage msg) throws UnableToDecryptException {
+  StreamMessage decryptWithPrivateKey(final StreamMessage msg) throws UnableToDecryptException {
     if (msg.getEncryptionType() != StreamMessage.EncryptionType.RSA) {
       throw new IllegalArgumentException("Given StreamMessage is not encrypted with RSA!");
     }
-    msg.setEncryptionType(StreamMessage.EncryptionType.NONE);
-    msg.setSerializedContent(decryptWithPrivateKey(msg.getSerializedContent()));
+    return new StreamMessage.Builder(msg)
+        .setEncryptionType(StreamMessage.EncryptionType.NONE)
+        .setSerializedContent(decryptWithPrivateKey(msg.getSerializedContent()))
+        .createStreamMessage();
   }
 
   public RSAPublicKey getPublicKey() {
@@ -178,15 +180,18 @@ public class EncryptionUtil {
   }
 
   /** Decrypts the serialized content of 'streamMessage' with 'groupKey'. */
-  public static void decryptStreamMessage(StreamMessage streamMessage, GroupKey groupKey)
+  public static StreamMessage decryptStreamMessage(final StreamMessage streamMessage, final GroupKey groupKey)
       throws UnableToDecryptException {
     if (streamMessage.getEncryptionType() != StreamMessage.EncryptionType.AES) {
       throw new IllegalArgumentException("Given StreamMessage is not encrypted with AES!");
     }
 
     try {
-      streamMessage.setSerializedContent(decrypt(streamMessage.getSerializedContent(), groupKey));
-      streamMessage.setEncryptionType(StreamMessage.EncryptionType.NONE);
+      final byte[] decryptedContent = decrypt(streamMessage.getSerializedContent(), groupKey);
+      return new StreamMessage.Builder(streamMessage)
+          .setSerializedContent(decryptedContent)
+          .setEncryptionType(StreamMessage.EncryptionType.NONE)
+          .createStreamMessage();
     } catch (Exception e) {
       if (groupKey == null) {
         log.debug(

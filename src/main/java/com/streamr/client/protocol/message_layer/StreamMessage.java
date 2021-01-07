@@ -278,10 +278,6 @@ public class StreamMessage implements ITimestamped {
         this.serializedContent = serializedContent;
     }
 
-    public void setSerializedContent(byte[] serializedContent) {
-        setSerializedContent(new String(serializedContent, StandardCharsets.UTF_8));
-    }
-
     public String serialize() {
         return StreamMessageAdapter.serialize(this);
     }
@@ -360,6 +356,11 @@ public class StreamMessage implements ITimestamped {
 
         public Builder setSerializedContent(final String serializedContent) {
             this.serializedContent = serializedContent;
+            return this;
+        }
+
+        public Builder setSerializedContent(final byte[] serializedContent) {
+            this.serializedContent = new String(serializedContent, StandardCharsets.UTF_8);
             return this;
         }
 

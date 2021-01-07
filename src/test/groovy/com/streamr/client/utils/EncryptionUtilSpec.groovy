@@ -52,7 +52,7 @@ class EncryptionUtilSpec extends StreamrSpecification {
         streamMessage.getEncryptionType() == StreamMessage.EncryptionType.RSA
 
         when:
-        util.decryptWithPrivateKey(streamMessage)
+        streamMessage = util.decryptWithPrivateKey(streamMessage)
         then:
         streamMessage.getSerializedContent() == serializedPlaintextContent
         streamMessage.getParsedContent() == plaintextContent
@@ -106,7 +106,7 @@ class EncryptionUtilSpec extends StreamrSpecification {
     void "encryptStreamMessage, then decryptStreamMessage() equals original message "() {
         when:
         EncryptionUtil.encryptStreamMessage(streamMessage, key)
-        EncryptionUtil.decryptStreamMessage(streamMessage, key)
+        streamMessage = EncryptionUtil.decryptStreamMessage(streamMessage, key)
 
         then:
         streamMessage.serializedContent == serializedPlaintextContent

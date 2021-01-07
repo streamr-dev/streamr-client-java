@@ -174,15 +174,24 @@ public abstract class BasicSubscription extends Subscription {
     return orderingUtil.getChains();
   }
 
-  private boolean tryDecrypt(StreamMessage msg) throws UnableToDecryptException {
+  private final class DecryptResult {
+    private final boolean status;
+    private final StreamMessage message;
+    DecryptResult(final boolean status, final StreamMessage message) {
+      this.status = status;
+      this.message = message;
+    }
+  }
+
+  private DecryptResult tryDecrypt(StreamMessage msg) throws UnableToDecryptException {
     // Key exchange messages are handled in a special way in KeyExchangeUtil
     if (msg.getMessageType() != StreamMessage.MessageType.STREAM_MESSAGE) {
-      return true;
+      return new DecryptResult(true, msg);
     }
 
     // Nothing needs to be done here if the message is not encrypted
     if (msg.getEncryptionType() == StreamMessage.EncryptionType.NONE) {
-      return true;
+      return new DecryptResult(true, msg);
     }
 
     try {
@@ -191,9 +200,9 @@ public abstract class BasicSubscription extends Subscription {
         throw new UnableToDecryptException(msg.getSerializedContent());
       }
 
-      EncryptionUtil.decryptStreamMessage(msg, groupKey);
+      msg = EncryptionUtil.decryptStreamMessage(msg, groupKey);
       alreadyFailedToDecrypt.remove(msg.getGroupKeyId());
-      return true;
+      return new DecryptResult(true, msg);
     } catch (UnableToDecryptException e) {
       if (alreadyFailedToDecrypt.contains(msg.getGroupKeyId())) {
         // even after receiving the latest group key, we still cannot decrypt
@@ -202,7 +211,7 @@ public abstract class BasicSubscription extends Subscription {
         // Fail next time we come here
         alreadyFailedToDecrypt.add(msg.getGroupKeyId());
       }
-      return false;
+      return new DecryptResult(false, msg);
     }
   }
 
@@ -216,11 +225,11 @@ public abstract class BasicSubscription extends Subscription {
     }
   }
 
-  private void decryptAndHandle(StreamMessage msg) {
+  private void decryptAndHandle(final StreamMessage msg) {
     try {
-      boolean success = tryDecrypt(msg);
-      if (success) {
-        handler.onMessage(this, msg);
+      DecryptResult result = tryDecrypt(msg);
+      if (result.status) {
+        handler.onMessage(this, result.message);
 
         // Handle new key if the message contains one
         if (msg.getNewGroupKey() != null) {
