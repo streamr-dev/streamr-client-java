@@ -63,7 +63,9 @@ public class DataUnionClientTest implements StreamrConstant {
   }
 
   @Test
-  void createDU() throws Exception {
+  void testDataUnion() throws Exception {
+//  @Test
+//  void createDU() throws Exception {
     du =
         client.deployDataUnion(
             duname,
@@ -93,7 +95,7 @@ public class DataUnionClientTest implements StreamrConstant {
     client.waitForMainnetTx(t.getTransactionHash(), 10000, 600000);
     du.sendTokensToBridge();
     assertNotNull(du.waitForEarningsChange(sidechainEarnings, 10000, 600000));
-    assertTrue(du.getEarnings(wallets[1].getAddress()).equals(testSendAmount));
+    assertEquals(du.getEarnings(wallets[1].getAddress()), testSendAmount);
     //    }
     //
     //    @Test
