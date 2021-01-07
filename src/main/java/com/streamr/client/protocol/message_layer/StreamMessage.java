@@ -9,8 +9,9 @@ import java.io.IOException;
 import java.nio.charset.StandardCharsets;
 import java.util.Date;
 import java.util.Map;
+import java.util.Objects;
 
-public class StreamMessage implements ITimestamped {
+public final class StreamMessage implements ITimestamped {
     public static final int LATEST_VERSION = 32;
 
     public enum MessageType {
@@ -281,12 +282,16 @@ public class StreamMessage implements ITimestamped {
     }
 
     @Override
-    public boolean equals(Object o) {
+    public boolean equals(final Object o) {
         if (this == o) return true;
         if (o == null || getClass() != o.getClass()) return false;
+        final StreamMessage that = (StreamMessage) o;
+        return Objects.equals(serialize(), that.serialize());
+    }
 
-        StreamMessage that = (StreamMessage) o;
-        return this.serialize().equals(that.serialize());
+    @Override
+    public int hashCode() {
+        return Objects.hash(serialize());
     }
 
     public static final class Builder {
