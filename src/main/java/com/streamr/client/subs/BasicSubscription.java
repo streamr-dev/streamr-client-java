@@ -197,7 +197,7 @@ public abstract class BasicSubscription extends Subscription {
     try {
       GroupKey groupKey = keyStore.get(msg.getStreamId(), msg.getGroupKeyId());
       if (groupKey == null) {
-        throw new UnableToDecryptException(msg.getSerializedContent());
+        throw UnableToDecryptException.create(msg.getSerializedContent());
       }
 
       msg = EncryptionUtil.decryptStreamMessage(msg, groupKey);
@@ -250,9 +250,8 @@ public abstract class BasicSubscription extends Subscription {
                 msg.getGroupKeyId());
         requestGroupKeyAndQueueMessage(msg);
       }
-    } catch (
-        UnableToDecryptException
-            e) { // failed to decrypt for the second time (after receiving the decryption key(s))
+    } catch (final UnableToDecryptException e) {
+      // failed to decrypt for the second time (after receiving the decryption key(s))
       getLogger()
           .error(
               "Failed to decrypt msg {} from {} in stream {} even after receiving the decryption keys. Calling the onUnableToDecrypt handler!",

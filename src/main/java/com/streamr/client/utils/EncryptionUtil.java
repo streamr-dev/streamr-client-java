@@ -63,7 +63,7 @@ public final class EncryptionUtil {
       rsaCipher.get().init(Cipher.DECRYPT_MODE, this.privateKey);
       return rsaCipher.get().doFinal(encryptedBytes);
     } catch (Exception e) {
-      throw new UnableToDecryptException(ciphertextHex);
+      throw UnableToDecryptException.create(ciphertextHex);
     }
   }
 
@@ -205,8 +205,7 @@ public final class EncryptionUtil {
             streamMessage.getMessageRef(),
             groupKey.getGroupKeyId());
       }
-
-      throw new UnableToDecryptException(streamMessage.getSerializedContent());
+      throw UnableToDecryptException.create(streamMessage.getSerializedContent());
     }
   }
 
