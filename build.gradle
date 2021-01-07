@@ -104,7 +104,7 @@ jar {
 // https://docs.gradle.org/current/userguide/working_with_files.html#sec:creating_uber_jar_example
 task fatJar(type: Jar) {
 	description = 'Creates a Jar file with all dependencies included.'
-	group = 'build'
+	group = JavaBasePlugin.BUILD_TASK_NAME
 	archiveClassifier = 'fat'
 
 	manifest {
@@ -170,8 +170,7 @@ configurations {
 }
 task integrationTest(type: Test) {
 	description = 'Runs integration tests.'
-	group = 'verification'
-
+	group = JavaBasePlugin.VERIFICATION_GROUP
 	testClassesDirs = sourceSets.integrationTest.output.classesDirs
 	classpath = sourceSets.integrationTest.runtimeClasspath
 	shouldRunAfter test
