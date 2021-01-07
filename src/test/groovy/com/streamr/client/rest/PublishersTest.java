@@ -6,6 +6,6 @@ import org.junit.jupiter.api.Test;
 class PublishersTest {
   @Test
   void equalsContract() {
-      EqualsVerifier.forClass(Publishers.class).verify();
+    EqualsVerifier.forClass(Publishers.class).verify();
   }
 }

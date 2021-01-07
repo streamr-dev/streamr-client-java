@@ -72,11 +72,12 @@ public class MessageCreationUtil {
 
     Pair<MessageID, MessageRef> pair =
         createMsgIdAndRef(stream.getId(), streamPartition, timestamp.getTime());
-    StreamMessage streamMessage = new StreamMessage.Builder()
-        .withMessageId(pair.getLeft())
-        .withPreviousMessageRef(pair.getRight())
-        .withSerializedContent(HttpUtils.mapAdapter.toJson(payload))
-        .createStreamMessage();
+    StreamMessage streamMessage =
+        new StreamMessage.Builder()
+            .withMessageId(pair.getLeft())
+            .withPreviousMessageRef(pair.getRight())
+            .withSerializedContent(HttpUtils.mapAdapter.toJson(payload))
+            .createStreamMessage();
 
     // Encrypt content if the GroupKey is provided
     if (groupKey != null) {
@@ -89,9 +90,10 @@ public class MessageCreationUtil {
       // Encrypt and attach newGroupKey if it's provided
       if (newGroupKey != null) {
         final EncryptedGroupKey newGroup = EncryptionUtil.encryptGroupKey(newGroupKey, groupKey);
-        streamMessage = new StreamMessage.Builder(streamMessage)
-            .withNewGroupKey(newGroup)
-            .createStreamMessage();
+        streamMessage =
+            new StreamMessage.Builder(streamMessage)
+                .withNewGroupKey(newGroup)
+                .createStreamMessage();
       }
     }
 
@@ -114,7 +116,8 @@ public class MessageCreationUtil {
 
     String keyExchangeStreamId = KeyExchangeUtil.getKeyExchangeStreamId(publisherAddress);
     Pair<MessageID, MessageRef> pair = createDefaultMsgIdAndRef(keyExchangeStreamId);
-    StreamMessage streamMessage = request.toStreamMessage(pair.getLeft(), pair.getRight()).createStreamMessage();
+    StreamMessage streamMessage =
+        request.toStreamMessage(pair.getLeft(), pair.getRight()).createStreamMessage();
 
     // Never encrypt but always sign
     streamMessage = signingUtil.signStreamMessage(streamMessage);
@@ -144,10 +147,12 @@ public class MessageCreationUtil {
 
     String keyExchangeStreamId = KeyExchangeUtil.getKeyExchangeStreamId(subscriberAddress);
     Pair<MessageID, MessageRef> pair = createDefaultMsgIdAndRef(keyExchangeStreamId);
-    StreamMessage streamMessage = response.toStreamMessage(pair.getLeft(), pair.getRight())
-        .withEncryptionType(StreamMessage.EncryptionType.RSA)
-        .withGroupKeyId(request.getPublicKey())
-        .createStreamMessage();
+    StreamMessage streamMessage =
+        response
+            .toStreamMessage(pair.getLeft(), pair.getRight())
+            .withEncryptionType(StreamMessage.EncryptionType.RSA)
+            .withGroupKeyId(request.getPublicKey())
+            .createStreamMessage();
 
     // Always sign
     streamMessage = signingUtil.signStreamMessage(streamMessage);
@@ -175,10 +180,12 @@ public class MessageCreationUtil {
 
     String keyExchangeStreamId = KeyExchangeUtil.getKeyExchangeStreamId(subscriberAddress);
     Pair<MessageID, MessageRef> pair = createDefaultMsgIdAndRef(keyExchangeStreamId);
-    StreamMessage streamMessage = announce.toStreamMessage(pair.getLeft(), pair.getRight())
-        .withEncryptionType(StreamMessage.EncryptionType.RSA)
-        .withGroupKeyId(publicKey)
-        .createStreamMessage();
+    StreamMessage streamMessage =
+        announce
+            .toStreamMessage(pair.getLeft(), pair.getRight())
+            .withEncryptionType(StreamMessage.EncryptionType.RSA)
+            .withGroupKeyId(publicKey)
+            .createStreamMessage();
 
     // Always sign
     streamMessage = signingUtil.signStreamMessage(streamMessage);
@@ -202,7 +209,8 @@ public class MessageCreationUtil {
 
     String keyExchangeStreamId = KeyExchangeUtil.getKeyExchangeStreamId(destinationAddress);
     Pair<MessageID, MessageRef> pair = createDefaultMsgIdAndRef(keyExchangeStreamId);
-    StreamMessage streamMessage = response.toStreamMessage(pair.getLeft(), pair.getRight()).createStreamMessage();
+    StreamMessage streamMessage =
+        response.toStreamMessage(pair.getLeft(), pair.getRight()).createStreamMessage();
 
     // Never encrypt but always sign
     streamMessage = signingUtil.signStreamMessage(streamMessage);

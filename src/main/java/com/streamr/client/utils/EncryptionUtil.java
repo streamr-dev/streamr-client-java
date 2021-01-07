@@ -85,7 +85,8 @@ public final class EncryptionUtil {
     return exportKeyAsPemString(this.publicKey, true);
   }
 
-  private static StreamMessage encryptWithPublicKey(final StreamMessage msg, final String publicKey) {
+  private static StreamMessage encryptWithPublicKey(
+      final StreamMessage msg, final String publicKey) {
     final String content = encryptWithPublicKey(msg.getSerializedContentAsBytes(), publicKey);
     return new StreamMessage.Builder(msg)
         .withEncryptionType(StreamMessage.EncryptionType.RSA)
@@ -174,8 +175,8 @@ public final class EncryptionUtil {
    * Sets the content of 'streamMessage' with the encryption result of the old content with
    * 'groupKey'.
    */
-  public static StreamMessage encryptStreamMessage(final StreamMessage streamMessage, final GroupKey groupKey)
-      throws InvalidGroupKeyException {
+  public static StreamMessage encryptStreamMessage(
+      final StreamMessage streamMessage, final GroupKey groupKey) throws InvalidGroupKeyException {
     final String content = encrypt(streamMessage.getSerializedContentAsBytes(), groupKey);
     return new StreamMessage.Builder(streamMessage)
         .withSerializedContent(content)
@@ -185,8 +186,8 @@ public final class EncryptionUtil {
   }
 
   /** Decrypts the serialized content of 'streamMessage' with 'groupKey'. */
-  public static StreamMessage decryptStreamMessage(final StreamMessage streamMessage, final GroupKey groupKey)
-      throws UnableToDecryptException {
+  public static StreamMessage decryptStreamMessage(
+      final StreamMessage streamMessage, final GroupKey groupKey) throws UnableToDecryptException {
     if (streamMessage.getEncryptionType() != StreamMessage.EncryptionType.AES) {
       throw new IllegalArgumentException("Given StreamMessage is not encrypted with AES!");
     }

@@ -27,8 +27,10 @@ public class HttpUtils {
   // Thread safe
   public static final Moshi MOSHI = addDefaultAdapters.apply(new Moshi.Builder()).build();
 
-  public static final JsonAdapter<Map<String, Object>> mapAdapter = MOSHI.adapter(Types.newParameterizedType(Map.class, String.class, Object.class));
-  public static final JsonAdapter<List<String>> listAdapter = MOSHI.adapter(Types.newParameterizedType(List.class, String.class));
+  public static final JsonAdapter<Map<String, Object>> mapAdapter =
+      MOSHI.adapter(Types.newParameterizedType(Map.class, String.class, Object.class));
+  public static final JsonAdapter<List<String>> listAdapter =
+      MOSHI.adapter(Types.newParameterizedType(List.class, String.class));
 
   public static final MediaType jsonType = MediaType.parse("application/json");
 

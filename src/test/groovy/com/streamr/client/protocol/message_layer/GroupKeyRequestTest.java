@@ -4,8 +4,8 @@ import nl.jqno.equalsverifier.EqualsVerifier;
 import org.junit.jupiter.api.Test;
 
 class GroupKeyRequestTest {
-    @Test
-    void equalsContract() {
-        EqualsVerifier.forClass(GroupKeyRequest.class).verify();
-    }
+  @Test
+  void equalsContract() {
+    EqualsVerifier.forClass(GroupKeyRequest.class).verify();
+  }
 }

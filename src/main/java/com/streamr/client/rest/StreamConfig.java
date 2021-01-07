@@ -7,6 +7,7 @@ import java.util.Objects;
 
 /**
  * {@code StreamConfig} holds a configuration of {@code FieldConfig } objects.
+ *
  * <p>Below is an example of Stream configuration in JSON format.
  *
  * <pre>
@@ -42,30 +43,30 @@ import java.util.Objects;
  * </pre>
  */
 public final class StreamConfig {
-    private final List<FieldConfig> fields;
+  private final List<FieldConfig> fields;
 
-    public StreamConfig() {
-        this.fields = new ArrayList<>();
-    }
+  public StreamConfig() {
+    this.fields = new ArrayList<>();
+  }
 
-    public StreamConfig(final FieldConfig... fields) {
-        this.fields = Arrays.asList(fields);
-    }
+  public StreamConfig(final FieldConfig... fields) {
+    this.fields = Arrays.asList(fields);
+  }
 
-    public List<FieldConfig> getFields() {
-        return fields;
-    }
+  public List<FieldConfig> getFields() {
+    return fields;
+  }
 
-    @Override
-    public boolean equals(final Object obj) {
-        if (this == obj) return true;
-        if (obj == null || getClass() != obj.getClass()) return false;
-        final StreamConfig that = (StreamConfig) obj;
-        return Objects.equals(fields, that.fields);
-    }
+  @Override
+  public boolean equals(final Object obj) {
+    if (this == obj) return true;
+    if (obj == null || getClass() != obj.getClass()) return false;
+    final StreamConfig that = (StreamConfig) obj;
+    return Objects.equals(fields, that.fields);
+  }
 
-    @Override
-    public int hashCode() {
-        return Objects.hash(fields);
-    }
+  @Override
+  public int hashCode() {
+    return Objects.hash(fields);
+  }
 }

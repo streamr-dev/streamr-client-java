@@ -6,6 +6,6 @@ import org.junit.jupiter.api.Test;
 class StreamTest {
   @Test
   void equalsContract() {
-      EqualsVerifier.forClass(Stream.class).verify();
+    EqualsVerifier.forClass(Stream.class).verify();
   }
 }

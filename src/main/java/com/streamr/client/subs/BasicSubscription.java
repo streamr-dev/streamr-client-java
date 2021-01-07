@@ -177,6 +177,7 @@ public abstract class BasicSubscription extends Subscription {
   private final class DecryptResult {
     private final boolean status;
     private final StreamMessage message;
+
     DecryptResult(final boolean status, final StreamMessage message) {
       this.status = status;
       this.message = message;
