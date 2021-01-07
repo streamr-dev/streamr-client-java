@@ -225,7 +225,9 @@ class BasicSubscriptionSpec extends StreamrSpecification {
         GroupKey newKey = GroupKey.generate()
         StreamMessage msg = createMessage()
         msg = EncryptionUtil.encryptStreamMessage(msg, oldKey)
-        msg.setNewGroupKey(EncryptionUtil.encryptGroupKey(newKey, oldKey))
+        msg = new StreamMessage.Builder(msg)
+                .setNewGroupKey(EncryptionUtil.encryptGroupKey(newKey, oldKey))
+                .createStreamMessage()
 
         when:
         sub.handleRealTimeMessage(msg)

@@ -192,10 +192,6 @@ public class StreamMessage implements ITimestamped {
         return previousMessageRef;
     }
 
-    public void setPreviousMessageRef(MessageRef previousMessageRef) {
-        this.previousMessageRef = previousMessageRef;
-    }
-
     public SignatureType getSignatureType() {
         return signatureType;
     }
@@ -251,27 +247,12 @@ public class StreamMessage implements ITimestamped {
         return serializedContent.getBytes(StandardCharsets.UTF_8);
     }
 
-    public void setEncryptionType(EncryptionType encryptionType) {
-        this.encryptionType = encryptionType;
-    }
-
     public String getGroupKeyId() {
         return groupKeyId;
     }
 
-    public void setGroupKeyId(String groupKeyId) {
-        this.groupKeyId = groupKeyId;
-    }
-
     public EncryptedGroupKey getNewGroupKey() {
         return newGroupKey;
-    }
-
-    public void setNewGroupKey(EncryptedGroupKey newGroupKey) {
-        if (newGroupKey.getGroupKeyId().equals(groupKeyId)) {
-            throw new IllegalArgumentException("newGroupKey isn't new - it matches the groupKeyId of the message: " + newGroupKey.getGroupKeyId());
-        }
-        this.newGroupKey = newGroupKey;
     }
 
     public String serialize() {
@@ -376,6 +357,10 @@ public class StreamMessage implements ITimestamped {
         }
 
         public Builder setNewGroupKey(final EncryptedGroupKey newGroupKey) {
+            if ((newGroupKey != null) && newGroupKey.getGroupKeyId().equals(groupKeyId)) {
+                final String msg = String.format("newGroupKey isn't new - it matches the groupKeyId of the message: %s", newGroupKey.getGroupKeyId());
+                throw new IllegalArgumentException(msg);
+            }
             this.newGroupKey = newGroupKey;
             return this;
         }

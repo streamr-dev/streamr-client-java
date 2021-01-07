@@ -72,7 +72,11 @@ public class MessageCreationUtil {
 
     Pair<MessageID, MessageRef> pair =
         createMsgIdAndRef(stream.getId(), streamPartition, timestamp.getTime());
-    StreamMessage streamMessage = new StreamMessage.Builder().setMessageID(pair.getLeft()).setPreviousMessageRef(pair.getRight()).setSerializedContent(HttpUtils.mapAdapter.toJson(payload)).createStreamMessage();
+    StreamMessage streamMessage = new StreamMessage.Builder()
+        .setMessageID(pair.getLeft())
+        .setPreviousMessageRef(pair.getRight())
+        .setSerializedContent(HttpUtils.mapAdapter.toJson(payload))
+        .createStreamMessage();
 
     // Encrypt content if the GroupKey is provided
     if (groupKey != null) {
@@ -84,7 +88,10 @@ public class MessageCreationUtil {
 
       // Encrypt and attach newGroupKey if it's provided
       if (newGroupKey != null) {
-        streamMessage.setNewGroupKey(EncryptionUtil.encryptGroupKey(newGroupKey, groupKey));
+        final EncryptedGroupKey newGroup = EncryptionUtil.encryptGroupKey(newGroupKey, groupKey);
+        streamMessage = new StreamMessage.Builder(streamMessage)
+            .setNewGroupKey(newGroup)
+            .createStreamMessage();
       }
     }
 

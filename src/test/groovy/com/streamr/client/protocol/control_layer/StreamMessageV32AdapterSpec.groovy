@@ -31,12 +31,14 @@ class StreamMessageV32AdapterSpec extends StreamrSpecification {
 
 	void "serialize maximal message"() {
 		String expectedJson = '[32,["streamId",0,123,0,"publisherid","msgChainId"],[122,0],27,0,2,"groupKeyId","encrypted-content","[\\\"newGroupKeyId\\\",\\\"encryptedGroupKeyHex-cached\\\"]",2,"signature"]'
-		msg.setPreviousMessageRef(new MessageRef(122L, 0))
-		msg.setEncryptionType(StreamMessage.EncryptionType.AES);
-		msg.setGroupKeyId("groupKeyId")
-		msg.setNewGroupKey(new EncryptedGroupKey("newGroupKeyId", "encryptedGroupKeyHex", "[\"newGroupKeyId\",\"encryptedGroupKeyHex-cached\"]"))
-		msg = new StreamMessage.Builder(msg).setSignature("signature").setSignatureType(StreamMessage.SignatureType.ETH)
+		msg = new StreamMessage.Builder(msg)
+				.setSignature("signature")
+				.setSignatureType(StreamMessage.SignatureType.ETH)
 				.setSerializedContent("encrypted-content")
+				.setPreviousMessageRef(new MessageRef(122L, 0))
+				.setEncryptionType(StreamMessage.EncryptionType.AES)
+				.setGroupKeyId("groupKeyId")
+				.setNewGroupKey(new EncryptedGroupKey("newGroupKeyId", "encryptedGroupKeyHex", "[\"newGroupKeyId\",\"encryptedGroupKeyHex-cached\"]"))
 				.createStreamMessage()
 
 		expect:

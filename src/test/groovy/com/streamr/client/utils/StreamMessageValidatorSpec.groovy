@@ -172,7 +172,9 @@ class StreamMessageValidatorSpec extends StreamrSpecification {
 
     void "accepts valid encrypted messages"() {
         stream.setRequireEncryptedData(true)
-        msgSigned.setEncryptionType(StreamMessage.EncryptionType.AES)
+        msgSigned = new StreamMessage.Builder(msgSigned)
+                .setEncryptionType(StreamMessage.EncryptionType.AES)
+                .createStreamMessage()
 
         when:
         validator.validate(msgSigned)
@@ -182,7 +184,9 @@ class StreamMessageValidatorSpec extends StreamrSpecification {
 
     void "rejects unencrypted messages if encryption is required"() {
         stream.setRequireEncryptedData(true)
-        msgSigned.setEncryptionType(StreamMessage.EncryptionType.NONE)
+        msgSigned = new StreamMessage.Builder(msgSigned)
+                .setEncryptionType(StreamMessage.EncryptionType.NONE)
+                .createStreamMessage()
 
         when:
         validator.validate(msgSigned)
@@ -204,7 +208,10 @@ class StreamMessageValidatorSpec extends StreamrSpecification {
     }
 
     void "[GroupKeyRequest] rejects unsigned"() {
-        groupKeyRequest = new StreamMessage.Builder(groupKeyRequest).setSignature(null).setSignatureType(StreamMessage.SignatureType.NONE).createStreamMessage()
+        groupKeyRequest = new StreamMessage.Builder(groupKeyRequest)
+                .setSignature(null)
+                .setSignatureType(StreamMessage.SignatureType.NONE)
+                .createStreamMessage()
 
         when:
         validator.validate(groupKeyRequest)
@@ -216,7 +223,10 @@ class StreamMessageValidatorSpec extends StreamrSpecification {
 
     void "[GroupKeyRequest] rejects invalid signatures"() {
         def signature = groupKeyRequest.getSignature().replace('a', 'b')
-        groupKeyRequest = new StreamMessage.Builder(groupKeyRequest).setSignature(signature).setSignatureType(StreamMessage.SignatureType.ETH).createStreamMessage()
+        groupKeyRequest = new StreamMessage.Builder(groupKeyRequest)
+                .setSignature(signature)
+                .setSignatureType(StreamMessage.SignatureType.ETH)
+                .createStreamMessage()
 
         when:
         validator.validate(groupKeyRequest)
@@ -261,7 +271,10 @@ class StreamMessageValidatorSpec extends StreamrSpecification {
     }
 
     void "[GroupKeyResponse] rejects unsigned"() {
-        groupKeyResponse = new StreamMessage.Builder(groupKeyResponse).setSignature(null).setSignatureType(StreamMessage.SignatureType.NONE).createStreamMessage()
+        groupKeyResponse = new StreamMessage.Builder(groupKeyResponse)
+                .setSignature(null)
+                .setSignatureType(StreamMessage.SignatureType.NONE)
+                .createStreamMessage()
 
         when:
         validator.validate(groupKeyResponse)
@@ -273,7 +286,10 @@ class StreamMessageValidatorSpec extends StreamrSpecification {
 
     void "[GroupKeyResponse] rejects invalid signatures"() {
         def signature = groupKeyResponse.getSignature().replace('a', 'b')
-        groupKeyResponse = new StreamMessage.Builder(groupKeyResponse).setSignature(signature).setSignatureType(StreamMessage.SignatureType.ETH).createStreamMessage()
+        groupKeyResponse = new StreamMessage.Builder(groupKeyResponse)
+                .setSignature(signature)
+                .setSignatureType(StreamMessage.SignatureType.ETH)
+                .createStreamMessage()
 
         when:
         validator.validate(groupKeyResponse)
@@ -318,7 +334,10 @@ class StreamMessageValidatorSpec extends StreamrSpecification {
     }
 
     void "[GroupKeyAnnounce] rejects unsigned"() {
-        groupKeyAnnounceRekey = new StreamMessage.Builder(groupKeyAnnounceRekey).setSignature(null).setSignatureType(StreamMessage.SignatureType.NONE).createStreamMessage()
+        groupKeyAnnounceRekey = new StreamMessage.Builder(groupKeyAnnounceRekey)
+                .setSignature(null)
+                .setSignatureType(StreamMessage.SignatureType.NONE)
+                .createStreamMessage()
 
         when:
         validator.validate(groupKeyAnnounceRekey)
@@ -330,7 +349,10 @@ class StreamMessageValidatorSpec extends StreamrSpecification {
 
     void "[GroupKeyAnnounce] rejects invalid signatures"() {
         def signature = groupKeyAnnounceRekey.getSignature().replace('a', 'b')
-        groupKeyAnnounceRekey = new StreamMessage.Builder(groupKeyAnnounceRekey).setSignature(signature).setSignatureType(StreamMessage.SignatureType.ETH).createStreamMessage()
+        groupKeyAnnounceRekey = new StreamMessage.Builder(groupKeyAnnounceRekey)
+                .setSignature(signature)
+                .setSignatureType(StreamMessage.SignatureType.ETH)
+                .createStreamMessage()
 
         when:
         validator.validate(groupKeyAnnounceRekey)
@@ -375,7 +397,10 @@ class StreamMessageValidatorSpec extends StreamrSpecification {
     }
 
     void "[GroupKeyErrorResponse] rejects unsigned"() {
-        groupKeyErrorResponse = new StreamMessage.Builder(groupKeyErrorResponse).setSignature(null).setSignatureType(StreamMessage.SignatureType.NONE).createStreamMessage()
+        groupKeyErrorResponse = new StreamMessage.Builder(groupKeyErrorResponse)
+                .setSignature(null)
+                .setSignatureType(StreamMessage.SignatureType.NONE)
+                .createStreamMessage()
 
         when:
         validator.validate(groupKeyErrorResponse)
@@ -387,7 +412,10 @@ class StreamMessageValidatorSpec extends StreamrSpecification {
 
     void "[GroupKeyErrorResponse] rejects invalid signatures"() {
         def signature = groupKeyErrorResponse.getSignature().replace('a', 'b')
-        groupKeyErrorResponse = new StreamMessage.Builder(groupKeyErrorResponse).setSignature(signature).setSignatureType(StreamMessage.SignatureType.ETH).createStreamMessage()
+        groupKeyErrorResponse = new StreamMessage.Builder(groupKeyErrorResponse)
+                .setSignature(signature)
+                .setSignatureType(StreamMessage.SignatureType.ETH)
+                .createStreamMessage()
 
         when:
         validator.validate(groupKeyErrorResponse)
