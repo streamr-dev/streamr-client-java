@@ -1,12 +1,10 @@
-package com.streamr.client
+package com.streamr.client.subs
 
+import com.streamr.client.MessageHandler
 import com.streamr.client.options.ResendLastOption
 import com.streamr.client.options.ResendOption
 import com.streamr.client.protocol.StreamrSpecification
 import com.streamr.client.protocol.message_layer.StreamMessage
-import com.streamr.client.subs.BasicSubscription
-import com.streamr.client.subs.HistoricalSubscription
-import com.streamr.client.subs.Subscription
 import com.streamr.client.utils.Address
 import com.streamr.client.utils.EncryptionUtil
 import com.streamr.client.utils.GroupKey
@@ -37,7 +35,7 @@ class HistoricalSubscriptionSpec extends StreamrSpecification {
         doneHandlerCalled = false
     }
 
-    MessageHandler defaultHandler = new MessageHandler() {
+	MessageHandler defaultHandler = new MessageHandler() {
         @Override
         void onMessage(Subscription sub, StreamMessage message) {
             received.add(message)

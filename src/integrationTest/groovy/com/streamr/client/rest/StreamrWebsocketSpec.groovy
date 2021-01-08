@@ -1,12 +1,13 @@
-package com.streamr.client
+package com.streamr.client.rest
 
+import com.streamr.client.MessageHandler
+import com.streamr.client.StreamrClient
+import com.streamr.client.StreamrIntegrationSpecification
 import com.streamr.client.exceptions.UnableToDecryptException
 import com.streamr.client.options.ResendFromOption
 import com.streamr.client.options.ResendLastOption
 import com.streamr.client.options.ResendRangeOption
 import com.streamr.client.protocol.message_layer.StreamMessage
-import com.streamr.client.rest.Permission
-import com.streamr.client.rest.Stream
 import com.streamr.client.subs.Subscription
 import com.streamr.client.utils.GroupKey
 import org.java_websocket.enums.ReadyState
