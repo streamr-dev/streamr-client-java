@@ -22,7 +22,8 @@ public class HttpUtils {
       (builder) ->
           builder
               .add(Date.class, new StringOrMillisDateJsonAdapter().nullSafe())
-              .add(BigDecimal.class, new BigDecimalAdapter().nullSafe());
+              .add(BigDecimal.class, new BigDecimalAdapter().nullSafe())
+              .add(new InstantJsonAdapter());
 
   // Thread safe
   public static final Moshi MOSHI = addDefaultAdapters.apply(new Moshi.Builder()).build();

@@ -1,7 +1,7 @@
-package com.streamr.client
+package com.streamr.client.rest
 
-import com.streamr.client.rest.Permission
-import com.streamr.client.rest.Stream
+import com.streamr.client.StreamrClient
+import com.streamr.client.StreamrIntegrationSpecification
 
 class PermissionEndpointsSpec extends StreamrIntegrationSpecification {
 
