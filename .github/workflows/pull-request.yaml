@@ -5,7 +5,7 @@ on:
 
 jobs:
   build:
-    name: Build and unit test
+    name: Check source format, build and unit test
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v2.3.4
@@ -26,7 +26,7 @@ jobs:
       - name: Unit Test
         run: make -f Makefile.ci test-unit
   integration-test:
-    name: Run integration tests
+    name: Integration test
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v2.3.4
