@@ -1,6 +1,7 @@
 package com.streamr.client.utils;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
+
 import java.time.Instant;
 import java.util.ArrayList;
 import java.util.List;
