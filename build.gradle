@@ -1,3 +1,4 @@
+import org.gradle.api.tasks.testing.logging.TestLogEvent
 import org.gradle.api.tasks.testing.logging.TestExceptionFormat
 
 plugins {
@@ -30,9 +31,6 @@ sourceSets {
 	test {
 		groovy {
 			srcDirs = ['src/test/groovy']
-		}
-		java {
-			srcDirs = ['src/test/java']
 		}
 	}
 	integrationTest {
@@ -178,36 +176,72 @@ task integrationTest(type: Test) {
 check.dependsOn integrationTest
 test {
 	useJUnitPlatform {
-		//includeTags 'fast', 'smoke & feature-a'
-		//excludeTags 'slow', 'ci'
-		//includeEngines 'junit-jupiter'
-		//excludeEngines 'junit-vintage'
+		systemProperties = [
+				'junit.jupiter.extensions.autodetection.enabled': 'true',
+				'junit.jupiter.testinstance.lifecycle.default': 'per_class',
+				'junit.jupiter.execution.timeout.default': '3 m',
+		]
 	}
 	testLogging {
 		events = [
-				'passed',
-				'failed',
-				'skipped',
+				TestLogEvent.SKIPPED,
+				TestLogEvent.FAILED,
 		]
-		showStandardStreams = true
-		exceptionFormat = TestExceptionFormat.FULL
+		exceptionFormat TestExceptionFormat.SHORT
+		info {
+			events = [
+					TestLogEvent.PASSED,
+					TestLogEvent.SKIPPED,
+					TestLogEvent.FAILED,
+			]
+			exceptionFormat TestExceptionFormat.FULL
+		}
+		debug {
+			events = [
+					TestLogEvent.STANDARD_OUT,
+					TestLogEvent.STANDARD_ERROR,
+					TestLogEvent.STARTED,
+					TestLogEvent.SKIPPED,
+					TestLogEvent.FAILED,
+					TestLogEvent.PASSED,
+			]
+			exceptionFormat TestExceptionFormat.FULL
+		}
 	}
 }
 integrationTest {
 	useJUnitPlatform {
-		//includeTags 'fast', 'smoke & feature-a'
-		//excludeTags 'slow', 'ci'
-		//includeEngines 'junit-jupiter'
-		//excludeEngines 'junit-vintage'
+		systemProperties = [
+				'junit.jupiter.extensions.autodetection.enabled': 'true',
+				'junit.jupiter.testinstance.lifecycle.default': 'per_class',
+				'junit.jupiter.execution.timeout.default': '3 m',
+		]
 	}
 	testLogging {
 		events = [
-				'passed',
-				'failed',
-				'skipped',
+				TestLogEvent.SKIPPED,
+				TestLogEvent.FAILED,
 		]
-		showStandardStreams = true
-		exceptionFormat = TestExceptionFormat.FULL
+		exceptionFormat TestExceptionFormat.SHORT
+		info {
+			events = [
+					TestLogEvent.PASSED,
+					TestLogEvent.SKIPPED,
+					TestLogEvent.FAILED,
+			]
+			exceptionFormat TestExceptionFormat.FULL
+		}
+		debug {
+			events = [
+					TestLogEvent.STANDARD_OUT,
+					TestLogEvent.STANDARD_ERROR,
+					TestLogEvent.STARTED,
+					TestLogEvent.SKIPPED,
+					TestLogEvent.FAILED,
+					TestLogEvent.PASSED,
+			]
+			exceptionFormat TestExceptionFormat.FULL
+		}
 	}
 }
 
