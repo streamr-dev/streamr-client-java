@@ -139,7 +139,7 @@ class DataUnionClientTest implements StreamrConstant {
   @Test
   @Order(4)
   void withdrawMemberAsAdmin() throws Exception {
-    final String recipient = member1Wallet.getAddress();
+    final String recipient = member2Wallet.getAddress();
     final BigInteger recipientBal =
         mainnetToken.balanceOf(new Address(recipient)).send().getValue();
     final EthereumTransactionReceipt tr = du.withdrawAllTokensForSelfOrAsAdmin(recipient);
