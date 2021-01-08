@@ -1,3 +1,4 @@
+import org.gradle.api.tasks.testing.logging.TestLogEvent
 import org.gradle.api.tasks.testing.logging.TestExceptionFormat
 
 plugins {
@@ -30,9 +31,6 @@ sourceSets {
 	test {
 		groovy {
 			srcDirs = ['src/test/groovy']
-		}
-		java {
-			srcDirs = ['src/test/java']
 		}
 	}
 	integrationTest {
@@ -104,7 +102,7 @@ jar {
 // https://docs.gradle.org/current/userguide/working_with_files.html#sec:creating_uber_jar_example
 task fatJar(type: Jar) {
 	description = 'Creates a Jar file with all dependencies included.'
-	group = 'build'
+	group = JavaBasePlugin.BUILD_TASK_NAME
 	archiveClassifier = 'fat'
 
 	manifest {
@@ -144,7 +142,6 @@ dependencies {
 	implementation('com.googlecode.json-simple:json-simple:1.1.1') // DO NOT USE! This should be a build time dep
 
 	// Test dependencies below
-	testRuntimeOnly('org.slf4j:slf4j-simple:1.7.30')
 	testImplementation('nl.jqno.equalsverifier:equalsverifier:3.5')
 	// Spock
 	testImplementation 'org.codehaus.groovy:groovy-all:2.5.14'
@@ -172,8 +169,7 @@ configurations {
 }
 task integrationTest(type: Test) {
 	description = 'Runs integration tests.'
-	group = 'verification'
-
+	group = JavaBasePlugin.VERIFICATION_GROUP
 	testClassesDirs = sourceSets.integrationTest.output.classesDirs
 	classpath = sourceSets.integrationTest.runtimeClasspath
 	shouldRunAfter test
@@ -181,36 +177,72 @@ task integrationTest(type: Test) {
 check.dependsOn integrationTest
 test {
 	useJUnitPlatform {
-		//includeTags 'fast', 'smoke & feature-a'
-		//excludeTags 'slow', 'ci'
-		//includeEngines 'junit-jupiter'
-		//excludeEngines 'junit-vintage'
+		systemProperties = [
+				'junit.jupiter.extensions.autodetection.enabled': 'true',
+				'junit.jupiter.testinstance.lifecycle.default': 'per_class',
+				'junit.jupiter.execution.timeout.default': '3 m',
+		]
 	}
 	testLogging {
 		events = [
-				'passed',
-				'failed',
-				'skipped',
+				TestLogEvent.SKIPPED,
+				TestLogEvent.FAILED,
 		]
-		showStandardStreams = true
-		exceptionFormat = TestExceptionFormat.FULL
+		exceptionFormat TestExceptionFormat.SHORT
+		info {
+			events = [
+					TestLogEvent.PASSED,
+					TestLogEvent.SKIPPED,
+					TestLogEvent.FAILED,
+			]
+			exceptionFormat TestExceptionFormat.FULL
+		}
+		debug {
+			events = [
+					TestLogEvent.STANDARD_OUT,
+					TestLogEvent.STANDARD_ERROR,
+					TestLogEvent.STARTED,
+					TestLogEvent.SKIPPED,
+					TestLogEvent.FAILED,
+					TestLogEvent.PASSED,
+			]
+			exceptionFormat TestExceptionFormat.FULL
+		}
 	}
 }
 integrationTest {
 	useJUnitPlatform {
-		//includeTags 'fast', 'smoke & feature-a'
-		//excludeTags 'slow', 'ci'
-		//includeEngines 'junit-jupiter'
-		//excludeEngines 'junit-vintage'
+		systemProperties = [
+				'junit.jupiter.extensions.autodetection.enabled': 'true',
+				'junit.jupiter.testinstance.lifecycle.default': 'per_class',
+				'junit.jupiter.execution.timeout.default': '3 m',
+		]
 	}
 	testLogging {
 		events = [
-				'passed',
-				'failed',
-				'skipped',
+				TestLogEvent.SKIPPED,
+				TestLogEvent.FAILED,
 		]
-		showStandardStreams = true
-		exceptionFormat = TestExceptionFormat.FULL
+		exceptionFormat TestExceptionFormat.SHORT
+		info {
+			events = [
+					TestLogEvent.PASSED,
+					TestLogEvent.SKIPPED,
+					TestLogEvent.FAILED,
+			]
+			exceptionFormat TestExceptionFormat.FULL
+		}
+		debug {
+			events = [
+					TestLogEvent.STANDARD_OUT,
+					TestLogEvent.STANDARD_ERROR,
+					TestLogEvent.STARTED,
+					TestLogEvent.SKIPPED,
+					TestLogEvent.FAILED,
+					TestLogEvent.PASSED,
+			]
+			exceptionFormat TestExceptionFormat.FULL
+		}
 	}
 }
 

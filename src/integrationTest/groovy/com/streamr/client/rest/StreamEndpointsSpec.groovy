@@ -1,14 +1,12 @@
-package com.streamr.client
+package com.streamr.client.rest
 
+import com.streamr.client.StreamrClient
+import com.streamr.client.StreamrIntegrationSpecification
 import com.streamr.client.authentication.EthereumAuthenticationMethod
 import com.streamr.client.exceptions.AmbiguousResultsException
+import com.streamr.client.exceptions.AuthenticationException
 import com.streamr.client.exceptions.PermissionDeniedException
 import com.streamr.client.exceptions.ResourceNotFoundException
-import com.streamr.client.rest.Stream
-import com.streamr.client.rest.StreamConfig
-import com.streamr.client.exceptions.AuthenticationException
-import com.streamr.client.rest.FieldConfig
-import com.streamr.client.rest.UserInfo
 
 class StreamEndpointsSpec extends StreamrIntegrationSpecification {
 

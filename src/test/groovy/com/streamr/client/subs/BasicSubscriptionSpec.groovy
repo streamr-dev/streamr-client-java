@@ -1,15 +1,18 @@
-package com.streamr.client
+package com.streamr.client.subs
 
+import com.streamr.client.MessageHandler
 import com.streamr.client.exceptions.GapDetectedException
 import com.streamr.client.exceptions.UnableToDecryptException
 import com.streamr.client.protocol.StreamrSpecification
 import com.streamr.client.protocol.message_layer.MessageRef
 import com.streamr.client.protocol.message_layer.StreamMessage
-import com.streamr.client.subs.BasicSubscription
 import com.streamr.client.subs.BasicSubscription.GroupKeyRequestFunction
-import com.streamr.client.subs.RealTimeSubscription
-import com.streamr.client.subs.Subscription
-import com.streamr.client.utils.*
+import com.streamr.client.utils.Address
+import com.streamr.client.utils.EncryptionUtil
+import com.streamr.client.utils.GroupKey
+import com.streamr.client.utils.GroupKeyStore
+import com.streamr.client.utils.KeyExchangeUtil
+import com.streamr.client.utils.OrderedMsgChain
 
 /**
  * BasicSubscription is abstract, but contains most of the code for RealtimeSubscription and
