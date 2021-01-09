@@ -2,11 +2,11 @@ package com.streamr.client.utils
 
 import com.streamr.client.exceptions.ValidationException
 import com.streamr.client.options.SigningOptions.SignatureVerificationPolicy
-import com.streamr.client.protocol.StreamrSpecification
 import com.streamr.client.protocol.message_layer.AbstractGroupKeyMessage
 import com.streamr.client.protocol.message_layer.GroupKeyRequest
 import com.streamr.client.protocol.message_layer.MessageID
 import com.streamr.client.protocol.message_layer.StreamMessage
+import com.streamr.client.protocol.message_layer.StreamrSpecification
 import com.streamr.client.rest.Stream
 import org.web3j.crypto.ECKeyPair
 

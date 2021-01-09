@@ -2,10 +2,10 @@ package com.streamr.client.utils
 
 import com.streamr.client.exceptions.InvalidGroupKeyException
 import com.streamr.client.exceptions.InvalidRSAKeyException
-import com.streamr.client.protocol.StreamrSpecification
 import com.streamr.client.protocol.message_layer.MessageID
 import com.streamr.client.protocol.message_layer.MessageRef
 import com.streamr.client.protocol.message_layer.StreamMessage
+import com.streamr.client.protocol.message_layer.StreamrSpecification
 import java.nio.charset.StandardCharsets
 import java.security.KeyPair
 import java.security.SecureRandom

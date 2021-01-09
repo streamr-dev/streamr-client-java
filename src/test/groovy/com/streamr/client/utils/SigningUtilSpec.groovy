@@ -1,11 +1,10 @@
 package com.streamr.client.utils
 
-import com.streamr.client.protocol.StreamrSpecification
 import com.streamr.client.protocol.message_layer.MessageID
 import com.streamr.client.protocol.message_layer.MessageRef
 import com.streamr.client.protocol.message_layer.StreamMessage
+import com.streamr.client.protocol.message_layer.StreamrSpecification
 import org.web3j.crypto.ECKeyPair
-import org.web3j.utils.Numeric
 
 class SigningUtilSpec extends StreamrSpecification {
     ECKeyPair account
