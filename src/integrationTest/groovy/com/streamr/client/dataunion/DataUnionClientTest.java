@@ -5,7 +5,7 @@ import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import com.streamr.client.StreamrClient;
-import com.streamr.client.StreamrConstant;
+import com.streamr.client.StreamrIntegrationSpecification;
 import com.streamr.client.dataunion.contracts.IERC20;
 import com.streamr.client.options.EncryptionOptions;
 import com.streamr.client.options.SigningOptions;
@@ -29,7 +29,7 @@ import org.web3j.protocol.http.HttpService;
 
 @Timeout(value = 11, unit = TimeUnit.MINUTES)
 @TestMethodOrder(MethodOrderer.OrderAnnotation.class)
-class DataUnionClientTest implements StreamrConstant {
+class DataUnionClientTest extends StreamrIntegrationSpecification {
   static final String[] TEST_RPC_KEYS =
       new String[] {
         "0x5e98cce00cff5dea6b454889f359a4ec06b9fa6b88e9d69b86de8e1c81887da0",
@@ -66,8 +66,8 @@ class DataUnionClientTest implements StreamrConstant {
             null,
             SigningOptions.getDefault(),
             EncryptionOptions.getDefault(),
-            StreamrConstant.DEFAULT_WEBSOCKET_URL,
-            StreamrConstant.DEFAULT_REST_URL);
+            DEFAULT_WEBSOCKET_URL,
+            DEFAULT_REST_URL);
     opts.setSidechainRpcUrl(DEV_SIDECHAIN_RPC);
     opts.setMainnetRpcUrl(DEV_MAINCHAIN_RPC);
     opts.setDataUnionMainnetFactoryAddress(DEV_MAINCHAIN_FACTORY);

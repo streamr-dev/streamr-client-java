@@ -1,14 +1,13 @@
 package com.streamr.client.utils
 
 import com.streamr.client.exceptions.GapFillFailedException
-import com.streamr.client.protocol.StreamrSpecification
 import com.streamr.client.protocol.message_layer.MessageRef
 import com.streamr.client.protocol.message_layer.StreamMessage
-import spock.util.concurrent.PollingConditions
-
+import com.streamr.client.protocol.message_layer.StreamrSpecification
 import java.util.function.Consumer
 import java.util.function.Function
 import java.util.stream.Collectors
+import spock.util.concurrent.PollingConditions
 
 class OrderedMsgChainSpec extends StreamrSpecification {
 

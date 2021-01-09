@@ -2,12 +2,16 @@ package com.streamr.client.utils
 
 import com.streamr.client.exceptions.InvalidGroupKeyRequestException
 import com.streamr.client.exceptions.SigningRequiredException
-import com.streamr.client.protocol.StreamrSpecification
-import com.streamr.client.protocol.message_layer.*
+import com.streamr.client.protocol.message_layer.AbstractGroupKeyMessage
+import com.streamr.client.protocol.message_layer.GroupKeyAnnounce
+import com.streamr.client.protocol.message_layer.GroupKeyErrorResponse
+import com.streamr.client.protocol.message_layer.GroupKeyRequest
+import com.streamr.client.protocol.message_layer.GroupKeyResponse
+import com.streamr.client.protocol.message_layer.StreamMessage
+import com.streamr.client.protocol.message_layer.StreamrSpecification
 import com.streamr.client.rest.Stream
-import org.web3j.crypto.ECKeyPair
-
 import java.security.SecureRandom
+import org.web3j.crypto.ECKeyPair
 
 class MessageCreationUtilSpec extends StreamrSpecification {
     MessageCreationUtil msgCreationUtil
