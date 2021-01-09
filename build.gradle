@@ -251,6 +251,14 @@ publishing {
 		}
 	}
 	repositories {
+		maven {
+			name = "GitHubPackages"
+			url = uri("https://maven.pkg.github.com/streamr-dev/streamr-client-java")
+			credentials {
+				username = project.findProperty("github.user") ?: System.getenv("USERNAME")
+				password = project.findProperty("github.apikey") ?: System.getenv("GITHUB_TOKEN")
+			}
+		}
 	}
 }
 // https://github.com/diffplug/spotless/tree/main/plugin-gradle
