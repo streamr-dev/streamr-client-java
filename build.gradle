@@ -4,6 +4,7 @@ import org.gradle.api.tasks.testing.logging.TestExceptionFormat
 plugins {
 	id 'java-library'
 	id 'groovy-gradle-plugin'
+	id 'groovy'
 	id 'idea'
 	id 'eclipse'
 	id 'maven-publish'
@@ -11,6 +12,7 @@ plugins {
 	id 'com.github.ben-manes.versions' version '0.36.0'
 	id 'com.diffplug.spotless' version '5.8.2'
 	id 'ru.vyarus.quality' version '4.4.0'
+	id 'org.unbroken-dome.test-sets' version '3.0.1'
 }
 
 repositories {
@@ -33,14 +35,13 @@ sourceSets {
 			srcDirs = ['src/test/groovy']
 		}
 	}
-	integrationTest {
-		groovy {
-			srcDirs = ['src/integrationTest/groovy']
-		}
-		compileClasspath += sourceSets.main.output
-		runtimeClasspath += sourceSets.main.output
-	}
 }
+// https://github.com/unbroken-dome/gradle-testsets-plugin
+testSets {
+	integrationTest { extendsFrom unitTest }
+}
+check.dependsOn integrationTest
+
 java {
 	sourceCompatibility(JavaVersion.VERSION_1_8)
 	targetCompatibility(JavaVersion.VERSION_1_8)
@@ -142,6 +143,7 @@ dependencies {
 	implementation('com.googlecode.json-simple:json-simple:1.1.1') // DO NOT USE! This should be a build time dep
 
 	// Test dependencies below
+	integrationTestImplementation sourceSets.test.output
 	testImplementation('nl.jqno.equalsverifier:equalsverifier:3.5')
 	// Spock
 	testImplementation 'org.codehaus.groovy:groovy-all:2.5.14'
@@ -162,19 +164,6 @@ dependencies {
 //		failOnVersionConflict()
 //	}
 //}
-// https://docs.gradle.org/current/userguide/java_testing.html#sec:configuring_java_integration_tests
-configurations {
-	integrationTestImplementation.extendsFrom testImplementation
-	integrationTestRuntimeOnly.extendsFrom testRuntimeOnly
-}
-task integrationTest(type: Test) {
-	description = 'Runs integration tests.'
-	group = JavaBasePlugin.VERIFICATION_GROUP
-	testClassesDirs = sourceSets.integrationTest.output.classesDirs
-	classpath = sourceSets.integrationTest.runtimeClasspath
-	shouldRunAfter test
-}
-check.dependsOn integrationTest
 test {
 	useJUnitPlatform {
 		systemProperties = [
