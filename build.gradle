@@ -13,7 +13,6 @@ plugins {
 	id 'idea'
 	id 'eclipse'
 	id 'maven-publish'
-	id 'com.jfrog.bintray' version '1.8.5'
 	id 'com.github.ben-manes.versions' version '0.36.0'
 	id 'com.diffplug.spotless' version '5.8.2'
 	id 'ru.vyarus.quality' version '4.4.0'
@@ -257,35 +256,6 @@ publishing {
 		}
 	}
 	repositories {
-		maven {
-			url 'https://dl.bintray.com/streamr/maven'
-		}
-	}
-}
-// https://github.com/bintray/gradle-bintray-plugin
-bintray {
-	user = project.hasProperty('bintrayUser') ? project.property('bintrayUser') : System.getenv('BINTRAY_USER')
-	key = project.hasProperty('bintrayApiKey') ? project.property('bintrayApiKey') : System.getenv('BINTRAY_API_KEY')
-	publications = ['streamrClient']
-	pkg {
-		repo = 'maven'
-		name = 'streamr-client-java'
-		userOrg = 'streamr'
-		desc = 'A Java library to interact with Streamr Network'
-		licenses = ['Apache-2.0']
-		websiteUrl = 'https://github.com/streamr-dev/streamr-client-java'
-		issueTrackerUrl = 'https://github.com/streamr-dev/streamr-client-java/issues'
-		vcsUrl = 'https://github.com/streamr-dev/streamr-client-java.git'
-		githubRepo = 'streamr-dev/streamr-client-java'
-		//githubReleaseNotesFile = 'README.md'
-		version {
-			name = project.version
-			vcsTag = "v${project.version}"
-			released = new Date()
-			gpg {
-				sign = true
-			}
-		}
 	}
 }
 // https://github.com/diffplug/spotless/tree/main/plugin-gradle
