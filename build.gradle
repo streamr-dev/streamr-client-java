@@ -1,6 +1,11 @@
 import org.gradle.api.tasks.testing.logging.TestLogEvent
 import org.gradle.api.tasks.testing.logging.TestExceptionFormat
 
+buildscript {
+	repositories {
+		jcenter()
+	}
+}
 plugins {
 	id 'java-library'
 	id 'groovy-gradle-plugin'
@@ -15,14 +20,8 @@ plugins {
 	id 'org.unbroken-dome.test-sets' version '3.0.1'
 }
 
-repositories {
-	jcenter()
-	// Ethereum Repository
-	maven {
-		url "https://dl.bintray.com/ethereum/maven/"
-	}
-	gradlePluginPortal()
-}
+group = 'com.streamr'
+version = '2.0.3-alpha.2'
 
 sourceSets {
 	main {
@@ -41,7 +40,41 @@ testSets {
 	integrationTest { extendsFrom unitTest }
 }
 check.dependsOn integrationTest
-
+tasks.withType(Test) {
+	useJUnitPlatform {
+		systemProperties = [
+				'junit.jupiter.extensions.autodetection.enabled': 'true',
+				'junit.jupiter.testinstance.lifecycle.default': 'per_class',
+				'junit.jupiter.execution.timeout.default': '3 m',
+		]
+	}
+	testLogging {
+		events = [
+				TestLogEvent.SKIPPED,
+				TestLogEvent.FAILED,
+		]
+		exceptionFormat TestExceptionFormat.SHORT
+		info {
+			events = [
+					TestLogEvent.PASSED,
+					TestLogEvent.SKIPPED,
+					TestLogEvent.FAILED,
+			]
+			exceptionFormat TestExceptionFormat.FULL
+		}
+		debug {
+			events = [
+					TestLogEvent.STANDARD_OUT,
+					TestLogEvent.STANDARD_ERROR,
+					TestLogEvent.STARTED,
+					TestLogEvent.SKIPPED,
+					TestLogEvent.FAILED,
+					TestLogEvent.PASSED,
+			]
+			exceptionFormat TestExceptionFormat.FULL
+		}
+	}
+}
 java {
 	sourceCompatibility(JavaVersion.VERSION_1_8)
 	targetCompatibility(JavaVersion.VERSION_1_8)
@@ -115,6 +148,14 @@ task fatJar(type: Jar) {
 		configurations.compileClasspath.findAll { it.name.endsWith('jar') }.collect { zipTree(it) }
 	}
 }
+repositories {
+	jcenter()
+	// Ethereum Repository
+	maven {
+		url "https://dl.bintray.com/ethereum/maven/"
+	}
+	gradlePluginPortal()
+}
 // https://docs.gradle.org/current/userguide/java_library_plugin.html
 dependencies {
 	implementation('org.slf4j:slf4j-api:1.7.30')
@@ -164,80 +205,7 @@ dependencies {
 //		failOnVersionConflict()
 //	}
 //}
-test {
-	useJUnitPlatform {
-		systemProperties = [
-				'junit.jupiter.extensions.autodetection.enabled': 'true',
-				'junit.jupiter.testinstance.lifecycle.default': 'per_class',
-				'junit.jupiter.execution.timeout.default': '3 m',
-		]
-	}
-	testLogging {
-		events = [
-				TestLogEvent.SKIPPED,
-				TestLogEvent.FAILED,
-		]
-		exceptionFormat TestExceptionFormat.SHORT
-		info {
-			events = [
-					TestLogEvent.PASSED,
-					TestLogEvent.SKIPPED,
-					TestLogEvent.FAILED,
-			]
-			exceptionFormat TestExceptionFormat.FULL
-		}
-		debug {
-			events = [
-					TestLogEvent.STANDARD_OUT,
-					TestLogEvent.STANDARD_ERROR,
-					TestLogEvent.STARTED,
-					TestLogEvent.SKIPPED,
-					TestLogEvent.FAILED,
-					TestLogEvent.PASSED,
-			]
-			exceptionFormat TestExceptionFormat.FULL
-		}
-	}
-}
-integrationTest {
-	useJUnitPlatform {
-		systemProperties = [
-				'junit.jupiter.extensions.autodetection.enabled': 'true',
-				'junit.jupiter.testinstance.lifecycle.default': 'per_class',
-				'junit.jupiter.execution.timeout.default': '3 m',
-		]
-	}
-	testLogging {
-		events = [
-				TestLogEvent.SKIPPED,
-				TestLogEvent.FAILED,
-		]
-		exceptionFormat TestExceptionFormat.SHORT
-		info {
-			events = [
-					TestLogEvent.PASSED,
-					TestLogEvent.SKIPPED,
-					TestLogEvent.FAILED,
-			]
-			exceptionFormat TestExceptionFormat.FULL
-		}
-		debug {
-			events = [
-					TestLogEvent.STANDARD_OUT,
-					TestLogEvent.STANDARD_ERROR,
-					TestLogEvent.STARTED,
-					TestLogEvent.SKIPPED,
-					TestLogEvent.FAILED,
-					TestLogEvent.PASSED,
-			]
-			exceptionFormat TestExceptionFormat.FULL
-		}
-	}
-}
-
 // https://docs.gradle.org/current/userguide/publishing_setup.html
-group = 'com.streamr'
-version = '2.0.3-alpha.2'
 publishing {
 	publications {
 		streamrClient(MavenPublication) {
