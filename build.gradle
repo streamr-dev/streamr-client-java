@@ -20,7 +20,7 @@ plugins {
 }
 
 group = 'com.streamr'
-version = '2.0.3-alpha.2'
+version = '2.0.3-alpha.3'
 description = 'A Java library to interact with Streamr Network'
 
 sourceSets {
