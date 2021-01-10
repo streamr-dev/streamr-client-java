@@ -157,6 +157,10 @@ repositories {
 	}
 	gradlePluginPortal()
 }
+ext {
+	junitJupiterVersion = '5.7.0'
+	junitPlatformVersion = '1.7.0'
+}
 // https://docs.gradle.org/current/userguide/java_library_plugin.html
 dependencies {
 	implementation('org.slf4j:slf4j-api:1.7.30')
@@ -175,12 +179,12 @@ dependencies {
 		exclude group: 'org.java-websocket', module: 'Java-WebSocket'
 		exclude group: 'org.slf4j', module: 'slf4j-api'
 	}
-	implementation('org.web3j:codegen:5.0.0')
-	implementation('com.google.code.findbugs:jsr305:3.0.2')
-	implementation('org.jetbrains:annotations:17.0.0')
+	implementation('com.google.code.findbugs:jsr305:3.0.2') // This project is dead?
+	implementation('org.jetbrains:annotations:17.0.0') // This does nothing?
 	implementation('org.bouncycastle:bcprov-jdk15on:1.65') {
 		because 'Web3j has same dependency and EncryptionUtil requires PEM'
 	}
+	implementation('org.web3j:codegen:5.0.0') // DO NOT USE! This should be a build time dep
 	// Transitive dependencies leaked from other dependencies
 	implementation('com.googlecode.json-simple:json-simple:1.1.1') // DO NOT USE! This should be a build time dep
 
@@ -193,12 +197,12 @@ dependencies {
 	testImplementation 'net.bytebuddy:byte-buddy:1.9.16'
 	testImplementation 'org.objenesis:objenesis:3.1'
 	// End Spock
-	testImplementation('org.junit.jupiter:junit-jupiter-api:5.7.0')
-	testImplementation('org.junit.jupiter:junit-jupiter-params:5.7.0')
-	testImplementation('org.junit.platform:junit-platform-commons:1.7.0')
-	testRuntimeOnly('org.junit.platform:junit-platform-launcher:1.7.0')
-	testRuntimeOnly('org.junit.jupiter:junit-jupiter-engine:5.7.0')
-	testRuntimeOnly('org.junit.vintage:junit-vintage-engine:5.7.0')
+	testImplementation("org.junit.jupiter:junit-jupiter-api:${junitJupiterVersion}")
+	testImplementation("org.junit.jupiter:junit-jupiter-params:${junitJupiterVersion}")
+	testImplementation("org.junit.platform:junit-platform-commons:${junitPlatformVersion}")
+	testRuntimeOnly("org.junit.platform:junit-platform-launcher:${junitPlatformVersion}")
+	testRuntimeOnly("org.junit.jupiter:junit-jupiter-engine:${junitJupiterVersion}")
+	testRuntimeOnly("org.junit.vintage:junit-vintage-engine:${junitJupiterVersion}")
 }
 // https://docs.gradle.org/current/userguide/resolution_strategy_tuning.html
 //configurations.all {
