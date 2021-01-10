@@ -10,10 +10,6 @@ import spock.lang.Specification
 class StreamrIntegrationSpecification extends Specification {
     public final static String DEFAULT_REST_URL = "http://localhost/api/v1"
     public final static String DEFAULT_WEBSOCKET_URL = "ws://localhost/api/v1/ws"
-    public final static String DEV_MAINCHAIN_RPC = "http://localhost:8545"
-    public final static String DEV_SIDECHAIN_RPC = "http://localhost:8546"
-    public final static String DEV_SIDECHAIN_FACTORY = "0x4081B7e107E59af8E82756F96C751174590989FE"
-    public final static String DEV_MAINCHAIN_FACTORY = "0x5E959e5d5F3813bE5c6CeA996a286F734cc9593b"
 
     protected static String generatePrivateKey() {
         byte[] array = new byte[32]

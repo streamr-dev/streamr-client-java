@@ -29,7 +29,11 @@ import org.web3j.protocol.http.HttpService;
 
 @Timeout(value = 11, unit = TimeUnit.MINUTES)
 @TestMethodOrder(MethodOrderer.OrderAnnotation.class)
-class DataUnionClientTest extends StreamrIntegrationSpecification {
+class DataUnionClientTest {
+  static final String DEV_MAINCHAIN_RPC = "http://localhost:8545";
+  static final String DEV_SIDECHAIN_RPC = "http://localhost:8546";
+  static final String DEV_SIDECHAIN_FACTORY = "0x4081B7e107E59af8E82756F96C751174590989FE";
+  static final String DEV_MAINCHAIN_FACTORY = "0x5E959e5d5F3813bE5c6CeA996a286F734cc9593b";
   static final String[] TEST_RPC_KEYS =
       new String[] {
         "0x5e98cce00cff5dea6b454889f359a4ec06b9fa6b88e9d69b86de8e1c81887da0",
@@ -66,8 +70,8 @@ class DataUnionClientTest extends StreamrIntegrationSpecification {
             null,
             SigningOptions.getDefault(),
             EncryptionOptions.getDefault(),
-            DEFAULT_WEBSOCKET_URL,
-            DEFAULT_REST_URL);
+            "ws://localhost/api/v1/ws",
+            "http://localhost/api/v1");
     opts.setSidechainRpcUrl(DEV_SIDECHAIN_RPC);
     opts.setMainnetRpcUrl(DEV_MAINCHAIN_RPC);
     opts.setDataUnionMainnetFactoryAddress(DEV_MAINCHAIN_FACTORY);
@@ -132,6 +136,7 @@ class DataUnionClientTest extends StreamrIntegrationSpecification {
 
     client.waitForMainnetTx(t.getTransactionHash(), pollInterval, timeout);
     du.sendTokensToBridge();
+
     assertNotNull(du.waitForEarningsChange(sidechainEarnings, pollInterval, timeout));
     assertEquals(du.getEarnings(member1Wallet.getAddress()), testSendAmount);
   }
