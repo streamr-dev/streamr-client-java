@@ -213,7 +213,7 @@ dependencies {
 // https://docs.gradle.org/current/userguide/publishing_setup.html
 publishing {
 	publications {
-		streamrClient(MavenPublication) {
+		clientWithSourceAndJavadoc(MavenPublication) {
 			artifactId = 'client'
 			groupId project.group
 			version project.version
