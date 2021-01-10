@@ -22,6 +22,7 @@ plugins {
 
 group = 'com.streamr'
 version = '2.0.3-alpha.2'
+description = 'A Java library to interact with Streamr Network'
 
 sourceSets {
 	main {
@@ -223,7 +224,7 @@ publishing {
 			}
 			pom {
 				name = 'Streamr Java Client Library'
-				description = 'A Java library to interact with Streamr Network'
+				description = project.description
 				url = 'https://streamr.network'
 				licenses {
 					license {
