@@ -37,14 +37,14 @@ class InstantJsonAdapterTest {
   }
 
   @DisplayName("Convert java.time.Instant to JSON String")
-  @ParameterizedTest(name = "with java.util.Instant '{1}'")
+  @ParameterizedTest(name = "with java.util.Instant {1}")
   @MethodSource("instants")
   void instantToString(final Instant input, final String expected) {
     assertEquals(expected, adapter.toJson(input));
   }
 
   @DisplayName("Convert JSON String to java.time.Instant")
-  @ParameterizedTest(name = "with String '{0}'")
+  @ParameterizedTest(name = "with String {0}")
   @MethodSource("strings")
   void stringToInstant(final String input, final Instant expected) {
     assertEquals(expected, adapter.fromJson(input));

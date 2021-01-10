@@ -1,7 +1,6 @@
 package com.streamr.client.utils
 
-import com.streamr.client.protocol.StreamrSpecification
-
+import com.streamr.client.protocol.message_layer.StreamrSpecification
 import java.util.function.BiFunction
 import java.util.function.Function
 
