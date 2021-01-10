@@ -7,7 +7,10 @@ import com.streamr.client.options.StreamrClientOptions
 import org.web3j.utils.Numeric
 import spock.lang.Specification
 
-class StreamrIntegrationSpecification extends Specification implements StreamrConstant {
+class StreamrIntegrationSpecification extends Specification {
+    public final static String DEFAULT_REST_URL = "http://localhost/api/v1"
+    public final static String DEFAULT_WEBSOCKET_URL = "ws://localhost/api/v1/ws"
+
     protected static String generatePrivateKey() {
         byte[] array = new byte[32]
         new Random().nextBytes(array)

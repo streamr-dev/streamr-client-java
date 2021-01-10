@@ -1,9 +1,15 @@
 import org.gradle.api.tasks.testing.logging.TestLogEvent
 import org.gradle.api.tasks.testing.logging.TestExceptionFormat
 
+buildscript {
+	repositories {
+		jcenter()
+	}
+}
 plugins {
 	id 'java-library'
 	id 'groovy-gradle-plugin'
+	id 'groovy'
 	id 'idea'
 	id 'eclipse'
 	id 'maven-publish'
@@ -11,16 +17,12 @@ plugins {
 	id 'com.github.ben-manes.versions' version '0.36.0'
 	id 'com.diffplug.spotless' version '5.8.2'
 	id 'ru.vyarus.quality' version '4.4.0'
+	id 'org.unbroken-dome.test-sets' version '3.0.1'
 }
 
-repositories {
-	jcenter()
-	// Ethereum Repository
-	maven {
-		url "https://dl.bintray.com/ethereum/maven/"
-	}
-	gradlePluginPortal()
-}
+group = 'com.streamr'
+version = '2.0.3-alpha.2'
+description = 'A Java library to interact with Streamr Network'
 
 sourceSets {
 	main {
@@ -33,12 +35,45 @@ sourceSets {
 			srcDirs = ['src/test/groovy']
 		}
 	}
-	integrationTest {
-		groovy {
-			srcDirs = ['src/integrationTest/groovy']
+}
+// https://github.com/unbroken-dome/gradle-testsets-plugin
+testSets {
+	integrationTest { extendsFrom unitTest }
+}
+check.dependsOn integrationTest
+tasks.withType(Test) {
+	useJUnitPlatform {
+		systemProperties = [
+				'junit.jupiter.extensions.autodetection.enabled': 'true',
+				'junit.jupiter.testinstance.lifecycle.default': 'per_class',
+				'junit.jupiter.execution.timeout.default': '3 m',
+		]
+	}
+	testLogging {
+		events = [
+				TestLogEvent.SKIPPED,
+				TestLogEvent.FAILED,
+		]
+		exceptionFormat TestExceptionFormat.SHORT
+		info {
+			events = [
+					TestLogEvent.PASSED,
+					TestLogEvent.SKIPPED,
+					TestLogEvent.FAILED,
+			]
+			exceptionFormat TestExceptionFormat.FULL
 		}
-		compileClasspath += sourceSets.main.output
-		runtimeClasspath += sourceSets.main.output
+		debug {
+			events = [
+					TestLogEvent.STANDARD_OUT,
+					TestLogEvent.STANDARD_ERROR,
+					TestLogEvent.STARTED,
+					TestLogEvent.SKIPPED,
+					TestLogEvent.FAILED,
+					TestLogEvent.PASSED,
+			]
+			exceptionFormat TestExceptionFormat.FULL
+		}
 	}
 }
 java {
@@ -114,6 +149,18 @@ task fatJar(type: Jar) {
 		configurations.compileClasspath.findAll { it.name.endsWith('jar') }.collect { zipTree(it) }
 	}
 }
+repositories {
+	jcenter()
+	// Ethereum Repository
+	maven {
+		url "https://dl.bintray.com/ethereum/maven/"
+	}
+	gradlePluginPortal()
+}
+ext {
+	junitJupiterVersion = '5.7.0'
+	junitPlatformVersion = '1.7.0'
+}
 // https://docs.gradle.org/current/userguide/java_library_plugin.html
 dependencies {
 	implementation('org.slf4j:slf4j-api:1.7.30')
@@ -132,16 +179,17 @@ dependencies {
 		exclude group: 'org.java-websocket', module: 'Java-WebSocket'
 		exclude group: 'org.slf4j', module: 'slf4j-api'
 	}
-	implementation('org.web3j:codegen:5.0.0')
-	implementation('com.google.code.findbugs:jsr305:3.0.2')
-	implementation('org.jetbrains:annotations:17.0.0')
+	implementation('com.google.code.findbugs:jsr305:3.0.2') // This project is dead?
+	implementation('org.jetbrains:annotations:17.0.0') // This does nothing?
 	implementation('org.bouncycastle:bcprov-jdk15on:1.65') {
 		because 'Web3j has same dependency and EncryptionUtil requires PEM'
 	}
+	implementation('org.web3j:codegen:5.0.0') // DO NOT USE! This should be a build time dep
 	// Transitive dependencies leaked from other dependencies
 	implementation('com.googlecode.json-simple:json-simple:1.1.1') // DO NOT USE! This should be a build time dep
 
 	// Test dependencies below
+	integrationTestImplementation sourceSets.test.output
 	testImplementation('nl.jqno.equalsverifier:equalsverifier:3.5')
 	// Spock
 	testImplementation 'org.codehaus.groovy:groovy-all:2.5.14'
@@ -149,12 +197,12 @@ dependencies {
 	testImplementation 'net.bytebuddy:byte-buddy:1.9.16'
 	testImplementation 'org.objenesis:objenesis:3.1'
 	// End Spock
-	testImplementation('org.junit.jupiter:junit-jupiter-api:5.7.0')
-	testImplementation('org.junit.jupiter:junit-jupiter-params:5.7.0')
-	testImplementation('org.junit.platform:junit-platform-commons:1.7.0')
-	testRuntimeOnly('org.junit.platform:junit-platform-launcher:1.7.0')
-	testRuntimeOnly('org.junit.jupiter:junit-jupiter-engine:5.7.0')
-	testRuntimeOnly('org.junit.vintage:junit-vintage-engine:5.7.0')
+	testImplementation("org.junit.jupiter:junit-jupiter-api:${junitJupiterVersion}")
+	testImplementation("org.junit.jupiter:junit-jupiter-params:${junitJupiterVersion}")
+	testImplementation("org.junit.platform:junit-platform-commons:${junitPlatformVersion}")
+	testRuntimeOnly("org.junit.platform:junit-platform-launcher:${junitPlatformVersion}")
+	testRuntimeOnly("org.junit.jupiter:junit-jupiter-engine:${junitJupiterVersion}")
+	testRuntimeOnly("org.junit.vintage:junit-vintage-engine:${junitJupiterVersion}")
 }
 // https://docs.gradle.org/current/userguide/resolution_strategy_tuning.html
 //configurations.all {
@@ -162,96 +210,10 @@ dependencies {
 //		failOnVersionConflict()
 //	}
 //}
-// https://docs.gradle.org/current/userguide/java_testing.html#sec:configuring_java_integration_tests
-configurations {
-	integrationTestImplementation.extendsFrom testImplementation
-	integrationTestRuntimeOnly.extendsFrom testRuntimeOnly
-}
-task integrationTest(type: Test) {
-	description = 'Runs integration tests.'
-	group = JavaBasePlugin.VERIFICATION_GROUP
-	testClassesDirs = sourceSets.integrationTest.output.classesDirs
-	classpath = sourceSets.integrationTest.runtimeClasspath
-	shouldRunAfter test
-}
-check.dependsOn integrationTest
-test {
-	useJUnitPlatform {
-		systemProperties = [
-				'junit.jupiter.extensions.autodetection.enabled': 'true',
-				'junit.jupiter.testinstance.lifecycle.default': 'per_class',
-				'junit.jupiter.execution.timeout.default': '3 m',
-		]
-	}
-	testLogging {
-		events = [
-				TestLogEvent.SKIPPED,
-				TestLogEvent.FAILED,
-		]
-		exceptionFormat TestExceptionFormat.SHORT
-		info {
-			events = [
-					TestLogEvent.PASSED,
-					TestLogEvent.SKIPPED,
-					TestLogEvent.FAILED,
-			]
-			exceptionFormat TestExceptionFormat.FULL
-		}
-		debug {
-			events = [
-					TestLogEvent.STANDARD_OUT,
-					TestLogEvent.STANDARD_ERROR,
-					TestLogEvent.STARTED,
-					TestLogEvent.SKIPPED,
-					TestLogEvent.FAILED,
-					TestLogEvent.PASSED,
-			]
-			exceptionFormat TestExceptionFormat.FULL
-		}
-	}
-}
-integrationTest {
-	useJUnitPlatform {
-		systemProperties = [
-				'junit.jupiter.extensions.autodetection.enabled': 'true',
-				'junit.jupiter.testinstance.lifecycle.default': 'per_class',
-				'junit.jupiter.execution.timeout.default': '3 m',
-		]
-	}
-	testLogging {
-		events = [
-				TestLogEvent.SKIPPED,
-				TestLogEvent.FAILED,
-		]
-		exceptionFormat TestExceptionFormat.SHORT
-		info {
-			events = [
-					TestLogEvent.PASSED,
-					TestLogEvent.SKIPPED,
-					TestLogEvent.FAILED,
-			]
-			exceptionFormat TestExceptionFormat.FULL
-		}
-		debug {
-			events = [
-					TestLogEvent.STANDARD_OUT,
-					TestLogEvent.STANDARD_ERROR,
-					TestLogEvent.STARTED,
-					TestLogEvent.SKIPPED,
-					TestLogEvent.FAILED,
-					TestLogEvent.PASSED,
-			]
-			exceptionFormat TestExceptionFormat.FULL
-		}
-	}
-}
-
 // https://docs.gradle.org/current/userguide/publishing_setup.html
-group = 'com.streamr'
-version = '2.0.3-alpha.2'
 publishing {
 	publications {
-		streamrClient(MavenPublication) {
+		clientWithSourceAndJavadoc(MavenPublication) {
 			artifactId = 'client'
 			groupId project.group
 			version project.version
@@ -266,7 +228,7 @@ publishing {
 			}
 			pom {
 				name = 'Streamr Java Client Library'
-				description = 'A Java library to interact with Streamr Network'
+				description = project.description
 				url = 'https://streamr.network'
 				licenses {
 					license {

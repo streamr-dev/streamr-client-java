@@ -7,7 +7,6 @@ import com.streamr.client.options.ResendLastOption
 import com.streamr.client.options.ResendOption
 import com.streamr.client.options.SigningOptions
 import com.streamr.client.options.StreamrClientOptions
-import com.streamr.client.protocol.StreamrSpecification
 import com.streamr.client.protocol.control_layer.BroadcastMessage
 import com.streamr.client.protocol.control_layer.ErrorResponse
 import com.streamr.client.protocol.control_layer.PublishRequest
@@ -22,6 +21,7 @@ import com.streamr.client.protocol.message_layer.MessageRef
 import com.streamr.client.protocol.message_layer.StreamMessage
 import com.streamr.client.rest.Stream
 import com.streamr.client.subs.Subscription
+import com.streamr.client.utils.Address
 import com.streamr.client.utils.EncryptionUtil
 import com.streamr.client.utils.GroupKey
 import com.streamr.client.utils.HttpUtils
@@ -30,7 +30,7 @@ import com.streamr.client.utils.KeyExchangeUtil
 import spock.lang.Shared
 import spock.util.concurrent.PollingConditions
 
-class StreamrClientSpec extends StreamrSpecification {
+class StreamrClientSpec extends StreamrIntegrationSpecification {
     @Shared
     private TestWebSocketServer server = new TestWebSocketServer("localhost", 6000)
     @Shared
@@ -77,7 +77,7 @@ class StreamrClientSpec extends StreamrSpecification {
     void setup() {
         server.clear()
 
-        AuthenticationMethod authenticationMethod = new EthereumAuthenticationMethod(publisherPrivateKey) {
+        AuthenticationMethod authenticationMethod = new EthereumAuthenticationMethod("d462a6f2ccd995a346a841d110e8c6954930a1c22851c0032d3116d8ccd2296a") {
             // Override login so that this doesn't call the REST API
             @Override
             protected AuthenticationMethod.LoginResponse login(String restApiUrl) throws IOException {
@@ -112,7 +112,7 @@ class StreamrClientSpec extends StreamrSpecification {
     }
 
     StreamMessage createMsg(String streamId, long timestamp, long sequenceNumber, Long prevTimestamp, Long prevSequenceNumber) {
-        MessageID msgId = new MessageID(streamId, 0, timestamp, sequenceNumber, publisherId, "msgChainId")
+        MessageID msgId = new MessageID(streamId, 0, timestamp, sequenceNumber, new Address("publisherId"), "msgChainId")
         MessageRef prev = prevTimestamp == null ? null : new MessageRef(prevTimestamp, prevSequenceNumber)
         def map = [hello: "world"]
         return new StreamMessage.Builder().withMessageId(msgId).withPreviousMessageRef(prev).withSerializedContent(HttpUtils.mapAdapter.toJson(map)).createStreamMessage()
@@ -158,7 +158,7 @@ class StreamrClientSpec extends StreamrSpecification {
         new PollingConditions().eventually {
             server.receivedControlMessages.size() == 2
         }
-        server.expect(new ResendRangeRequest(server.receivedControlMessages[1].message.requestId, stream.id, 0, new MessageRef(0, 1), new MessageRef(1, 0), publisherId, "msgChainId", client.sessionToken))
+        server.expect(new ResendRangeRequest(server.receivedControlMessages[1].message.requestId, stream.id, 0, new MessageRef(0, 1), new MessageRef(1, 0), new Address("publisherId"), "msgChainId", client.sessionToken))
 
         when:
         client.receiveMessage(new UnicastMessage(server.receivedControlMessages[1].message.requestId, createMsg("test-stream", 1, 0, 0, 0)))
@@ -180,8 +180,8 @@ class StreamrClientSpec extends StreamrSpecification {
         new PollingConditions().eventually {
             server.receivedControlMessages.size() == 3
         }
-        server.expect(new ResendRangeRequest(server.receivedControlMessages[1].message.requestId, stream.id, 0, new MessageRef(0, 1), new MessageRef(1, 0), publisherId, "msgChainId", client.sessionToken))
-        server.expect(new ResendRangeRequest(server.receivedControlMessages[2].message.requestId, stream.id, 0, new MessageRef(0, 1), new MessageRef(1, 0), publisherId, "msgChainId", client.sessionToken))
+        server.expect(new ResendRangeRequest(server.receivedControlMessages[1].message.requestId, stream.id, 0, new MessageRef(0, 1), new MessageRef(1, 0), new Address("publisherId"), "msgChainId", client.sessionToken))
+        server.expect(new ResendRangeRequest(server.receivedControlMessages[2].message.requestId, stream.id, 0, new MessageRef(0, 1), new MessageRef(1, 0), new Address("publisherId"), "msgChainId", client.sessionToken))
     }
 
     void "publish() publishes with the latest key added to keyStore"() {
@@ -375,7 +375,7 @@ class StreamrClientSpec extends StreamrSpecification {
 
         then:
         // Client should have resubscribed to its key exchange stream and the actual stream
-        server.expect(new SubscribeRequest(server.receivedControlMessages[0].message.requestId, KeyExchangeUtil.getKeyExchangeStreamId(publisher), 0, client.sessionToken))
+        server.expect(new SubscribeRequest(server.receivedControlMessages[0].message.requestId, KeyExchangeUtil.getKeyExchangeStreamId(new Address("0x6807295093ac5da6fb2a10f7dedc5edd620804fb")), 0, client.sessionToken))
         server.expect(new SubscribeRequest(server.receivedControlMessages[1].message.requestId, stream.id, 0, client.sessionToken))
 
         when:

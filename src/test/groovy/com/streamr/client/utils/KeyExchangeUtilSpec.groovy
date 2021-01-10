@@ -1,8 +1,11 @@
 package com.streamr.client.utils
 
-import com.streamr.client.protocol.StreamrSpecification
-import com.streamr.client.protocol.message_layer.*
-
+import com.streamr.client.protocol.message_layer.GroupKeyAnnounce
+import com.streamr.client.protocol.message_layer.GroupKeyRequest
+import com.streamr.client.protocol.message_layer.GroupKeyResponse
+import com.streamr.client.protocol.message_layer.MessageID
+import com.streamr.client.protocol.message_layer.StreamMessage
+import com.streamr.client.protocol.message_layer.StreamrSpecification
 import java.time.Clock
 import java.time.Duration
 import java.time.Instant
