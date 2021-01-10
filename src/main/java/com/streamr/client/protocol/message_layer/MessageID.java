@@ -1,72 +1,93 @@
 package com.streamr.client.protocol.message_layer;
+
 import com.streamr.client.exceptions.MalformedMessageException;
 import com.streamr.client.utils.Address;
-
 import java.util.Date;
+import java.util.Objects;
 
-public class MessageID {
-    private final String streamId;
-    private final int streamPartition;
-    private final long timestamp;
-    private final long sequenceNumber;
-    private final Address publisherId;
-    private final String msgChainId;
+public final class MessageID {
+  private final String streamId;
+  private final int streamPartition;
+  private final long timestamp;
+  private final long sequenceNumber;
+  private final Address publisherId;
+  private final String msgChainId;
 
-    public MessageID(String streamId, int streamPartition, long timestamp, long sequenceNumber, Address publisherId, String msgChainId) {
-        if (streamId == null) {
-            throw new MalformedMessageException("'streamId' cannot be null.");
-        }
-        if (publisherId == null) {
-            throw new MalformedMessageException("'publisherId' cannot be null.");
-        }
-        if (msgChainId == null) {
-            throw new MalformedMessageException("'msgChainId' cannot be null.");
-        }
-        this.streamId = streamId;
-        this.streamPartition = streamPartition;
-        this.timestamp = timestamp;
-        this.sequenceNumber = sequenceNumber;
-        this.publisherId = publisherId;
-        this.msgChainId = msgChainId;
+  public MessageID(
+      String streamId,
+      final int streamPartition,
+      final long timestamp,
+      final long sequenceNumber,
+      final Address publisherId,
+      final String msgChainId) {
+    if (streamId == null) {
+      throw new MalformedMessageException("'streamId' cannot be null.");
     }
-
-    public String getStreamId() {
-        return streamId;
+    if (publisherId == null) {
+      throw new MalformedMessageException("'publisherId' cannot be null.");
     }
-
-    public int getStreamPartition() {
-        return streamPartition;
+    if (msgChainId == null) {
+      throw new MalformedMessageException("'msgChainId' cannot be null.");
     }
+    this.streamId = streamId;
+    this.streamPartition = streamPartition;
+    this.timestamp = timestamp;
+    this.sequenceNumber = sequenceNumber;
+    this.publisherId = publisherId;
+    this.msgChainId = msgChainId;
+  }
 
-    public long getTimestamp() {
-        return timestamp;
-    }
+  public String getStreamId() {
+    return streamId;
+  }
 
-    public Date getTimestampAsDate() {
-        return new Date(timestamp);
-    }
+  public int getStreamPartition() {
+    return streamPartition;
+  }
 
-    public long getSequenceNumber() {
-        return sequenceNumber;
-    }
+  public long getTimestamp() {
+    return timestamp;
+  }
 
-    public Address getPublisherId() {
-        return publisherId;
-    }
+  public Date getTimestampAsDate() {
+    return new Date(timestamp);
+  }
 
-    public String getMsgChainId() {
-        return msgChainId;
-    }
+  public long getSequenceNumber() {
+    return sequenceNumber;
+  }
 
-    @Override
-    public String toString() {
-        return "MessageID{" +
-                "streamId='" + streamId + '\'' +
-                ", streamPartition=" + streamPartition +
-                ", timestamp=" + timestamp +
-                ", sequenceNumber=" + sequenceNumber +
-                ", publisherId='" + publisherId + '\'' +
-                ", msgChainId='" + msgChainId + '\'' +
-                '}';
-    }
+  public Address getPublisherId() {
+    return publisherId;
+  }
+
+  public String getMsgChainId() {
+    return msgChainId;
+  }
+
+  @Override
+  public boolean equals(final Object o) {
+    if (this == o) return true;
+    if (o == null || getClass() != o.getClass()) return false;
+    final MessageID messageID = (MessageID) o;
+    return streamPartition == messageID.streamPartition
+        && timestamp == messageID.timestamp
+        && sequenceNumber == messageID.sequenceNumber
+        && Objects.equals(streamId, messageID.streamId)
+        && Objects.equals(publisherId, messageID.publisherId)
+        && Objects.equals(msgChainId, messageID.msgChainId);
+  }
+
+  @Override
+  public int hashCode() {
+    return Objects.hash(
+        streamId, streamPartition, timestamp, sequenceNumber, publisherId, msgChainId);
+  }
+
+  @Override
+  public String toString() {
+    return String.format(
+        "MessageID{streamId='%s', streamPartition=%d, timestamp=%d, sequenceNumber=%d, publisherId='%s', msgChainId='%s'}",
+        streamId, streamPartition, timestamp, sequenceNumber, publisherId, msgChainId);
+  }
 }

@@ -5,7 +5,6 @@ import com.streamr.client.protocol.message_layer.MessageID
 import com.streamr.client.protocol.message_layer.MessageRef
 import com.streamr.client.protocol.message_layer.StreamMessage
 import org.web3j.crypto.ECKeyPair
-import org.web3j.utils.Numeric
 
 class SigningUtilSpec extends StreamrSpecification {
     ECKeyPair account
@@ -34,31 +33,43 @@ class SigningUtilSpec extends StreamrSpecification {
     }
 
     void "should correctly sign a StreamMessage with null previous ref"() {
-        StreamMessage msg = new StreamMessage(msgId, null, [foo: 'bar'])
+        StreamMessage msg = new StreamMessage.Builder()
+                .withMessageId(msgId)
+                .withPreviousMessageRef(null)
+                .withSerializedContent(HttpUtils.mapAdapter.toJson([foo: 'bar']))
+                .createStreamMessage()
         String expectedPayload = "streamId04252353150publisheridmsgChainId"+'{"foo":"bar"}'
         when:
-        signingUtil.signStreamMessage(msg)
+        msg = signingUtil.signStreamMessage(msg)
         then:
         msg.signatureType == StreamMessage.SignatureType.ETH
         msg.signature == SigningUtil.sign(expectedPayload, account)
     }
 
     void "should correctly sign a StreamMessage with non-null previous ref"() {
-        StreamMessage msg = new StreamMessage(msgId, new MessageRef(100, 1), [foo: 'bar'])
+        StreamMessage msg = new StreamMessage.Builder()
+                .withMessageId(msgId)
+                .withPreviousMessageRef(new MessageRef(100, 1))
+                .withSerializedContent(HttpUtils.mapAdapter.toJson([foo: 'bar']))
+                .createStreamMessage()
         String expectedPayload = "streamId04252353150publisheridmsgChainId1001"+'{"foo":"bar"}'
         when:
-        signingUtil.signStreamMessage(msg)
+        msg = signingUtil.signStreamMessage(msg)
         then:
         msg.signatureType == StreamMessage.SignatureType.ETH
         msg.signature == SigningUtil.sign(expectedPayload, account)
     }
 
     void "should correctly sign a StreamMessage with new group key"() {
-        StreamMessage msg = new StreamMessage(msgId, new MessageRef(100, 1), [foo: 'bar'])
-        msg.setNewGroupKey(new EncryptedGroupKey("groupKeyId", "keyHex"))
+        StreamMessage msg = new StreamMessage.Builder()
+                .withMessageId(msgId)
+                .withPreviousMessageRef(new MessageRef(100, 1))
+                .withSerializedContent(HttpUtils.mapAdapter.toJson([foo: 'bar']))
+                .withNewGroupKey(new EncryptedGroupKey("groupKeyId", "keyHex"))
+                .createStreamMessage()
         String expectedPayload = "streamId04252353150publisheridmsgChainId1001"+'{"foo":"bar"}'+'["groupKeyId","keyHex"]'
         when:
-        signingUtil.signStreamMessage(msg)
+        msg = signingUtil.signStreamMessage(msg)
         then:
         msg.signatureType == StreamMessage.SignatureType.ETH
         msg.signature == SigningUtil.sign(expectedPayload, account)
@@ -66,14 +77,23 @@ class SigningUtilSpec extends StreamrSpecification {
 
     void "returns false if no signature"() {
         when:
-        StreamMessage msg = new StreamMessage(msgId, null, [foo: 'bar'])
+        StreamMessage msg = new StreamMessage.Builder()
+                .withMessageId(msgId)
+                .withPreviousMessageRef(null)
+                .withSerializedContent(HttpUtils.mapAdapter.toJson([foo: 'bar']))
+                .createStreamMessage()
         then:
         !SigningUtil.hasValidSignature(msg)
     }
 
     void "returns false if wrong signature"() {
-        StreamMessage msg = new StreamMessage(msgId, null, [foo: 'bar'])
-        msg.setSignatureFields("0x787cd72924153c88350e808de68b68c88030cbc34d053a5c696a5893d5e6fec1687c1b6205ec99aeb3375a81bf5cb8857ae39c1b55a41b32ed6399ae8da456a61b", StreamMessage.SignatureType.ETH)
+        StreamMessage msg = new StreamMessage.Builder()
+                .withMessageId(msgId)
+                .withPreviousMessageRef(null)
+                .withSerializedContent(HttpUtils.mapAdapter.toJson([foo: 'bar']))
+                .withSignature("0x787cd72924153c88350e808de68b68c88030cbc34d053a5c696a5893d5e6fec1687c1b6205ec99aeb3375a81bf5cb8857ae39c1b55a41b32ed6399ae8da456a61b")
+                .withSignatureType(StreamMessage.SignatureType.ETH)
+                .createStreamMessage()
 
         expect:
         !SigningUtil.hasValidSignature(msg)
@@ -81,8 +101,12 @@ class SigningUtilSpec extends StreamrSpecification {
 
     void "returns true if correct signature"() {
         MessageID msgId = new MessageID("streamId", 0, 425235315L, 0L, address, "msgChainId")
-        StreamMessage msg = new StreamMessage(msgId, null, [foo: 'bar'])
-        signingUtil.signStreamMessage(msg)
+        StreamMessage msg = new StreamMessage.Builder()
+                .withMessageId(msgId)
+                .withPreviousMessageRef(null)
+                .withSerializedContent(HttpUtils.mapAdapter.toJson([foo: 'bar']))
+                .createStreamMessage()
+        msg = signingUtil.signStreamMessage(msg)
 
         expect:
         SigningUtil.hasValidSignature(msg)
@@ -91,8 +115,13 @@ class SigningUtilSpec extends StreamrSpecification {
     void "returns true for correct signature of publisher address has upper and lower case letters"() {
         Address address1 = new Address("0x752C8dCAC0788759aCB1B4BB7A9103596BEe3e6c")
         MessageID msgId = new MessageID("ogzCJrTdQGuKQO7nkLd3Rw", 0, 1567003338767L, 2L, address1, "kxYyLiSUQO0SRvMx6gA1")
-        StreamMessage msg = new StreamMessage(msgId, new MessageRef(1567003338767L,1L), [numero: 86])
-        msg.setSignatureFields("0xc97f1fbb4f506a53ecb838db59017f687892494a9073315f8a187846865bf8325333315b116f1142921a97e49e3881eced2b176c69f9d60666b98b7641ad11e01b", StreamMessage.SignatureType.ETH)
+        StreamMessage msg = new StreamMessage.Builder()
+                .withMessageId(msgId)
+                .withPreviousMessageRef(new MessageRef(1567003338767L, 1L))
+                .withSerializedContent(HttpUtils.mapAdapter.toJson([numero: 86]))
+                .withSignature("0xc97f1fbb4f506a53ecb838db59017f687892494a9073315f8a187846865bf8325333315b116f1142921a97e49e3881eced2b176c69f9d60666b98b7641ad11e01b")
+                .withSignatureType(StreamMessage.SignatureType.ETH)
+                .createStreamMessage()
 
         expect:
         SigningUtil.hasValidSignature(msg)

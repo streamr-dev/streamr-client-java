@@ -2,40 +2,42 @@ package com.streamr.client.protocol.message_layer;
 
 import com.streamr.client.utils.EncryptedGroupKey;
 import com.streamr.client.utils.ValidationUtil;
-
 import java.util.List;
+import java.util.Objects;
 
-public class GroupKeyAnnounce extends AbstractGroupKeyMessage {
-    private final List<EncryptedGroupKey> groupKeys;
+public final class GroupKeyAnnounce extends AbstractGroupKeyMessage {
+  private final List<EncryptedGroupKey> groupKeys;
 
-    public GroupKeyAnnounce(String streamId, List<EncryptedGroupKey> groupKeys) {
-        super(streamId);
-        ValidationUtil.checkNotNull(groupKeys, "groupKeys");
-        this.groupKeys = groupKeys;
-    }
+  public GroupKeyAnnounce(String streamId, List<EncryptedGroupKey> groupKeys) {
+    super(streamId);
+    ValidationUtil.checkNotNull(groupKeys, "groupKeys");
+    this.groupKeys = groupKeys;
+  }
 
-    public List<EncryptedGroupKey> getKeys() {
-        return groupKeys;
-    }
+  public List<EncryptedGroupKey> getKeys() {
+    return groupKeys;
+  }
 
-    @Override
-    protected StreamMessage.MessageType getMessageType() {
-        return StreamMessage.MessageType.GROUP_KEY_ANNOUNCE;
-    }
+  @Override
+  protected StreamMessage.MessageType getMessageType() {
+    return StreamMessage.MessageType.GROUP_KEY_ANNOUNCE;
+  }
 
-    @Override
-    public boolean equals(Object o) {
-        if (this == o) return true;
-        if (o == null || getClass() != o.getClass()) return false;
+  @Override
+  public boolean equals(final Object obj) {
+    if (this == obj) return true;
+    if (obj == null || getClass() != obj.getClass()) return false;
+    final GroupKeyAnnounce that = (GroupKeyAnnounce) obj;
+    return Objects.equals(groupKeys, that.groupKeys) && Objects.equals(streamId, that.streamId);
+  }
 
-        GroupKeyAnnounce that = (GroupKeyAnnounce) o;
+  @Override
+  public int hashCode() {
+    return Objects.hash(groupKeys, streamId);
+  }
 
-        if (!streamId.equals(that.streamId)) return false;
-        return groupKeys.equals(that.groupKeys);
-    }
-
-    @Override
-    public String toString() {
-        return String.format("GroupKeyAnnounce{streamId=%s, groupKeys=%s}", streamId, groupKeys);
-    }
+  @Override
+  public String toString() {
+    return String.format("GroupKeyAnnounce{streamId=%s, groupKeys=%s}", streamId, groupKeys);
+  }
 }

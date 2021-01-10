@@ -25,10 +25,7 @@ class EncryptionUtilSpec extends StreamrSpecification {
     GroupKey key
 
     def setup() {
-        streamMessage = new StreamMessage(
-                new MessageID("stream-id", 0, 1L, 0L, publisherId, "msgChainId"),
-                new MessageRef(0L, 0L),
-                plaintextContent)
+        streamMessage = new StreamMessage.Builder().withMessageId(new MessageID("stream-id", 0, 1L, 0L, publisherId, "msgChainId")).withPreviousMessageRef(new MessageRef(0L, 0L)).withSerializedContent(HttpUtils.mapAdapter.toJson(plaintextContent)).createStreamMessage()
         util = new EncryptionUtil()
         key = GroupKey.generate()
     }
@@ -49,13 +46,13 @@ class EncryptionUtilSpec extends StreamrSpecification {
 
     void "rsa decryption after encryption equals the initial plaintext (StreamMessage)"() {
         when:
-        EncryptionUtil.encryptWithPublicKey(streamMessage, util.getPublicKeyAsPemString())
+        streamMessage = EncryptionUtil.encryptWithPublicKey(streamMessage, util.getPublicKeyAsPemString())
         then:
         streamMessage.getSerializedContent() != serializedPlaintextContent
         streamMessage.getEncryptionType() == StreamMessage.EncryptionType.RSA
 
         when:
-        util.decryptWithPrivateKey(streamMessage)
+        streamMessage = util.decryptWithPrivateKey(streamMessage)
         then:
         streamMessage.getSerializedContent() == serializedPlaintextContent
         streamMessage.getParsedContent() == plaintextContent
@@ -100,7 +97,7 @@ class EncryptionUtilSpec extends StreamrSpecification {
     }
     void "encryptStreamMessage() encrypts the message"() {
         when:
-        EncryptionUtil.encryptStreamMessage(streamMessage, key)
+        streamMessage = EncryptionUtil.encryptStreamMessage(streamMessage, key)
 
         then:
         streamMessage.serializedContent != serializedPlaintextContent
@@ -108,8 +105,8 @@ class EncryptionUtilSpec extends StreamrSpecification {
     }
     void "encryptStreamMessage, then decryptStreamMessage() equals original message "() {
         when:
-        EncryptionUtil.encryptStreamMessage(streamMessage, key)
-        EncryptionUtil.decryptStreamMessage(streamMessage, key)
+        streamMessage = EncryptionUtil.encryptStreamMessage(streamMessage, key)
+        streamMessage = EncryptionUtil.decryptStreamMessage(streamMessage, key)
 
         then:
         streamMessage.serializedContent == serializedPlaintextContent

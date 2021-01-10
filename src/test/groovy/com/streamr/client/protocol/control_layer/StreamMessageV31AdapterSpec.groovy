@@ -14,17 +14,18 @@ class StreamMessageV31AdapterSpec extends StreamrSpecification {
 		adapter = new StreamMessageAdapter()
 
 		String serializedContent = '{"desi":"2","dir":"1","oper":40,"veh":222,"tst":"2018-06-05T19:49:33Z","tsi":1528228173,"spd":3.6,"hdg":69,"lat":60.192258,"long":24.928701,"acc":-0.59,"dl":-248,"odo":5134,"drst":0,"oday":"2018-06-05","jrn":885,"line":30,"start":"22:23"}'
-		msg = new StreamMessage(
-				new MessageID("7wa7APtlTq6EC5iTCBy6dw", 0, 1528228173462L, 0, publisherId, "1"),
-				new MessageRef(1528228170000L, 0),
-				StreamMessage.MessageType.STREAM_MESSAGE,
-				serializedContent,
-				StreamMessage.ContentType.JSON,
-				StreamMessage.EncryptionType.NONE,
-				null,
-				null,
-				StreamMessage.SignatureType.ETH,
-				"signature")
+		msg = new StreamMessage.Builder()
+				.withMessageId(new MessageID("7wa7APtlTq6EC5iTCBy6dw", 0, 1528228173462L, 0, publisherId, "1"))
+				.withPreviousMessageRef(new MessageRef(1528228170000L, 0))
+				.withMessageType(StreamMessage.MessageType.STREAM_MESSAGE)
+				.withSerializedContent(serializedContent)
+				.withContentType(StreamMessage.ContentType.JSON)
+				.withEncryptionType(StreamMessage.EncryptionType.NONE)
+				.withGroupKeyId(null)
+				.withNewGroupKey(null)
+				.withSignatureType(StreamMessage.SignatureType.ETH)
+				.withSignature("signature")
+				.createStreamMessage()
 	}
 
 	void "deserialize"() {

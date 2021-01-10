@@ -70,7 +70,7 @@ class HistoricalSubscriptionSpec extends StreamrSpecification {
 
     void "calls the done handler only when the encryption queue is empty"() {
         GroupKey key = GroupKey.generate()
-        EncryptionUtil.encryptStreamMessage(msg, key)
+        msg = EncryptionUtil.encryptStreamMessage(msg, key)
 
         when:
         sub.handleResentMessage(msg) // queued

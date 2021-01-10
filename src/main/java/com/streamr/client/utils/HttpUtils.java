@@ -2,6 +2,7 @@ package com.streamr.client.utils;
 
 import com.squareup.moshi.JsonAdapter;
 import com.squareup.moshi.Moshi;
+import com.squareup.moshi.Types;
 import com.streamr.client.exceptions.AuthenticationException;
 import com.streamr.client.exceptions.PermissionDeniedException;
 import com.streamr.client.exceptions.ResourceNotFoundException;
@@ -27,8 +28,10 @@ public class HttpUtils {
   // Thread safe
   public static final Moshi MOSHI = addDefaultAdapters.apply(new Moshi.Builder()).build();
 
-  public static final JsonAdapter<Map> mapAdapter = MOSHI.adapter(Map.class);
-  public static final JsonAdapter<List> listAdapter = MOSHI.adapter(List.class);
+  public static final JsonAdapter<Map<String, Object>> mapAdapter =
+      MOSHI.adapter(Types.newParameterizedType(Map.class, String.class, Object.class));
+  public static final JsonAdapter<List<String>> listAdapter =
+      MOSHI.adapter(Types.newParameterizedType(List.class, String.class));
 
   public static final MediaType jsonType = MediaType.parse("application/json");
 

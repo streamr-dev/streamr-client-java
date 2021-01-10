@@ -1,66 +1,72 @@
 package com.streamr.client.rest;
 
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.List;
+import java.util.Objects;
 
-/*
-   "config":{
-      "topic":"7wa7APtlTq6EC5iTCBy6dw",
-      "fields":[
-         {
-            "name":"veh",
-            "type":"string"
-         },
-         {
-            "name":"spd",
-            "type":"number"
-         },
-         {
-            "name":"hdg",
-            "type":"number"
-         },
-         {
-            "name":"lat",
-            "type":"number"
-         },
-         {
-            "name":"long",
-            "type":"number"
-         },
-         {
-            "name":"line",
-            "type":"string"
-         }
-      ]
-   }
+/**
+ * {@code StreamConfig} holds a configuration of {@code FieldConfig } objects.
+ *
+ * <p>Below is an example of Stream configuration in JSON format.
+ *
+ * <pre>
+ * +config":{
+ *   "topic":"7wa7APtlTq6EC5iTCBy6dw",
+ *   "fields":[
+ *     {
+ *       "name":"veh",
+ *       "type":"string"
+ *     },
+ *     {
+ *       "name":"spd",
+ *       "type":"number"
+ *     },
+ *     {
+ *       "name":"hdg",
+ *       "type":"number"
+ *     },
+ *     {
+ *       "name":"lat",
+ *       "type":"number"
+ *     },
+ *     {
+ *       "name":"long",
+ *       "type":"number"
+ *     },
+ *     {
+ *       "name":"line",
+ *       "type":"string"
+ *     }
+ *   ]
+ * }
+ * </pre>
  */
-public class StreamConfig {
-    private List<FieldConfig> fields;
+public final class StreamConfig {
+  private final List<FieldConfig> fields;
 
-    public StreamConfig() {
-        this.fields = new ArrayList<>();
-    }
+  public StreamConfig() {
+    this.fields = new ArrayList<>();
+  }
 
-    public StreamConfig(List<FieldConfig> fields) {
-        this.fields = fields;
-    }
+  public StreamConfig(final FieldConfig... fields) {
+    this.fields = Arrays.asList(fields);
+  }
 
-    public List<FieldConfig> getFields() {
-        return fields;
-    }
+  public List<FieldConfig> getFields() {
+    return fields;
+  }
 
-    public void setFields(List<FieldConfig> fields) {
-        this.fields = fields;
-    }
+  @Override
+  public boolean equals(final Object obj) {
+    if (this == obj) return true;
+    if (obj == null || getClass() != obj.getClass()) return false;
+    final StreamConfig that = (StreamConfig) obj;
+    return Objects.equals(fields, that.fields);
+  }
 
-    public StreamConfig addField(FieldConfig field) {
-        this.fields.add(field);
-        return this;
-    }
-
-    @Override
-    public boolean equals(Object obj) {
-        // Configs are equal if all the fields are equal (in order)
-        return obj instanceof StreamConfig && ((StreamConfig) obj).getFields().equals(fields);
-    }
+  @Override
+  public int hashCode() {
+    return Objects.hash(fields);
+  }
 }

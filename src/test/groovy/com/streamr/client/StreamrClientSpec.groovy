@@ -2,11 +2,11 @@ package com.streamr.client
 
 import com.streamr.client.authentication.AuthenticationMethod
 import com.streamr.client.authentication.EthereumAuthenticationMethod
-import com.streamr.client.options.ResendOption
+import com.streamr.client.options.EncryptionOptions
 import com.streamr.client.options.ResendLastOption
+import com.streamr.client.options.ResendOption
 import com.streamr.client.options.SigningOptions
 import com.streamr.client.options.StreamrClientOptions
-import com.streamr.client.options.EncryptionOptions
 import com.streamr.client.protocol.StreamrSpecification
 import com.streamr.client.protocol.control_layer.BroadcastMessage
 import com.streamr.client.protocol.control_layer.ErrorResponse
@@ -24,6 +24,7 @@ import com.streamr.client.rest.Stream
 import com.streamr.client.subs.Subscription
 import com.streamr.client.utils.EncryptionUtil
 import com.streamr.client.utils.GroupKey
+import com.streamr.client.utils.HttpUtils
 import com.streamr.client.utils.InMemoryGroupKeyStore
 import com.streamr.client.utils.KeyExchangeUtil
 import spock.lang.Shared
@@ -42,9 +43,14 @@ class StreamrClientSpec extends StreamrSpecification {
     void setupSpec() {
         server.start()
 
-        stream = new Stream("", "")
-        stream.setId("test-stream")
-        stream.setPartitions(1)
+        stream = new Stream.Builder()
+                .withName("")
+                .withDescription("")
+                .withId("test-stream")
+                .withPartitions(1)
+                .withRequireSignedData(false)
+                .withRequireEncryptedData(false)
+                .createStream()
     }
 
     void cleanupSpec() {
@@ -108,7 +114,8 @@ class StreamrClientSpec extends StreamrSpecification {
     StreamMessage createMsg(String streamId, long timestamp, long sequenceNumber, Long prevTimestamp, Long prevSequenceNumber) {
         MessageID msgId = new MessageID(streamId, 0, timestamp, sequenceNumber, publisherId, "msgChainId")
         MessageRef prev = prevTimestamp == null ? null : new MessageRef(prevTimestamp, prevSequenceNumber)
-        return new StreamMessage(msgId, prev, [hello: "world"])
+        def map = [hello: "world"]
+        return new StreamMessage.Builder().withMessageId(msgId).withPreviousMessageRef(prev).withSerializedContent(HttpUtils.mapAdapter.toJson(map)).createStreamMessage()
     }
 
     void "subscribe() sends SubscribeRequest and 1 ResendLastRequest after SubscribeResponse if answer received"() {
