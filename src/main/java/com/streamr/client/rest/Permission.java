@@ -1,58 +1,80 @@
 package com.streamr.client.rest;
 
-public class Permission {
-    private String id;
-    private Boolean anonymous;
-    private Operation operation;
-    private String user;
+import java.util.Objects;
 
-    public enum Operation {
-        stream_get, stream_subscribe, stream_publish, stream_delete, stream_share
-    }
+public final class Permission {
+  private final String id;
+  private final Boolean anonymous;
+  private final Operation operation;
+  private final String user;
 
-    public Permission(Operation operation, String user) {
-        this.operation = operation;
-        this.user = user;
-        this.anonymous = false;
-    }
+  public enum Operation {
+    stream_get,
+    stream_subscribe,
+    stream_publish,
+    stream_delete,
+    stream_share
+  }
 
-    /**
-     * Public permission
-     */
-    public Permission(Operation operation) {
-        this.operation = operation;
-        this.anonymous = true;
-    }
+  public Permission(
+      final String id, final Boolean anonymous, final Operation operation, final String user) {
+    this.id = id;
+    this.anonymous = anonymous;
+    this.operation = operation;
+    this.user = user;
+  }
 
-    public String getId() {
-        return id;
-    }
+  public Permission(final Operation operation, final String user) {
+    this.operation = operation;
+    this.user = user;
+    this.anonymous = false;
+    this.id = null;
+  }
 
-    public void setId(String id) {
-        this.id = id;
-    }
+  /** Public permission */
+  public Permission(final Operation operation) {
+    this.operation = operation;
+    this.anonymous = true;
+    this.user = null;
+    this.id = null;
+  }
 
-    public Boolean getAnonymous() {
-        return anonymous;
-    }
+  public String getId() {
+    return id;
+  }
 
-    public void setAnonymous(Boolean anonymous) {
-        this.anonymous = anonymous;
-    }
+  public Boolean getAnonymous() {
+    return anonymous;
+  }
 
-    public Operation getOperation() {
-        return operation;
-    }
+  public Operation getOperation() {
+    return operation;
+  }
 
-    public void setOperation(Operation operation) {
-        this.operation = operation;
-    }
+  public String getUser() {
+    return user;
+  }
 
-    public String getUser() {
-        return user;
-    }
+  @Override
+  public boolean equals(final Object obj) {
+    if (this == obj) return true;
+    if (obj == null || getClass() != obj.getClass()) return false;
+    final Permission that = (Permission) obj;
+    return Objects.equals(id, that.id)
+        && Objects.equals(anonymous, that.anonymous)
+        && operation == that.operation
+        && Objects.equals(user, that.user);
+  }
 
-    public void setUser(String user) {
-        this.user = user;
-    }
+  @Override
+  public int hashCode() {
+    return Objects.hash(id, anonymous, operation, user);
+  }
+
+  @Override
+  public String toString() {
+    return String.format(
+        "Permission{id='%s', anonymous=%s, operation=%s, user='%s'}",
+        id, anonymous, operation, user);
+  }
 }

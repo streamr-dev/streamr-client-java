@@ -23,7 +23,10 @@ class PermissionEndpointsSpec extends StreamrIntegrationSpecification {
     }
 
     void "grant()"() {
-        Stream proto = new Stream(generateResourceName(), "This stream was created from an integration test")
+        Stream proto = new Stream.Builder()
+                .withName(generateResourceName())
+                .withDescription("This stream was created from an integration test")
+                .createStream()
         Stream stream = grantor.createStream(proto)
 
         when:
@@ -42,7 +45,10 @@ class PermissionEndpointsSpec extends StreamrIntegrationSpecification {
     }
 
     void "grantPublic()"() {
-        Stream proto = new Stream(generateResourceName(), "This stream was created from an integration test")
+        Stream proto = new Stream.Builder()
+                .withName(generateResourceName())
+                .withDescription("This stream was created from an integration test")
+                .createStream()
         Stream stream = grantor.createStream(proto)
 
         when:

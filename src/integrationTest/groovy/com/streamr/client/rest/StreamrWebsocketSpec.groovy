@@ -28,9 +28,15 @@ class StreamrWebsocketSpec extends StreamrIntegrationSpecification {
 		publisher = createClientWithPrivateKey(publisherPrivateKey)
 		subscriber = createClientWithPrivateKey(subscriberPrivateKey)
 
-		stream = publisher.createStream(new Stream(generateResourceName(), ""))
-		publisher.grant(stream, Permission.Operation.stream_get, subscriber.getPublisherId().toString())
-		publisher.grant(stream, Permission.Operation.stream_subscribe, subscriber.getPublisherId().toString())
+		Stream proto = new Stream.Builder()
+				.withName(generateResourceName())
+				.withDescription("")
+				.withRequireEncryptedData(false)
+				.withRequireSignedData(false)
+				.createStream()
+		this.stream = publisher.createStream(proto)
+		publisher.grant(this.stream, Permission.Operation.stream_get, subscriber.getPublisherId().toString())
+		publisher.grant(this.stream, Permission.Operation.stream_subscribe, subscriber.getPublisherId().toString())
 	}
 
 	void cleanup() {
@@ -58,7 +64,11 @@ class StreamrWebsocketSpec extends StreamrIntegrationSpecification {
 
 
 	void "client automatically connects for publishing"() {
-		Stream stream = publisher.createStream(new Stream(generateResourceName(), ""))
+		Stream stream = new Stream.Builder()
+				.withName(generateResourceName())
+				.withDescription("")
+				.createStream()
+		stream = publisher.createStream(stream)
 
 		when:
 		publisher.publish(stream, [foo: "bar"], new Date())
@@ -68,7 +78,11 @@ class StreamrWebsocketSpec extends StreamrIntegrationSpecification {
 	}
 
 	void "client automatically connects for subscribing"() {
-		Stream stream = subscriber.createStream(new Stream(generateResourceName(), ""))
+		Stream stream = new Stream.Builder()
+				.withName(generateResourceName())
+				.withDescription("")
+				.createStream()
+		stream = subscriber.createStream(stream)
 
 		when:
 		subscriber.subscribe(stream, new MessageHandler() {

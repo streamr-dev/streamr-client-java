@@ -30,9 +30,22 @@ class DecryptionQueuesSpec extends StreamrSpecification {
 		StreamMessage pub2msg1 = createMessage(0, 0, null, null, getPublisherId(2), [:], "pub2msgChain")
 
 		// Encrypt each message with appropriate key and add to the decryptionQueues
-		[chain1key1msg1, chain1key1msg2, chain1key1msg3].each { EncryptionUtil.encryptStreamMessage(it, key1)}.each { decryptionQueues.add(it) }
-		[chain1key2msg4, chain2key2msg1, chain2key2msg2].each { EncryptionUtil.encryptStreamMessage(it, key2)}.each { decryptionQueues.add(it) }
-		[pub2msg1].each { EncryptionUtil.encryptStreamMessage(it, pub2key)}.each { decryptionQueues.add(it) }
+		chain1key1msg1 = EncryptionUtil.encryptStreamMessage(chain1key1msg1, key1)
+		chain1key1msg2 = EncryptionUtil.encryptStreamMessage(chain1key1msg2, key1)
+		chain1key1msg3 = EncryptionUtil.encryptStreamMessage(chain1key1msg3, key1)
+		decryptionQueues.add(chain1key1msg1)
+		decryptionQueues.add(chain1key1msg2)
+		decryptionQueues.add(chain1key1msg3)
+
+		chain1key2msg4 = EncryptionUtil.encryptStreamMessage(chain1key2msg4, key2)
+		chain2key2msg1 = EncryptionUtil.encryptStreamMessage(chain2key2msg1, key2)
+		chain2key2msg2 = EncryptionUtil.encryptStreamMessage(chain2key2msg2, key2)
+		decryptionQueues.add(chain1key2msg4)
+		decryptionQueues.add(chain2key2msg1)
+		decryptionQueues.add(chain2key2msg2)
+
+		pub2msg1 = EncryptionUtil.encryptStreamMessage(pub2msg1, pub2key)
+		decryptionQueues.add(pub2msg1)
 
 		expect:
 		!decryptionQueues.isEmpty()

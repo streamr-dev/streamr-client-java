@@ -6,6 +6,7 @@ import com.streamr.client.protocol.message_layer.MessageRef
 import com.streamr.client.protocol.message_layer.StreamMessage
 import com.streamr.client.protocol.message_layer.StreamMessageAdapter
 import com.streamr.client.utils.EncryptedGroupKey
+import com.streamr.client.utils.HttpUtils
 
 class StreamMessageV32AdapterSpec extends StreamrSpecification {
 	private static final int VERSION = 32
@@ -17,11 +18,7 @@ class StreamMessageV32AdapterSpec extends StreamrSpecification {
 		adapter = new StreamMessageAdapter()
 
 		// Message with minimal fields
-		msg = new StreamMessage(
-				new MessageID("streamId", 0, 123L, 0, publisherId, "msgChainId"),
-				null,
-				[:]
-		)
+		msg = new StreamMessage.Builder().withMessageId(new MessageID("streamId", 0, 123L, 0, publisherId, "msgChainId")).withPreviousMessageRef(null).withSerializedContent(HttpUtils.mapAdapter.toJson([:])).createStreamMessage()
 	}
 
 	void "serialize minimal message"() {
@@ -34,12 +31,15 @@ class StreamMessageV32AdapterSpec extends StreamrSpecification {
 
 	void "serialize maximal message"() {
 		String expectedJson = '[32,["streamId",0,123,0,"publisherid","msgChainId"],[122,0],27,0,2,"groupKeyId","encrypted-content","[\\\"newGroupKeyId\\\",\\\"encryptedGroupKeyHex-cached\\\"]",2,"signature"]'
-		msg.setPreviousMessageRef(new MessageRef(122L, 0))
-		msg.setEncryptionType(StreamMessage.EncryptionType.AES);
-		msg.setGroupKeyId("groupKeyId")
-		msg.setSerializedContent("encrypted-content")
-		msg.setNewGroupKey(new EncryptedGroupKey("newGroupKeyId", "encryptedGroupKeyHex", "[\"newGroupKeyId\",\"encryptedGroupKeyHex-cached\"]"))
-		msg.setSignatureFields("signature", StreamMessage.SignatureType.ETH)
+		msg = new StreamMessage.Builder(msg)
+				.withSignature("signature")
+				.withSignatureType(StreamMessage.SignatureType.ETH)
+				.withSerializedContent("encrypted-content")
+				.withPreviousMessageRef(new MessageRef(122L, 0))
+				.withEncryptionType(StreamMessage.EncryptionType.AES)
+				.withGroupKeyId("groupKeyId")
+				.withNewGroupKey(new EncryptedGroupKey("newGroupKeyId", "encryptedGroupKeyHex", "[\"newGroupKeyId\",\"encryptedGroupKeyHex-cached\"]"))
+				.createStreamMessage()
 
 		expect:
 		adapter.serialize(msg, VERSION) == expectedJson

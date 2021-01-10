@@ -67,8 +67,14 @@ public class TestingStreamrClient extends StreamrClient {
       return mockStreams.get(streamId);
     } else {
       // Return a default mock
-      Stream stream = new Stream("default mock stream from TestingStreamrClient", "");
-      stream.setId(streamId);
+      Stream stream =
+          new Stream.Builder()
+              .withName("default mock stream from TestingStreamrClient")
+              .withDescription("")
+              .withId(streamId)
+              .withRequireSignedData(false)
+              .withRequireEncryptedData(false)
+              .createStream();
       return stream;
     }
   }
