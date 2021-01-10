@@ -5,7 +5,6 @@ import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import com.streamr.client.StreamrClient;
-import com.streamr.client.StreamrIntegrationSpecification;
 import com.streamr.client.dataunion.contracts.IERC20;
 import com.streamr.client.options.EncryptionOptions;
 import com.streamr.client.options.SigningOptions;
