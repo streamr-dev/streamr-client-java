@@ -1,9 +1,22 @@
-# Set update schedule for GitHub Actions
+
+# https://docs.github.com/en/free-pro-team@latest/github/administering-a-repository/configuration-options-for-dependency-updates
 
 version: 2
 updates:
   - package-ecosystem: "github-actions"
     directory: "/"
     schedule:
-      # Check for updates to GitHub Actions every weekday
       interval: "daily"
+      time: "08:00"
+      timezone: "Europe/Helsinki"
+    reviewers:
+      - "kare"
+  - package-manager: "java:gradle"
+    directory: "/"
+    schedule:
+      interval: "daily"
+      time: "08:00"
+      timezone: "Europe/Helsinki"
+    reviewers:
+      - "kare"
+
