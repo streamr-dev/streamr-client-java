@@ -5,6 +5,7 @@ import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import com.streamr.client.StreamrClient;
+import com.streamr.client.authentication.EthereumAuthenticationMethod;
 import com.streamr.client.dataunion.contracts.IERC20;
 import com.streamr.client.options.EncryptionOptions;
 import com.streamr.client.options.SigningOptions;
@@ -17,6 +18,7 @@ import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.MethodOrderer;
 import org.junit.jupiter.api.Order;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.TestInstance;
 import org.junit.jupiter.api.TestMethodOrder;
 import org.junit.jupiter.api.Timeout;
 import org.web3j.abi.datatypes.Address;
@@ -28,6 +30,7 @@ import org.web3j.protocol.http.HttpService;
 
 @Timeout(value = 11, unit = TimeUnit.MINUTES)
 @TestMethodOrder(MethodOrderer.OrderAnnotation.class)
+@TestInstance(TestInstance.Lifecycle.PER_CLASS)
 class DataUnionClientTest {
   static final String DEV_MAINCHAIN_RPC = "http://localhost:8545";
   static final String DEV_SIDECHAIN_RPC = "http://localhost:8546";
