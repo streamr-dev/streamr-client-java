@@ -173,7 +173,7 @@ dependencies {
 	}
 	implementation('org.cache2k:cache2k-api:1.6.0.Final')
 	implementation('org.cache2k:cache2k-core:1.6.0.Final')
-	implementation('org.web3j:core:5.0.0') {
+	implementation('org.web3j:core:4.8.3') {
 		exclude group: 'com.squareup.okhttp3', module: 'okhttp'
 		exclude group: 'org.java-websocket', module: 'Java-WebSocket'
 		exclude group: 'org.slf4j', module: 'slf4j-api'
@@ -183,7 +183,7 @@ dependencies {
 	implementation('org.bouncycastle:bcprov-jdk15on:1.65') {
 		because 'Web3j has same dependency and EncryptionUtil requires PEM'
 	}
-	implementation('org.web3j:codegen:5.0.0') // DO NOT USE! This should be a build time dep
+	implementation('org.web3j:codegen:4.8.3') // DO NOT USE! This should be a build time dep
 	// Transitive dependencies leaked from other dependencies
 	implementation('com.googlecode.json-simple:json-simple:1.1.1') // DO NOT USE! This should be a build time dep
 
