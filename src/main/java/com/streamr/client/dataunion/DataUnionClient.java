@@ -1,6 +1,25 @@
 package com.streamr.client.dataunion;
 
-import com.streamr.client.dataunion.contracts.*;
+import static com.streamr.client.dataunion.Web3jUtils.fromBytes65;
+import static com.streamr.client.dataunion.Web3jUtils.toWei;
+import static com.streamr.client.dataunion.Web3jUtils.waitForCondition;
+import static com.streamr.client.dataunion.Web3jUtils.waitForErc20BalanceChange;
+import static com.streamr.client.dataunion.Web3jUtils.waitForTx;
+import static org.web3j.tx.Contract.staticExtractEventParameters;
+
+import com.streamr.client.dataunion.Web3jUtils.Condition;
+import com.streamr.client.dataunion.contracts.DataUnionFactoryMainnet;
+import com.streamr.client.dataunion.contracts.DataUnionFactorySidechain;
+import com.streamr.client.dataunion.contracts.DataUnionMainnet;
+import com.streamr.client.dataunion.contracts.DataUnionSidechain;
+import com.streamr.client.dataunion.contracts.ForeignAMB;
+import com.streamr.client.dataunion.contracts.HomeAMB;
+import com.streamr.client.dataunion.contracts.IERC20;
+import java.math.BigInteger;
+import java.util.ArrayList;
+import java.util.List;
+import java.util.NoSuchElementException;
+import java.util.Optional;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.web3j.abi.EventValues;
@@ -18,17 +37,6 @@ import org.web3j.protocol.Web3j;
 import org.web3j.protocol.core.methods.response.Log;
 import org.web3j.protocol.core.methods.response.TransactionReceipt;
 import org.web3j.protocol.http.HttpService;
-
-import java.math.BigInteger;
-import java.util.ArrayList;
-import java.util.List;
-import java.util.NoSuchElementException;
-import java.util.Optional;
-
-import static com.streamr.client.utils.Web3jUtils.*;
-import static org.web3j.tx.Contract.staticExtractEventParameters;
-
-import com.streamr.client.utils.Web3jUtils.Condition;
 import org.web3j.utils.Numeric;
 
 

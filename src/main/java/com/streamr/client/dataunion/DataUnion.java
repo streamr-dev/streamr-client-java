@@ -1,13 +1,12 @@
 package com.streamr.client.dataunion;
 
-import static com.streamr.client.utils.Web3jUtils.asDynamicAddressArray;
-import static com.streamr.client.utils.Web3jUtils.toBytes65;
-import static com.streamr.client.utils.Web3jUtils.waitForCodeAtAddress;
-import static com.streamr.client.utils.Web3jUtils.waitForCondition;
+import static com.streamr.client.dataunion.Web3jUtils.asDynamicAddressArray;
+import static com.streamr.client.dataunion.Web3jUtils.toBytes65;
+import static com.streamr.client.dataunion.Web3jUtils.waitForCodeAtAddress;
+import static com.streamr.client.dataunion.Web3jUtils.waitForCondition;
 
 import com.streamr.client.dataunion.contracts.DataUnionMainnet;
 import com.streamr.client.dataunion.contracts.DataUnionSidechain;
-import com.streamr.client.utils.Web3jUtils;
 import java.math.BigInteger;
 import org.web3j.abi.TypeEncoder;
 import org.web3j.abi.datatypes.Address;

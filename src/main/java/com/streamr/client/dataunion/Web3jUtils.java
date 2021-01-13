@@ -1,4 +1,4 @@
-package com.streamr.client.utils;
+package com.streamr.client.dataunion;
 
 import java.io.IOException;
 import java.lang.reflect.InvocationTargetException;
@@ -24,15 +24,15 @@ import org.web3j.protocol.core.methods.request.Transaction;
 import org.web3j.protocol.core.methods.response.EthCall;
 import org.web3j.protocol.core.methods.response.TransactionReceipt;
 
-public class Web3jUtils {
+class Web3jUtils {
   private static final Logger log = LoggerFactory.getLogger(Web3jUtils.class);
 
-  public interface Condition {
+  interface Condition {
     // returns null if still waiting
     Object check() throws Exception;
   }
 
-  public static class CodePresent implements Condition {
+  static class CodePresent implements Condition {
     private final Web3j connector;
     private final String address;
 
@@ -48,13 +48,13 @@ public class Web3jUtils {
       return null;
     }
 
-    public CodePresent(String address, Web3j connector) {
+    CodePresent(String address, Web3j connector) {
       this.address = address;
       this.connector = connector;
     }
   }
 
-  public static class Erc20BalanceChanged implements Condition {
+  static class Erc20BalanceChanged implements Condition {
     private final Web3j connector;
     private final String tokenAddress, balanceAddress;
     private final BigInteger initialBalance;
@@ -70,7 +70,7 @@ public class Web3jUtils {
       return null;
     }
 
-    public Erc20BalanceChanged(
+    Erc20BalanceChanged(
         BigInteger initialBalance, String tokenAddress, String balanceAddress, Web3j connector) {
       this.initialBalance = initialBalance;
       this.tokenAddress = tokenAddress;
@@ -79,7 +79,7 @@ public class Web3jUtils {
     }
   }
 
-  public static Object waitForCondition(
+  static Object waitForCondition(
       Condition condition, final long sleeptime, final long timeout) throws Exception {
     if (sleeptime <= 0 || timeout <= 0) {
       return condition.check();
@@ -98,7 +98,7 @@ public class Web3jUtils {
     return null;
   }
 
-  public static DynamicArray<org.web3j.abi.datatypes.Address> asDynamicAddressArray(
+  static DynamicArray<org.web3j.abi.datatypes.Address> asDynamicAddressArray(
       String[] addresses) {
     ArrayList<Address> addressList =
         new ArrayList<org.web3j.abi.datatypes.Address>(addresses.length);
@@ -108,12 +108,12 @@ public class Web3jUtils {
     return new DynamicArray<org.web3j.abi.datatypes.Address>(Address.class, addressList);
   }
 
-  public static String waitForCodeAtAddress(
+  static String waitForCodeAtAddress(
       String address, Web3j connector, long sleeptime, long timeout) throws Exception {
     return (String) waitForCondition(new CodePresent(address, connector), sleeptime, timeout);
   }
 
-  public static Boolean waitForTx(Web3j web3j, String txhash, long sleeptime, long timeout)
+  static Boolean waitForTx(Web3j web3j, String txhash, long sleeptime, long timeout)
       throws Exception {
     Condition txfinish =
         new Condition() {
@@ -135,7 +135,7 @@ public class Web3jUtils {
    *
    * @return new balance, or null if balance didnt change in waiting period
    */
-  public static BigInteger waitForErc20BalanceChange(
+  static BigInteger waitForErc20BalanceChange(
       BigInteger initialBalance,
       String tokenAddress,
       String balanceAddress,
@@ -151,7 +151,7 @@ public class Web3jUtils {
     return o == null ? null : (BigInteger) o;
   }
 
-  public static BigInteger callUintGetterFunction(
+  static BigInteger callUintGetterFunction(
       String contract, String functionName, Web3j connection)
       throws ClassNotFoundException, NoSuchMethodException, InvocationTargetException,
           InstantiationException, IllegalAccessException, IOException {
@@ -166,7 +166,7 @@ public class Web3jUtils {
     return (BigInteger) ret.iterator().next().getValue();
   }
 
-  public static BigInteger erc20Balance(String contract, String balanceAddress, Web3j connection)
+  static BigInteger erc20Balance(String contract, String balanceAddress, Web3j connection)
       throws ClassNotFoundException, NoSuchMethodException, InvocationTargetException,
           InstantiationException, IllegalAccessException, IOException {
     Function fn =
@@ -181,7 +181,7 @@ public class Web3jUtils {
   }
 
   @SuppressWarnings("rawtypes")
-  public static List<Type> callFunction(String contract, Function fn, Web3j connection)
+  static List<Type> callFunction(String contract, Function fn, Web3j connection)
       throws IOException {
     log.info("Calling view function " + fn + " on contract " + contract);
     EthCall response =
@@ -195,7 +195,7 @@ public class Web3jUtils {
   }
 
   // these methods should be built in to SignatureData
-  public static byte[] toBytes65(Sign.SignatureData sig) {
+  static byte[] toBytes65(Sign.SignatureData sig) {
     byte[] result = new byte[65];
     System.arraycopy(sig.getR(), 0, result, 0, 32);
     System.arraycopy(sig.getS(), 0, result, 32, 32);
@@ -203,14 +203,14 @@ public class Web3jUtils {
     return result;
   }
 
-  public static Sign.SignatureData fromBytes65(byte[] bytes) {
+  static Sign.SignatureData fromBytes65(byte[] bytes) {
     byte[] r = Arrays.copyOfRange(bytes, 0, 32);
     byte[] s = Arrays.copyOfRange(bytes, 32, 64);
     byte[] v = Arrays.copyOfRange(bytes, 64, 65);
     return new Sign.SignatureData(v, r, s);
   }
 
-  public static BigInteger toWei(double ether) {
+  static BigInteger toWei(double ether) {
     return new BigDecimal(BigInteger.TEN.pow(18))
         .multiply(BigDecimal.valueOf(ether))
         .toBigInteger();
