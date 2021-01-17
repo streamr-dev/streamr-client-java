@@ -1,7 +1,6 @@
 package com.streamr.client.rest
 
 import com.streamr.client.StreamrClient
-import com.streamr.client.StreamrIntegrationSpecification
 import com.streamr.client.authentication.EthereumAuthenticationMethod
 import com.streamr.client.exceptions.AmbiguousResultsException
 import com.streamr.client.exceptions.AuthenticationException
@@ -10,14 +9,15 @@ import com.streamr.client.exceptions.ResourceNotFoundException
 import com.streamr.client.testing.TestingClient
 import com.streamr.client.testing.TestingKeys
 import com.streamr.client.testing.TestingStreams
+import spock.lang.Specification
 
-class StreamEndpointsSpec extends StreamrIntegrationSpecification {
+class StreamEndpointsSpec extends Specification {
 
-	private StreamrClient client
+    private StreamrClient client
 
-	void setup() {
-		client = TestingClient.createClientWithPrivateKey(TestingKeys.generatePrivateKey())
-	}
+    void setup() {
+        client = TestingClient.createClientWithPrivateKey(TestingKeys.generatePrivateKey())
+    }
 
     void cleanup() {
         if (client != null) {

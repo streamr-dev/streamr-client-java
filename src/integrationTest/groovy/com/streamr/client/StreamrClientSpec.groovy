@@ -30,9 +30,10 @@ import com.streamr.client.utils.HttpUtils
 import com.streamr.client.utils.InMemoryGroupKeyStore
 import com.streamr.client.utils.KeyExchangeUtil
 import spock.lang.Shared
+import spock.lang.Specification
 import spock.util.concurrent.PollingConditions
 
-class StreamrClientSpec extends StreamrIntegrationSpecification {
+class StreamrClientSpec extends Specification {
     @Shared
     private TestWebSocketServer server = new TestWebSocketServer("localhost", 6000)
     @Shared
@@ -197,8 +198,8 @@ class StreamrClientSpec extends StreamrIntegrationSpecification {
         new PollingConditions().eventually {
             server.receivedControlMessages.size() == 1
         }
-        ((PublishRequest)server.receivedControlMessages[0].message).streamMessage.getGroupKeyId() == groupKey.groupKeyId
-        !((PublishRequest)server.receivedControlMessages[0].message).streamMessage.getSerializedContent().contains("secret")
+        ((PublishRequest) server.receivedControlMessages[0].message).streamMessage.getGroupKeyId() == groupKey.groupKeyId
+        !((PublishRequest) server.receivedControlMessages[0].message).streamMessage.getSerializedContent().contains("secret")
     }
 
     void "publish() publishes with the key given as argument"() {
@@ -211,8 +212,8 @@ class StreamrClientSpec extends StreamrIntegrationSpecification {
         new PollingConditions().eventually {
             server.receivedControlMessages.size() == 1
         }
-        ((PublishRequest)server.receivedControlMessages[0].message).streamMessage.getGroupKeyId() == groupKey.groupKeyId
-        !((PublishRequest)server.receivedControlMessages[0].message).streamMessage.getSerializedContent().contains("secret")
+        ((PublishRequest) server.receivedControlMessages[0].message).streamMessage.getGroupKeyId() == groupKey.groupKeyId
+        !((PublishRequest) server.receivedControlMessages[0].message).streamMessage.getSerializedContent().contains("secret")
 
         when:
         // The group key is not given in the next call
@@ -223,8 +224,8 @@ class StreamrClientSpec extends StreamrIntegrationSpecification {
         new PollingConditions().eventually {
             server.receivedControlMessages.size() == 2
         }
-        ((PublishRequest)server.receivedControlMessages[1].message).streamMessage.getGroupKeyId() == groupKey.groupKeyId
-        !((PublishRequest)server.receivedControlMessages[1].message).streamMessage.getSerializedContent().contains("another")
+        ((PublishRequest) server.receivedControlMessages[1].message).streamMessage.getGroupKeyId() == groupKey.groupKeyId
+        !((PublishRequest) server.receivedControlMessages[1].message).streamMessage.getSerializedContent().contains("another")
 
     }
 
@@ -239,7 +240,7 @@ class StreamrClientSpec extends StreamrIntegrationSpecification {
         new PollingConditions().eventually {
             server.receivedControlMessages.size() == 1
         }
-        ((PublishRequest)server.receivedControlMessages[0].message).streamMessage.getGroupKeyId() == groupKey.groupKeyId
+        ((PublishRequest) server.receivedControlMessages[0].message).streamMessage.getGroupKeyId() == groupKey.groupKeyId
     }
 
     void "publish() called with a new GroupKey rotates the key"() {
@@ -317,7 +318,7 @@ class StreamrClientSpec extends StreamrIntegrationSpecification {
 
     void "calling publish from multiple threads during a server disconnect does not cause errors (CORE-1912)"() {
         Thread serverRestart = new Thread() {
-            void run(){
+            void run() {
                 server.stop()
                 server = new TestWebSocketServer("localhost", 6000)
                 server.start()
