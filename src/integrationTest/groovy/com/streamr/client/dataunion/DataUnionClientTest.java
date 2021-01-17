@@ -9,6 +9,7 @@ import com.streamr.client.dataunion.contracts.IERC20;
 import com.streamr.client.options.EncryptionOptions;
 import com.streamr.client.options.SigningOptions;
 import com.streamr.client.options.StreamrClientOptions;
+import com.streamr.client.testing.TestingMeta;
 import java.math.BigInteger;
 import java.util.Arrays;
 import java.util.concurrent.TimeUnit;
@@ -69,8 +70,8 @@ class DataUnionClientTest {
             null,
             SigningOptions.getDefault(),
             EncryptionOptions.getDefault(),
-            "ws://localhost/api/v1/ws",
-            "http://localhost/api/v1");
+            TestingMeta.WEBSOCKET_URL,
+            TestingMeta.REST_URL);
     opts.setSidechainRpcUrl(DEV_SIDECHAIN_RPC);
     opts.setMainnetRpcUrl(DEV_MAINCHAIN_RPC);
     opts.setDataUnionMainnetFactoryAddress(DEV_MAINCHAIN_FACTORY);

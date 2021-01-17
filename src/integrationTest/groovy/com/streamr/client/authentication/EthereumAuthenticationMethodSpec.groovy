@@ -2,6 +2,7 @@ package com.streamr.client.authentication
 
 import com.streamr.client.StreamrIntegrationSpecification
 import com.streamr.client.testing.TestingKeys
+import com.streamr.client.testing.TestingMeta
 
 class EthereumAuthenticationMethodSpec extends StreamrIntegrationSpecification {
 
@@ -9,7 +10,7 @@ class EthereumAuthenticationMethodSpec extends StreamrIntegrationSpecification {
         EthereumAuthenticationMethod auth = new EthereumAuthenticationMethod(TestingKeys.generatePrivateKey())
 
         when:
-        String sessionToken = auth.newSessionToken(DEFAULT_REST_URL)
+        String sessionToken = auth.newSessionToken(TestingMeta.REST_URL)
 
         then:
         sessionToken != null
