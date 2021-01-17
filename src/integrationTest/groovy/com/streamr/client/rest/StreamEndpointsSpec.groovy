@@ -8,6 +8,7 @@ import com.streamr.client.exceptions.AuthenticationException
 import com.streamr.client.exceptions.PermissionDeniedException
 import com.streamr.client.exceptions.ResourceNotFoundException
 import com.streamr.client.testing.TestingKeys
+import com.streamr.client.testing.TestingStreams
 
 class StreamEndpointsSpec extends StreamrIntegrationSpecification {
 
@@ -28,7 +29,7 @@ class StreamEndpointsSpec extends StreamrIntegrationSpecification {
         def fieldBar = new FieldConfig("bar", FieldConfig.Type.STRING)
         def config = new StreamConfig(fieldFoo, fieldBar)
         Stream proto = new Stream.Builder()
-                .withName(generateResourceName())
+                .withName(TestingStreams.generateName())
                 .withDescription("This stream was created from an integration test")
                 .withConfig(config)
                 .createStream()
@@ -59,7 +60,7 @@ class StreamEndpointsSpec extends StreamrIntegrationSpecification {
 
     void "createStream() then getStream() setting requireSignedData"() {
         Stream proto = new Stream.Builder()
-                .withName(generateResourceName())
+                .withName(TestingStreams.generateName())
                 .withDescription("This stream was created from an integration test")
                 .withRequireSignedData(true)
                 .withConfig(new StreamConfig())
@@ -80,7 +81,7 @@ class StreamEndpointsSpec extends StreamrIntegrationSpecification {
 
     void "createStream() then getStreamByName()"() {
         Stream proto = new Stream.Builder()
-                .withName(generateResourceName())
+                .withName(TestingStreams.generateName())
                 .withDescription("This stream was created from an integration test")
                 .createStream()
 
@@ -110,7 +111,7 @@ class StreamEndpointsSpec extends StreamrIntegrationSpecification {
 
     void "getStreamByName() throws AmbiguousResultsException if multiple matching streams are found"() {
         Stream proto = new Stream.Builder()
-                .withName(generateResourceName())
+                .withName(TestingStreams.generateName())
                 .withDescription("This stream was created from an integration test")
                 .createStream()
 
@@ -127,7 +128,7 @@ class StreamEndpointsSpec extends StreamrIntegrationSpecification {
 
     void "createStream() throws AuthenticationException if the client is unauthenticated"() {
         Stream proto = new Stream.Builder()
-                .withName(generateResourceName())
+                .withName(TestingStreams.generateName())
                 .withDescription("This stream was created from an integration test")
                 .createStream()
         StreamrClient unauthenticatedClient = createUnauthenticatedClient()
@@ -152,7 +153,7 @@ class StreamEndpointsSpec extends StreamrIntegrationSpecification {
 
     void "getStream() throws PermissionDeniedException for streams which the user can not access"() {
         Stream proto = new Stream.Builder()
-                .withName(generateResourceName())
+                .withName(TestingStreams.generateName())
                 .withDescription("This stream was created from an integration test")
                 .createStream()
         StreamrClient unauthenticatedClient = createUnauthenticatedClient()
@@ -185,7 +186,7 @@ class StreamEndpointsSpec extends StreamrIntegrationSpecification {
 
     void "getPublishers()"() {
         Stream proto = new Stream.Builder()
-                .withName(generateResourceName())
+                .withName(TestingStreams.generateName())
                 .withDescription("This stream was created from an integration test")
                 .createStream()
         Stream createdResult = client.createStream(proto)
@@ -197,7 +198,7 @@ class StreamEndpointsSpec extends StreamrIntegrationSpecification {
 
     void "isPublisher()"() {
         Stream proto = new Stream.Builder()
-                .withName(generateResourceName())
+                .withName(TestingStreams.generateName())
                 .withDescription("This stream was created from an integration test")
                 .createStream()
         Stream createdResult = client.createStream(proto)
@@ -211,7 +212,7 @@ class StreamEndpointsSpec extends StreamrIntegrationSpecification {
 
     void "getSubscribers()"() {
         Stream proto = new Stream.Builder()
-                .withName(generateResourceName())
+                .withName(TestingStreams.generateName())
                 .withDescription("This stream was created from an integration test")
                 .createStream()
         Stream createdResult = client.createStream(proto)
@@ -223,7 +224,7 @@ class StreamEndpointsSpec extends StreamrIntegrationSpecification {
 
     void "isSubscriber()"() {
         Stream proto = new Stream.Builder()
-                .withName(generateResourceName())
+                .withName(TestingStreams.generateName())
                 .withDescription("This stream was created from an integration test")
                 .createStream()
         Stream createdResult = client.createStream(proto)

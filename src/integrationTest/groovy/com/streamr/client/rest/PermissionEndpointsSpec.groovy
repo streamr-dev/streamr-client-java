@@ -3,6 +3,7 @@ package com.streamr.client.rest
 import com.streamr.client.StreamrClient
 import com.streamr.client.StreamrIntegrationSpecification
 import com.streamr.client.testing.TestingKeys
+import com.streamr.client.testing.TestingStreams
 
 class PermissionEndpointsSpec extends StreamrIntegrationSpecification {
 
@@ -25,7 +26,7 @@ class PermissionEndpointsSpec extends StreamrIntegrationSpecification {
 
     void "grant()"() {
         Stream proto = new Stream.Builder()
-                .withName(generateResourceName())
+                .withName(TestingStreams.generateName())
                 .withDescription("This stream was created from an integration test")
                 .createStream()
         Stream stream = grantor.createStream(proto)
@@ -47,7 +48,7 @@ class PermissionEndpointsSpec extends StreamrIntegrationSpecification {
 
     void "grantPublic()"() {
         Stream proto = new Stream.Builder()
-                .withName(generateResourceName())
+                .withName(TestingStreams.generateName())
                 .withDescription("This stream was created from an integration test")
                 .createStream()
         Stream stream = grantor.createStream(proto)

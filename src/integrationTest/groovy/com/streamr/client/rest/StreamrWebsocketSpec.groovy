@@ -10,6 +10,7 @@ import com.streamr.client.options.ResendRangeOption
 import com.streamr.client.protocol.message_layer.StreamMessage
 import com.streamr.client.subs.Subscription
 import com.streamr.client.testing.TestingKeys
+import com.streamr.client.testing.TestingStreams
 import com.streamr.client.utils.GroupKey
 import org.java_websocket.enums.ReadyState
 import spock.util.concurrent.PollingConditions
@@ -30,7 +31,7 @@ class StreamrWebsocketSpec extends StreamrIntegrationSpecification {
 		subscriber = createClientWithPrivateKey(subscriberPrivateKey)
 
 		Stream proto = new Stream.Builder()
-				.withName(generateResourceName())
+				.withName(TestingStreams.generateName())
 				.withDescription("")
 				.withRequireEncryptedData(false)
 				.withRequireSignedData(false)
@@ -66,7 +67,7 @@ class StreamrWebsocketSpec extends StreamrIntegrationSpecification {
 
 	void "client automatically connects for publishing"() {
 		Stream stream = new Stream.Builder()
-				.withName(generateResourceName())
+				.withName(TestingStreams.generateName())
 				.withDescription("")
 				.createStream()
 		stream = publisher.createStream(stream)
@@ -80,7 +81,7 @@ class StreamrWebsocketSpec extends StreamrIntegrationSpecification {
 
 	void "client automatically connects for subscribing"() {
 		Stream stream = new Stream.Builder()
-				.withName(generateResourceName())
+				.withName(TestingStreams.generateName())
 				.withDescription("")
 				.createStream()
 		stream = subscriber.createStream(stream)

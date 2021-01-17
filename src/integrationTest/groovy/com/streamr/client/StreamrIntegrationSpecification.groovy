@@ -22,7 +22,4 @@ class StreamrIntegrationSpecification extends Specification {
         return new StreamrClientOptions(new EthereumAuthenticationMethod(privateKey), SigningOptions.getDefault(), EncryptionOptions.getDefault(), TestingMeta.WEBSOCKET_URL, TestingMeta.REST_URL)
     }
 
-    protected String generateResourceName() {
-        return "${this.getClass().getSimpleName()}-${System.currentTimeMillis()}"
-    }
 }
