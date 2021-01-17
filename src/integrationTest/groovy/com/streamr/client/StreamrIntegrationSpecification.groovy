@@ -9,7 +9,6 @@ import spock.lang.Specification
 
 class StreamrIntegrationSpecification extends Specification {
 
-
     protected static StreamrClient createUnauthenticatedClient() {
         return new StreamrClient(new StreamrClientOptions(null, SigningOptions.getDefault(), EncryptionOptions.getDefault(), TestingMeta.WEBSOCKET_URL, TestingMeta.REST_URL))
     }
@@ -18,7 +17,7 @@ class StreamrIntegrationSpecification extends Specification {
         return new StreamrClient(createOptionsWithPrivateKey(privateKey))
     }
 
-    protected static StreamrClientOptions createOptionsWithPrivateKey(String privateKey = null) {
+    private static StreamrClientOptions createOptionsWithPrivateKey(String privateKey = null) {
         return new StreamrClientOptions(new EthereumAuthenticationMethod(privateKey), SigningOptions.getDefault(), EncryptionOptions.getDefault(), TestingMeta.WEBSOCKET_URL, TestingMeta.REST_URL)
     }
 
