@@ -9,6 +9,7 @@ import com.streamr.client.options.ResendLastOption
 import com.streamr.client.options.ResendRangeOption
 import com.streamr.client.protocol.message_layer.StreamMessage
 import com.streamr.client.subs.Subscription
+import com.streamr.client.testing.TestingClient
 import com.streamr.client.testing.TestingKeys
 import com.streamr.client.testing.TestingStreams
 import com.streamr.client.utils.GroupKey
@@ -27,8 +28,8 @@ class StreamrWebsocketSpec extends StreamrIntegrationSpecification {
 	void setup() {
 		publisherPrivateKey = TestingKeys.generatePrivateKey()
 		subscriberPrivateKey = TestingKeys.generatePrivateKey()
-		publisher = createClientWithPrivateKey(publisherPrivateKey)
-		subscriber = createClientWithPrivateKey(subscriberPrivateKey)
+		publisher = TestingClient.createClientWithPrivateKey(publisherPrivateKey)
+		subscriber = TestingClient.createClientWithPrivateKey(subscriberPrivateKey)
 
 		Stream proto = new Stream.Builder()
 				.withName(TestingStreams.generateName())
@@ -580,7 +581,7 @@ class StreamrWebsocketSpec extends StreamrIntegrationSpecification {
 
 	void "two instances of same publisher publishing to the same stream"() {
 		boolean stop = false
-		StreamrClient publisher2 = createClientWithPrivateKey(publisherPrivateKey) // same private key
+		StreamrClient publisher2 = TestingClient.createClientWithPrivateKey(publisherPrivateKey) // same private key
 		publisher.grant(stream, Permission.Operation.stream_get, publisher2.getPublisherId().toString())
 		publisher.grant(stream, Permission.Operation.stream_publish, publisher2.getPublisherId().toString())
 

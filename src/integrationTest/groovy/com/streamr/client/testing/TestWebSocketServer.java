@@ -1,4 +1,4 @@
-package com.streamr.client;
+package com.streamr.client.testing;
 
 import com.streamr.client.protocol.control_layer.BroadcastMessage;
 import com.streamr.client.protocol.control_layer.ControlMessage;

@@ -7,6 +7,7 @@ import com.streamr.client.exceptions.AmbiguousResultsException
 import com.streamr.client.exceptions.AuthenticationException
 import com.streamr.client.exceptions.PermissionDeniedException
 import com.streamr.client.exceptions.ResourceNotFoundException
+import com.streamr.client.testing.TestingClient
 import com.streamr.client.testing.TestingKeys
 import com.streamr.client.testing.TestingStreams
 
@@ -15,7 +16,7 @@ class StreamEndpointsSpec extends StreamrIntegrationSpecification {
 	private StreamrClient client
 
 	void setup() {
-		client = createClientWithPrivateKey(TestingKeys.generatePrivateKey())
+		client = TestingClient.createClientWithPrivateKey(TestingKeys.generatePrivateKey())
 	}
 
     void cleanup() {
@@ -131,7 +132,7 @@ class StreamEndpointsSpec extends StreamrIntegrationSpecification {
                 .withName(TestingStreams.generateName())
                 .withDescription("This stream was created from an integration test")
                 .createStream()
-        StreamrClient unauthenticatedClient = createUnauthenticatedClient()
+        StreamrClient unauthenticatedClient = TestingClient.createUnauthenticatedClient()
 
         when:
         unauthenticatedClient.createStream(proto)
@@ -156,7 +157,7 @@ class StreamEndpointsSpec extends StreamrIntegrationSpecification {
                 .withName(TestingStreams.generateName())
                 .withDescription("This stream was created from an integration test")
                 .createStream()
-        StreamrClient unauthenticatedClient = createUnauthenticatedClient()
+        StreamrClient unauthenticatedClient = TestingClient.createUnauthenticatedClient()
 
         when:
         Stream createResult = client.createStream(proto)

@@ -2,6 +2,7 @@ package com.streamr.client.rest
 
 import com.streamr.client.StreamrClient
 import com.streamr.client.StreamrIntegrationSpecification
+import com.streamr.client.testing.TestingClient
 import com.streamr.client.testing.TestingKeys
 import com.streamr.client.testing.TestingStreams
 
@@ -11,8 +12,8 @@ class PermissionEndpointsSpec extends StreamrIntegrationSpecification {
     private StreamrClient grantee
 
 	void setup() {
-        grantor = createClientWithPrivateKey(TestingKeys.generatePrivateKey())
-        grantee = createClientWithPrivateKey(TestingKeys.generatePrivateKey())
+        grantor = TestingClient.createClientWithPrivateKey(TestingKeys.generatePrivateKey())
+        grantee = TestingClient.createClientWithPrivateKey(TestingKeys.generatePrivateKey())
 	}
 
     void cleanup() {
