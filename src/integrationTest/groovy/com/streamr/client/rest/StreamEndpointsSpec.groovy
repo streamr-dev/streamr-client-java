@@ -7,13 +7,14 @@ import com.streamr.client.exceptions.AmbiguousResultsException
 import com.streamr.client.exceptions.AuthenticationException
 import com.streamr.client.exceptions.PermissionDeniedException
 import com.streamr.client.exceptions.ResourceNotFoundException
+import com.streamr.client.testing.TestingKeys
 
 class StreamEndpointsSpec extends StreamrIntegrationSpecification {
 
 	private StreamrClient client
 
 	void setup() {
-		client = createClientWithPrivateKey(generatePrivateKey())
+		client = createClientWithPrivateKey(TestingKeys.generatePrivateKey())
 	}
 
     void cleanup() {

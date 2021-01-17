@@ -9,6 +9,7 @@ import com.streamr.client.options.ResendLastOption
 import com.streamr.client.options.ResendRangeOption
 import com.streamr.client.protocol.message_layer.StreamMessage
 import com.streamr.client.subs.Subscription
+import com.streamr.client.testing.TestingKeys
 import com.streamr.client.utils.GroupKey
 import org.java_websocket.enums.ReadyState
 import spock.util.concurrent.PollingConditions
@@ -23,8 +24,8 @@ class StreamrWebsocketSpec extends StreamrIntegrationSpecification {
 	PollingConditions within10sec = new PollingConditions(timeout: 10)
 
 	void setup() {
-		publisherPrivateKey = generatePrivateKey()
-		subscriberPrivateKey = generatePrivateKey()
+		publisherPrivateKey = TestingKeys.generatePrivateKey()
+		subscriberPrivateKey = TestingKeys.generatePrivateKey()
 		publisher = createClientWithPrivateKey(publisherPrivateKey)
 		subscriber = createClientWithPrivateKey(subscriberPrivateKey)
 
