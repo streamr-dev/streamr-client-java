@@ -18,6 +18,7 @@ import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.MethodOrderer;
 import org.junit.jupiter.api.Order;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.TestInstance;
 import org.junit.jupiter.api.TestMethodOrder;
 import org.junit.jupiter.api.Timeout;
 import org.web3j.abi.datatypes.Address;
@@ -29,6 +30,7 @@ import org.web3j.protocol.http.HttpService;
 
 @Timeout(value = 11, unit = TimeUnit.MINUTES)
 @TestMethodOrder(MethodOrderer.OrderAnnotation.class)
+@TestInstance(TestInstance.Lifecycle.PER_CLASS)
 class DataUnionClientTest {
   static final String DEV_MAINCHAIN_RPC = "http://localhost:8545";
   static final String DEV_SIDECHAIN_RPC = "http://localhost:8546";
