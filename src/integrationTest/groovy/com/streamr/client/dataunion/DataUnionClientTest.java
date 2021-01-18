@@ -5,11 +5,11 @@ import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import com.streamr.client.StreamrClient;
-import com.streamr.client.authentication.EthereumAuthenticationMethod;
 import com.streamr.client.dataunion.contracts.IERC20;
 import com.streamr.client.options.EncryptionOptions;
 import com.streamr.client.options.SigningOptions;
 import com.streamr.client.options.StreamrClientOptions;
+import com.streamr.client.testing.TestingMeta;
 import java.math.BigInteger;
 import java.util.Arrays;
 import java.util.concurrent.TimeUnit;
@@ -32,11 +32,11 @@ import org.web3j.protocol.http.HttpService;
 @TestMethodOrder(MethodOrderer.OrderAnnotation.class)
 @TestInstance(TestInstance.Lifecycle.PER_CLASS)
 class DataUnionClientTest {
-  static final String DEV_MAINCHAIN_RPC = "http://localhost:8545";
-  static final String DEV_SIDECHAIN_RPC = "http://localhost:8546";
-  static final String DEV_SIDECHAIN_FACTORY = "0x4081B7e107E59af8E82756F96C751174590989FE";
-  static final String DEV_MAINCHAIN_FACTORY = "0x5E959e5d5F3813bE5c6CeA996a286F734cc9593b";
-  static final String[] TEST_RPC_KEYS =
+  private static final String DEV_MAINCHAIN_RPC = "http://localhost:8545";
+  private static final String DEV_SIDECHAIN_RPC = "http://localhost:8546";
+  private static final String DEV_SIDECHAIN_FACTORY = "0x4081B7e107E59af8E82756F96C751174590989FE";
+  private static final String DEV_MAINCHAIN_FACTORY = "0x5E959e5d5F3813bE5c6CeA996a286F734cc9593b";
+  private static final String[] TEST_RPC_KEYS =
       new String[] {
         "0x5e98cce00cff5dea6b454889f359a4ec06b9fa6b88e9d69b86de8e1c81887da0",
         "0xe5af7834455b7239881b85be89d905d6881dcb4751063897f12be1b0dd546bdb",
@@ -51,15 +51,15 @@ class DataUnionClientTest {
         "0x2c326a4c139eced39709b235fffa1fde7c252f3f7b505103f7b251586c35d543",
         */
       };
-  static final String DATA_UNION_NAME = "test" + System.currentTimeMillis();
+  private static final String DATA_UNION_NAME = "test" + System.currentTimeMillis();
 
-  StreamrClient streamrClient;
-  DataUnionClient client;
-  Credentials adminWallet;
-  Credentials member1Wallet;
-  Credentials member2Wallet;
-  DataUnion du;
-  IERC20 mainnetToken;
+  private StreamrClient streamrClient;
+  private DataUnionClient client;
+  private Credentials adminWallet;
+  private Credentials member1Wallet;
+  private Credentials member2Wallet;
+  private DataUnion du;
+  private IERC20 mainnetToken;
 
   @BeforeAll
   void setup() throws Exception {
@@ -72,22 +72,13 @@ class DataUnionClientTest {
             null,
             SigningOptions.getDefault(),
             EncryptionOptions.getDefault(),
-            "ws://localhost/api/v1/ws",
-            "http://localhost/api/v1");
+            TestingMeta.WEBSOCKET_URL,
+            TestingMeta.REST_URL);
     opts.setSidechainRpcUrl(DEV_SIDECHAIN_RPC);
     opts.setMainnetRpcUrl(DEV_MAINCHAIN_RPC);
     opts.setDataUnionMainnetFactoryAddress(DEV_MAINCHAIN_FACTORY);
     opts.setDataUnionSidechainFactoryAddress(DEV_SIDECHAIN_FACTORY);
     streamrClient = new StreamrClient(opts);
-    final String adminPk = TEST_RPC_KEYS[0];
-    client = streamrClient.dataUnionClient(adminPk, adminPk);
-    du = client.dataUnionFromName(DATA_UNION_NAME);
-    // public static IERC20 load(String contractAddress, Web3j web3j, Credentials credentials,
-    // ContractGasProvider contractGasProvider)
-    Web3j mainnet = Web3j.build(new HttpService(DEV_MAINCHAIN_RPC));
-    mainnetToken =
-        IERC20.load(
-            client.mainnetTokenAddress(), mainnet, adminWallet, new EstimatedGasProvider(mainnet));
   }
 
   @AfterAll
@@ -97,11 +88,23 @@ class DataUnionClientTest {
     }
   }
 
-  final long pollInterval = 10000;
-  final long timeout = 600000;
-
   @Test
   @Order(1)
+  void createDataUnionClient() throws Exception {
+    final String adminPk = TEST_RPC_KEYS[0];
+    client = streamrClient.dataUnionClient(adminPk, adminPk);
+    du = client.dataUnionFromName(DATA_UNION_NAME);
+    Web3j mainnet = Web3j.build(new HttpService(DEV_MAINCHAIN_RPC));
+    mainnetToken =
+        IERC20.load(
+            client.mainnetTokenAddress(), mainnet, adminWallet, new EstimatedGasProvider(mainnet));
+  }
+
+  private final long pollInterval = 10000;
+  private final long timeout = 600000;
+
+  @Test
+  @Order(10)
   void createDataUnion() throws Exception {
     du =
         client.deployDataUnion(
@@ -115,7 +118,7 @@ class DataUnionClientTest {
   }
 
   @Test
-  @Order(2)
+  @Order(20)
   void addMembersToDataUnion() throws Exception {
     final EthereumTransactionReceipt tr =
         du.addMembers(member1Wallet.getAddress(), member2Wallet.getAddress());
@@ -129,7 +132,7 @@ class DataUnionClientTest {
   final BigInteger testSendAmount = BigInteger.valueOf(1000000000000000000l);
 
   @Test
-  @Order(3)
+  @Order(30)
   void testTransferAndSidechainStats() throws Exception {
     final BigInteger sidechainEarnings = du.totalEarnings();
     final Address address = new Address(du.getMainnetContractAddress());
@@ -144,7 +147,7 @@ class DataUnionClientTest {
   }
 
   @Test
-  @Order(4)
+  @Order(40)
   void withdrawMemberAsAdmin() throws Exception {
     final String recipient = member2Wallet.getAddress();
     final BigInteger recipientBal =
@@ -160,7 +163,7 @@ class DataUnionClientTest {
   }
 
   @Test
-  @Order(5)
+  @Order(50)
   void signedWithdrawalForAnother() throws Exception {
     final Address member1Address = new Address(member1Wallet.getAddress());
     final BigInteger recipientBal = mainnetToken.balanceOf(member1Address).send().getValue();

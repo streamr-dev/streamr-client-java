@@ -1,17 +1,20 @@
 package com.streamr.client.rest
 
 import com.streamr.client.StreamrClient
-import com.streamr.client.StreamrIntegrationSpecification
+import com.streamr.client.testing.TestingKeys
+import com.streamr.client.testing.TestingStreamrClient
+import com.streamr.client.testing.TestingStreams
+import spock.lang.Specification
 
-class PermissionEndpointsSpec extends StreamrIntegrationSpecification {
+class PermissionEndpointsSpec extends Specification {
 
-	private StreamrClient grantor
+    private StreamrClient grantor
     private StreamrClient grantee
 
-	void setup() {
-        grantor = createClientWithPrivateKey(generatePrivateKey())
-        grantee = createClientWithPrivateKey(generatePrivateKey())
-	}
+    void setup() {
+        grantor = TestingStreamrClient.createClientWithPrivateKey(TestingKeys.generatePrivateKey())
+        grantee = TestingStreamrClient.createClientWithPrivateKey(TestingKeys.generatePrivateKey())
+    }
 
     void cleanup() {
         if (grantor != null) {
@@ -24,7 +27,7 @@ class PermissionEndpointsSpec extends StreamrIntegrationSpecification {
 
     void "grant()"() {
         Stream proto = new Stream.Builder()
-                .withName(generateResourceName())
+                .withName(TestingStreams.generateName())
                 .withDescription("This stream was created from an integration test")
                 .createStream()
         Stream stream = grantor.createStream(proto)
@@ -46,7 +49,7 @@ class PermissionEndpointsSpec extends StreamrIntegrationSpecification {
 
     void "grantPublic()"() {
         Stream proto = new Stream.Builder()
-                .withName(generateResourceName())
+                .withName(TestingStreams.generateName())
                 .withDescription("This stream was created from an integration test")
                 .createStream()
         Stream stream = grantor.createStream(proto)

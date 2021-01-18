@@ -1,13 +1,12 @@
 package com.streamr.client.dataunion;
 
-import static com.streamr.client.utils.Web3jUtils.asDynamicAddressArray;
-import static com.streamr.client.utils.Web3jUtils.toBytes65;
-import static com.streamr.client.utils.Web3jUtils.waitForCodeAtAddress;
-import static com.streamr.client.utils.Web3jUtils.waitForCondition;
+import static com.streamr.client.dataunion.Web3jUtils.asDynamicAddressArray;
+import static com.streamr.client.dataunion.Web3jUtils.toBytes65;
+import static com.streamr.client.dataunion.Web3jUtils.waitForCodeAtAddress;
+import static com.streamr.client.dataunion.Web3jUtils.waitForCondition;
 
 import com.streamr.client.dataunion.contracts.DataUnionMainnet;
 import com.streamr.client.dataunion.contracts.DataUnionSidechain;
-import com.streamr.client.utils.Web3jUtils;
 import java.math.BigInteger;
 import org.web3j.abi.TypeEncoder;
 import org.web3j.abi.datatypes.Address;
@@ -20,7 +19,7 @@ import org.web3j.crypto.Sign;
 import org.web3j.protocol.Web3j;
 import org.web3j.utils.Numeric;
 
-public class DataUnion {
+public final class DataUnion {
   private static final BigInteger MAX_UINT256 =
       BigInteger.valueOf(2).pow(256).subtract(BigInteger.ONE);
 
@@ -38,19 +37,19 @@ public class DataUnion {
   private final Credentials sidechainCred;
 
   protected static class RangeException extends Exception {
-    public RangeException(String msg) {
+    public RangeException(final String msg) {
       super(msg);
     }
-  };
+  }
 
   // use DataUnionClient to instantiate
   protected DataUnion(
-      DataUnionMainnet mainnet,
-      Web3j mainnetConnector,
-      Credentials mainnetCred,
-      DataUnionSidechain sidechain,
-      Web3j sidechainConnector,
-      Credentials sidechainCred) {
+      final DataUnionMainnet mainnet,
+      final Web3j mainnetConnector,
+      final Credentials mainnetCred,
+      final DataUnionSidechain sidechain,
+      final Web3j sidechainConnector,
+      final Credentials sidechainCred) {
     this.mainnet = mainnet;
     this.mainnetConnector = mainnetConnector;
     this.mainnetCred = mainnetCred;
@@ -59,7 +58,7 @@ public class DataUnion {
     this.sidechainCred = sidechainCred;
   }
 
-  public boolean waitForDeployment(long pollInterval, long timeout) throws Exception {
+  public boolean waitForDeployment(final long pollInterval, final long timeout) throws Exception {
     String code =
         waitForCodeAtAddress(
             sidechain.getContractAddress(), sidechainConnector, pollInterval, timeout);
@@ -87,12 +86,13 @@ public class DataUnion {
     mainnet.sendTokensToBridge().send();
   }
 
-  public void setNewMemberEth(BigInteger amountWei) throws Exception {
+  public void setNewMemberEth(final BigInteger amountWei) throws Exception {
     sidechain.setNewMemberEth(new Uint256(amountWei)).send();
   }
 
   public BigInteger waitForEarningsChange(
-      final BigInteger initialBalance, long pollInterval, long timeout) throws Exception {
+      final BigInteger initialBalance, final long pollInterval, final long timeout)
+      throws Exception {
     Web3jUtils.Condition earningsChange =
         new Web3jUtils.Condition() {
           @Override
@@ -107,65 +107,60 @@ public class DataUnion {
     return (BigInteger) waitForCondition(earningsChange, pollInterval, timeout);
   }
 
-  public EthereumTransactionReceipt addJoinPartAgents(String... agents) throws Exception {
+  public EthereumTransactionReceipt addJoinPartAgents(final String... agents) throws Exception {
     return new EthereumTransactionReceipt(
         sidechain.addJoinPartAgents(asDynamicAddressArray(agents)).send());
   }
 
-  public EthereumTransactionReceipt partMembers(String... members) throws Exception {
+  public EthereumTransactionReceipt partMembers(final String... members) throws Exception {
     return new EthereumTransactionReceipt(
         sidechain.partMembers(asDynamicAddressArray(members)).send());
   }
 
-  public EthereumTransactionReceipt addMembers(String... members) throws Exception {
+  public EthereumTransactionReceipt addMembers(final String... members) throws Exception {
     return new EthereumTransactionReceipt(
         sidechain.addMembers(asDynamicAddressArray(members)).send());
   }
 
-  protected void checkRange(BigInteger x, BigInteger min, BigInteger max) throws RangeException {
+  protected void checkRange(final BigInteger x, final BigInteger min, final BigInteger max)
+      throws RangeException {
     if (x.compareTo(min) < 0 || x.compareTo(max) > 0) {
       throw new RangeException("Amount must be between " + min + " and " + max);
     }
   }
 
   /**
-   * withdraw a member to his own address. Must be that member or admin.
+   * Withdraw a member to his own address. Must be that member or admin.
    *
-   * @param member
    * @param amount amount in wei
-   * @return
-   * @throws Exception
    */
-  public EthereumTransactionReceipt withdrawTokensForSelfOrAsAdmin(String member, BigInteger amount)
-      throws Exception {
+  public EthereumTransactionReceipt withdrawTokensForSelfOrAsAdmin(
+      final String member, final BigInteger amount) throws Exception {
     checkRange(amount, BigInteger.ONE, MAX_UINT256);
     return new EthereumTransactionReceipt(
         sidechain.withdraw(new Address(member), new Uint256(amount), new Bool(true)).send());
   }
 
-  public EthereumTransactionReceipt withdrawAllTokensForSelfOrAsAdmin(String member)
+  public EthereumTransactionReceipt withdrawAllTokensForSelfOrAsAdmin(final String member)
       throws Exception {
     return new EthereumTransactionReceipt(
         sidechain.withdrawAll(new Address(member), new Bool(true)).send());
   }
 
   /**
-   * sends TX to sidechain as admin. withdrawer doesnt pay TX fee
+   * Sends TX to sidechain as admin. withdrawer doesnt pay TX fee
    *
-   * @param withdrawerPrivateKey
-   * @param to
    * @param amount amout in wei or 0 to withdraw everything
-   * @return
-   * @throws Exception
    */
   public EthereumTransactionReceipt withdrawTokensForMember(
-      BigInteger withdrawerPrivateKey, String to, BigInteger amount) throws Exception {
+      final BigInteger withdrawerPrivateKey, final String to, final BigInteger amount)
+      throws Exception {
     return withdrawTokensForMember(
         Credentials.create(ECKeyPair.create(withdrawerPrivateKey)), to, amount);
   }
 
   public EthereumTransactionReceipt withdrawAllTokensForMember(
-      BigInteger withdrawerPrivateKey, String to) throws Exception {
+      final BigInteger withdrawerPrivateKey, final String to) throws Exception {
     return withdrawTokensForMember(
         Credentials.create(ECKeyPair.create(withdrawerPrivateKey)), to, BigInteger.ZERO);
   }
@@ -173,25 +168,22 @@ public class DataUnion {
   /**
    * sends TX to sidechain as admin. withdrawer doesnt pay TX fee
    *
-   * @param withdrawerPrivateKey
-   * @param to
    * @param amount amout in wei or 0 to withdraw everything
-   * @return
-   * @throws Exception
    */
   public EthereumTransactionReceipt withdrawTokensForMember(
-      String withdrawerPrivateKey, String to, BigInteger amount) throws Exception {
+      final String withdrawerPrivateKey, final String to, final BigInteger amount)
+      throws Exception {
     return withdrawTokensForMember(Credentials.create(withdrawerPrivateKey), to, amount);
   }
 
   public EthereumTransactionReceipt withdrawAllTokensForMember(
-      String withdrawerPrivateKey, String to) throws Exception {
+      final String withdrawerPrivateKey, final String to) throws Exception {
     return withdrawTokensForMember(Credentials.create(withdrawerPrivateKey), to, BigInteger.ZERO);
   }
 
   // amount == 0 means withdrawAll
   protected EthereumTransactionReceipt withdrawTokensForMember(
-      Credentials member, String to, BigInteger amount) throws Exception {
+      final Credentials member, final String to, final BigInteger amount) throws Exception {
     // 0 is allowed in this protected method
     checkRange(amount, BigInteger.ZERO, MAX_UINT256);
     byte[] req = createWithdrawRequest(member.getAddress(), to, amount);
@@ -203,17 +195,9 @@ public class DataUnion {
     }
   }
 
-  /**
-   * sends TX to sidechain as admin. withdrawer doesnt pay TX fee
-   *
-   * @param from
-   * @param to
-   * @param signedWithdrawalRequest
-   * @return
-   * @throws Exception
-   */
+  /** Sends TX to sidechain as admin. withdrawer doesnt pay TX fee */
   public EthereumTransactionReceipt withdrawAllTokensForMember(
-      String from, String to, byte[] signedWithdrawalRequest) throws Exception {
+      final String from, final String to, final byte[] signedWithdrawalRequest) throws Exception {
     return new EthereumTransactionReceipt(
         sidechain
             .withdrawAllToSigned(
@@ -224,18 +208,13 @@ public class DataUnion {
             .send());
   }
 
-  /**
-   * sends TX to sidechain as admin. withdrawer doesnt pay TX fee
-   *
-   * @param from
-   * @param to
-   * @param signedWithdrawalRequest
-   * @param amount
-   * @return
-   * @throws Exception
-   */
+  /** Sends TX to sidechain as admin. withdrawer doesnt pay TX fee */
   public EthereumTransactionReceipt withdrawTokensForMember(
-      String from, String to, byte[] signedWithdrawalRequest, BigInteger amount) throws Exception {
+      final String from,
+      final String to,
+      final byte[] signedWithdrawalRequest,
+      final BigInteger amount)
+      throws Exception {
     return new EthereumTransactionReceipt(
         sidechain
             .withdrawToSigned(
@@ -271,25 +250,25 @@ public class DataUnion {
     return sidechain.joinPartAgentCount().send().getValue();
   }
 
-  public BigInteger getEarnings(String member) throws Exception {
+  public BigInteger getEarnings(final String member) throws Exception {
     return sidechain.getEarnings(new Address(member)).send().getValue();
   }
 
-  public BigInteger getWithdrawn(String member) throws Exception {
+  public BigInteger getWithdrawn(final String member) throws Exception {
     return sidechain.getWithdrawn(new Address(member)).send().getValue();
   }
 
-  public BigInteger getWithdrawableEarnings(String member) throws Exception {
+  public BigInteger getWithdrawableEarnings(final String member) throws Exception {
     return sidechain.getWithdrawableEarnings(new Address(member)).send().getValue();
   }
 
   // create unsigned blob. must be signed to submit
-  protected byte[] createWithdrawAllRequest(String from, String to) throws Exception {
+  protected byte[] createWithdrawAllRequest(final String from, final String to) throws Exception {
     return createWithdrawRequest(from, to, BigInteger.ZERO);
   }
 
-  protected byte[] createWithdrawRequest(String from, String to, BigInteger amount)
-      throws Exception {
+  protected byte[] createWithdrawRequest(
+      final String from, final String to, final BigInteger amount) throws Exception {
     Uint256 withdrawn = sidechain.getWithdrawn(new Address(from)).send();
     // TypeEncode doesnt expose a non-padding encode() :(
     String messageHex =
@@ -300,12 +279,12 @@ public class DataUnion {
     return Numeric.hexStringToByteArray(messageHex);
   }
 
-  public boolean isMemberActive(String member) throws Exception {
+  public boolean isMemberActive(final String member) throws Exception {
     return ActiveStatus.ACTIVE.ordinal()
         == sidechain.memberData(new Address(member)).send().component1().getValue().longValue();
   }
 
-  public boolean isMemberInactive(String member) throws Exception {
+  public boolean isMemberInactive(final String member) throws Exception {
     return ActiveStatus.INACTIVE.ordinal()
         == sidechain.memberData(new Address(member)).send().component1().getValue().longValue();
   }
