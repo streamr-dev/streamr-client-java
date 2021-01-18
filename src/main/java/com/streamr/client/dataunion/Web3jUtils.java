@@ -71,7 +71,10 @@ final class Web3jUtils {
     }
 
     Erc20BalanceChanged(
-        final BigInteger initialBalance, final String tokenAddress, final String balanceAddress, final Web3j connector) {
+        final BigInteger initialBalance,
+        final String tokenAddress,
+        final String balanceAddress,
+        final Web3j connector) {
       this.initialBalance = initialBalance;
       this.tokenAddress = tokenAddress;
       this.balanceAddress = balanceAddress;
@@ -109,11 +112,13 @@ final class Web3jUtils {
   }
 
   static String waitForCodeAtAddress(
-      final String address, final Web3j connector, final long sleeptime, final long timeout) throws Exception {
+      final String address, final Web3j connector, final long sleeptime, final long timeout)
+      throws Exception {
     return (String) waitForCondition(new CodePresent(address, connector), sleeptime, timeout);
   }
 
-  static Boolean waitForTx(final Web3j web3j, final String txhash, final long sleeptime, final long timeout)
+  static Boolean waitForTx(
+      final Web3j web3j, final String txhash, final long sleeptime, final long timeout)
       throws Exception {
     Condition txfinish =
         new Condition() {
@@ -166,7 +171,8 @@ final class Web3jUtils {
     return (BigInteger) ret.iterator().next().getValue();
   }
 
-  static BigInteger erc20Balance(final String contract, final String balanceAddress, final Web3j connection)
+  static BigInteger erc20Balance(
+      final String contract, final String balanceAddress, final Web3j connection)
       throws ClassNotFoundException, NoSuchMethodException, InvocationTargetException,
           InstantiationException, IllegalAccessException, IOException {
     Function fn =
