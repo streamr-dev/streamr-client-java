@@ -99,7 +99,7 @@ class DataUnionClientTest {
   final long timeout = 600000;
 
   @Test
-  @Order(1)
+  @Order(10)
   void createDataUnion() throws Exception {
     du =
         client.deployDataUnion(
@@ -113,7 +113,7 @@ class DataUnionClientTest {
   }
 
   @Test
-  @Order(2)
+  @Order(20)
   void addMembersToDataUnion() throws Exception {
     final EthereumTransactionReceipt tr =
         du.addMembers(member1Wallet.getAddress(), member2Wallet.getAddress());
@@ -127,7 +127,7 @@ class DataUnionClientTest {
   final BigInteger testSendAmount = BigInteger.valueOf(1000000000000000000l);
 
   @Test
-  @Order(3)
+  @Order(30)
   void testTransferAndSidechainStats() throws Exception {
     final BigInteger sidechainEarnings = du.totalEarnings();
     final Address address = new Address(du.getMainnetContractAddress());
@@ -142,7 +142,7 @@ class DataUnionClientTest {
   }
 
   @Test
-  @Order(4)
+  @Order(40)
   void withdrawMemberAsAdmin() throws Exception {
     final String recipient = member2Wallet.getAddress();
     final BigInteger recipientBal =
@@ -158,7 +158,7 @@ class DataUnionClientTest {
   }
 
   @Test
-  @Order(5)
+  @Order(50)
   void signedWithdrawalForAnother() throws Exception {
     final Address member1Address = new Address(member1Wallet.getAddress());
     final BigInteger recipientBal = mainnetToken.balanceOf(member1Address).send().getValue();
