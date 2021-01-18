@@ -79,15 +79,6 @@ class DataUnionClientTest {
     opts.setDataUnionMainnetFactoryAddress(DEV_MAINCHAIN_FACTORY);
     opts.setDataUnionSidechainFactoryAddress(DEV_SIDECHAIN_FACTORY);
     streamrClient = new StreamrClient(opts);
-    final String adminPk = TEST_RPC_KEYS[0];
-    client = streamrClient.dataUnionClient(adminPk, adminPk);
-    du = client.dataUnionFromName(DATA_UNION_NAME);
-    // public static IERC20 load(String contractAddress, Web3j web3j, Credentials credentials,
-    // ContractGasProvider contractGasProvider)
-    Web3j mainnet = Web3j.build(new HttpService(DEV_MAINCHAIN_RPC));
-    mainnetToken =
-        IERC20.load(
-            client.mainnetTokenAddress(), mainnet, adminWallet, new EstimatedGasProvider(mainnet));
   }
 
   @AfterAll
@@ -95,6 +86,18 @@ class DataUnionClientTest {
     if (streamrClient != null) {
       streamrClient.disconnect();
     }
+  }
+
+  @Test
+  @Order(1)
+  void createDataUnionClient() throws Exception {
+    final String adminPk = TEST_RPC_KEYS[0];
+    client = streamrClient.dataUnionClient(adminPk, adminPk);
+    du = client.dataUnionFromName(DATA_UNION_NAME);
+    Web3j mainnet = Web3j.build(new HttpService(DEV_MAINCHAIN_RPC));
+    mainnetToken =
+        IERC20.load(
+            client.mainnetTokenAddress(), mainnet, adminWallet, new EstimatedGasProvider(mainnet));
   }
 
   private final long pollInterval = 10000;
