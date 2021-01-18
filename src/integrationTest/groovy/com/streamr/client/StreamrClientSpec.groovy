@@ -1,7 +1,5 @@
 package com.streamr.client
 
-import com.streamr.client.authentication.AuthenticationMethod
-import com.streamr.client.authentication.EthereumAuthenticationMethod
 import com.streamr.client.options.EncryptionOptions
 import com.streamr.client.options.ResendLastOption
 import com.streamr.client.options.ResendOption
@@ -19,6 +17,8 @@ import com.streamr.client.protocol.control_layer.UnicastMessage
 import com.streamr.client.protocol.message_layer.MessageID
 import com.streamr.client.protocol.message_layer.MessageRef
 import com.streamr.client.protocol.message_layer.StreamMessage
+import com.streamr.client.rest.AuthenticationMethod
+import com.streamr.client.rest.EthereumAuthenticationMethod
 import com.streamr.client.rest.Stream
 import com.streamr.client.subs.Subscription
 import com.streamr.client.testing.TestWebSocketServer

@@ -1,4 +1,4 @@
-package com.streamr.client.authentication;
+package com.streamr.client.rest;
 
 import com.squareup.moshi.JsonAdapter;
 import com.streamr.client.utils.HttpUtils;

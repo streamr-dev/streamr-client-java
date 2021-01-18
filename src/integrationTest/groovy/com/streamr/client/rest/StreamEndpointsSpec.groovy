@@ -1,7 +1,6 @@
 package com.streamr.client.rest
 
 import com.streamr.client.StreamrClient
-import com.streamr.client.authentication.EthereumAuthenticationMethod
 import com.streamr.client.exceptions.AmbiguousResultsException
 import com.streamr.client.exceptions.AuthenticationException
 import com.streamr.client.exceptions.PermissionDeniedException
