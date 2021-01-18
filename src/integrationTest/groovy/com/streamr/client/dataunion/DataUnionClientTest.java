@@ -32,11 +32,11 @@ import org.web3j.protocol.http.HttpService;
 @TestMethodOrder(MethodOrderer.OrderAnnotation.class)
 @TestInstance(TestInstance.Lifecycle.PER_CLASS)
 class DataUnionClientTest {
-  static final String DEV_MAINCHAIN_RPC = "http://localhost:8545";
-  static final String DEV_SIDECHAIN_RPC = "http://localhost:8546";
-  static final String DEV_SIDECHAIN_FACTORY = "0x4081B7e107E59af8E82756F96C751174590989FE";
-  static final String DEV_MAINCHAIN_FACTORY = "0x5E959e5d5F3813bE5c6CeA996a286F734cc9593b";
-  static final String[] TEST_RPC_KEYS =
+  private static final String DEV_MAINCHAIN_RPC = "http://localhost:8545";
+  private static final String DEV_SIDECHAIN_RPC = "http://localhost:8546";
+  private static final String DEV_SIDECHAIN_FACTORY = "0x4081B7e107E59af8E82756F96C751174590989FE";
+  private static final String DEV_MAINCHAIN_FACTORY = "0x5E959e5d5F3813bE5c6CeA996a286F734cc9593b";
+  private static final String[] TEST_RPC_KEYS =
       new String[] {
         "0x5e98cce00cff5dea6b454889f359a4ec06b9fa6b88e9d69b86de8e1c81887da0",
         "0xe5af7834455b7239881b85be89d905d6881dcb4751063897f12be1b0dd546bdb",
@@ -51,15 +51,15 @@ class DataUnionClientTest {
         "0x2c326a4c139eced39709b235fffa1fde7c252f3f7b505103f7b251586c35d543",
         */
       };
-  static final String DATA_UNION_NAME = "test" + System.currentTimeMillis();
+  private static final String DATA_UNION_NAME = "test" + System.currentTimeMillis();
 
-  StreamrClient streamrClient;
-  DataUnionClient client;
-  Credentials adminWallet;
-  Credentials member1Wallet;
-  Credentials member2Wallet;
-  DataUnion du;
-  IERC20 mainnetToken;
+  private StreamrClient streamrClient;
+  private DataUnionClient client;
+  private Credentials adminWallet;
+  private Credentials member1Wallet;
+  private Credentials member2Wallet;
+  private DataUnion du;
+  private IERC20 mainnetToken;
 
   @BeforeAll
   void setup() throws Exception {
@@ -97,8 +97,8 @@ class DataUnionClientTest {
     }
   }
 
-  final long pollInterval = 10000;
-  final long timeout = 600000;
+  private final long pollInterval = 10000;
+  private final long timeout = 600000;
 
   @Test
   @Order(10)
