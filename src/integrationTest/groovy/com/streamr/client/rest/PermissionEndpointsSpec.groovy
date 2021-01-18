@@ -1,8 +1,8 @@
 package com.streamr.client.rest
 
 import com.streamr.client.StreamrClient
-import com.streamr.client.testing.TestingClient
 import com.streamr.client.testing.TestingKeys
+import com.streamr.client.testing.TestingStreamrClient
 import com.streamr.client.testing.TestingStreams
 import spock.lang.Specification
 
@@ -12,8 +12,8 @@ class PermissionEndpointsSpec extends Specification {
     private StreamrClient grantee
 
     void setup() {
-        grantor = TestingClient.createClientWithPrivateKey(TestingKeys.generatePrivateKey())
-        grantee = TestingClient.createClientWithPrivateKey(TestingKeys.generatePrivateKey())
+        grantor = TestingStreamrClient.createClientWithPrivateKey(TestingKeys.generatePrivateKey())
+        grantee = TestingStreamrClient.createClientWithPrivateKey(TestingKeys.generatePrivateKey())
     }
 
     void cleanup() {

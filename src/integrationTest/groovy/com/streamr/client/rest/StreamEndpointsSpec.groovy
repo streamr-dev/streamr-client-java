@@ -6,8 +6,8 @@ import com.streamr.client.exceptions.AmbiguousResultsException
 import com.streamr.client.exceptions.AuthenticationException
 import com.streamr.client.exceptions.PermissionDeniedException
 import com.streamr.client.exceptions.ResourceNotFoundException
-import com.streamr.client.testing.TestingClient
 import com.streamr.client.testing.TestingKeys
+import com.streamr.client.testing.TestingStreamrClient
 import com.streamr.client.testing.TestingStreams
 import spock.lang.Specification
 
@@ -16,7 +16,7 @@ class StreamEndpointsSpec extends Specification {
     private StreamrClient client
 
     void setup() {
-        client = TestingClient.createClientWithPrivateKey(TestingKeys.generatePrivateKey())
+        client = TestingStreamrClient.createClientWithPrivateKey(TestingKeys.generatePrivateKey())
     }
 
     void cleanup() {
@@ -132,7 +132,7 @@ class StreamEndpointsSpec extends Specification {
                 .withName(TestingStreams.generateName())
                 .withDescription("This stream was created from an integration test")
                 .createStream()
-        StreamrClient unauthenticatedClient = TestingClient.createUnauthenticatedClient()
+        StreamrClient unauthenticatedClient = TestingStreamrClient.createUnauthenticatedClient()
 
         when:
         unauthenticatedClient.createStream(proto)
@@ -157,7 +157,7 @@ class StreamEndpointsSpec extends Specification {
                 .withName(TestingStreams.generateName())
                 .withDescription("This stream was created from an integration test")
                 .createStream()
-        StreamrClient unauthenticatedClient = TestingClient.createUnauthenticatedClient()
+        StreamrClient unauthenticatedClient = TestingStreamrClient.createUnauthenticatedClient()
 
         when:
         Stream createResult = client.createStream(proto)
