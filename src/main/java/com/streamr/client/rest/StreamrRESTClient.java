@@ -2,9 +2,6 @@ package com.streamr.client.rest;
 
 import com.squareup.moshi.JsonAdapter;
 import com.squareup.moshi.Types;
-import com.streamr.client.exceptions.AmbiguousResultsException;
-import com.streamr.client.exceptions.AuthenticationException;
-import com.streamr.client.exceptions.ResourceNotFoundException;
 import com.streamr.client.options.StreamrClientOptions;
 import com.streamr.client.utils.Address;
 import com.streamr.client.utils.HttpUtils;

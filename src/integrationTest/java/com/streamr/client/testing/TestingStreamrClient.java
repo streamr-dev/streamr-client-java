@@ -2,7 +2,7 @@ package com.streamr.client.testing;
 
 import com.streamr.client.MessageHandler;
 import com.streamr.client.StreamrClient;
-import com.streamr.client.exceptions.ResourceNotFoundException;
+import com.streamr.client.rest.ResourceNotFoundException;
 import com.streamr.client.options.EncryptionOptions;
 import com.streamr.client.options.ResendOption;
 import com.streamr.client.options.SigningOptions;
