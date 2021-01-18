@@ -11,7 +11,7 @@ updates:
       timezone: "Europe/Helsinki"
     reviewers:
       - "kare"
-  - package-manager: "java:gradle"
+  - package-ecosystem: "gradle"
     directory: "/"
     schedule:
       interval: "daily"
