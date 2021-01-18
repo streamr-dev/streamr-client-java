@@ -24,7 +24,7 @@ public class TestingStreamrClient extends StreamrClient {
   List<StreamMessage> receivedStreamMessages = new ArrayList<>();
   Map<String, Stream> mockStreams = new LinkedHashMap<>();
 
-  public TestingStreamrClient(StreamrClientOptions options) {
+  public TestingStreamrClient(final StreamrClientOptions options) {
     super(options);
   }
 
@@ -38,11 +38,11 @@ public class TestingStreamrClient extends StreamrClient {
             TestingMeta.REST_URL));
   }
 
-  public static StreamrClient createClientWithPrivateKey(String privateKey) {
+  public static StreamrClient createClientWithPrivateKey(final String privateKey) {
     return new StreamrClient(createOptionsWithPrivateKey(privateKey));
   }
 
-  private static StreamrClientOptions createOptionsWithPrivateKey(String privateKey) {
+  private static StreamrClientOptions createOptionsWithPrivateKey(final String privateKey) {
     return new StreamrClientOptions(
         new EthereumAuthenticationMethod(privateKey),
         SigningOptions.getDefault(),
