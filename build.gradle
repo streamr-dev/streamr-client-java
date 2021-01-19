@@ -153,14 +153,6 @@ task fatJar(type: Jar) {
 		configurations.compileClasspath.findAll { it.name.endsWith('jar') }.collect { zipTree(it) }
 	}
 }
-repositories {
-	jcenter()
-	// Ethereum Repository
-	maven {
-		url "https://dl.bintray.com/ethereum/maven/"
-	}
-	gradlePluginPortal()
-}
 ext {
 	slf4jApiVersion = '1.7.30'
 	okHttpVersion = '4.9.0'
