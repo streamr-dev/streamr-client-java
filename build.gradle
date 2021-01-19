@@ -164,7 +164,7 @@ ext {
 	okIoVersion = '2.9.0'
 	commonsLangVersion = '3.11'
 	javaWebSocketVersion = '1.5.1'
-	cache2kVersion = '2.0.0.Final'
+	cache2kVersion = '1.6.0.Final'
 	web3jVersion = '5.0.0'
 	findbugsVersion = '3.0.2'
 	jetbrainsVersion = '17.0.0'
