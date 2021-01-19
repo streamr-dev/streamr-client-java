@@ -13,14 +13,16 @@ jobs:
           fetch-depth: 0
       - uses: actions/setup-java@v1.4.3
         with:
-          java-version: 1.8
+          java-version: 9
       - uses: actions/cache@v2.1.3
         with:
           path: ~/.gradle/caches
           key: ${{ runner.os }}-gradle-${{ hashFiles('build.gradle') }}
           restore-keys: ${{ runner.os }}-gradle
       - name: Check source format
-        run: make -f Makefile.ci fmt
+        run: |
+          java -version
+          make -f Makefile.ci fmt
       - name: Build
         run: make -f Makefile.ci build
       - name: Unit Test
@@ -32,7 +34,7 @@ jobs:
       - uses: actions/checkout@v2.3.4
       - uses: actions/setup-java@v1.4.3
         with:
-          java-version: 1.8
+          java-version: 9
       - uses: actions/cache@v2.1.3
         with:
           path: ~/.gradle/caches
