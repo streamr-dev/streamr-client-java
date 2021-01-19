@@ -54,6 +54,11 @@ tasks.withType(Test) {
 				TestLogEvent.FAILED,
 		]
 		exceptionFormat TestExceptionFormat.SHORT
+		if (System.getenv("CI") == null) {
+			exceptionFormat TestExceptionFormat.FULL
+			events += TestLogEvent.STARTED
+			events += TestLogEvent.PASSED
+		}
 		info {
 			events = [
 					TestLogEvent.PASSED,
