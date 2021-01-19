@@ -30,9 +30,7 @@ jobs:
           key: ${{ runner.os }}-gradle-${{ hashFiles('build.gradle') }}
           restore-keys: ${{ runner.os }}-gradle
       - name: Check source format
-        run: |
-          java -version
-          make -f Makefile.ci fmt
+        run: make -f Makefile.ci fmt
       - name: Build
         run: make -f Makefile.ci build
       - name: Unit Test
