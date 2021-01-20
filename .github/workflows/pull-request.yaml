@@ -4,7 +4,7 @@ on:
   pull_request:
 
 env:
-  JAVA_VERSION: '1.8.275'
+  JAVA_VERSION: '1.8.0.275'
 
 jobs:
   build:
