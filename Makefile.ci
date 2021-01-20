@@ -4,7 +4,7 @@ PATH := .:$(PATH)
 .SHELLFLAGS := -eu -o pipefail -c # run '/bin/bash ... -c /bin/cmd'
 .DEFAULT_GOAL := build
 
-gradle := gradlew --rerun-tasks
+gradle := gradlew --no-daemon
 
 .PHONY: build
 build:
