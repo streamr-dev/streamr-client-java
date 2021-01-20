@@ -5,7 +5,7 @@ on:
 
 env:
   JAVA_VERSION: '1.8'
-  JDK_FILE: 'zulu8.50.0.51-ca-jdk8.0.275-linux_x64.tar.gz'
+  JDK_FILE: 'zulu8.50.0.51-ca-jdk8.0.275-linux_x64.zip'
   JDK_URL: 'https://static.azul.com/zulu/bin'
 
 jobs:
