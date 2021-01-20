@@ -4,8 +4,8 @@ on:
   pull_request:
 
 env:
-  SDKMAN_JAVA_VERSION: '9.0.7-zulu'
-  JAVA_VERSION: '9'
+  SDKMAN_JAVA_VERSION: '8.0.275-zulu'
+  JAVA_VERSION: '1.8'
 
 jobs:
   build:
