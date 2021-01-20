@@ -81,11 +81,8 @@ tasks.withType(Test) {
 	}
 }
 java {
-	toolchain {
-		languageVersion = JavaLanguageVersion.of(8)
-		vendor = JvmVendorSpec.AZUL
-		implementation = JvmImplementation.VENDOR_SPECIFIC
-	}
+	sourceCompatibility(JavaVersion.VERSION_1_8)
+	targetCompatibility(JavaVersion.VERSION_1_8)
 	withJavadocJar()
 	withSourcesJar()
 }
