@@ -56,7 +56,6 @@ tasks.withType(Test) {
 		exceptionFormat TestExceptionFormat.SHORT
 		if (System.getenv("CI") == null) {
 			exceptionFormat TestExceptionFormat.FULL
-			events += TestLogEvent.STARTED
 			events += TestLogEvent.PASSED
 		}
 		info {
