@@ -5,7 +5,7 @@ on:
 
 env:
   # https://static.azul.com/zulu/bin/
-  JAVA_VERSION: 'zulu8.50.0.51-ca-jdk8.0.275'
+  JAVA_VERSION: 'zulu8.50.0.51-ca-jdk8.0.275-linux_x64.zip'
 
 jobs:
   build:
