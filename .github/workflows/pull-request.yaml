@@ -4,8 +4,8 @@ on:
   pull_request:
 
 env:
-  # https://www.azul.com/downloads/zulu-community/?version=java-8-lts&os=linux&architecture=x86-64-bit&package=jdk
-  JAVA_VERSION: '8.50.0.51'
+  # https://static.azul.com/zulu/bin/
+  JAVA_VERSION: 'zulu8.50.0.51-ca-jdk8.0.275'
 
 jobs:
   build:
