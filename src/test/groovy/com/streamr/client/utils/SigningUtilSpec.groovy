@@ -1,5 +1,6 @@
 package com.streamr.client.utils
 
+import com.streamr.client.protocol.message_layer.Json
 import com.streamr.client.protocol.message_layer.MessageID
 import com.streamr.client.protocol.message_layer.MessageRef
 import com.streamr.client.protocol.message_layer.StreamMessage
