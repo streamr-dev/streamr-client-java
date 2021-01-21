@@ -1,5 +1,8 @@
 package com.streamr.client.protocol.message_layer;
 
+import com.squareup.moshi.JsonAdapter;
+import com.squareup.moshi.Moshi;
+import com.squareup.moshi.Types;
 import com.streamr.client.protocol.common.MessageRef;
 import com.streamr.client.protocol.common.UnsupportedMessageException;
 import com.streamr.client.utils.Address;
@@ -12,6 +15,12 @@ import java.util.Objects;
 
 public final class StreamMessage implements ITimestamped {
   public static final int LATEST_VERSION = 32;
+  private final JsonAdapter<Map<String, Object>> mapStringObjectAdapter =
+      new Moshi.Builder()
+          .add(Date.class, new StringOrMillisDateJsonAdapter().nullSafe())
+          .build()
+          .<Map<String, Object>>adapter(
+              Types.newParameterizedType(Map.class, String.class, Object.class));
 
   public enum MessageType {
     STREAM_MESSAGE((byte) 27),
@@ -228,7 +237,7 @@ public final class StreamMessage implements ITimestamped {
       }
       if (contentType == ContentType.JSON) {
         try {
-          this.parsedContent = Json.mapAdapter.fromJson(serializedContent);
+          this.parsedContent = mapStringObjectAdapter.fromJson(serializedContent);
         } catch (IOException e) {
           throw new RuntimeException("Failed to parse message content: " + serializedContent);
         }

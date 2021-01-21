@@ -1,7 +1,8 @@
-package com.streamr.client.protocol.message_layer;
+package com.streamr.client.rest;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 
+import com.streamr.client.rest.InstantJsonAdapter;
 import java.time.Instant;
 import java.util.ArrayList;
 import java.util.List;

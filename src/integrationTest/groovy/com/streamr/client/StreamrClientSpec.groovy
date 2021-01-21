@@ -5,6 +5,7 @@ import com.streamr.client.options.ResendLastOption
 import com.streamr.client.options.ResendOption
 import com.streamr.client.options.SigningOptions
 import com.streamr.client.options.StreamrClientOptions
+import com.streamr.client.protocol.common.MessageRef
 import com.streamr.client.protocol.control_layer.BroadcastMessage
 import com.streamr.client.protocol.control_layer.ErrorResponse
 import com.streamr.client.protocol.control_layer.PublishRequest
@@ -14,15 +15,14 @@ import com.streamr.client.protocol.control_layer.ResendResponseResent
 import com.streamr.client.protocol.control_layer.SubscribeRequest
 import com.streamr.client.protocol.control_layer.SubscribeResponse
 import com.streamr.client.protocol.control_layer.UnicastMessage
-import com.streamr.client.protocol.message_layer.Json
 import com.streamr.client.protocol.message_layer.MessageId
-import com.streamr.client.protocol.common.MessageRef
 import com.streamr.client.protocol.message_layer.StreamMessage
 import com.streamr.client.rest.AuthenticationMethod
 import com.streamr.client.rest.EthereumAuthenticationMethod
 import com.streamr.client.rest.Stream
 import com.streamr.client.subs.Subscription
 import com.streamr.client.testing.TestWebSocketServer
+import com.streamr.client.testing.TestingJson
 import com.streamr.client.testing.TestingStreamrClient
 import com.streamr.client.utils.Address
 import com.streamr.client.utils.EncryptionUtil
@@ -118,7 +118,7 @@ class StreamrClientSpec extends Specification {
         MessageId msgId = new MessageId(streamId, 0, timestamp, sequenceNumber, new Address("publisherId"), "msgChainId")
         MessageRef prev = prevTimestamp == null ? null : new MessageRef(prevTimestamp, prevSequenceNumber)
         def map = [hello: "world"]
-        return new StreamMessage.Builder().withMessageId(msgId).withPreviousMessageRef(prev).withSerializedContent(Json.mapAdapter.toJson(map)).createStreamMessage()
+        return new StreamMessage.Builder().withMessageId(msgId).withPreviousMessageRef(prev).withSerializedContent(TestingJson.toJson(map)).createStreamMessage()
     }
 
     void "subscribe() sends SubscribeRequest and 1 ResendLastRequest after SubscribeResponse if answer received"() {

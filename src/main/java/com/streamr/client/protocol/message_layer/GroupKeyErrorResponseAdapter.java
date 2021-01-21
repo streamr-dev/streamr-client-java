@@ -21,7 +21,7 @@ public class GroupKeyErrorResponseAdapter
     String streamId = reader.nextString();
     String errorCode = reader.nextString();
     String errorMessage = reader.nextString();
-    List<String> groupKeyIds = Json.listAdapter.fromJson(reader);
+    List<String> groupKeyIds = listOfStrings.fromJson(reader);
     reader.endArray();
 
     return new GroupKeyErrorResponse(requestId, streamId, errorCode, errorMessage, groupKeyIds);
@@ -35,7 +35,7 @@ public class GroupKeyErrorResponseAdapter
     writer.value(message.getStreamId());
     writer.value(message.getCode());
     writer.value(message.getMessage());
-    Json.listAdapter.toJson(writer, message.getGroupKeyIds());
+    listOfStrings.toJson(writer, message.getGroupKeyIds());
     writer.endArray();
   }
 }

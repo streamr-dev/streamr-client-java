@@ -1,6 +1,7 @@
 package com.streamr.client.protocol.message_layer
 
 import com.streamr.client.protocol.common.MessageRef
+import com.streamr.client.testing.TestingJson
 import com.streamr.client.utils.Address
 import spock.lang.Specification
 
@@ -35,6 +36,6 @@ class StreamrSpecification extends Specification {
     }
 
     protected StreamMessage createMessage(long timestamp = 0, long sequenceNumber = 0, Long previousTimestamp = null, Long previousSequenceNumber = null, Address publisherId = new Address("publisherId"), Map content = [:], String msgChainId = "msgChainId") {
-        return new StreamMessage.Builder().withMessageId(new MessageId("streamId", 0, timestamp, sequenceNumber, publisherId, msgChainId)).withPreviousMessageRef((previousTimestamp != null ? new MessageRef(previousTimestamp, previousSequenceNumber ?: 0) : null)).withSerializedContent(Json.mapAdapter.toJson(content)).createStreamMessage()
+        return new StreamMessage.Builder().withMessageId(new MessageId("streamId", 0, timestamp, sequenceNumber, publisherId, msgChainId)).withPreviousMessageRef((previousTimestamp != null ? new MessageRef(previousTimestamp, previousSequenceNumber ?: 0) : null)).withSerializedContent(TestingJson.toJson(content)).createStreamMessage()
     }
 }

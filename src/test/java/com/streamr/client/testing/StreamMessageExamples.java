@@ -1,10 +1,13 @@
 package com.streamr.client.testing;
 
+import com.squareup.moshi.Moshi;
+import com.squareup.moshi.Types;
 import com.streamr.client.protocol.common.MessageRef;
-import com.streamr.client.protocol.message_layer.Json;
 import com.streamr.client.protocol.message_layer.MessageId;
 import com.streamr.client.protocol.message_layer.StreamMessage;
+import com.streamr.client.protocol.message_layer.StringOrMillisDateJsonAdapter;
 import com.streamr.client.utils.Address;
+import java.util.Date;
 import java.util.HashMap;
 import java.util.Map;
 
@@ -19,7 +22,12 @@ public class StreamMessageExamples {
 
       final Map<String, Object> content = new HashMap<>();
       content.put("hello", "world");
-      final String serializedContent = Json.mapAdapter.toJson(content);
+      final String serializedContent =
+          new Moshi.Builder()
+              .add(Date.class, new StringOrMillisDateJsonAdapter().nullSafe())
+              .build()
+              .adapter(Types.newParameterizedType(Map.class, String.class, Object.class))
+              .toJson(content);
 
       helloWorld =
           new StreamMessage.Builder()

@@ -1,6 +1,7 @@
 package com.streamr.client.protocol.message_layer
 
 import com.streamr.client.protocol.common.MessageRef
+import com.streamr.client.testing.TestingJson
 import com.streamr.client.utils.EncryptedGroupKey
 
 class StreamMessageV32AdapterSpec extends StreamrSpecification {
@@ -13,7 +14,7 @@ class StreamMessageV32AdapterSpec extends StreamrSpecification {
 		adapter = new StreamMessageAdapter()
 
 		// Message with minimal fields
-		msg = new StreamMessage.Builder().withMessageId(new MessageId("streamId", 0, 123L, 0, publisherId, "msgChainId")).withPreviousMessageRef(null).withSerializedContent(Json.mapAdapter.toJson([:])).createStreamMessage()
+		msg = new StreamMessage.Builder().withMessageId(new MessageId("streamId", 0, 123L, 0, publisherId, "msgChainId")).withPreviousMessageRef(null).withSerializedContent(TestingJson.toJson([:])).createStreamMessage()
 	}
 
 	void "serialize minimal message"() {

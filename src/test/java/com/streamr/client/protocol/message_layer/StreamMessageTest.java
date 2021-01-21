@@ -8,7 +8,7 @@ class StreamMessageTest {
   @Test
   void equalsContract() {
     EqualsVerifier.forClass(StreamMessage.class)
-        .withIgnoredFields("parsedContent")
+        .withIgnoredFields("parsedContent", "mapStringObjectAdapter")
         .suppress(Warning.NULL_FIELDS)
         .verify();
   }

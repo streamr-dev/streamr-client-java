@@ -1,5 +1,8 @@
 package com.streamr.client.utils;
 
+import com.squareup.moshi.JsonAdapter;
+import com.squareup.moshi.Moshi;
+import com.squareup.moshi.Types;
 import com.streamr.client.exceptions.InvalidGroupKeyException;
 import com.streamr.client.exceptions.InvalidGroupKeyRequestException;
 import com.streamr.client.exceptions.InvalidGroupKeyResponseException;
@@ -9,10 +12,10 @@ import com.streamr.client.protocol.message_layer.GroupKeyAnnounce;
 import com.streamr.client.protocol.message_layer.GroupKeyErrorResponse;
 import com.streamr.client.protocol.message_layer.GroupKeyRequest;
 import com.streamr.client.protocol.message_layer.GroupKeyResponse;
-import com.streamr.client.protocol.message_layer.Json;
 import com.streamr.client.protocol.message_layer.MalformedMessageException;
 import com.streamr.client.protocol.message_layer.MessageId;
 import com.streamr.client.protocol.message_layer.StreamMessage;
+import com.streamr.client.protocol.message_layer.StringOrMillisDateJsonAdapter;
 import com.streamr.client.rest.Stream;
 import java.nio.ByteBuffer;
 import java.nio.charset.StandardCharsets;
@@ -43,8 +46,11 @@ public class MessageCreationUtil {
   private final SigningUtil signingUtil;
 
   private final Map<String, MessageRef> refsPerStreamAndPartition = new HashMap<>();
-
   private final Map<String, Integer> cachedHashes = new HashMap<>();
+  private final JsonAdapter<Map<String, Object>> mapOfStringAndObjectAdapter = new Moshi.Builder()
+      .add(Date.class, new StringOrMillisDateJsonAdapter().nullSafe())
+      .build()
+      .adapter(Types.newParameterizedType(Map.class, String.class, Object.class));
 
   public MessageCreationUtil(Address publisherId, SigningUtil signingUtil) {
     this.publisherId = publisherId;
@@ -77,7 +83,7 @@ public class MessageCreationUtil {
         new StreamMessage.Builder()
             .withMessageId(pair.getLeft())
             .withPreviousMessageRef(pair.getRight())
-            .withSerializedContent(Json.mapAdapter.toJson(payload))
+            .withSerializedContent(mapOfStringAndObjectAdapter.toJson(payload))
             .createStreamMessage();
 
     // Encrypt content if the GroupKey is provided

@@ -3,8 +3,11 @@ package com.streamr.client.rest;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 
 import com.squareup.moshi.JsonReader;
+import com.squareup.moshi.Moshi;
+import com.streamr.client.protocol.message_layer.StringOrMillisDateJsonAdapter;
 import java.io.IOException;
 import java.nio.charset.StandardCharsets;
+import java.util.Date;
 import nl.jqno.equalsverifier.EqualsVerifier;
 import okio.Buffer;
 import org.junit.jupiter.api.Test;
@@ -26,7 +29,12 @@ class StreamTest {
     String json =
         "{\"id\":\"7wa7APtlTq6EC5iTCBy6dw\",\"partitions\":1,\"name\":\"Public transport demo\",\"feed\":{\"id\":7,\"name\":\"API\",\"module\":147},\"config\":{\"topic\":\"7wa7APtlTq6EC5iTCBy6dw\",\"fields\":[{\"name\":\"veh\",\"type\":\"string\"},{\"name\":\"spd\",\"type\":\"number\"},{\"name\":\"hdg\",\"type\":\"number\"},{\"name\":\"lat\",\"type\":\"number\"},{\"name\":\"long\",\"type\":\"number\"},{\"name\":\"line\",\"type\":\"string\"}]},\"description\":\"Helsinki tram data by HSL\",\"uiChannel\":false,\"dateCreated\":\"2016-05-27T15:46:30Z\",\"lastUpdated\":\"2017-04-10T16:04:38Z\"}";
 
-    Stream s = StreamrRESTClient.streamJsonAdapter.fromJson(toReader(json));
+    Stream s =
+        new Moshi.Builder()
+            .add(Date.class, new StringOrMillisDateJsonAdapter().nullSafe())
+            .build()
+            .adapter(Stream.class)
+            .fromJson(toReader(json));
 
     assertEquals("7wa7APtlTq6EC5iTCBy6dw", s.getId());
     assertEquals("Public transport demo", s.getName());
