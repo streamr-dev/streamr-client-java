@@ -139,7 +139,7 @@ public class TestWebSocketServer extends WebSocketServer {
       try {
         Thread.sleep(100); // give time to the client to send the expected request
       } catch (InterruptedException e) {
-        e.printStackTrace();
+        Thread.currentThread().interrupt();
       }
     }
     if (receivedControlMessages.size() == checkedControlMessages.get()) {
