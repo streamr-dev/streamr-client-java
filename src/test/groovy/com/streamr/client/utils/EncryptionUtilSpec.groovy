@@ -4,7 +4,7 @@ import com.streamr.client.exceptions.InvalidGroupKeyException
 import com.streamr.client.exceptions.InvalidRSAKeyException
 import com.streamr.client.protocol.message_layer.Json
 import com.streamr.client.protocol.message_layer.MessageId
-import com.streamr.client.protocol.message_layer.MessageRef
+import com.streamr.client.protocol.common.MessageRef
 import com.streamr.client.protocol.message_layer.StreamMessage
 import com.streamr.client.protocol.message_layer.StreamrSpecification
 import java.nio.charset.StandardCharsets

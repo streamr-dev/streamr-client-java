@@ -2,7 +2,7 @@ package com.streamr.client.options;
 
 import com.streamr.client.protocol.control_layer.ControlMessage;
 import com.streamr.client.protocol.control_layer.ResendRangeRequest;
-import com.streamr.client.protocol.message_layer.MessageRef;
+import com.streamr.client.protocol.common.MessageRef;
 import com.streamr.client.utils.Address;
 
 import java.util.Date;

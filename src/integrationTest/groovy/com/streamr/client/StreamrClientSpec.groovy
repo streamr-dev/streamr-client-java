@@ -16,7 +16,7 @@ import com.streamr.client.protocol.control_layer.SubscribeResponse
 import com.streamr.client.protocol.control_layer.UnicastMessage
 import com.streamr.client.protocol.message_layer.Json
 import com.streamr.client.protocol.message_layer.MessageId
-import com.streamr.client.protocol.message_layer.MessageRef
+import com.streamr.client.protocol.common.MessageRef
 import com.streamr.client.protocol.message_layer.StreamMessage
 import com.streamr.client.rest.AuthenticationMethod
 import com.streamr.client.rest.EthereumAuthenticationMethod

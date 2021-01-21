@@ -4,7 +4,7 @@ import com.streamr.client.MessageHandler
 import com.streamr.client.exceptions.GapDetectedException
 import com.streamr.client.options.ResendLastOption
 import com.streamr.client.protocol.message_layer.StreamrSpecification
-import com.streamr.client.protocol.message_layer.MessageRef
+import com.streamr.client.protocol.common.MessageRef
 import com.streamr.client.protocol.message_layer.StreamMessage
 import com.streamr.client.utils.Address
 import com.streamr.client.utils.GroupKeyStore

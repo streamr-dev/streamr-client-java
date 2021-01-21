@@ -1,6 +1,6 @@
 package com.streamr.client.protocol.control_layer;
 
-import com.streamr.client.protocol.message_layer.MessageRef;
+import com.streamr.client.protocol.common.MessageRef;
 import com.streamr.client.utils.Address;
 
 public class ResendRangeRequest extends ControlMessage {

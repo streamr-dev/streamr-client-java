@@ -1,4 +1,4 @@
-package com.streamr.client.protocol.message_layer;
+package com.streamr.client.protocol.common;
 
 import java.util.Date;
 import java.util.Objects;

@@ -1,7 +1,7 @@
 package com.streamr.client.protocol.control_layer
 
 import com.streamr.client.protocol.message_layer.StreamrSpecification
-import com.streamr.client.protocol.message_layer.MessageRef
+import com.streamr.client.protocol.common.MessageRef
 
 class ResendRangeRequestAdapterSpec extends StreamrSpecification {
 

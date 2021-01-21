@@ -1,5 +1,7 @@
 package com.streamr.client.protocol.message_layer
 
+import com.streamr.client.protocol.common.MessageRef
+
 class StreamMessageV30AdapterSpec extends StreamrSpecification {
 	StreamMessageAdapter adapter
 	StreamMessage msg

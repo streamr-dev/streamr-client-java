@@ -4,6 +4,7 @@ import com.squareup.moshi.JsonAdapter;
 import com.squareup.moshi.JsonReader;
 import com.squareup.moshi.JsonWriter;
 
+import com.streamr.client.protocol.common.MessageRef;
 import java.io.IOException;
 
 public class MessageRefAdapter extends JsonAdapter<MessageRef> {

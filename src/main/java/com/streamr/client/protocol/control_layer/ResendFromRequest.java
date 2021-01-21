@@ -1,6 +1,6 @@
 package com.streamr.client.protocol.control_layer;
 
-import com.streamr.client.protocol.message_layer.MessageRef;
+import com.streamr.client.protocol.common.MessageRef;
 
 public class ResendFromRequest extends ControlMessage {
     public static final int TYPE = 12;

@@ -22,7 +22,7 @@ import com.streamr.client.protocol.control_layer.UnsubscribeResponse;
 import com.streamr.client.protocol.message_layer.AbstractGroupKeyMessage;
 import com.streamr.client.protocol.message_layer.GroupKeyRequest;
 import com.streamr.client.protocol.message_layer.MalformedMessageException;
-import com.streamr.client.protocol.message_layer.MessageRef;
+import com.streamr.client.protocol.common.MessageRef;
 import com.streamr.client.protocol.message_layer.StreamMessage;
 import com.streamr.client.protocol.message_layer.StreamMessageValidator;
 import com.streamr.client.rest.AuthenticationMethod;

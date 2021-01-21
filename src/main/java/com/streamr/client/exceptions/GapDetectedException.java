@@ -1,6 +1,6 @@
 package com.streamr.client.exceptions;
 
-import com.streamr.client.protocol.message_layer.MessageRef;
+import com.streamr.client.protocol.common.MessageRef;
 import com.streamr.client.utils.Address;
 
 public class GapDetectedException extends RuntimeException {

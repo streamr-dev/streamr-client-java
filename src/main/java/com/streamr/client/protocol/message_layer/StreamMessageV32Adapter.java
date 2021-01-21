@@ -3,6 +3,7 @@ package com.streamr.client.protocol.message_layer;
 import com.squareup.moshi.JsonAdapter;
 import com.squareup.moshi.JsonReader;
 import com.squareup.moshi.JsonWriter;
+import com.streamr.client.protocol.common.MessageRef;
 import com.streamr.client.protocol.message_layer.StreamMessage.EncryptionType;
 import com.streamr.client.protocol.message_layer.StreamMessage.SignatureType;
 import com.streamr.client.utils.EncryptedGroupKey;

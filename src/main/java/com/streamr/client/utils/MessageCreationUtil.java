@@ -11,7 +11,7 @@ import com.streamr.client.protocol.message_layer.GroupKeyResponse;
 import com.streamr.client.protocol.message_layer.Json;
 import com.streamr.client.protocol.message_layer.MalformedMessageException;
 import com.streamr.client.protocol.message_layer.MessageId;
-import com.streamr.client.protocol.message_layer.MessageRef;
+import com.streamr.client.protocol.common.MessageRef;
 import com.streamr.client.protocol.message_layer.StreamMessage;
 import com.streamr.client.rest.Stream;
 import java.nio.ByteBuffer;

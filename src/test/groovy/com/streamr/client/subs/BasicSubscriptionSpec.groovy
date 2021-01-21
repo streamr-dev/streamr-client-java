@@ -4,7 +4,7 @@ import com.streamr.client.MessageHandler
 import com.streamr.client.exceptions.GapDetectedException
 import com.streamr.client.exceptions.UnableToDecryptException
 import com.streamr.client.protocol.message_layer.StreamrSpecification
-import com.streamr.client.protocol.message_layer.MessageRef
+import com.streamr.client.protocol.common.MessageRef
 import com.streamr.client.protocol.message_layer.StreamMessage
 import com.streamr.client.subs.BasicSubscription.GroupKeyRequestFunction
 import com.streamr.client.utils.Address

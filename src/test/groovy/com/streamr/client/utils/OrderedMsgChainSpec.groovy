@@ -1,7 +1,7 @@
 package com.streamr.client.utils
 
 import com.streamr.client.exceptions.GapFillFailedException
-import com.streamr.client.protocol.message_layer.MessageRef
+import com.streamr.client.protocol.common.MessageRef
 import com.streamr.client.protocol.message_layer.StreamMessage
 import com.streamr.client.protocol.message_layer.StreamrSpecification
 import java.util.function.Consumer
