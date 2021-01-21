@@ -16,7 +16,7 @@ public class StreamMessageV32Adapter extends JsonAdapter<StreamMessage> {
   private static final Logger log = LoggerFactory.getLogger(StreamMessageV32Adapter.class);
 
   private static final int VERSION = 32;
-  private static final MessageIDAdapter msgIdAdapter = new MessageIDAdapter();
+  private static final MessageIdAdapter msgIdAdapter = new MessageIdAdapter();
   private static final MessageRefAdapter msgRefAdapter = new MessageRefAdapter();
 
   private static <T> T nullSafeRead(JsonReader reader, Callable<T> unsafeGetter) throws Exception {

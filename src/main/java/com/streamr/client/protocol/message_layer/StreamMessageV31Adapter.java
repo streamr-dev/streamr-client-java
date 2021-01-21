@@ -16,7 +16,7 @@ public class StreamMessageV31Adapter extends JsonAdapter<StreamMessage> {
   private static final Logger log = LoggerFactory.getLogger(StreamMessageV31Adapter.class);
 
   private static final int VERSION = 31;
-  private static final MessageIDAdapter msgIdAdapter = new MessageIDAdapter();
+  private static final MessageIdAdapter msgIdAdapter = new MessageIdAdapter();
   private static final MessageRefAdapter msgRefAdapter = new MessageRefAdapter();
 
   @Override

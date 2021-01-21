@@ -14,7 +14,7 @@ import org.slf4j.LoggerFactory;
 public class StreamMessageV30Adapter extends JsonAdapter<StreamMessage> {
 
   private static final Logger log = LoggerFactory.getLogger(StreamMessageV30Adapter.class);
-  private static final MessageIDAdapter msgIdAdapter = new MessageIDAdapter();
+  private static final MessageIdAdapter msgIdAdapter = new MessageIdAdapter();
   private static final MessageRefAdapter msgRefAdapter = new MessageRefAdapter();
 
   @Override
