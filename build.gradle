@@ -28,10 +28,13 @@ sourceSets {
 		java {
 			srcDirs = ['src/main/java']
 		}
+		groovy {
+			srcDirs = []
+		}
 	}
 	test {
 		groovy {
-			srcDirs = ['src/test/groovy']
+			srcDirs = ['src/test/java', 'src/test/groovy']
 		}
 	}
 }
@@ -54,6 +57,10 @@ tasks.withType(Test) {
 				TestLogEvent.FAILED,
 		]
 		exceptionFormat TestExceptionFormat.SHORT
+		if (System.getenv("CI") == null) {
+			exceptionFormat TestExceptionFormat.FULL
+			events += TestLogEvent.PASSED
+		}
 		info {
 			events = [
 					TestLogEvent.PASSED,
@@ -147,14 +154,6 @@ task fatJar(type: Jar) {
 	from {
 		configurations.compileClasspath.findAll { it.name.endsWith('jar') }.collect { zipTree(it) }
 	}
-}
-repositories {
-	jcenter()
-	// Ethereum Repository
-	maven {
-		url "https://dl.bintray.com/ethereum/maven/"
-	}
-	gradlePluginPortal()
 }
 ext {
 	slf4jApiVersion = '1.7.30'

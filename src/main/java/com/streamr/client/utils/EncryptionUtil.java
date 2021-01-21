@@ -324,7 +324,6 @@ public final class EncryptionUtil {
         | SecurityException
         | IllegalArgumentException
         | IllegalAccessException ex) {
-      ex.printStackTrace();
       throw new RuntimeException(ex);
     }
     return new SecretKeySpec(DatatypeConverter.parseHexBinary(groupKeyHex), "AES");
