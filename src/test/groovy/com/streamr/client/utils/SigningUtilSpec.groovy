@@ -1,7 +1,7 @@
 package com.streamr.client.utils
 
 import com.streamr.client.protocol.message_layer.Json
-import com.streamr.client.protocol.message_layer.MessageID
+import com.streamr.client.protocol.message_layer.MessageId
 import com.streamr.client.protocol.message_layer.MessageRef
 import com.streamr.client.protocol.message_layer.StreamMessage
 import com.streamr.client.protocol.message_layer.StreamrSpecification
@@ -11,7 +11,7 @@ class SigningUtilSpec extends StreamrSpecification {
     ECKeyPair account
     Address address
     SigningUtil signingUtil
-    MessageID msgId
+    MessageId msgId
 
     void setup() {
         // The EthereumAuthenticationMethod accepts a private key with or without the '0x' prefix. It is removed if present to work with ECKey.fromPrivate.
@@ -22,7 +22,7 @@ class SigningUtilSpec extends StreamrSpecification {
         assert address.toString() == "0xa5374e3C19f15E1847881979Dd0C6C9ffe846BD5".toLowerCase()
 
         signingUtil = new SigningUtil(account)
-        msgId = new MessageID("streamId", 0, 425235315L, 0L, publisherId, "msgChainId")
+        msgId = new MessageId("streamId", 0, 425235315L, 0L, publisherId, "msgChainId")
     }
 
     void "should correctly sign arbitrary data"() {
@@ -101,7 +101,7 @@ class SigningUtilSpec extends StreamrSpecification {
     }
 
     void "returns true if correct signature"() {
-        MessageID msgId = new MessageID("streamId", 0, 425235315L, 0L, address, "msgChainId")
+        MessageId msgId = new MessageId("streamId", 0, 425235315L, 0L, address, "msgChainId")
         StreamMessage msg = new StreamMessage.Builder()
                 .withMessageId(msgId)
                 .withPreviousMessageRef(null)
@@ -115,7 +115,7 @@ class SigningUtilSpec extends StreamrSpecification {
 
     void "returns true for correct signature of publisher address has upper and lower case letters"() {
         Address address1 = new Address("0x752C8dCAC0788759aCB1B4BB7A9103596BEe3e6c")
-        MessageID msgId = new MessageID("ogzCJrTdQGuKQO7nkLd3Rw", 0, 1567003338767L, 2L, address1, "kxYyLiSUQO0SRvMx6gA1")
+        MessageId msgId = new MessageId("ogzCJrTdQGuKQO7nkLd3Rw", 0, 1567003338767L, 2L, address1, "kxYyLiSUQO0SRvMx6gA1")
         StreamMessage msg = new StreamMessage.Builder()
                 .withMessageId(msgId)
                 .withPreviousMessageRef(new MessageRef(1567003338767L, 1L))

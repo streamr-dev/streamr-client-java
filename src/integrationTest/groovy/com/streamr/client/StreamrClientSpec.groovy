@@ -15,7 +15,7 @@ import com.streamr.client.protocol.control_layer.SubscribeRequest
 import com.streamr.client.protocol.control_layer.SubscribeResponse
 import com.streamr.client.protocol.control_layer.UnicastMessage
 import com.streamr.client.protocol.message_layer.Json
-import com.streamr.client.protocol.message_layer.MessageID
+import com.streamr.client.protocol.message_layer.MessageId
 import com.streamr.client.protocol.message_layer.MessageRef
 import com.streamr.client.protocol.message_layer.StreamMessage
 import com.streamr.client.rest.AuthenticationMethod
@@ -115,7 +115,7 @@ class StreamrClientSpec extends Specification {
     }
 
     StreamMessage createMsg(String streamId, long timestamp, long sequenceNumber, Long prevTimestamp, Long prevSequenceNumber) {
-        MessageID msgId = new MessageID(streamId, 0, timestamp, sequenceNumber, new Address("publisherId"), "msgChainId")
+        MessageId msgId = new MessageId(streamId, 0, timestamp, sequenceNumber, new Address("publisherId"), "msgChainId")
         MessageRef prev = prevTimestamp == null ? null : new MessageRef(prevTimestamp, prevSequenceNumber)
         def map = [hello: "world"]
         return new StreamMessage.Builder().withMessageId(msgId).withPreviousMessageRef(prev).withSerializedContent(Json.mapAdapter.toJson(map)).createStreamMessage()

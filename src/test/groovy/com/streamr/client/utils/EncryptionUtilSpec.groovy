@@ -3,7 +3,7 @@ package com.streamr.client.utils
 import com.streamr.client.exceptions.InvalidGroupKeyException
 import com.streamr.client.exceptions.InvalidRSAKeyException
 import com.streamr.client.protocol.message_layer.Json
-import com.streamr.client.protocol.message_layer.MessageID
+import com.streamr.client.protocol.message_layer.MessageId
 import com.streamr.client.protocol.message_layer.MessageRef
 import com.streamr.client.protocol.message_layer.StreamMessage
 import com.streamr.client.protocol.message_layer.StreamrSpecification
@@ -26,7 +26,7 @@ class EncryptionUtilSpec extends StreamrSpecification {
     GroupKey key
 
     def setup() {
-        streamMessage = new StreamMessage.Builder().withMessageId(new MessageID("stream-id", 0, 1L, 0L, publisherId, "msgChainId")).withPreviousMessageRef(new MessageRef(0L, 0L)).withSerializedContent(Json.mapAdapter.toJson(plaintextContent)).createStreamMessage()
+        streamMessage = new StreamMessage.Builder().withMessageId(new MessageId("stream-id", 0, 1L, 0L, publisherId, "msgChainId")).withPreviousMessageRef(new MessageRef(0L, 0L)).withSerializedContent(Json.mapAdapter.toJson(plaintextContent)).createStreamMessage()
         util = new EncryptionUtil()
         key = GroupKey.generate()
     }

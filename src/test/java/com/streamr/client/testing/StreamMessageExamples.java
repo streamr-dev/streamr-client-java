@@ -1,7 +1,7 @@
 package com.streamr.client.testing;
 
 import com.streamr.client.protocol.message_layer.Json;
-import com.streamr.client.protocol.message_layer.MessageID;
+import com.streamr.client.protocol.message_layer.MessageId;
 import com.streamr.client.protocol.message_layer.MessageRef;
 import com.streamr.client.protocol.message_layer.StreamMessage;
 import com.streamr.client.utils.Address;
@@ -14,8 +14,8 @@ public class StreamMessageExamples {
 
     static {
       final Address publisherId = new Address("publisherId");
-      final MessageID id =
-          new MessageID("7wa7APtlTq6EC5iTCBy6dw", 0, 1528228173462L, 0, publisherId, "1");
+      final MessageId id =
+          new MessageId("7wa7APtlTq6EC5iTCBy6dw", 0, 1528228173462L, 0, publisherId, "1");
 
       final Map<String, Object> content = new HashMap<>();
       content.put("hello", "world");

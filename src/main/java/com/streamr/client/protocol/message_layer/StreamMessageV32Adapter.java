@@ -32,7 +32,7 @@ public class StreamMessageV32Adapter extends JsonAdapter<StreamMessage> {
     try {
       // top-level array has already been opened in StreamMessageAdapter
       // version field has already been read in StreamMessageAdapter
-      MessageID messageID = msgIdAdapter.fromJson(reader);
+      MessageId messageId = msgIdAdapter.fromJson(reader);
       MessageRef previousMessageRef = nullSafeRead(reader, () -> msgRefAdapter.fromJson(reader));
       StreamMessage.MessageType messageType =
           StreamMessage.MessageType.fromId((byte) reader.nextInt());
@@ -47,7 +47,7 @@ public class StreamMessageV32Adapter extends JsonAdapter<StreamMessage> {
       // top-level array will be closed in StreamMessageAdapter
 
       return new StreamMessage.Builder()
-          .withMessageId(messageID)
+          .withMessageId(messageId)
           .withPreviousMessageRef(previousMessageRef)
           .withMessageType(messageType)
           .withSerializedContent(serializedContent)
@@ -71,7 +71,7 @@ public class StreamMessageV32Adapter extends JsonAdapter<StreamMessage> {
   public void toJson(JsonWriter writer, StreamMessage value) throws IOException {
     writer.beginArray();
     writer.value(VERSION);
-    msgIdAdapter.toJson(writer, value.getMessageID());
+    msgIdAdapter.toJson(writer, value.getMessageId());
 
     if (value.getPreviousMessageRef() != null) {
       msgRefAdapter.toJson(writer, value.getPreviousMessageRef());

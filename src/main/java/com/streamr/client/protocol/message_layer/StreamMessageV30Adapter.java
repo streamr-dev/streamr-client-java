@@ -21,7 +21,7 @@ public class StreamMessageV30Adapter extends JsonAdapter<StreamMessage> {
   public StreamMessage fromJson(JsonReader reader) throws IOException {
     try {
       // version field has already been read in StreamMessageAdapter
-      MessageID messageID = msgIdAdapter.fromJson(reader);
+      MessageId messageId = msgIdAdapter.fromJson(reader);
       MessageRef previousMessageRef = null;
       // Peek at the previousMessageRef, as it can be null
       if (reader.peek().equals(JsonReader.Token.NULL)) {
@@ -40,7 +40,7 @@ public class StreamMessageV30Adapter extends JsonAdapter<StreamMessage> {
       }
 
       return new StreamMessage.Builder()
-          .withMessageId(messageID)
+          .withMessageId(messageId)
           .withPreviousMessageRef(previousMessageRef)
           .withMessageType(messageType)
           .withSerializedContent(serializedContent)

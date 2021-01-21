@@ -12,7 +12,7 @@ class StreamMessageV32AdapterSpec extends StreamrSpecification {
 		adapter = new StreamMessageAdapter()
 
 		// Message with minimal fields
-		msg = new StreamMessage.Builder().withMessageId(new MessageID("streamId", 0, 123L, 0, publisherId, "msgChainId")).withPreviousMessageRef(null).withSerializedContent(Json.mapAdapter.toJson([:])).createStreamMessage()
+		msg = new StreamMessage.Builder().withMessageId(new MessageId("streamId", 0, 123L, 0, publisherId, "msgChainId")).withPreviousMessageRef(null).withSerializedContent(Json.mapAdapter.toJson([:])).createStreamMessage()
 	}
 
 	void "serialize minimal message"() {

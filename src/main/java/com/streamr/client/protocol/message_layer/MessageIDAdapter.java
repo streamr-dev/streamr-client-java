@@ -7,9 +7,9 @@ import com.streamr.client.utils.Address;
 
 import java.io.IOException;
 
-public class MessageIDAdapter extends JsonAdapter<MessageID> {
+public class MessageIDAdapter extends JsonAdapter<MessageId> {
     @Override
-    public MessageID fromJson(JsonReader reader) throws IOException {
+    public MessageId fromJson(JsonReader reader) throws IOException {
         reader.beginArray();
         String streamId = reader.nextString();
         int streamPartition = reader.nextInt();
@@ -18,11 +18,11 @@ public class MessageIDAdapter extends JsonAdapter<MessageID> {
         String publisherId = reader.nextString();
         String msgChainId = reader.nextString();
         reader.endArray();
-        return new MessageID(streamId, streamPartition, timestamp, sequenceNumber, new Address(publisherId), msgChainId);
+        return new MessageId(streamId, streamPartition, timestamp, sequenceNumber, new Address(publisherId), msgChainId);
     }
 
     @Override
-    public void toJson(JsonWriter writer, MessageID value) throws IOException {
+    public void toJson(JsonWriter writer, MessageId value) throws IOException {
         writer.beginArray();
         writer.value(value.getStreamId());
         writer.value(value.getStreamPartition());

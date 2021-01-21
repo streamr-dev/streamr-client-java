@@ -53,9 +53,9 @@ public abstract class AbstractGroupKeyMessage {
   }
 
   public StreamMessage.Builder toStreamMessageBuilder(
-      final MessageID messageID, final MessageRef prevMsgRef) {
+      final MessageId messageId, final MessageRef prevMsgRef) {
     return new StreamMessage.Builder()
-        .withMessageId(messageID)
+        .withMessageId(messageId)
         .withPreviousMessageRef(prevMsgRef)
         .withMessageType(getMessageType())
         .withSerializedContent(serialize())

@@ -120,7 +120,7 @@ public final class StreamMessage implements ITimestamped {
     }
   }
 
-  private final MessageID messageID;
+  private final MessageId messageId;
   private final MessageRef previousMessageRef;
   private final MessageType messageType;
   // Might need to change parsedContent to Object when non-JSON contentTypes are introduced
@@ -137,7 +137,7 @@ public final class StreamMessage implements ITimestamped {
    * Full constructor, creates a StreamMessage with all fields directly set to the provided values.
    */
   private StreamMessage(
-      final MessageID messageID,
+      final MessageId messageId,
       final MessageRef previousMessageRef,
       final MessageType messageType,
       final String serializedContent,
@@ -147,7 +147,7 @@ public final class StreamMessage implements ITimestamped {
       final EncryptedGroupKey newGroupKey,
       final SignatureType signatureType,
       final String signature) {
-    this.messageID = messageID;
+    this.messageId = messageId;
     this.previousMessageRef = previousMessageRef;
     this.messageType = messageType;
     this.serializedContent = serializedContent;
@@ -159,32 +159,32 @@ public final class StreamMessage implements ITimestamped {
     this.signature = signature;
   }
 
-  public MessageID getMessageID() {
-    return messageID;
+  public MessageId getMessageId() {
+    return messageId;
   }
 
   public String getStreamId() {
-    return messageID.getStreamId();
+    return messageId.getStreamId();
   }
 
   public int getStreamPartition() {
-    return messageID.getStreamPartition();
+    return messageId.getStreamPartition();
   }
 
   public long getTimestamp() {
-    return messageID.getTimestamp();
+    return messageId.getTimestamp();
   }
 
   public long getSequenceNumber() {
-    return messageID.getSequenceNumber();
+    return messageId.getSequenceNumber();
   }
 
   public Address getPublisherId() {
-    return messageID.getPublisherId();
+    return messageId.getPublisherId();
   }
 
   public String getMsgChainId() {
-    return messageID.getMsgChainId();
+    return messageId.getMsgChainId();
   }
 
   public MessageRef getPreviousMessageRef() {
@@ -279,7 +279,7 @@ public final class StreamMessage implements ITimestamped {
     return String.format(
         "%s{messageId=%s, previousMessageRef=%s, content='%s', contentType=%s, encryptionType=%s, groupKeyId='%s', newGroupKey='%s', signatureType=%s, signature='%s'}",
         messageType,
-        messageID,
+        messageId,
         previousMessageRef,
         serializedContent,
         contentType,
@@ -304,7 +304,7 @@ public final class StreamMessage implements ITimestamped {
   }
 
   public static final class Builder {
-    private MessageID messageId;
+    private MessageId messageId;
     private MessageRef previousMessageRef;
     private MessageType messageType = MessageType.STREAM_MESSAGE;
     private String serializedContent;
@@ -318,7 +318,7 @@ public final class StreamMessage implements ITimestamped {
     public Builder() {}
 
     public Builder(final StreamMessage message) {
-      this.messageId = message.messageID;
+      this.messageId = message.messageId;
       this.previousMessageRef = message.previousMessageRef;
       this.messageType = message.messageType;
       this.serializedContent = message.serializedContent;
@@ -330,7 +330,7 @@ public final class StreamMessage implements ITimestamped {
       this.signature = message.signature;
     }
 
-    public Builder withMessageId(final MessageID messageId) {
+    public Builder withMessageId(final MessageId messageId) {
       this.messageId = messageId;
       return this;
     }

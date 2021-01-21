@@ -10,7 +10,7 @@ import com.streamr.client.protocol.message_layer.GroupKeyRequest;
 import com.streamr.client.protocol.message_layer.GroupKeyResponse;
 import com.streamr.client.protocol.message_layer.Json;
 import com.streamr.client.protocol.message_layer.MalformedMessageException;
-import com.streamr.client.protocol.message_layer.MessageID;
+import com.streamr.client.protocol.message_layer.MessageId;
 import com.streamr.client.protocol.message_layer.MessageRef;
 import com.streamr.client.protocol.message_layer.StreamMessage;
 import com.streamr.client.rest.Stream;
@@ -32,7 +32,7 @@ import org.apache.commons.lang3.tuple.Pair;
 /**
  * A stateful helper class to create StreamMessages, with the following responsibilities:
  *
- * <p>- Maintains message chains by creating appropriate MessageIDs and MessageRefs - Encrypts
+ * <p>- Maintains message chains by creating appropriate MessageIds and MessageRefs - Encrypts
  * created messages - Signs created messages
  *
  * <p>Does NOT: - Manage encryption keys
@@ -71,7 +71,7 @@ public class MessageCreationUtil {
       @Nullable GroupKey newGroupKey) {
     int streamPartition = getStreamPartition(stream.getPartitions(), partitionKey);
 
-    Pair<MessageID, MessageRef> pair =
+    Pair<MessageId, MessageRef> pair =
         createMsgIdAndRef(stream.getId(), streamPartition, timestamp.getTime());
     StreamMessage streamMessage =
         new StreamMessage.Builder()
@@ -116,7 +116,7 @@ public class MessageCreationUtil {
         new GroupKeyRequest(UUID.randomUUID().toString(), streamId, rsaPublicKey, groupKeyIds);
 
     String keyExchangeStreamId = KeyExchangeUtil.getKeyExchangeStreamId(publisherAddress);
-    Pair<MessageID, MessageRef> pair = createDefaultMsgIdAndRef(keyExchangeStreamId);
+    Pair<MessageId, MessageRef> pair = createDefaultMsgIdAndRef(keyExchangeStreamId);
     StreamMessage streamMessage =
         request.toStreamMessageBuilder(pair.getLeft(), pair.getRight()).createStreamMessage();
 
@@ -147,7 +147,7 @@ public class MessageCreationUtil {
         new GroupKeyResponse(request.getRequestId(), request.getStreamId(), encryptedGroupKeys);
 
     String keyExchangeStreamId = KeyExchangeUtil.getKeyExchangeStreamId(subscriberAddress);
-    Pair<MessageID, MessageRef> pair = createDefaultMsgIdAndRef(keyExchangeStreamId);
+    Pair<MessageId, MessageRef> pair = createDefaultMsgIdAndRef(keyExchangeStreamId);
     StreamMessage streamMessage =
         response
             .toStreamMessageBuilder(pair.getLeft(), pair.getRight())
@@ -180,7 +180,7 @@ public class MessageCreationUtil {
     GroupKeyAnnounce announce = new GroupKeyAnnounce(streamId, encryptedGroupKeys);
 
     String keyExchangeStreamId = KeyExchangeUtil.getKeyExchangeStreamId(subscriberAddress);
-    Pair<MessageID, MessageRef> pair = createDefaultMsgIdAndRef(keyExchangeStreamId);
+    Pair<MessageId, MessageRef> pair = createDefaultMsgIdAndRef(keyExchangeStreamId);
     StreamMessage streamMessage =
         announce
             .toStreamMessageBuilder(pair.getLeft(), pair.getRight())
@@ -209,7 +209,7 @@ public class MessageCreationUtil {
             request.getGroupKeyIds());
 
     String keyExchangeStreamId = KeyExchangeUtil.getKeyExchangeStreamId(destinationAddress);
-    Pair<MessageID, MessageRef> pair = createDefaultMsgIdAndRef(keyExchangeStreamId);
+    Pair<MessageId, MessageRef> pair = createDefaultMsgIdAndRef(keyExchangeStreamId);
     StreamMessage streamMessage =
         response.toStreamMessageBuilder(pair.getLeft(), pair.getRight()).createStreamMessage();
 
@@ -259,20 +259,20 @@ public class MessageCreationUtil {
     }
   }
 
-  private Pair<MessageID, MessageRef> createMsgIdAndRef(
+  private Pair<MessageId, MessageRef> createMsgIdAndRef(
       String streamId, int streamPartition, long timestamp) {
     String key = streamId + streamPartition;
     long sequenceNumber = getNextSequenceNumber(key, timestamp);
-    MessageID msgId =
-        new MessageID(
+    MessageId msgId =
+        new MessageId(
             streamId, streamPartition, timestamp, sequenceNumber, publisherId, msgChainId);
     MessageRef prevMsgRef = refsPerStreamAndPartition.get(key);
-    Pair<MessageID, MessageRef> p = Pair.of(msgId, prevMsgRef);
+    Pair<MessageId, MessageRef> p = Pair.of(msgId, prevMsgRef);
     refsPerStreamAndPartition.put(key, new MessageRef(timestamp, sequenceNumber));
     return p;
   }
 
-  private Pair<MessageID, MessageRef> createDefaultMsgIdAndRef(String streamId) {
+  private Pair<MessageId, MessageRef> createDefaultMsgIdAndRef(String streamId) {
     return createMsgIdAndRef(streamId, 0, (new Date()).getTime());
   }
 

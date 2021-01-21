@@ -4,7 +4,7 @@ import com.streamr.client.utils.Address;
 import java.util.Date;
 import java.util.Objects;
 
-public final class MessageID {
+public final class MessageId {
   private final String streamId;
   private final int streamPartition;
   private final long timestamp;
@@ -12,7 +12,7 @@ public final class MessageID {
   private final Address publisherId;
   private final String msgChainId;
 
-  public MessageID(
+  public MessageId(
       String streamId,
       final int streamPartition,
       final long timestamp,
@@ -68,13 +68,13 @@ public final class MessageID {
   public boolean equals(final Object o) {
     if (this == o) return true;
     if (o == null || getClass() != o.getClass()) return false;
-    final MessageID messageID = (MessageID) o;
-    return streamPartition == messageID.streamPartition
-        && timestamp == messageID.timestamp
-        && sequenceNumber == messageID.sequenceNumber
-        && Objects.equals(streamId, messageID.streamId)
-        && Objects.equals(publisherId, messageID.publisherId)
-        && Objects.equals(msgChainId, messageID.msgChainId);
+    final MessageId messageId = (MessageId) o;
+    return streamPartition == messageId.streamPartition
+        && timestamp == messageId.timestamp
+        && sequenceNumber == messageId.sequenceNumber
+        && Objects.equals(streamId, messageId.streamId)
+        && Objects.equals(publisherId, messageId.publisherId)
+        && Objects.equals(msgChainId, messageId.msgChainId);
   }
 
   @Override
@@ -86,7 +86,7 @@ public final class MessageID {
   @Override
   public String toString() {
     return String.format(
-        "MessageID{streamId='%s', streamPartition=%d, timestamp=%d, sequenceNumber=%d, publisherId='%s', msgChainId='%s'}",
+        "MessageId{streamId='%s', streamPartition=%d, timestamp=%d, sequenceNumber=%d, publisherId='%s', msgChainId='%s'}",
         streamId, streamPartition, timestamp, sequenceNumber, publisherId, msgChainId);
   }
 }
