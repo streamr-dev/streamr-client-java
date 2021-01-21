@@ -1,11 +1,5 @@
-package com.streamr.client.protocol.control_layer
+package com.streamr.client.protocol.message_layer
 
-import com.streamr.client.protocol.message_layer.Json
-import com.streamr.client.protocol.message_layer.MessageID
-import com.streamr.client.protocol.message_layer.MessageRef
-import com.streamr.client.protocol.message_layer.StreamMessage
-import com.streamr.client.protocol.message_layer.StreamMessageAdapter
-import com.streamr.client.protocol.message_layer.StreamrSpecification
 import com.streamr.client.utils.EncryptedGroupKey
 
 class StreamMessageV32AdapterSpec extends StreamrSpecification {

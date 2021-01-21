@@ -1,10 +1,4 @@
-package com.streamr.client.protocol.control_layer
-
-import com.streamr.client.protocol.message_layer.StreamrSpecification
-import com.streamr.client.protocol.message_layer.MessageID
-import com.streamr.client.protocol.message_layer.MessageRef
-import com.streamr.client.protocol.message_layer.StreamMessage
-import com.streamr.client.protocol.message_layer.StreamMessageAdapter
+package com.streamr.client.protocol.message_layer
 
 class StreamMessageV31AdapterSpec extends StreamrSpecification {
 	StreamMessageAdapter adapter
