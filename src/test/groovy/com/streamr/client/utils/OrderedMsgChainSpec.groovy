@@ -201,9 +201,9 @@ class OrderedMsgChainSpec extends StreamrSpecification {
                     return streamMessage.getTimestamp()
                 }
             }).collect(Collectors.toList())
-            println("Was expecting to receive messages ordered per timestamp but instead received timestamps in " +
+            assert result, "Was expecting to receive messages ordered per timestamp but instead received timestamps in " +
                     "this order:\n" + receivedTimestamps.join(", ") + "\nThe unordered messages were processed" +
-                    "in the following timestamp order:\n" + shuffledTimestamps.join(", "))
+                    "in the following timestamp order:\n" + shuffledTimestamps.join(", ")
         }
         then:
         result
