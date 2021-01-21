@@ -1,10 +1,9 @@
 package com.streamr.client.options;
 
 import com.streamr.client.exceptions.InvalidOptionsException;
-import com.streamr.client.protocol.control_layer.ControlMessage;
-import com.streamr.client.protocol.message_layer.StreamMessage;
 import com.streamr.client.rest.AuthenticationMethod;
 import com.streamr.client.rest.EthereumAuthenticationMethod;
+import com.streamr.client.ws.WebsocketUrl;
 
 public class StreamrClientOptions {
 
@@ -12,12 +11,7 @@ public class StreamrClientOptions {
   private SigningOptions signingOptions = SigningOptions.getDefault();
   private EncryptionOptions encryptionOptions = EncryptionOptions.getDefault();
   private boolean publishSignedMsgs = false;
-  private String websocketApiUrl =
-      "wss://www.streamr.com/api/v1/ws"
-          + "?controlLayerVersion="
-          + ControlMessage.LATEST_VERSION
-          + "&messageLayerVersion="
-          + StreamMessage.LATEST_VERSION;
+  private WebsocketUrl websocketApiUrl = new WebsocketUrl();
   private String restApiUrl = "https://www.streamr.com/api/v1";
 
   private String mainnetRpcUrl = "http://localhost:8545";
@@ -65,7 +59,7 @@ public class StreamrClientOptions {
       String restApiUrl) {
     this(authenticationMethod, signingOptions);
     this.encryptionOptions = encryptionOptions;
-    this.websocketApiUrl = addMissingQueryString(websocketApiUrl);
+    this.websocketApiUrl = new WebsocketUrl(websocketApiUrl);
     this.restApiUrl = restApiUrl;
   }
 
@@ -89,11 +83,7 @@ public class StreamrClientOptions {
   }
 
   public String getWebsocketApiUrl() {
-    return websocketApiUrl;
-  }
-
-  public void setWebsocketApiUrl(String websocketApiUrl) {
-    this.websocketApiUrl = addMissingQueryString(websocketApiUrl);
+    return websocketApiUrl.toString();
   }
 
   public String getRestApiUrl() {
@@ -162,36 +152,6 @@ public class StreamrClientOptions {
 
   public void setSkipGapsOnFullQueue(boolean skipGapsOnFullQueue) {
     this.skipGapsOnFullQueue = skipGapsOnFullQueue;
-  }
-
-  private String addMissingQueryString(String url) {
-    String[] parts = url.split("\\?");
-    if (parts.length == 1) { // no query string
-      return url
-          + "?controlLayerVersion="
-          + ControlMessage.LATEST_VERSION
-          + "&messageLayerVersion="
-          + StreamMessage.LATEST_VERSION;
-    } else {
-      String[] params = parts[1].split("&");
-      boolean missingControlLayer = true;
-      boolean missingMessageLayer = true;
-      for (String p : params) {
-        if (p.startsWith("controlLayerVersion=")) {
-          missingControlLayer = false;
-        } else if (p.startsWith("messageLayerVersion=")) {
-          missingMessageLayer = false;
-        }
-      }
-      String result = url;
-      if (missingControlLayer) {
-        result += "&controlLayerVersion=" + ControlMessage.LATEST_VERSION;
-      }
-      if (missingMessageLayer) {
-        result += "&messageLayerVersion=" + StreamMessage.LATEST_VERSION;
-      }
-      return result;
-    }
   }
 
   public String getDataUnionSidechainFactoryAddress() {
