@@ -14,7 +14,7 @@ class StreamMessageSpec extends Specification {
 
 	void "constructor that takes Map content sets the correct serializedContent"() {
 		String serializedContent = msg.getSerializedContent()
-		Map<String, Object> mapContent = HttpUtils.mapAdapter.fromJson(serializedContent)
+		Map<String, Object> mapContent = Json.mapAdapter.fromJson(serializedContent)
 
 		when:
 		msg = new StreamMessage.Builder(msg)

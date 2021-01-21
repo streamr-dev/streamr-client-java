@@ -4,6 +4,7 @@ import com.streamr.client.exceptions.ValidationException
 import com.streamr.client.options.SigningOptions.SignatureVerificationPolicy
 import com.streamr.client.protocol.message_layer.AbstractGroupKeyMessage
 import com.streamr.client.protocol.message_layer.GroupKeyRequest
+import com.streamr.client.protocol.message_layer.Json
 import com.streamr.client.protocol.message_layer.MessageID
 import com.streamr.client.protocol.message_layer.StreamMessage
 import com.streamr.client.protocol.message_layer.StreamrSpecification
@@ -33,7 +34,7 @@ class StreamMessageValidatorSpec extends StreamrSpecification {
             .withMessageId(msgId)
             .withPreviousMessageRef(null)
             .withMessageType(StreamMessage.MessageType.STREAM_MESSAGE)
-            .withSerializedContent(HttpUtils.mapAdapter.toJson([foo: 'bar']))
+            .withSerializedContent(Json.mapAdapter.toJson([foo: 'bar']))
             .withEncryptionType(StreamMessage.EncryptionType.NONE)
             .withGroupKeyId(null)
             .withSignatureType(StreamMessage.SignatureType.ETH)
@@ -45,7 +46,7 @@ class StreamMessageValidatorSpec extends StreamrSpecification {
             .withMessageId(msgId)
             .withPreviousMessageRef(null)
             .withMessageType(StreamMessage.MessageType.STREAM_MESSAGE)
-            .withSerializedContent(HttpUtils.mapAdapter.toJson([foo: 'bar']))
+            .withSerializedContent(Json.mapAdapter.toJson([foo: 'bar']))
             .withEncryptionType(StreamMessage.EncryptionType.NONE)
             .withGroupKeyId(null)
             .withSignatureType(StreamMessage.SignatureType.ETH)
@@ -56,7 +57,7 @@ class StreamMessageValidatorSpec extends StreamrSpecification {
             .withMessageId(msgId)
             .withPreviousMessageRef(null)
             .withMessageType(StreamMessage.MessageType.STREAM_MESSAGE)
-            .withSerializedContent(HttpUtils.mapAdapter.toJson([foo: 'bar']))
+            .withSerializedContent(Json.mapAdapter.toJson([foo: 'bar']))
             .withEncryptionType(StreamMessage.EncryptionType.NONE)
             .withGroupKeyId(null)
             .withSignatureType(StreamMessage.SignatureType.NONE)
