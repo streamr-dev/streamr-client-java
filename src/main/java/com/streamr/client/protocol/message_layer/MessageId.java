@@ -13,7 +13,7 @@ public final class MessageId {
   private final String msgChainId;
 
   public MessageId(
-      String streamId,
+      final String streamId,
       final int streamPartition,
       final long timestamp,
       final long sequenceNumber,
