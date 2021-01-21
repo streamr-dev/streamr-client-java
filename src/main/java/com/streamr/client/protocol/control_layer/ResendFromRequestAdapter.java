@@ -3,7 +3,7 @@ package com.streamr.client.protocol.control_layer;
 import com.squareup.moshi.JsonReader;
 import com.squareup.moshi.JsonWriter;
 import com.streamr.client.protocol.common.MessageRef;
-import com.streamr.client.protocol.message_layer.MessageRefAdapter;
+import com.streamr.client.protocol.common.MessageRefAdapter;
 import java.io.IOException;
 
 public class ResendFromRequestAdapter extends ControlLayerAdapter<ResendFromRequest> {
