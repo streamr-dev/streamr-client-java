@@ -1,6 +1,5 @@
 package com.streamr.client.protocol.message_layer;
 
-import com.streamr.client.exceptions.MalformedMessageException;
 import com.streamr.client.utils.Address;
 import java.util.Date;
 import java.util.Objects;

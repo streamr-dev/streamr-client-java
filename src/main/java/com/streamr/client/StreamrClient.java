@@ -2,7 +2,7 @@ package com.streamr.client;
 
 import com.streamr.client.dataunion.DataUnionClient;
 import com.streamr.client.exceptions.ConnectionTimeoutException;
-import com.streamr.client.exceptions.MalformedMessageException;
+import com.streamr.client.protocol.message_layer.MalformedMessageException;
 import com.streamr.client.exceptions.PartitionNotSpecifiedException;
 import com.streamr.client.exceptions.SubscriptionNotFoundException;
 import com.streamr.client.options.ResendOption;

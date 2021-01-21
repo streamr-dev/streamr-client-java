@@ -1,6 +1,6 @@
 package com.streamr.client.utils;
 
-import com.streamr.client.exceptions.MalformedMessageException;
+import com.streamr.client.protocol.message_layer.MalformedMessageException;
 
 import java.util.Collection;
 

@@ -1,6 +1,5 @@
 package com.streamr.client.protocol.message_layer;
 
-import com.streamr.client.exceptions.EncryptedContentNotParsableException;
 import com.streamr.client.exceptions.UnsupportedMessageException;
 import com.streamr.client.utils.Address;
 import com.streamr.client.utils.EncryptedGroupKey;

@@ -1,6 +1,6 @@
 package com.streamr.client.protocol.message_layer
 
-import com.streamr.client.exceptions.EncryptedContentNotParsableException
+
 import com.streamr.client.protocol.message_layer.StreamMessage.EncryptionType
 import com.streamr.client.testing.StreamMessageExamples
 import spock.lang.Specification
