@@ -1,7 +1,7 @@
 package com.streamr.client.rest;
 
 import com.squareup.moshi.JsonAdapter;
-import com.streamr.client.utils.HttpUtils;
+import com.streamr.client.protocol.message_layer.Json;
 import com.streamr.client.utils.KeyUtil;
 import com.streamr.client.utils.SigningUtil;
 import java.io.IOException;
@@ -16,9 +16,9 @@ public class EthereumAuthenticationMethod extends AuthenticationMethod {
   private final ECKeyPair account;
   // address is prefixed with "0x"
   private final String address;
-  private JsonAdapter<Challenge> challengeAdapter = HttpUtils.MOSHI.adapter(Challenge.class);
+  private JsonAdapter<Challenge> challengeAdapter = Json.MOSHI.adapter(Challenge.class);
   private JsonAdapter<ChallengeResponse> challengeResponseAdapter =
-      HttpUtils.MOSHI.adapter(ChallengeResponse.class);
+      Json.MOSHI.adapter(ChallengeResponse.class);
 
   public EthereumAuthenticationMethod(String ethereumPrivateKey) {
     super();

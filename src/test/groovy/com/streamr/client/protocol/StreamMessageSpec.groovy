@@ -3,7 +3,6 @@ package com.streamr.client.protocol
 import com.streamr.client.exceptions.EncryptedContentNotParsableException
 import com.streamr.client.protocol.message_layer.StreamMessage
 import com.streamr.client.protocol.message_layer.StreamMessage.EncryptionType
-import com.streamr.client.utils.HttpUtils
 import spock.lang.Specification
 
 class StreamMessageSpec extends Specification {
@@ -19,7 +18,7 @@ class StreamMessageSpec extends Specification {
 
 		when:
 		msg = new StreamMessage.Builder(msg)
-				.withSerializedContent(HttpUtils.mapAdapter.toJson(mapContent))
+				.withSerializedContent(Json.mapAdapter.toJson(mapContent))
 				.createStreamMessage()
 		then:
 		msg.getParsedContent() == mapContent

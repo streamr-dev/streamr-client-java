@@ -2,7 +2,6 @@ package com.streamr.client.testing;
 
 import com.streamr.client.MessageHandler;
 import com.streamr.client.StreamrClient;
-import com.streamr.client.rest.ResourceNotFoundException;
 import com.streamr.client.options.EncryptionOptions;
 import com.streamr.client.options.ResendOption;
 import com.streamr.client.options.SigningOptions;
@@ -10,6 +9,7 @@ import com.streamr.client.options.StreamrClientOptions;
 import com.streamr.client.protocol.control_layer.ControlMessage;
 import com.streamr.client.protocol.message_layer.StreamMessage;
 import com.streamr.client.rest.EthereumAuthenticationMethod;
+import com.streamr.client.rest.ResourceNotFoundException;
 import com.streamr.client.rest.Stream;
 import com.streamr.client.rest.UserInfo;
 import com.streamr.client.subs.Subscription;

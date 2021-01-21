@@ -9,6 +9,7 @@ import com.streamr.client.protocol.message_layer.GroupKeyAnnounce;
 import com.streamr.client.protocol.message_layer.GroupKeyErrorResponse;
 import com.streamr.client.protocol.message_layer.GroupKeyRequest;
 import com.streamr.client.protocol.message_layer.GroupKeyResponse;
+import com.streamr.client.protocol.message_layer.Json;
 import com.streamr.client.protocol.message_layer.MessageID;
 import com.streamr.client.protocol.message_layer.MessageRef;
 import com.streamr.client.protocol.message_layer.StreamMessage;
@@ -76,7 +77,7 @@ public class MessageCreationUtil {
         new StreamMessage.Builder()
             .withMessageId(pair.getLeft())
             .withPreviousMessageRef(pair.getRight())
-            .withSerializedContent(HttpUtils.mapAdapter.toJson(payload))
+            .withSerializedContent(Json.mapAdapter.toJson(payload))
             .createStreamMessage();
 
     // Encrypt content if the GroupKey is provided

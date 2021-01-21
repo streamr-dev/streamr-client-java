@@ -1,7 +1,7 @@
 package com.streamr.client.rest;
 
 import com.squareup.moshi.JsonAdapter;
-import com.streamr.client.utils.HttpUtils;
+import com.streamr.client.protocol.message_layer.Json;
 import java.io.IOException;
 import java.util.Date;
 import okhttp3.OkHttpClient;
@@ -15,7 +15,7 @@ public abstract class AuthenticationMethod {
   private JsonAdapter<LoginResponse> responseAdapter;
 
   public AuthenticationMethod() {
-    this.responseAdapter = HttpUtils.MOSHI.adapter(LoginResponse.class);
+    this.responseAdapter = Json.MOSHI.adapter(LoginResponse.class);
   }
 
   /**
@@ -42,12 +42,12 @@ public abstract class AuthenticationMethod {
     Request request =
         new Request.Builder()
             .url(endpoint)
-            .post(RequestBody.create(requestBody, HttpUtils.jsonType))
+            .post(RequestBody.create(requestBody, Json.jsonType))
             .build();
 
     // Execute the request and retrieve the response.
     Response response = client.newCall(request).execute();
-    HttpUtils.assertSuccessful(response);
+    StreamrRESTClient.assertSuccessful(response);
     return response;
   }
 

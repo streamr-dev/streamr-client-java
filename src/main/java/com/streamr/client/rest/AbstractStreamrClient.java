@@ -2,8 +2,8 @@ package com.streamr.client.rest;
 
 import com.squareup.moshi.Moshi;
 import com.streamr.client.options.StreamrClientOptions;
+import com.streamr.client.protocol.message_layer.Json;
 import com.streamr.client.utils.Address;
-import com.streamr.client.utils.HttpUtils;
 import java.io.IOException;
 import java.util.List;
 
@@ -12,9 +12,7 @@ import java.util.List;
  * serializers etc.
  */
 public abstract class AbstractStreamrClient {
-
-  // Thread safe
-  protected static final Moshi MOSHI = HttpUtils.MOSHI;
+  protected static final Moshi MOSHI = Json.MOSHI;
 
   protected final StreamrClientOptions options;
 

@@ -1,4 +1,4 @@
-package com.streamr.client.utils;
+package com.streamr.client.protocol.message_layer;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 
