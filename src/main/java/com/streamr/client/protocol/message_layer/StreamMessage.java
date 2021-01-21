@@ -4,7 +4,6 @@ import com.streamr.client.exceptions.EncryptedContentNotParsableException;
 import com.streamr.client.exceptions.UnsupportedMessageException;
 import com.streamr.client.utils.Address;
 import com.streamr.client.utils.EncryptedGroupKey;
-import com.streamr.client.utils.HttpUtils;
 import java.io.IOException;
 import java.nio.charset.StandardCharsets;
 import java.util.Date;
@@ -229,7 +228,7 @@ public final class StreamMessage implements ITimestamped {
       }
       if (contentType == ContentType.JSON) {
         try {
-          this.parsedContent = HttpUtils.mapAdapter.fromJson(serializedContent);
+          this.parsedContent = Json.mapAdapter.fromJson(serializedContent);
         } catch (IOException e) {
           throw new RuntimeException("Failed to parse message content: " + serializedContent);
         }
