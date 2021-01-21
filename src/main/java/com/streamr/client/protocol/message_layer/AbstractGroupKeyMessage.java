@@ -1,7 +1,6 @@
 package com.streamr.client.protocol.message_layer;
 
 import com.streamr.client.protocol.message_layer.StreamMessage.MessageType;
-import com.streamr.client.utils.ValidationUtil;
 import java.io.IOException;
 import java.util.HashMap;
 import java.util.Map;

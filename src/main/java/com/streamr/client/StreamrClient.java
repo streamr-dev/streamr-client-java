@@ -2,7 +2,6 @@ package com.streamr.client;
 
 import com.streamr.client.dataunion.DataUnionClient;
 import com.streamr.client.exceptions.ConnectionTimeoutException;
-import com.streamr.client.protocol.message_layer.MalformedMessageException;
 import com.streamr.client.exceptions.PartitionNotSpecifiedException;
 import com.streamr.client.exceptions.SubscriptionNotFoundException;
 import com.streamr.client.options.ResendOption;
@@ -22,6 +21,7 @@ import com.streamr.client.protocol.control_layer.UnsubscribeRequest;
 import com.streamr.client.protocol.control_layer.UnsubscribeResponse;
 import com.streamr.client.protocol.message_layer.AbstractGroupKeyMessage;
 import com.streamr.client.protocol.message_layer.GroupKeyRequest;
+import com.streamr.client.protocol.message_layer.MalformedMessageException;
 import com.streamr.client.protocol.message_layer.MessageRef;
 import com.streamr.client.protocol.message_layer.StreamMessage;
 import com.streamr.client.rest.AuthenticationMethod;
