@@ -1,20 +1,12 @@
-package com.streamr.client;
+package com.streamr.client.rest;
 
 import com.squareup.moshi.JsonAdapter;
 import com.squareup.moshi.Types;
-import com.streamr.client.authentication.AuthenticationMethod;
-import com.streamr.client.exceptions.AmbiguousResultsException;
-import com.streamr.client.exceptions.AuthenticationException;
-import com.streamr.client.exceptions.ResourceNotFoundException;
 import com.streamr.client.options.StreamrClientOptions;
-import com.streamr.client.rest.Permission;
-import com.streamr.client.rest.Publishers;
-import com.streamr.client.rest.Stream;
-import com.streamr.client.rest.Subscribers;
-import com.streamr.client.rest.UserInfo;
+import com.streamr.client.protocol.message_layer.Json;
 import com.streamr.client.utils.Address;
-import com.streamr.client.utils.HttpUtils;
 import java.io.IOException;
+import java.net.HttpURLConnection;
 import java.util.List;
 import okhttp3.Call;
 import okhttp3.HttpUrl;
@@ -74,7 +66,7 @@ public abstract class StreamrRESTClient extends AbstractStreamrClient {
     final Call call = client.newCall(request);
     final Response response = call.execute();
     try {
-      HttpUtils.assertSuccessful(response);
+      assertSuccessful(response);
 
       // Deserialize HTTP response to concrete type.
       if (adapter == null) {
@@ -125,7 +117,7 @@ public abstract class StreamrRESTClient extends AbstractStreamrClient {
       HttpUrl url, String requestBody, JsonAdapter<T> adapter, boolean retryIfSessionExpired)
       throws IOException {
     Request.Builder builder =
-        new Request.Builder().url(url).post(RequestBody.create(requestBody, HttpUtils.jsonType));
+        new Request.Builder().url(url).post(RequestBody.create(requestBody, Json.jsonType));
     return executeWithRetry(builder, adapter, retryIfSessionExpired);
   }
 
@@ -160,12 +152,13 @@ public abstract class StreamrRESTClient extends AbstractStreamrClient {
     }
   }
 
-  public Stream createStream(Stream stream) throws IOException {
+  public Stream createStream(final Stream stream) throws IOException {
     HttpUrl url = getEndpointUrl("streams");
     return post(url, streamJsonAdapter.toJson(stream), streamJsonAdapter);
   }
 
-  public Permission grant(Stream stream, Permission.Operation operation, String user)
+  public Permission grant(
+      final Stream stream, final Permission.Operation operation, final String user)
       throws IOException {
     if (stream == null || operation == null || user == null) {
       throw new IllegalArgumentException("Must give all of stream, operation, and user!");
@@ -177,7 +170,8 @@ public abstract class StreamrRESTClient extends AbstractStreamrClient {
     return post(url, permissionJsonAdapter.toJson(permission), permissionJsonAdapter);
   }
 
-  public Permission grantPublic(Stream stream, Permission.Operation operation) throws IOException {
+  public Permission grantPublic(final Stream stream, final Permission.Operation operation)
+      throws IOException {
     if (stream == null || operation == null) {
       throw new IllegalArgumentException("Must give stream and operation!");
     }
@@ -193,16 +187,16 @@ public abstract class StreamrRESTClient extends AbstractStreamrClient {
     return get(url, userInfoJsonAdapter);
   }
 
-  public List<String> getPublishers(String streamId) throws IOException {
+  public List<String> getPublishers(final String streamId) throws IOException {
     HttpUrl url = getEndpointUrl("streams", streamId, "publishers");
     return get(url, publishersJsonAdapter).getAddresses();
   }
 
-  public boolean isPublisher(String streamId, Address address) throws IOException {
+  public boolean isPublisher(final String streamId, final Address address) throws IOException {
     return isPublisher(streamId, address.toString());
   }
 
-  public boolean isPublisher(String streamId, String ethAddress) throws IOException {
+  public boolean isPublisher(final String streamId, final String ethAddress) throws IOException {
     HttpUrl url = getEndpointUrl("streams", streamId, "publisher", ethAddress);
     try {
       get(url, null);
@@ -212,16 +206,16 @@ public abstract class StreamrRESTClient extends AbstractStreamrClient {
     }
   }
 
-  public List<String> getSubscribers(String streamId) throws IOException {
+  public List<String> getSubscribers(final String streamId) throws IOException {
     HttpUrl url = getEndpointUrl("streams", streamId, "subscribers");
     return get(url, subscribersJsonAdapter).getAddresses();
   }
 
-  public boolean isSubscriber(String streamId, Address address) throws IOException {
+  public boolean isSubscriber(final String streamId, final Address address) throws IOException {
     return isSubscriber(streamId, address.toString());
   }
 
-  public boolean isSubscriber(String streamId, String ethAddress) throws IOException {
+  public boolean isSubscriber(final String streamId, final String ethAddress) throws IOException {
     HttpUrl url = getEndpointUrl("streams", streamId, "subscriber", ethAddress);
     try {
       get(url, null);
@@ -242,5 +236,28 @@ public abstract class StreamrRESTClient extends AbstractStreamrClient {
       builder = builder.addPathSegment(segment);
     }
     return builder.build();
+  }
+
+  /** You might have to close {@code response} if {@code assertSuccessful()} fails. */
+  static void assertSuccessful(Response response) throws IOException {
+    if (!response.isSuccessful()) {
+      String action = response.request().method() + " " + response.request().url().toString();
+
+      switch (response.code()) {
+        case HttpURLConnection.HTTP_NOT_FOUND:
+          throw new ResourceNotFoundException(action);
+        case HttpURLConnection.HTTP_UNAUTHORIZED:
+          throw new AuthenticationException(action);
+        case HttpURLConnection.HTTP_FORBIDDEN:
+          throw new PermissionDeniedException(action);
+        default:
+          throw new RuntimeException(
+              action
+                  + " failed with HTTP status "
+                  + response.code()
+                  + ":"
+                  + response.body().string());
+      }
+    }
   }
 }

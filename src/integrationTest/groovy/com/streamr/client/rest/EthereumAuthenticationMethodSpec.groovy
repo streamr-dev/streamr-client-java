@@ -1,4 +1,4 @@
-package com.streamr.client.authentication
+package com.streamr.client.rest
 
 import com.streamr.client.testing.TestingKeys
 import com.streamr.client.testing.TestingMeta

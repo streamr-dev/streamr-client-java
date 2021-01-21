@@ -2,14 +2,13 @@ package com.streamr.client.protocol.message_layer;
 
 import com.squareup.moshi.*;
 import com.streamr.client.utils.EncryptedGroupKey;
-import com.streamr.client.utils.HttpUtils;
 import java.io.IOException;
 import java.util.List;
 import javax.annotation.Nullable;
 
 public class GroupKeyResponseAdapter extends AbstractGroupKeyMessageAdapter<GroupKeyResponse> {
   private static final Moshi MOSHI =
-      HttpUtils.addDefaultAdapters
+      Json.addDefaultAdapters
           .apply(new Moshi.Builder())
           .add(EncryptedGroupKey.class, new EncryptedGroupKeyAdapter())
           .build();

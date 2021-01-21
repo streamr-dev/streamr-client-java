@@ -1,11 +1,6 @@
 package com.streamr.client.rest
 
 import com.streamr.client.StreamrClient
-import com.streamr.client.authentication.EthereumAuthenticationMethod
-import com.streamr.client.exceptions.AmbiguousResultsException
-import com.streamr.client.exceptions.AuthenticationException
-import com.streamr.client.exceptions.PermissionDeniedException
-import com.streamr.client.exceptions.ResourceNotFoundException
 import com.streamr.client.testing.TestingKeys
 import com.streamr.client.testing.TestingStreamrClient
 import com.streamr.client.testing.TestingStreams
