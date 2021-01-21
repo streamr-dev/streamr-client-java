@@ -1,7 +1,7 @@
 package com.streamr.client.protocol.message_layer;
 
-import com.streamr.client.exceptions.UnsupportedMessageException;
 import com.streamr.client.protocol.common.MessageRef;
+import com.streamr.client.protocol.common.UnsupportedMessageException;
 import com.streamr.client.utils.Address;
 import com.streamr.client.utils.EncryptedGroupKey;
 import java.io.IOException;
