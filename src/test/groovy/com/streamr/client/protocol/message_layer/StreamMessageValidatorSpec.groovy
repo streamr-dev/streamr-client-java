@@ -28,7 +28,14 @@ class StreamMessageValidatorSpec extends StreamrSpecification {
     StreamMessage groupKeyErrorResponse
 
     String signature = "0x787cd72924153c88350e808de68b68c88030cbc34d053a5c696a5893d5e6fec1687c1b6205ec99aeb3375a81bf5cb8857ae39c1b55a41b32ed6399ae8da456a61b"
-    MessageId msgId = new MessageId("streamId", 0, 425235315L, 0L, publisherId, "msgChainId")
+    MessageId msgId = new MessageId.Builder()
+            .withStreamId("streamId")
+            .withStreamPartition(0)
+            .withTimestamp(425235315L)
+            .withSequenceNumber(0L)
+            .withPublisherId(publisherId)
+            .withMsgChainId("msgChainId")
+            .createMessageId()
 
     // The signature of this message is invalid but still in a correct format
     StreamMessage msgInvalid = new StreamMessage.Builder()

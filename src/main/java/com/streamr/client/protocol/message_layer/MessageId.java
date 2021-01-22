@@ -12,7 +12,7 @@ public final class MessageId {
   private final Address publisherId;
   private final String msgChainId;
 
-  public MessageId(
+  private MessageId(
       final String streamId,
       final int streamPartition,
       final long timestamp,
@@ -88,5 +88,60 @@ public final class MessageId {
     return String.format(
         "MessageId{streamId='%s', streamPartition=%d, timestamp=%d, sequenceNumber=%d, publisherId='%s', msgChainId='%s'}",
         streamId, streamPartition, timestamp, sequenceNumber, publisherId, msgChainId);
+  }
+
+  public final static class Builder {
+    private String streamId;
+    private int streamPartition;
+    private long timestamp;
+    private long sequenceNumber;
+    private Address publisherId;
+    private String msgChainId;
+
+    public Builder() {}
+
+    public Builder(final MessageId messageId) {
+      this.streamId = messageId.streamId;
+      this.streamPartition = messageId.streamPartition;
+      this.timestamp = messageId.timestamp;
+      this.sequenceNumber = messageId.sequenceNumber;
+      this.publisherId = messageId.publisherId;
+      this.msgChainId = messageId.msgChainId;
+    }
+
+    public Builder withStreamId(final String streamId) {
+      this.streamId = streamId;
+      return this;
+    }
+
+    public Builder withStreamPartition(final int streamPartition) {
+      this.streamPartition = streamPartition;
+      return this;
+    }
+
+    public Builder withTimestamp(final long timestamp) {
+      this.timestamp = timestamp;
+      return this;
+    }
+
+    public Builder withSequenceNumber(final long sequenceNumber) {
+      this.sequenceNumber = sequenceNumber;
+      return this;
+    }
+
+    public Builder withPublisherId(final Address publisherId) {
+      this.publisherId = publisherId;
+      return this;
+    }
+
+    public Builder withMsgChainId(final String msgChainId) {
+      this.msgChainId = msgChainId;
+      return this;
+    }
+
+    public MessageId createMessageId() {
+      return new MessageId(
+          streamId, streamPartition, timestamp, sequenceNumber, publisherId, msgChainId);
+    }
   }
 }

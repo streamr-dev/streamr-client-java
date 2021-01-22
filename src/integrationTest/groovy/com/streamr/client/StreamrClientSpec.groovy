@@ -115,10 +115,21 @@ class StreamrClientSpec extends Specification {
     }
 
     StreamMessage createMsg(String streamId, long timestamp, long sequenceNumber, Long prevTimestamp, Long prevSequenceNumber) {
-        MessageId msgId = new MessageId(streamId, 0, timestamp, sequenceNumber, new Address("publisherId"), "msgChainId")
+        MessageId msgId = new MessageId.Builder()
+                .withStreamId(streamId)
+                .withStreamPartition(0)
+                .withTimestamp(timestamp)
+                .withSequenceNumber(sequenceNumber)
+                .withPublisherId(new Address("publisherId"))
+                .withMsgChainId("msgChainId")
+                .createMessageId()
         MessageRef prev = prevTimestamp == null ? null : new MessageRef(prevTimestamp, prevSequenceNumber)
         def map = [hello: "world"]
-        return new StreamMessage.Builder().withMessageId(msgId).withPreviousMessageRef(prev).withSerializedContent(TestingJson.toJson(map)).createStreamMessage()
+        return new StreamMessage.Builder()
+                .withMessageId(msgId)
+                .withPreviousMessageRef(prev)
+                .withSerializedContent(TestingJson.toJson(map))
+                .createStreamMessage()
     }
 
     void "subscribe() sends SubscribeRequest and 1 ResendLastRequest after SubscribeResponse if answer received"() {

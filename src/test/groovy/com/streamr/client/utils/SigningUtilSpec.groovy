@@ -1,8 +1,7 @@
 package com.streamr.client.utils
 
-
-import com.streamr.client.protocol.message_layer.MessageId
 import com.streamr.client.protocol.common.MessageRef
+import com.streamr.client.protocol.message_layer.MessageId
 import com.streamr.client.protocol.message_layer.StreamMessage
 import com.streamr.client.protocol.message_layer.StreamrSpecification
 import com.streamr.client.testing.TestingJson
@@ -23,7 +22,14 @@ class SigningUtilSpec extends StreamrSpecification {
         assert address.toString() == "0xa5374e3C19f15E1847881979Dd0C6C9ffe846BD5".toLowerCase()
 
         signingUtil = new SigningUtil(account)
-        msgId = new MessageId("streamId", 0, 425235315L, 0L, publisherId, "msgChainId")
+        msgId = new MessageId.Builder()
+                .withStreamId("streamId")
+                .withStreamPartition(0)
+                .withTimestamp(425235315L)
+                .withSequenceNumber(0L)
+                .withPublisherId(publisherId)
+                .withMsgChainId("msgChainId")
+                .createMessageId()
     }
 
     void "should correctly sign arbitrary data"() {
@@ -102,7 +108,14 @@ class SigningUtilSpec extends StreamrSpecification {
     }
 
     void "returns true if correct signature"() {
-        MessageId msgId = new MessageId("streamId", 0, 425235315L, 0L, address, "msgChainId")
+        MessageId msgId = new MessageId.Builder()
+                .withStreamId("streamId")
+                .withStreamPartition(0)
+                .withTimestamp(425235315L)
+                .withSequenceNumber(0L)
+                .withPublisherId(address)
+                .withMsgChainId("msgChainId")
+                .createMessageId()
         StreamMessage msg = new StreamMessage.Builder()
                 .withMessageId(msgId)
                 .withPreviousMessageRef(null)
@@ -116,7 +129,14 @@ class SigningUtilSpec extends StreamrSpecification {
 
     void "returns true for correct signature of publisher address has upper and lower case letters"() {
         Address address1 = new Address("0x752C8dCAC0788759aCB1B4BB7A9103596BEe3e6c")
-        MessageId msgId = new MessageId("ogzCJrTdQGuKQO7nkLd3Rw", 0, 1567003338767L, 2L, address1, "kxYyLiSUQO0SRvMx6gA1")
+        MessageId msgId = new MessageId.Builder()
+                .withStreamId("ogzCJrTdQGuKQO7nkLd3Rw")
+                .withStreamPartition(0)
+                .withTimestamp(1567003338767L)
+                .withSequenceNumber(2L)
+                .withPublisherId(address1)
+                .withMsgChainId("kxYyLiSUQO0SRvMx6gA1")
+                .createMessageId()
         StreamMessage msg = new StreamMessage.Builder()
                 .withMessageId(msgId)
                 .withPreviousMessageRef(new MessageRef(1567003338767L, 1L))

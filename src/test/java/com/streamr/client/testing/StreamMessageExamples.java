@@ -18,7 +18,14 @@ public class StreamMessageExamples {
     static {
       final Address publisherId = new Address("publisherId");
       final MessageId id =
-          new MessageId("7wa7APtlTq6EC5iTCBy6dw", 0, 1528228173462L, 0, publisherId, "1");
+          new MessageId.Builder()
+              .withStreamId("7wa7APtlTq6EC5iTCBy6dw")
+              .withStreamPartition(0)
+              .withTimestamp(1528228173462L)
+              .withSequenceNumber(0)
+              .withPublisherId(publisherId)
+              .withMsgChainId("1")
+              .createMessageId();
 
       final Map<String, Object> content = new HashMap<>();
       content.put("hello", "world");

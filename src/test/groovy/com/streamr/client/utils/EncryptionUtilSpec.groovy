@@ -2,8 +2,8 @@ package com.streamr.client.utils
 
 import com.streamr.client.exceptions.InvalidGroupKeyException
 import com.streamr.client.exceptions.InvalidRSAKeyException
-import com.streamr.client.protocol.message_layer.MessageId
 import com.streamr.client.protocol.common.MessageRef
+import com.streamr.client.protocol.message_layer.MessageId
 import com.streamr.client.protocol.message_layer.StreamMessage
 import com.streamr.client.protocol.message_layer.StreamrSpecification
 import com.streamr.client.testing.TestingJson
@@ -26,7 +26,19 @@ class EncryptionUtilSpec extends StreamrSpecification {
     GroupKey key
 
     def setup() {
-        streamMessage = new StreamMessage.Builder().withMessageId(new MessageId("stream-id", 0, 1L, 0L, publisherId, "msgChainId")).withPreviousMessageRef(new MessageRef(0L, 0L)).withSerializedContent(TestingJson.toJson(plaintextContent)).createStreamMessage()
+        def messageId = new MessageId.Builder()
+                .withStreamId("stream-id")
+                .withStreamPartition(0)
+                .withTimestamp(1L)
+                .withSequenceNumber(0L)
+                .withPublisherId(publisherId)
+                .withMsgChainId("msgChainId")
+                .createMessageId()
+        streamMessage = new StreamMessage.Builder()
+                .withMessageId(messageId)
+                .withPreviousMessageRef(new MessageRef(0L, 0L))
+                .withSerializedContent(TestingJson.toJson(plaintextContent))
+                .createStreamMessage()
         util = new EncryptionUtil()
         key = GroupKey.generate()
     }

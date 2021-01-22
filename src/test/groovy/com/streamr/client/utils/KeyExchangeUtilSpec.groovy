@@ -19,8 +19,16 @@ class KeyExchangeUtilSpec extends StreamrSpecification {
     Consumer<StreamMessage> publish
     KeyExchangeUtil.OnNewKeysFunction onNewKeysFunction
     ArrayList<StreamMessage> published
+    MessageId messageId = new MessageId.Builder()
+            .withStreamId("subscriberId")
+            .withStreamPartition(0)
+            .withTimestamp(5145)
+            .withSequenceNumber(0)
+            .withPublisherId(publisherId)
+            .withMsgChainId("")
+            .createMessageId()
     StreamMessage response = new StreamMessage.Builder()
-            .withMessageId(new MessageId("subscriberId", 0, 5145, 0, publisherId, ""))
+            .withMessageId(messageId)
             .withMessageType(null)
             .withMessageType(StreamMessage.MessageType.GROUP_KEY_RESPONSE)
             .withSerializedContent("response")
@@ -57,7 +65,14 @@ class KeyExchangeUtilSpec extends StreamrSpecification {
     }
 
     void "handleGroupKeyRequest() should send group key response for the requested keys"() {
-        MessageId id = new MessageId("publisherInbox", 0, 414, 0, subscriberId, "msgChainId")
+        MessageId id = new MessageId.Builder()
+                .withStreamId("publisherInbox")
+                .withStreamPartition(0)
+                .withTimestamp(414)
+                .withSequenceNumber(0)
+                .withPublisherId(subscriberId)
+                .withMsgChainId("msgChainId")
+                .createMessageId()
         GroupKey key1 = GroupKey.generate()
         GroupKey key2 = GroupKey.generate()
 
@@ -86,7 +101,14 @@ class KeyExchangeUtilSpec extends StreamrSpecification {
     }
 
     void "handleGroupKeyResponse() should decrypt keys, add keys to keyStore, and call onNewKeys function"() {
-        MessageId id = new MessageId("subscriberInbox", 0, 414, 0, publisherId, "msgChainId")
+        MessageId id = new MessageId.Builder()
+                .withStreamId("subscriberInbox")
+                .withStreamPartition(0)
+                .withTimestamp(414)
+                .withSequenceNumber(0)
+                .withPublisherId(publisherId)
+                .withMsgChainId("msgChainId")
+                .createMessageId()
         GroupKey key = GroupKey.generate()
         EncryptedGroupKey encryptedKey = EncryptionUtil.encryptWithPublicKey(key, encryptionUtil.publicKey)
 
@@ -104,7 +126,14 @@ class KeyExchangeUtilSpec extends StreamrSpecification {
     }
 
     void "handleGroupKeyAnnounce() should RSA decrypt keys, add them to keyStore, and call onNewKeys function"() {
-        MessageId id = new MessageId("subscriberInbox", 0, 414, 0, publisherId, "msgChainId")
+        MessageId id = new MessageId.Builder()
+                .withStreamId("subscriberInbox")
+                .withStreamPartition(0)
+                .withTimestamp(414)
+                .withSequenceNumber(0)
+                .withPublisherId(publisherId)
+                .withMsgChainId("msgChainId")
+                .createMessageId()
         GroupKey key = GroupKey.generate()
         EncryptedGroupKey encryptedKey = EncryptionUtil.encryptWithPublicKey(key, encryptionUtil.publicKey)
 
@@ -122,7 +151,14 @@ class KeyExchangeUtilSpec extends StreamrSpecification {
     }
 
     void "handleGroupKeyAnnounce() should AES decrypt keys, add them to keyStore, and call onNewKeys function"() {
-        MessageId id = new MessageId("subscriberInbox", 0, 414, 0, publisherId, "msgChainId")
+        MessageId id = new MessageId.Builder()
+                .withStreamId("subscriberInbox")
+                .withStreamPartition(0)
+                .withTimestamp(414)
+                .withSequenceNumber(0)
+                .withPublisherId(publisherId)
+                .withMsgChainId("msgChainId")
+                .createMessageId()
         GroupKey keyToEncrypt = GroupKey.generate()
         GroupKey keyToEncryptWith = GroupKey.generate()
         EncryptedGroupKey encryptedKey = EncryptionUtil.encryptGroupKey(keyToEncrypt, keyToEncryptWith)
@@ -206,13 +242,14 @@ class KeyExchangeUtilSpec extends StreamrSpecification {
         util.getKnownPublicKeysByPublisher().put(getSubscriberId(2), new EncryptionUtil().publicKeyAsPemString)
         util.getKnownPublicKeysByPublisher().put(getSubscriberId(3), new EncryptionUtil().publicKeyAsPemString)
 
-        def msgId = new MessageId(
-                "keyexchange-sub1",
-                0,
-                0,
-                0,
-                publisherId,
-                "msgChainId")
+        MessageId msgId = new MessageId.Builder()
+                .withStreamId("keyexchange-sub1")
+                .withStreamPartition(0)
+                .withTimestamp(0)
+                .withSequenceNumber(0)
+                .withPublisherId(publisherId)
+                .withMsgChainId("msgChainId")
+                .createMessageId()
         StreamMessage announce1 = new GroupKeyAnnounce("streamId", [])
                 .toStreamMessageBuilder(msgId, null)
                 .createStreamMessage()

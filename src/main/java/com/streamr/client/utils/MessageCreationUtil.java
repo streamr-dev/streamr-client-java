@@ -270,8 +270,7 @@ public class MessageCreationUtil {
     String key = streamId + streamPartition;
     long sequenceNumber = getNextSequenceNumber(key, timestamp);
     MessageId msgId =
-        new MessageId(
-            streamId, streamPartition, timestamp, sequenceNumber, publisherId, msgChainId);
+        new MessageId.Builder().withStreamId(streamId).withStreamPartition(streamPartition).withTimestamp(timestamp).withSequenceNumber(sequenceNumber).withPublisherId(publisherId).withMsgChainId(msgChainId).createMessageId();
     MessageRef prevMsgRef = refsPerStreamAndPartition.get(key);
     Pair<MessageId, MessageRef> p = Pair.of(msgId, prevMsgRef);
     refsPerStreamAndPartition.put(key, new MessageRef(timestamp, sequenceNumber));

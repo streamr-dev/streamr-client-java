@@ -10,8 +10,15 @@ class StreamMessageV31AdapterSpec extends StreamrSpecification {
 		adapter = new StreamMessageAdapter()
 
 		String serializedContent = '{"desi":"2","dir":"1","oper":40,"veh":222,"tst":"2018-06-05T19:49:33Z","tsi":1528228173,"spd":3.6,"hdg":69,"lat":60.192258,"long":24.928701,"acc":-0.59,"dl":-248,"odo":5134,"drst":0,"oday":"2018-06-05","jrn":885,"line":30,"start":"22:23"}'
+		final MessageId messageId = new MessageId.Builder()
+				.withStreamId("7wa7APtlTq6EC5iTCBy6dw")
+				.withStreamPartition(0)
+				.withTimestamp(1528228173462L)
+				.withSequenceNumber(0)
+				.withPublisherId(publisherId).withMsgChainId("1")
+				.createMessageId()
 		msg = new StreamMessage.Builder()
-				.withMessageId(new MessageId("7wa7APtlTq6EC5iTCBy6dw", 0, 1528228173462L, 0, publisherId, "1"))
+				.withMessageId(messageId)
 				.withPreviousMessageRef(new MessageRef(1528228170000L, 0))
 				.withMessageType(StreamMessage.MessageType.STREAM_MESSAGE)
 				.withSerializedContent(serializedContent)

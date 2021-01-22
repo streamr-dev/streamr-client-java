@@ -17,8 +17,14 @@ public class MessageIdAdapter extends JsonAdapter<MessageId> {
     String publisherId = reader.nextString();
     String msgChainId = reader.nextString();
     reader.endArray();
-    return new MessageId(
-        streamId, streamPartition, timestamp, sequenceNumber, new Address(publisherId), msgChainId);
+    return new MessageId.Builder()
+        .withStreamId(streamId)
+        .withStreamPartition(streamPartition)
+        .withTimestamp(timestamp)
+        .withSequenceNumber(sequenceNumber)
+        .withPublisherId(new Address(publisherId))
+        .withMsgChainId(msgChainId)
+        .createMessageId();
   }
 
   @Override
