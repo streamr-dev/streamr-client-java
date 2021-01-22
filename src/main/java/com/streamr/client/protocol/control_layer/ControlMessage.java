@@ -4,6 +4,7 @@ import com.squareup.moshi.JsonReader;
 import com.squareup.moshi.JsonWriter;
 import java.io.IOException;
 import java.nio.charset.StandardCharsets;
+import java.util.Objects;
 import okio.Buffer;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -16,7 +17,7 @@ public abstract class ControlMessage {
   private final int type;
   private final String requestId;
 
-  public ControlMessage(int type, String requestId) {
+  public ControlMessage(final int type, final String requestId) {
     this.type = type;
     this.requestId = requestId;
   }
@@ -52,11 +53,16 @@ public abstract class ControlMessage {
   }
 
   @Override
-  public boolean equals(Object o) {
-    if (this == o) return true;
-    if (o == null || getClass() != o.getClass()) return false;
-    ControlMessage that = (ControlMessage) o;
-    return this.toJson().equals(that.toJson());
+  public boolean equals(final Object obj) {
+    if (this == obj) return true;
+    if (obj == null || getClass() != obj.getClass()) return false;
+    final ControlMessage that = (ControlMessage) obj;
+    return Objects.equals(toJson(), that.toJson());
+  }
+
+  @Override
+  public int hashCode() {
+    return Objects.hash(toJson());
   }
 
   @Override
