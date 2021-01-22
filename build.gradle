@@ -166,7 +166,7 @@ ext {
 	cache2kVersion = '1.6.0.Final'
 	web3jVersion = '5.0.0'
 	findbugsVersion = '3.0.2'
-	jetbrainsVersion = '17.0.0'
+	jetbrainsVersion = '20.1.0'
 	bouncyCastleVersion = '1.67'
 	equalsVerifierVersion = '3.5.2'
 	groovyVersion = '2.5.14'
