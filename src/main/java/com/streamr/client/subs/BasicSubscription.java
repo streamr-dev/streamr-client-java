@@ -174,7 +174,7 @@ public abstract class BasicSubscription extends Subscription {
     return orderingUtil.getChains();
   }
 
-  private final class DecryptResult {
+  private static final class DecryptResult {
     private final boolean status;
     private final StreamMessage message;
 
