@@ -90,7 +90,7 @@ public final class MessageId {
         streamId, streamPartition, timestamp, sequenceNumber, publisherId, msgChainId);
   }
 
-  public final static class Builder {
+  public static final class Builder {
     private String streamId;
     private int streamPartition;
     private long timestamp;

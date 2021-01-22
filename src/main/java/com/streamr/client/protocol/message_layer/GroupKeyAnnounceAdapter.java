@@ -1,14 +1,9 @@
 package com.streamr.client.protocol.message_layer;
 
-import com.squareup.moshi.JsonAdapter;
 import com.squareup.moshi.JsonReader;
 import com.squareup.moshi.JsonWriter;
-import com.squareup.moshi.Moshi;
-import com.squareup.moshi.Types;
 import com.streamr.client.utils.EncryptedGroupKey;
 import java.io.IOException;
-import java.math.BigDecimal;
-import java.util.Date;
 import java.util.List;
 import javax.annotation.Nullable;
 

@@ -142,8 +142,7 @@ public final class EncryptionUtil {
     return aesCipher.get().doFinal(DatatypeConverter.parseHexBinary(ciphertext.substring(32)));
   }
 
-  static EncryptedGroupKey encryptGroupKey(
-      GroupKey keyToEncrypt, GroupKey keyToEncryptWith) {
+  static EncryptedGroupKey encryptGroupKey(GroupKey keyToEncrypt, GroupKey keyToEncryptWith) {
     return new EncryptedGroupKey(
         keyToEncrypt.getGroupKeyId(),
         encrypt(DatatypeConverter.parseHexBinary(keyToEncrypt.getGroupKeyHex()), keyToEncryptWith));
@@ -186,8 +185,8 @@ public final class EncryptionUtil {
   }
 
   /** Decrypts the serialized content of 'streamMessage' with 'groupKey'. */
-   public static StreamMessage decryptStreamMessage(
-       final StreamMessage streamMessage, final GroupKey groupKey) throws UnableToDecryptException {
+  public static StreamMessage decryptStreamMessage(
+      final StreamMessage streamMessage, final GroupKey groupKey) throws UnableToDecryptException {
     if (streamMessage.getEncryptionType() != StreamMessage.EncryptionType.AES) {
       throw new IllegalArgumentException("Given StreamMessage is not encrypted with AES!");
     }

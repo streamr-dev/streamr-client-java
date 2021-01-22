@@ -47,10 +47,11 @@ public class MessageCreationUtil {
 
   private final Map<String, MessageRef> refsPerStreamAndPartition = new HashMap<>();
   private final Map<String, Integer> cachedHashes = new HashMap<>();
-  private final JsonAdapter<Map<String, Object>> mapOfStringAndObjectAdapter = new Moshi.Builder()
-      .add(Date.class, new StringOrMillisDateJsonAdapter().nullSafe())
-      .build()
-      .adapter(Types.newParameterizedType(Map.class, String.class, Object.class));
+  private final JsonAdapter<Map<String, Object>> mapOfStringAndObjectAdapter =
+      new Moshi.Builder()
+          .add(Date.class, new StringOrMillisDateJsonAdapter().nullSafe())
+          .build()
+          .adapter(Types.newParameterizedType(Map.class, String.class, Object.class));
 
   public MessageCreationUtil(Address publisherId, SigningUtil signingUtil) {
     this.publisherId = publisherId;
@@ -270,7 +271,14 @@ public class MessageCreationUtil {
     String key = streamId + streamPartition;
     long sequenceNumber = getNextSequenceNumber(key, timestamp);
     MessageId msgId =
-        new MessageId.Builder().withStreamId(streamId).withStreamPartition(streamPartition).withTimestamp(timestamp).withSequenceNumber(sequenceNumber).withPublisherId(publisherId).withMsgChainId(msgChainId).createMessageId();
+        new MessageId.Builder()
+            .withStreamId(streamId)
+            .withStreamPartition(streamPartition)
+            .withTimestamp(timestamp)
+            .withSequenceNumber(sequenceNumber)
+            .withPublisherId(publisherId)
+            .withMsgChainId(msgChainId)
+            .createMessageId();
     MessageRef prevMsgRef = refsPerStreamAndPartition.get(key);
     Pair<MessageId, MessageRef> p = Pair.of(msgId, prevMsgRef);
     refsPerStreamAndPartition.put(key, new MessageRef(timestamp, sequenceNumber));
