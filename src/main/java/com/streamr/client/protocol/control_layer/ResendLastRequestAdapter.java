@@ -4,7 +4,7 @@ import com.squareup.moshi.JsonReader;
 import com.squareup.moshi.JsonWriter;
 import java.io.IOException;
 
-public class ResendLastRequestAdapter extends ControlLayerAdapter<ResendLastRequest> {
+final class ResendLastRequestAdapter extends ControlLayerAdapter<ResendLastRequest> {
 
   ResendLastRequestAdapter() {
     super(ResendLastRequest.class);

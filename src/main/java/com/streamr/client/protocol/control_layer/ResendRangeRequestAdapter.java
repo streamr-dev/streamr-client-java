@@ -7,7 +7,7 @@ import com.streamr.client.protocol.common.MessageRefAdapter;
 import com.streamr.client.utils.Address;
 import java.io.IOException;
 
-public class ResendRangeRequestAdapter extends ControlLayerAdapter<ResendRangeRequest> {
+final class ResendRangeRequestAdapter extends ControlLayerAdapter<ResendRangeRequest> {
   private static final MessageRefAdapter msgRefAdapter = new MessageRefAdapter();
 
   ResendRangeRequestAdapter() {

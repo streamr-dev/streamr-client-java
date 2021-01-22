@@ -6,7 +6,7 @@ import com.streamr.client.protocol.common.MessageRef;
 import com.streamr.client.protocol.common.MessageRefAdapter;
 import java.io.IOException;
 
-public class ResendFromRequestAdapter extends ControlLayerAdapter<ResendFromRequest> {
+final class ResendFromRequestAdapter extends ControlLayerAdapter<ResendFromRequest> {
   private static final MessageRefAdapter msgRefAdapter = new MessageRefAdapter();
 
   ResendFromRequestAdapter() {

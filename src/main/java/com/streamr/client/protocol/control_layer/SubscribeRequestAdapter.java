@@ -4,7 +4,7 @@ import com.squareup.moshi.JsonReader;
 import com.squareup.moshi.JsonWriter;
 import java.io.IOException;
 
-public class SubscribeRequestAdapter extends ControlLayerAdapter<SubscribeRequest> {
+final class SubscribeRequestAdapter extends ControlLayerAdapter<SubscribeRequest> {
 
   SubscribeRequestAdapter() {
     super(SubscribeRequest.class);

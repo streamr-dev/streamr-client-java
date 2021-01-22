@@ -4,7 +4,7 @@ import com.squareup.moshi.JsonReader;
 import com.squareup.moshi.JsonWriter;
 import java.io.IOException;
 
-public class ErrorResponseAdapter extends ControlLayerAdapter<ErrorResponse> {
+final class ErrorResponseAdapter extends ControlLayerAdapter<ErrorResponse> {
   ErrorResponseAdapter() {
     super(ErrorResponse.class);
   }
