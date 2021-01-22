@@ -28,20 +28,20 @@ public class EncryptionOptions {
         this.autoRevoke = autoRevoke;
     }
 
-    public EncryptionOptions(GroupKeyStore keyStore, String rsaPublicKey, String rsaPrivateKey) {
+    private EncryptionOptions(GroupKeyStore keyStore, String rsaPublicKey, String rsaPrivateKey) {
         this(keyStore, rsaPublicKey, rsaPrivateKey, true);
     }
 
     // TODO: non-null RSA defaults?
-    public EncryptionOptions(GroupKeyStore keyStore) {
+    private EncryptionOptions(GroupKeyStore keyStore) {
         this(keyStore, null, null, true);
     }
 
-    public EncryptionOptions() {
+    private EncryptionOptions() {
         this(new InMemoryGroupKeyStore(), null, null);
     }
 
-    public EncryptionOptions(boolean autoRevoke) {
+    private EncryptionOptions(boolean autoRevoke) {
         this(new InMemoryGroupKeyStore(), null, null, autoRevoke);
     }
 
