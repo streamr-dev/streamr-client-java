@@ -17,7 +17,6 @@ class StreamrSpecification extends Specification {
 	final String subscriberPrivateKey = "81fe39ed83c4ab997f64564d0c5a630e34c621ad9bbe51ad2754fac575fc0c46"
 	final Address subscriber = new Address("0xbe0ab87a1f5b09afe9101b09e3c86fd8f4162527")
 
-	protected static final Address subscriberId = new Address("subscriberId")
 	protected static final Address publisherId = new Address("publisherId")
 
 

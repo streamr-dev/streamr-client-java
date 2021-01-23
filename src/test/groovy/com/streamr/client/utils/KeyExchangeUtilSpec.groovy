@@ -71,7 +71,7 @@ class KeyExchangeUtilSpec extends StreamrSpecification {
                 .withStreamPartition(0)
                 .withTimestamp(414)
                 .withSequenceNumber(0)
-                .withPublisherId(subscriberId)
+                .withPublisherId(TestingAddresses.SUBSCRIBER_ID)
                 .withMsgChainId("msgChainId")
                 .createMessageId()
         GroupKey key1 = GroupKey.generate()
@@ -88,7 +88,7 @@ class KeyExchangeUtilSpec extends StreamrSpecification {
         1 * keyStore.get("streamId", key1.groupKeyId) >> key1
         1 * keyStore.get("streamId", key2.groupKeyId) >> key2
         1 * messageCreationUtil.createGroupKeyResponse(_, _, _) >> { Address subId, GroupKeyRequest req, List<GroupKey> keys ->
-            assert subId == subscriberId
+            assert subId == TestingAddresses.SUBSCRIBER_ID
             assert req == request
             assert keys == [key1, key2]
             return response
@@ -98,7 +98,7 @@ class KeyExchangeUtilSpec extends StreamrSpecification {
 
         then:
         // Remember the public key of the subscriber
-        util.getKnownPublicKeysByPublisher().get(subscriberId) == encryptionUtil.publicKeyAsPemString
+        util.getKnownPublicKeysByPublisher().get(TestingAddresses.SUBSCRIBER_ID) == encryptionUtil.publicKeyAsPemString
     }
 
     void "handleGroupKeyResponse() should decrypt keys, add keys to keyStore, and call onNewKeys function"() {
