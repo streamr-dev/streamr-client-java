@@ -1,7 +1,7 @@
 package com.streamr.client.utils
 
 import com.streamr.client.protocol.message_layer.StreamrSpecification
-import com.streamr.client.protocol.message_layer.TestingAddresses
+import com.streamr.client.testing.TestingAddresses
 import java.util.function.BiFunction
 import java.util.function.Function
 

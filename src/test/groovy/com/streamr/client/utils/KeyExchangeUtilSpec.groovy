@@ -6,7 +6,7 @@ import com.streamr.client.protocol.message_layer.GroupKeyResponse
 import com.streamr.client.protocol.message_layer.MessageId
 import com.streamr.client.protocol.message_layer.StreamMessage
 import com.streamr.client.protocol.message_layer.StreamrSpecification
-import com.streamr.client.protocol.message_layer.TestingAddresses
+import com.streamr.client.testing.TestingAddresses
 import java.time.Clock
 import java.time.Duration
 import java.time.Instant

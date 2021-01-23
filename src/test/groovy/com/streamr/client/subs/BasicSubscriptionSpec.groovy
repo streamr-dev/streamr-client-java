@@ -6,7 +6,7 @@ import com.streamr.client.exceptions.UnableToDecryptException
 import com.streamr.client.protocol.message_layer.StreamrSpecification
 import com.streamr.client.protocol.common.MessageRef
 import com.streamr.client.protocol.message_layer.StreamMessage
-import com.streamr.client.protocol.message_layer.TestingAddresses
+import com.streamr.client.testing.TestingAddresses
 import com.streamr.client.subs.BasicSubscription.GroupKeyRequestFunction
 import com.streamr.client.utils.Address
 import com.streamr.client.utils.EncryptionUtil

@@ -1,4 +1,4 @@
-package com.streamr.client.protocol.message_layer
+package com.streamr.client.testing
 
 import com.streamr.client.utils.Address
 
