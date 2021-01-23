@@ -5,6 +5,7 @@ import com.streamr.client.options.ResendLastOption
 import com.streamr.client.options.ResendOption
 import com.streamr.client.protocol.message_layer.MessageId
 import com.streamr.client.protocol.message_layer.StreamMessage
+import com.streamr.client.testing.TestingAddresses
 import com.streamr.client.testing.TestingJson
 import com.streamr.client.utils.Address
 import com.streamr.client.utils.EncryptionUtil
@@ -30,7 +31,7 @@ class HistoricalSubscriptionSpec extends Specification {
     def setup() {
 		final MessageId messageId = new MessageId.Builder()
 				.withStreamId("streamId")
-				.withPublisherId(new Address("publisherId"))
+				.withPublisherId(TestingAddresses.PUBLISHER_ID)
 				.withMsgChainId("msgChainId")
 				.createMessageId()
 		msg = new StreamMessage.Builder()

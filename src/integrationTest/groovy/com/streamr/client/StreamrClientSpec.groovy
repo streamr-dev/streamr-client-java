@@ -22,6 +22,7 @@ import com.streamr.client.rest.EthereumAuthenticationMethod
 import com.streamr.client.rest.Stream
 import com.streamr.client.subs.Subscription
 import com.streamr.client.testing.TestWebSocketServer
+import com.streamr.client.testing.TestingAddresses
 import com.streamr.client.testing.TestingJson
 import com.streamr.client.testing.TestingStreamrClient
 import com.streamr.client.utils.Address
@@ -120,7 +121,7 @@ class StreamrClientSpec extends Specification {
                 .withStreamPartition(0)
                 .withTimestamp(timestamp)
                 .withSequenceNumber(sequenceNumber)
-                .withPublisherId(new Address("publisherId"))
+                .withPublisherId(TestingAddresses.PUBLISHER_ID)
                 .withMsgChainId("msgChainId")
                 .createMessageId()
         MessageRef prev = prevTimestamp == null ? null : new MessageRef(prevTimestamp, prevSequenceNumber)
@@ -172,7 +173,7 @@ class StreamrClientSpec extends Specification {
         new PollingConditions().eventually {
             server.receivedControlMessages.size() == 2
         }
-        server.expect(new ResendRangeRequest(server.receivedControlMessages[1].message.requestId, stream.id, 0, new MessageRef(0, 1), new MessageRef(1, 0), new Address("publisherId"), "msgChainId", client.sessionToken))
+        server.expect(new ResendRangeRequest(server.receivedControlMessages[1].message.requestId, stream.id, 0, new MessageRef(0, 1), new MessageRef(1, 0), TestingAddresses.PUBLISHER_ID, "msgChainId", client.sessionToken))
 
         when:
         client.receiveMessage(new UnicastMessage(server.receivedControlMessages[1].message.requestId, createMsg("test-stream", 1, 0, 0, 0)))
@@ -194,8 +195,8 @@ class StreamrClientSpec extends Specification {
         new PollingConditions().eventually {
             server.receivedControlMessages.size() == 3
         }
-        server.expect(new ResendRangeRequest(server.receivedControlMessages[1].message.requestId, stream.id, 0, new MessageRef(0, 1), new MessageRef(1, 0), new Address("publisherId"), "msgChainId", client.sessionToken))
-        server.expect(new ResendRangeRequest(server.receivedControlMessages[2].message.requestId, stream.id, 0, new MessageRef(0, 1), new MessageRef(1, 0), new Address("publisherId"), "msgChainId", client.sessionToken))
+        server.expect(new ResendRangeRequest(server.receivedControlMessages[1].message.requestId, stream.id, 0, new MessageRef(0, 1), new MessageRef(1, 0), TestingAddresses.PUBLISHER_ID, "msgChainId", client.sessionToken))
+        server.expect(new ResendRangeRequest(server.receivedControlMessages[2].message.requestId, stream.id, 0, new MessageRef(0, 1), new MessageRef(1, 0), TestingAddresses.PUBLISHER_ID, "msgChainId", client.sessionToken))
     }
 
     void "publish() publishes with the latest key added to keyStore"() {

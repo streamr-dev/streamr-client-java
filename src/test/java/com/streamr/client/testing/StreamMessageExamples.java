@@ -16,7 +16,7 @@ public class StreamMessageExamples {
     public static final StreamMessage helloWorld;
 
     static {
-      final Address publisherId = new Address("publisherId");
+      final Address publisherId = TestingAddresses.PUBLISHER_ID;
       final MessageId id =
           new MessageId.Builder()
               .withStreamId("7wa7APtlTq6EC5iTCBy6dw")
