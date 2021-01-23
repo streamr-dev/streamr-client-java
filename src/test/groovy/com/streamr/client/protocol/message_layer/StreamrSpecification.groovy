@@ -20,9 +20,6 @@ class StreamrSpecification extends Specification {
 	protected static final Address subscriberId = new Address("subscriberId")
 	protected static final Address publisherId = new Address("publisherId")
 
-	protected static Address getSubscriberId(int number) {
-		return new Address("subscriberId${number}")
-	}
 
 	protected static Address getPublisherId(int number) {
 		return new Address("publisherId${number}")

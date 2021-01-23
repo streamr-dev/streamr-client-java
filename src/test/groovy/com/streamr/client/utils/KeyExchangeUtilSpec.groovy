@@ -6,6 +6,7 @@ import com.streamr.client.protocol.message_layer.GroupKeyResponse
 import com.streamr.client.protocol.message_layer.MessageId
 import com.streamr.client.protocol.message_layer.StreamMessage
 import com.streamr.client.protocol.message_layer.StreamrSpecification
+import com.streamr.client.protocol.message_layer.TestingAddresses
 import java.time.Clock
 import java.time.Duration
 import java.time.Instant
@@ -238,9 +239,9 @@ class KeyExchangeUtilSpec extends StreamrSpecification {
         util = new KeyExchangeUtil(keyStore, messageCreationUtil, encryptionUtil, addressValidityUtil2, publish, onNewKeysFunction)
 
         // Set some public keys for subscribers
-        util.getKnownPublicKeysByPublisher().put(getSubscriberId(1), new EncryptionUtil().publicKeyAsPemString)
-        util.getKnownPublicKeysByPublisher().put(getSubscriberId(2), new EncryptionUtil().publicKeyAsPemString)
-        util.getKnownPublicKeysByPublisher().put(getSubscriberId(3), new EncryptionUtil().publicKeyAsPemString)
+        util.getKnownPublicKeysByPublisher().put(TestingAddresses.createSubscriberId(1), new EncryptionUtil().publicKeyAsPemString)
+        util.getKnownPublicKeysByPublisher().put(TestingAddresses.createSubscriberId(2), new EncryptionUtil().publicKeyAsPemString)
+        util.getKnownPublicKeysByPublisher().put(TestingAddresses.createSubscriberId(3), new EncryptionUtil().publicKeyAsPemString)
 
         MessageId msgId = new MessageId.Builder()
                 .withStreamId("keyexchange-sub1")
@@ -262,12 +263,12 @@ class KeyExchangeUtilSpec extends StreamrSpecification {
 
         then:
         // Should check current subscribers with AddressValidityUtil, which responds that subscribers 1 and 3 are still active
-        1 * addressValidityUtil2.getSubscribersSet("streamId", true) >> [getSubscriberId(1), getSubscriberId(3)].toSet()
+        1 * addressValidityUtil2.getSubscribersSet("streamId", true) >> [TestingAddresses.createSubscriberId(1), TestingAddresses.createSubscriberId(3)].toSet()
         // Add new key to keystore
         1 * keyStore.add("streamId", _)
-        1 * messageCreationUtil.createGroupKeyAnnounce(getSubscriberId(1), "streamId", _, _) >> announce1
-        0 * messageCreationUtil.createGroupKeyAnnounce(getSubscriberId(2), "streamId", _, _) // don't call for subscriber 2
-        1 * messageCreationUtil.createGroupKeyAnnounce(getSubscriberId(3), "streamId", _, _) >> announce3
+        1 * messageCreationUtil.createGroupKeyAnnounce(TestingAddresses.createSubscriberId(1), "streamId", _, _) >> announce1
+        0 * messageCreationUtil.createGroupKeyAnnounce(TestingAddresses.createSubscriberId(2), "streamId", _, _) // don't call for subscriber 2
+        1 * messageCreationUtil.createGroupKeyAnnounce(TestingAddresses.createSubscriberId(3), "streamId", _, _) >> announce3
 
         published.size() == 2
         published[0] == announce1
