@@ -3,8 +3,10 @@ package com.streamr.client.subs
 import com.streamr.client.MessageHandler
 import com.streamr.client.options.ResendLastOption
 import com.streamr.client.options.ResendOption
-import com.streamr.client.protocol.message_layer.StreamrSpecification
+import com.streamr.client.protocol.message_layer.MessageId
 import com.streamr.client.protocol.message_layer.StreamMessage
+import com.streamr.client.protocol.message_layer.StreamrSpecification
+import com.streamr.client.testing.TestingJson
 import com.streamr.client.utils.Address
 import com.streamr.client.utils.EncryptionUtil
 import com.streamr.client.utils.GroupKey
@@ -26,14 +28,22 @@ class HistoricalSubscriptionSpec extends StreamrSpecification {
     boolean doneHandlerCalled
 
     def setup() {
-        msg = createMessage()
-        keyStore = Mock(GroupKeyStore)
-        keyExchangeUtil = Mock(KeyExchangeUtil)
-        received = []
-        sub = createSub()
-        groupKeyFunctionCallCount = 0
-        doneHandlerCalled = false
-    }
+		final MessageId messageId = new MessageId.Builder()
+				.withStreamId("streamId")
+				.withPublisherId(new Address("publisherId"))
+				.withMsgChainId("msgChainId")
+				.createMessageId()
+		msg = new StreamMessage.Builder()
+				.withMessageId(messageId)
+				.withSerializedContent(TestingJson.toJson([:]))
+				.createStreamMessage()
+		keyStore = Mock(GroupKeyStore)
+		keyExchangeUtil = Mock(KeyExchangeUtil)
+		received = []
+		sub = createSub()
+		groupKeyFunctionCallCount = 0
+		doneHandlerCalled = false
+	}
 
 	MessageHandler defaultHandler = new MessageHandler() {
         @Override
