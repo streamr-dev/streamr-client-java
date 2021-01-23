@@ -6,7 +6,6 @@ import com.streamr.client.exceptions.UnableToDecryptException
 import com.streamr.client.protocol.common.MessageRef
 import com.streamr.client.protocol.message_layer.MessageId
 import com.streamr.client.protocol.message_layer.StreamMessage
-import com.streamr.client.protocol.message_layer.StreamrSpecification
 import com.streamr.client.subs.BasicSubscription.GroupKeyRequestFunction
 import com.streamr.client.testing.TestingAddresses
 import com.streamr.client.testing.TestingJson
@@ -17,12 +16,13 @@ import com.streamr.client.utils.GroupKey
 import com.streamr.client.utils.GroupKeyStore
 import com.streamr.client.utils.KeyExchangeUtil
 import com.streamr.client.utils.OrderedMsgChain
+import spock.lang.Specification
 
 /**
  * BasicSubscription is abstract, but contains most of the code for RealtimeSubscription and
  * HistoricalSubscription. This class tests BasicSubscription via RealtimeSubscription.
  */
-class BasicSubscriptionSpec extends StreamrSpecification {
+class BasicSubscriptionSpec extends Specification {
 
     private static final long propagationTimeout = 1000
     private static final long resendTimeout = 1000

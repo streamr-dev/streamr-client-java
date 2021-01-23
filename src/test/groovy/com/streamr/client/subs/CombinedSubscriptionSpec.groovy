@@ -6,7 +6,6 @@ import com.streamr.client.options.ResendLastOption
 import com.streamr.client.protocol.common.MessageRef
 import com.streamr.client.protocol.message_layer.MessageId
 import com.streamr.client.protocol.message_layer.StreamMessage
-import com.streamr.client.protocol.message_layer.StreamrSpecification
 import com.streamr.client.testing.TestingAddresses
 import com.streamr.client.testing.TestingJson
 import com.streamr.client.testing.TestingMessageRef
@@ -14,8 +13,9 @@ import com.streamr.client.utils.Address
 import com.streamr.client.utils.GroupKeyStore
 import com.streamr.client.utils.KeyExchangeUtil
 import com.streamr.client.utils.OrderedMsgChain
+import spock.lang.Specification
 
-class CombinedSubscriptionSpec extends StreamrSpecification {
+class CombinedSubscriptionSpec extends Specification {
 
     void "calls the gap handler if gap among real time messages queued during resend"() {
 		final MessageId messageId2 = new MessageId.Builder()

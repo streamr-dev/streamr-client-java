@@ -4,16 +4,16 @@ import com.streamr.client.exceptions.GapFillFailedException
 import com.streamr.client.protocol.common.MessageRef
 import com.streamr.client.protocol.message_layer.MessageId
 import com.streamr.client.protocol.message_layer.StreamMessage
-import com.streamr.client.protocol.message_layer.StreamrSpecification
 import com.streamr.client.testing.TestingAddresses
 import com.streamr.client.testing.TestingJson
 import com.streamr.client.testing.TestingMessageRef
 import java.util.function.Consumer
 import java.util.function.Function
 import java.util.stream.Collectors
+import spock.lang.Specification
 import spock.util.concurrent.PollingConditions
 
-class OrderedMsgChainSpec extends StreamrSpecification {
+class OrderedMsgChainSpec extends Specification {
     final String content = TestingJson.toJson(new HashMap<String, Object>())
     final StreamMessage msg1 = new StreamMessage.Builder()
             .withMessageId(new MessageId.Builder().withTimestamp(1).withSequenceNumber(0).withStreamId("streamId").withPublisherId(TestingAddresses.PUBLISHER_ID).withMsgChainId("msgChainId").createMessageId())

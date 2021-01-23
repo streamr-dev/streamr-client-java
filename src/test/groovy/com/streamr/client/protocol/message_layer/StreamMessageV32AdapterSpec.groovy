@@ -4,8 +4,9 @@ import com.streamr.client.protocol.common.MessageRef
 import com.streamr.client.testing.TestingAddresses
 import com.streamr.client.testing.TestingJson
 import com.streamr.client.utils.EncryptedGroupKey
+import spock.lang.Specification
 
-class StreamMessageV32AdapterSpec extends StreamrSpecification {
+class StreamMessageV32AdapterSpec extends Specification {
 	private static final int VERSION = 32
 
 	StreamMessageAdapter adapter

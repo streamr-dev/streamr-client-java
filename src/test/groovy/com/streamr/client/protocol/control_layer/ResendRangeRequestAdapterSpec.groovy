@@ -1,10 +1,10 @@
 package com.streamr.client.protocol.control_layer
 
-import com.streamr.client.protocol.message_layer.StreamrSpecification
 import com.streamr.client.protocol.common.MessageRef
 import com.streamr.client.testing.TestingAddresses
+import spock.lang.Specification
 
-class ResendRangeRequestAdapterSpec extends StreamrSpecification {
+class ResendRangeRequestAdapterSpec extends Specification {
 
 	def "serialization and deserialization"(String serializedMessage, ControlMessage message) {
 		expect:

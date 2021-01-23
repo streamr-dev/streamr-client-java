@@ -5,7 +5,6 @@ import com.streamr.client.exceptions.InvalidRSAKeyException
 import com.streamr.client.protocol.common.MessageRef
 import com.streamr.client.protocol.message_layer.MessageId
 import com.streamr.client.protocol.message_layer.StreamMessage
-import com.streamr.client.protocol.message_layer.StreamrSpecification
 import com.streamr.client.testing.TestingAddresses
 import com.streamr.client.testing.TestingJson
 import java.nio.charset.StandardCharsets
@@ -15,8 +14,9 @@ import java.security.interfaces.RSAPrivateKey
 import java.security.interfaces.RSAPublicKey
 import javax.xml.bind.DatatypeConverter
 import org.web3j.utils.Numeric
+import spock.lang.Specification
 
-class EncryptionUtilSpec extends StreamrSpecification {
+class EncryptionUtilSpec extends Specification {
 
     final Map plaintextContent = [foo: 'bar']
     final String serializedPlaintextContent = "{\"foo\":\"bar\"}"

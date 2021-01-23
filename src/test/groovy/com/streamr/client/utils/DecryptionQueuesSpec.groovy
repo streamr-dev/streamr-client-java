@@ -2,12 +2,12 @@ package com.streamr.client.utils
 
 import com.streamr.client.protocol.message_layer.MessageId
 import com.streamr.client.protocol.message_layer.StreamMessage
-import com.streamr.client.protocol.message_layer.StreamrSpecification
 import com.streamr.client.testing.TestingAddresses
 import com.streamr.client.testing.TestingJson
 import com.streamr.client.testing.TestingMessageRef
+import spock.lang.Specification
 
-class DecryptionQueuesSpec extends StreamrSpecification {
+class DecryptionQueuesSpec extends Specification {
 
 	DecryptionQueues decryptionQueues
 

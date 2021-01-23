@@ -3,12 +3,12 @@ package com.streamr.client.utils
 import com.streamr.client.protocol.common.MessageRef
 import com.streamr.client.protocol.message_layer.MessageId
 import com.streamr.client.protocol.message_layer.StreamMessage
-import com.streamr.client.protocol.message_layer.StreamrSpecification
 import com.streamr.client.testing.TestingAddresses
 import com.streamr.client.testing.TestingJson
 import org.web3j.crypto.ECKeyPair
+import spock.lang.Specification
 
-class SigningUtilSpec extends StreamrSpecification {
+class SigningUtilSpec extends Specification {
     ECKeyPair account
     Address address
     SigningUtil signingUtil

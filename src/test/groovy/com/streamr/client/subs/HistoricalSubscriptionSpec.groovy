@@ -5,13 +5,13 @@ import com.streamr.client.options.ResendLastOption
 import com.streamr.client.options.ResendOption
 import com.streamr.client.protocol.message_layer.MessageId
 import com.streamr.client.protocol.message_layer.StreamMessage
-import com.streamr.client.protocol.message_layer.StreamrSpecification
 import com.streamr.client.testing.TestingJson
 import com.streamr.client.utils.Address
 import com.streamr.client.utils.EncryptionUtil
 import com.streamr.client.utils.GroupKey
 import com.streamr.client.utils.GroupKeyStore
 import com.streamr.client.utils.KeyExchangeUtil
+import spock.lang.Specification
 import spock.util.concurrent.PollingConditions
 
 /**
@@ -19,7 +19,7 @@ import spock.util.concurrent.PollingConditions
  * Most of the code is already tested in BasicSubscriptionSpec.
  * These tests focus on testing the additional code in HistoricalSubscription.
  */
-class HistoricalSubscriptionSpec extends StreamrSpecification {
+class HistoricalSubscriptionSpec extends Specification {
     StreamMessage msg
     GroupKeyStore keyStore
     KeyExchangeUtil keyExchangeUtil

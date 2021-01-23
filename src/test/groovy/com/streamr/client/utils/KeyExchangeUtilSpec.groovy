@@ -5,15 +5,15 @@ import com.streamr.client.protocol.message_layer.GroupKeyRequest
 import com.streamr.client.protocol.message_layer.GroupKeyResponse
 import com.streamr.client.protocol.message_layer.MessageId
 import com.streamr.client.protocol.message_layer.StreamMessage
-import com.streamr.client.protocol.message_layer.StreamrSpecification
 import com.streamr.client.testing.TestingAddresses
 import java.time.Clock
 import java.time.Duration
 import java.time.Instant
 import java.util.function.Consumer
 import java.util.function.Function
+import spock.lang.Specification
 
-class KeyExchangeUtilSpec extends StreamrSpecification {
+class KeyExchangeUtilSpec extends Specification {
     KeyExchangeUtil util
     GroupKeyStore keyStore
     MessageCreationUtil messageCreationUtil

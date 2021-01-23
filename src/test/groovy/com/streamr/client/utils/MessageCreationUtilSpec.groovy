@@ -8,13 +8,13 @@ import com.streamr.client.protocol.message_layer.GroupKeyErrorResponse
 import com.streamr.client.protocol.message_layer.GroupKeyRequest
 import com.streamr.client.protocol.message_layer.GroupKeyResponse
 import com.streamr.client.protocol.message_layer.StreamMessage
-import com.streamr.client.protocol.message_layer.StreamrSpecification
 import com.streamr.client.rest.Stream
 import com.streamr.client.testing.TestingAddresses
 import java.security.SecureRandom
 import org.web3j.crypto.ECKeyPair
+import spock.lang.Specification
 
-class MessageCreationUtilSpec extends StreamrSpecification {
+class MessageCreationUtilSpec extends Specification {
     MessageCreationUtil msgCreationUtil
     SigningUtil signingUtil
     EncryptionUtil encryptionUtil

@@ -2,8 +2,9 @@ package com.streamr.client.protocol.message_layer
 
 import com.streamr.client.protocol.common.MessageRef
 import com.streamr.client.testing.TestingAddresses
+import spock.lang.Specification
 
-class StreamMessageV31AdapterSpec extends StreamrSpecification {
+class StreamMessageV31AdapterSpec extends Specification {
 	StreamMessageAdapter adapter
 	StreamMessage msg
 
