@@ -57,7 +57,7 @@ class AddressValidityUtilSpec extends StreamrSpecification {
             @Override
             List<String> apply(String streamId) {
                 getPublishersFunctionCallCount++
-                return streamId == "streamId" ? [getPublisherId(1), getPublisherId(2)] : null
+                return streamId == "streamId" ? [TestingAddresses.createPublisherId(1), TestingAddresses.createPublisherId(2)] : null
             }
         }
         int isPublisherFunctionCallCount = 0
@@ -65,25 +65,25 @@ class AddressValidityUtilSpec extends StreamrSpecification {
             @Override
             Boolean apply(String streamId, Address publisher) {
                 isPublisherFunctionCallCount++;
-                return streamId == "streamId" && publisher == getPublisherId(3)
+                return streamId == "streamId" && publisher == TestingAddresses.createPublisherId(3)
             }
         }
         AddressValidityUtil util = new AddressValidityUtil(null, null, getPublishersFunction, isPublisherFunction)
         when:
         // cache miss --> getting all addresses
-        boolean res1 = util.isValidPublisher("streamId", getPublisherId(1))
+        boolean res1 = util.isValidPublisher("streamId", TestingAddresses.createPublisherId(1))
         // cache hit
-        boolean res2 = util.isValidPublisher("streamId", getPublisherId(2))
+        boolean res2 = util.isValidPublisher("streamId", TestingAddresses.createPublisherId(2))
         // cache miss --> get only this address
-        boolean res3 = util.isValidPublisher("streamId", getPublisherId(3))
+        boolean res3 = util.isValidPublisher("streamId", TestingAddresses.createPublisherId(3))
         // cache miss --> get only this address
-        boolean res4 = util.isValidPublisher("streamId", getPublisherId(4))
+        boolean res4 = util.isValidPublisher("streamId", TestingAddresses.createPublisherId(4))
         // cache hit
-        boolean res5 = util.isValidPublisher("streamId", getPublisherId(1))
+        boolean res5 = util.isValidPublisher("streamId", TestingAddresses.createPublisherId(1))
         // cache hit
-        boolean res6 = util.isValidPublisher("streamId", getPublisherId(3))
+        boolean res6 = util.isValidPublisher("streamId", TestingAddresses.createPublisherId(3))
         // cache hit
-        boolean res7 = util.isValidPublisher("streamId", getPublisherId(4))
+        boolean res7 = util.isValidPublisher("streamId", TestingAddresses.createPublisherId(4))
         then:
         getPublishersFunctionCallCount == 1
         isPublisherFunctionCallCount == 2

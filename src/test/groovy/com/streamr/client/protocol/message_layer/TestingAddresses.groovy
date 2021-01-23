@@ -8,4 +8,8 @@ final class TestingAddresses {
 	public static Address createSubscriberId(int number) {
 		return new Address("subscriberId${number}")
 	}
+
+	public static Address createPublisherId(int number) {
+		return new Address("publisherId${number}")
+	}
 }

@@ -21,10 +21,6 @@ class StreamrSpecification extends Specification {
 	protected static final Address publisherId = new Address("publisherId")
 
 
-	protected static Address getPublisherId(int number) {
-		return new Address("publisherId${number}")
-	}
-
 	protected StreamMessage createMessage(Map content) {
 		return createMessage(new Date().getTime(), seqNo++, null, null, publisherId, content)
 	}

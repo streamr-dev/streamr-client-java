@@ -2,6 +2,7 @@ package com.streamr.client.utils
 
 import com.streamr.client.protocol.message_layer.StreamMessage
 import com.streamr.client.protocol.message_layer.StreamrSpecification
+import com.streamr.client.protocol.message_layer.TestingAddresses
 
 class DecryptionQueuesSpec extends StreamrSpecification {
 
@@ -27,7 +28,7 @@ class DecryptionQueuesSpec extends StreamrSpecification {
 		StreamMessage chain2key2msg2 = createMessage(1, 0, 0, 0, publisherId, [:], "msgChain2")
 
 		// And a completely different publisher
-		StreamMessage pub2msg1 = createMessage(0, 0, null, null, getPublisherId(2), [:], "pub2msgChain")
+		StreamMessage pub2msg1 = createMessage(0, 0, null, null, TestingAddresses.createPublisherId(2), [:], "pub2msgChain")
 
 		// Encrypt each message with appropriate key and add to the decryptionQueues
 		chain1key1msg1 = EncryptionUtil.encryptStreamMessage(chain1key1msg1, key1)
@@ -68,7 +69,7 @@ class DecryptionQueuesSpec extends StreamrSpecification {
 
 		when:
 		// Drain with publisher2's key
-		Collection<StreamMessage> unlockedByPub2 = decryptionQueues.drainUnlockedMessages(getPublisherId(2), [pub2key]*.groupKeyId.toSet())
+		Collection<StreamMessage> unlockedByPub2 = decryptionQueues.drainUnlockedMessages(TestingAddresses.createPublisherId(2), [pub2key]*.groupKeyId.toSet())
 
 		then:
 		unlockedByPub2 == [pub2msg1]

@@ -6,6 +6,7 @@ import com.streamr.client.exceptions.UnableToDecryptException
 import com.streamr.client.protocol.message_layer.StreamrSpecification
 import com.streamr.client.protocol.common.MessageRef
 import com.streamr.client.protocol.message_layer.StreamMessage
+import com.streamr.client.protocol.message_layer.TestingAddresses
 import com.streamr.client.subs.BasicSubscription.GroupKeyRequestFunction
 import com.streamr.client.utils.Address
 import com.streamr.client.utils.EncryptionUtil
@@ -138,8 +139,8 @@ class BasicSubscriptionSpec extends StreamrSpecification {
     }
 
     void "does not throw if different publishers"() {
-        StreamMessage msg1 = createMessage(1, 0, null, 0, getPublisherId(1))
-        StreamMessage msg4 = createMessage(4, 0, 3, 0, getPublisherId(2))
+        StreamMessage msg1 = createMessage(1, 0, null, 0, TestingAddresses.createPublisherId(1))
+        StreamMessage msg4 = createMessage(4, 0, 3, 0, TestingAddresses.createPublisherId(2))
 
         when:
         sub.handleRealTimeMessage(msg1)
@@ -335,10 +336,10 @@ class BasicSubscriptionSpec extends StreamrSpecification {
     }
 
     void "queues messages when not able to decrypt and handles them once the key is updated (multiple publishers)"() {
-        StreamMessage msg1pub1 = createMessage(1, 0, null, null, getPublisherId(1), [foo: 'bar1'])
-        StreamMessage msg2pub1 = createMessage(2, 0, null, null, getPublisherId(1), [foo: 'bar2'])
-        StreamMessage msg1pub2 = createMessage(1, 0, null, null, getPublisherId(2), [foo: 'bar3'])
-        StreamMessage msg2pub2 = createMessage(2, 0, null, null, getPublisherId(2), [foo: 'bar4'])
+        StreamMessage msg1pub1 = createMessage(1, 0, null, null, TestingAddresses.createPublisherId(1), [foo: 'bar1'])
+        StreamMessage msg2pub1 = createMessage(2, 0, null, null, TestingAddresses.createPublisherId(1), [foo: 'bar2'])
+        StreamMessage msg1pub2 = createMessage(1, 0, null, null, TestingAddresses.createPublisherId(2), [foo: 'bar3'])
+        StreamMessage msg2pub2 = createMessage(2, 0, null, null, TestingAddresses.createPublisherId(2), [foo: 'bar4'])
 
         GroupKey groupKeyPub1 = GroupKey.generate()
         GroupKey groupKeyPub2 = GroupKey.generate()
@@ -403,11 +404,11 @@ class BasicSubscriptionSpec extends StreamrSpecification {
     }
 
     void "queues messages when not able to decrypt and handles them once the key is updated (multiple publishers interleaved)"() {
-        StreamMessage msg1pub1 = createMessage(1, 0, null, null, getPublisherId(1), [foo: 'bar1'])
-        StreamMessage msg2pub1 = createMessage(2, 0, null, null, getPublisherId(1), [foo: 'bar2'])
-        StreamMessage msg3pub1 = createMessage(3, 0, null, null, getPublisherId(1), [foo: 'bar3'])
-        StreamMessage msg1pub2 = createMessage(1, 0, null, null, getPublisherId(2), [foo: 'bar4'])
-        StreamMessage msg2pub2 = createMessage(2, 0, null, null, getPublisherId(2), [foo: 'bar5'])
+        StreamMessage msg1pub1 = createMessage(1, 0, null, null, TestingAddresses.createPublisherId(1), [foo: 'bar1'])
+        StreamMessage msg2pub1 = createMessage(2, 0, null, null, TestingAddresses.createPublisherId(1), [foo: 'bar2'])
+        StreamMessage msg3pub1 = createMessage(3, 0, null, null, TestingAddresses.createPublisherId(1), [foo: 'bar3'])
+        StreamMessage msg1pub2 = createMessage(1, 0, null, null, TestingAddresses.createPublisherId(2), [foo: 'bar4'])
+        StreamMessage msg2pub2 = createMessage(2, 0, null, null, TestingAddresses.createPublisherId(2), [foo: 'bar5'])
 
         GroupKey groupKeyPub1 = GroupKey.generate()
         GroupKey groupKeyPub2 = GroupKey.generate()
@@ -442,7 +443,7 @@ class BasicSubscriptionSpec extends StreamrSpecification {
 
         when:
         // Triggers processing of queued messages for pub1
-        sub.onNewKeysAdded(getPublisherId(1), [groupKeyPub1])
+        sub.onNewKeysAdded(TestingAddresses.createPublisherId(1), [groupKeyPub1])
 
         then:
         2 * keyStore.get(msg1pub1.getStreamId(), groupKeyPub1.getGroupKeyId()) >> groupKeyPub1
@@ -471,7 +472,7 @@ class BasicSubscriptionSpec extends StreamrSpecification {
 
         when:
         // Triggers processing of queued messages for pub2
-        sub.onNewKeysAdded(getPublisherId(2), [groupKeyPub2])
+        sub.onNewKeysAdded(TestingAddresses.createPublisherId(2), [groupKeyPub2])
 
         then:
         2 * keyStore.get(msg1pub2.getStreamId(), groupKeyPub2.getGroupKeyId()) >> groupKeyPub2
@@ -484,10 +485,10 @@ class BasicSubscriptionSpec extends StreamrSpecification {
 
     void "queues messages when not able to decrypt and handles them once the key is updated (one publisher, two keys on two msgChains)"() {
         // All messages have the same publisherId
-        StreamMessage key1msg1 = createMessage(1, 0, null, null, getPublisherId(1), [n: 1], "msgChain1")
-        StreamMessage key1msg2 = createMessage(2, 0, null, null, getPublisherId(1), [n: 2], "msgChain1")
-        StreamMessage key2msg1 = createMessage(3, 0, null, null, getPublisherId(1), [n: 3], "msgChain2")
-        StreamMessage key2msg2 = createMessage(4, 0, null, null, getPublisherId(1), [n: 4], "msgChain2")
+        StreamMessage key1msg1 = createMessage(1, 0, null, null, TestingAddresses.createPublisherId(1), [n: 1], "msgChain1")
+        StreamMessage key1msg2 = createMessage(2, 0, null, null, TestingAddresses.createPublisherId(1), [n: 2], "msgChain1")
+        StreamMessage key2msg1 = createMessage(3, 0, null, null, TestingAddresses.createPublisherId(1), [n: 3], "msgChain2")
+        StreamMessage key2msg2 = createMessage(4, 0, null, null, TestingAddresses.createPublisherId(1), [n: 4], "msgChain2")
 
         GroupKey key1 = GroupKey.generate()
         GroupKey key2 = GroupKey.generate()
@@ -521,7 +522,7 @@ class BasicSubscriptionSpec extends StreamrSpecification {
 
         when:
         // Triggers processing of queued messages for key1 / msgChain1
-        sub.onNewKeysAdded(getPublisherId(1), [key1])
+        sub.onNewKeysAdded(TestingAddresses.createPublisherId(1), [key1])
 
         then:
         2 * keyStore.get(key1msg1.getStreamId(), key1.getGroupKeyId()) >> key1
@@ -532,7 +533,7 @@ class BasicSubscriptionSpec extends StreamrSpecification {
 
         when:
         // Triggers processing of queued messages for key2 / msgChain2
-        sub.onNewKeysAdded(getPublisherId(1), [key2])
+        sub.onNewKeysAdded(TestingAddresses.createPublisherId(1), [key2])
 
         then:
         2 * keyStore.get(key2msg1.getStreamId(), key2.getGroupKeyId()) >> key2
