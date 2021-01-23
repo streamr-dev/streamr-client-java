@@ -305,8 +305,26 @@ class BasicSubscriptionSpec extends StreamrSpecification {
     }
 
     void "queues messages when not able to decrypt and handles them once the key is updated"() {
-        StreamMessage msg1 = createMessage(1, [foo: 'bar1'])
-        StreamMessage msg2 = createMessage(2, [foo: 'bar2'])
+        final MessageId messageId1 = new MessageId.Builder()
+                .withStreamId("streamId")
+                .withTimestamp(1)
+                .withPublisherId(TestingAddresses.PUBLISHER_ID)
+                .withMsgChainId("msgChainId")
+                .createMessageId()
+        StreamMessage msg1 = new StreamMessage.Builder()
+                .withMessageId(messageId1)
+                .withSerializedContent(TestingJson.toJson([foo: 'bar1']))
+                .createStreamMessage()
+        final MessageId messageId2 = new MessageId.Builder()
+                .withStreamId("streamId")
+                .withTimestamp(2)
+                .withPublisherId(TestingAddresses.PUBLISHER_ID)
+                .withMsgChainId("msgChainId")
+                .createMessageId()
+        StreamMessage msg2 = new StreamMessage.Builder()
+                .withMessageId(messageId2)
+                .withSerializedContent(TestingJson.toJson([foo: 'bar2']))
+                .createStreamMessage()
 
         GroupKey groupKey = GroupKey.generate()
         msg1 = EncryptionUtil.encryptStreamMessage(msg1, groupKey)
