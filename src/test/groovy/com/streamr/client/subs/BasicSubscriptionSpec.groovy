@@ -3,11 +3,13 @@ package com.streamr.client.subs
 import com.streamr.client.MessageHandler
 import com.streamr.client.exceptions.GapDetectedException
 import com.streamr.client.exceptions.UnableToDecryptException
-import com.streamr.client.protocol.message_layer.StreamrSpecification
 import com.streamr.client.protocol.common.MessageRef
+import com.streamr.client.protocol.message_layer.MessageId
 import com.streamr.client.protocol.message_layer.StreamMessage
-import com.streamr.client.testing.TestingAddresses
+import com.streamr.client.protocol.message_layer.StreamrSpecification
 import com.streamr.client.subs.BasicSubscription.GroupKeyRequestFunction
+import com.streamr.client.testing.TestingAddresses
+import com.streamr.client.testing.TestingJson
 import com.streamr.client.utils.Address
 import com.streamr.client.utils.EncryptionUtil
 import com.streamr.client.utils.GroupKey
@@ -204,11 +206,18 @@ class BasicSubscriptionSpec extends StreamrSpecification {
     }
 
     void "decrypts encrypted messages with the correct key"() {
-        GroupKey groupKey = GroupKey.generate()
-
+        final MessageId messageId = new MessageId.Builder()
+                .withStreamId("streamId")
+                .withTimestamp(System.currentTimeMillis())
+                .withPublisherId(TestingAddresses.PUBLISHER_ID)
+                .withMsgChainId("msgChainId")
+                .createMessageId()
         Map plaintext = [foo: 'bar']
-        StreamMessage msg1 = createMessage(plaintext)
-
+        StreamMessage msg1 = new StreamMessage.Builder()
+                .withMessageId(messageId)
+                .withSerializedContent(TestingJson.toJson(plaintext))
+                .createStreamMessage()
+        GroupKey groupKey = GroupKey.generate()
         msg1 = EncryptionUtil.encryptStreamMessage(msg1, groupKey)
 
         when:

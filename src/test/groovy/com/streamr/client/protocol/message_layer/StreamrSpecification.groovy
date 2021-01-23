@@ -11,12 +11,6 @@ import spock.lang.Specification
  * Useful methods for subclasses to use
  */
 class StreamrSpecification extends Specification {
-	private static int seqNo = 0
-
-	protected static StreamMessage createMessage(Map content) {
-		return createMessage(new Date().getTime(), seqNo++, null, null, TestingAddresses.PUBLISHER_ID, content)
-	}
-
 	protected static StreamMessage createMessage(long timestamp, Map content) {
 		return createMessage(timestamp, 0, null, null, TestingAddresses.PUBLISHER_ID, content)
 	}
