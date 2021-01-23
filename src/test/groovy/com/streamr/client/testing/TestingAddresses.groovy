@@ -4,6 +4,7 @@ import com.streamr.client.utils.Address
 
 final class TestingAddresses {
 	public static final Address SUBSCRIBER_ID = new Address("subscriberId")
+	public static final Address PUBLISHER_ID = new Address("publisherId")
 
 	private TestingAddresses() {}
 

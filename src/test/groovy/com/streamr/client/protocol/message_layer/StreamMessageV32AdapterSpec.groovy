@@ -1,6 +1,7 @@
 package com.streamr.client.protocol.message_layer
 
 import com.streamr.client.protocol.common.MessageRef
+import com.streamr.client.testing.TestingAddresses
 import com.streamr.client.testing.TestingJson
 import com.streamr.client.utils.EncryptedGroupKey
 
@@ -19,7 +20,7 @@ class StreamMessageV32AdapterSpec extends StreamrSpecification {
 				.withStreamPartition(0)
 				.withTimestamp(123L)
 				.withSequenceNumber(0)
-				.withPublisherId(publisherId)
+				.withPublisherId(TestingAddresses.PUBLISHER_ID)
 				.withMsgChainId("msgChainId")
 				.createMessageId()
 		msg = new StreamMessage.Builder()
@@ -66,7 +67,7 @@ class StreamMessageV32AdapterSpec extends StreamrSpecification {
 		msg.getTimestamp() == 123L
 		msg.getTimestampAsDate() == new Date(123L)
 		msg.getSequenceNumber() == 0
-		msg.getPublisherId() == publisherId
+		msg.getPublisherId() == TestingAddresses.PUBLISHER_ID
 		msg.getMsgChainId() == "msgChainId"
 		msg.getPreviousMessageRef() == null
 		msg.getMessageType() == StreamMessage.MessageType.STREAM_MESSAGE
@@ -91,7 +92,7 @@ class StreamMessageV32AdapterSpec extends StreamrSpecification {
 		msg.getTimestamp() == 123L
 		msg.getTimestampAsDate() == new Date(123L)
 		msg.getSequenceNumber() == 0
-		msg.getPublisherId() == publisherId
+		msg.getPublisherId() == TestingAddresses.PUBLISHER_ID
 		msg.getMsgChainId() == "msgChainId"
 		msg.getPreviousMessageRef() == new MessageRef(122L, 0)
 		msg.getMessageType() == StreamMessage.MessageType.STREAM_MESSAGE

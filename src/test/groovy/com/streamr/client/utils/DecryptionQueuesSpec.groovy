@@ -18,14 +18,14 @@ class DecryptionQueuesSpec extends StreamrSpecification {
 		GroupKey pub2key = GroupKey.generate()
 
 		// msgChain1 has messages with two different keys
-		StreamMessage chain1key1msg1 = createMessage(0, 0, null, null, publisherId, [:], "msgChain1")
-		StreamMessage chain1key1msg2 = createMessage(1, 0, 0, 0, publisherId, [:], "msgChain1")
-		StreamMessage chain1key1msg3 = createMessage(2, 0, 0, 0, publisherId, [:], "msgChain1")
-		StreamMessage chain1key2msg4 = createMessage(3, 0, 0, 0, publisherId, [:], "msgChain1")
+		StreamMessage chain1key1msg1 = createMessage(0, 0, null, null, TestingAddresses.PUBLISHER_ID, [:], "msgChain1")
+		StreamMessage chain1key1msg2 = createMessage(1, 0, 0, 0, TestingAddresses.PUBLISHER_ID, [:], "msgChain1")
+		StreamMessage chain1key1msg3 = createMessage(2, 0, 0, 0, TestingAddresses.PUBLISHER_ID, [:], "msgChain1")
+		StreamMessage chain1key2msg4 = createMessage(3, 0, 0, 0, TestingAddresses.PUBLISHER_ID, [:], "msgChain1")
 
 		// Also there's another msgChain from the same publisher
-		StreamMessage chain2key2msg1 = createMessage(0, 0, null, null, publisherId, [:], "msgChain2")
-		StreamMessage chain2key2msg2 = createMessage(1, 0, 0, 0, publisherId, [:], "msgChain2")
+		StreamMessage chain2key2msg1 = createMessage(0, 0, null, null, TestingAddresses.PUBLISHER_ID, [:], "msgChain2")
+		StreamMessage chain2key2msg2 = createMessage(1, 0, 0, 0, TestingAddresses.PUBLISHER_ID, [:], "msgChain2")
 
 		// And a completely different publisher
 		StreamMessage pub2msg1 = createMessage(0, 0, null, null, TestingAddresses.createPublisherId(2), [:], "pub2msgChain")
@@ -53,7 +53,7 @@ class DecryptionQueuesSpec extends StreamrSpecification {
 
 		when:
 		// Drain with key 1
-		Collection<StreamMessage> unlockedByKey1 = decryptionQueues.drainUnlockedMessages(publisherId, [key1]*.groupKeyId.toSet())
+		Collection<StreamMessage> unlockedByKey1 = decryptionQueues.drainUnlockedMessages(TestingAddresses.PUBLISHER_ID, [key1]*.groupKeyId.toSet())
 
 		then:
 		unlockedByKey1 == [chain1key1msg1, chain1key1msg2, chain1key1msg3]
@@ -61,7 +61,7 @@ class DecryptionQueuesSpec extends StreamrSpecification {
 
 		when:
 		// Drain with key 2
-		Collection<StreamMessage> unlockedByKey2 = decryptionQueues.drainUnlockedMessages(publisherId, [key2]*.groupKeyId.toSet())
+		Collection<StreamMessage> unlockedByKey2 = decryptionQueues.drainUnlockedMessages(TestingAddresses.PUBLISHER_ID, [key2]*.groupKeyId.toSet())
 
 		then:
 		unlockedByKey2 == [chain1key2msg4, chain2key2msg1, chain2key2msg2]

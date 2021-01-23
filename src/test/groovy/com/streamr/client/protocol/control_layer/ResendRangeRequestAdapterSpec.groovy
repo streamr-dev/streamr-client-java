@@ -2,6 +2,7 @@ package com.streamr.client.protocol.control_layer
 
 import com.streamr.client.protocol.message_layer.StreamrSpecification
 import com.streamr.client.protocol.common.MessageRef
+import com.streamr.client.testing.TestingAddresses
 
 class ResendRangeRequestAdapterSpec extends StreamrSpecification {
 
@@ -12,7 +13,7 @@ class ResendRangeRequestAdapterSpec extends StreamrSpecification {
 
 		where:
 		serializedMessage | message
-		'[2,13,"requestId","streamId",0,[143415425455,0],[14341542564555,7],"publisherid","msgChainId","sessionToken"]' | new ResendRangeRequest("requestId", "streamId", 0, new MessageRef(143415425455L, 0L), new MessageRef(14341542564555L, 7L), publisherId, "msgChainId", "sessionToken")
+		'[2,13,"requestId","streamId",0,[143415425455,0],[14341542564555,7],"publisherid","msgChainId","sessionToken"]' | new ResendRangeRequest("requestId", "streamId", 0, new MessageRef(143415425455L, 0L), new MessageRef(14341542564555L, 7L), TestingAddresses.PUBLISHER_ID, "msgChainId", "sessionToken")
 		'[2,13,"requestId","streamId",0,[143415425455,0],[14341542564555,7],null,null,null]' | new ResendRangeRequest("requestId", "streamId", 0, new MessageRef(143415425455L, 0L), new MessageRef(14341542564555L, 7L), null)
 	}
 

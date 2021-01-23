@@ -3,6 +3,7 @@ package com.streamr.client.protocol.message_layer
 import com.streamr.client.exceptions.ValidationException
 import com.streamr.client.options.SigningOptions.SignatureVerificationPolicy
 import com.streamr.client.rest.Stream
+import com.streamr.client.testing.TestingAddresses
 import com.streamr.client.testing.TestingJson
 import com.streamr.client.utils.Address
 import com.streamr.client.utils.AddressValidityUtil
@@ -33,7 +34,7 @@ class StreamMessageValidatorSpec extends StreamrSpecification {
             .withStreamPartition(0)
             .withTimestamp(425235315L)
             .withSequenceNumber(0L)
-            .withPublisherId(publisherId)
+            .withPublisherId(TestingAddresses.PUBLISHER_ID)
             .withMsgChainId("msgChainId")
             .createMessageId()
 
@@ -103,7 +104,7 @@ class StreamMessageValidatorSpec extends StreamrSpecification {
         groupKeyErrorResponse = publisherMsgCreationUtil.createGroupKeyErrorResponse(subscriber, (GroupKeyRequest) AbstractGroupKeyMessage.fromStreamMessage(groupKeyRequest), new Exception("Test exception"))
 
         validator = getValidator(SignatureVerificationPolicy.ALWAYS)
-        publishers = [publisherId, publisher]
+        publishers = [TestingAddresses.PUBLISHER_ID, publisher]
         subscribers = [subscriber]
     }
 

@@ -1,6 +1,7 @@
 package com.streamr.client.protocol.message_layer
 
 import com.streamr.client.protocol.common.MessageRef
+import com.streamr.client.testing.TestingAddresses
 import com.streamr.client.testing.TestingJson
 import com.streamr.client.utils.Address
 import spock.lang.Specification
@@ -17,15 +18,13 @@ class StreamrSpecification extends Specification {
 	final String subscriberPrivateKey = "81fe39ed83c4ab997f64564d0c5a630e34c621ad9bbe51ad2754fac575fc0c46"
 	final Address subscriber = new Address("0xbe0ab87a1f5b09afe9101b09e3c86fd8f4162527")
 
-	protected static final Address publisherId = new Address("publisherId")
-
 
 	protected StreamMessage createMessage(Map content) {
-		return createMessage(new Date().getTime(), seqNo++, null, null, publisherId, content)
+		return createMessage(new Date().getTime(), seqNo++, null, null, TestingAddresses.PUBLISHER_ID, content)
 	}
 
 	protected StreamMessage createMessage(long timestamp, Map content) {
-		return createMessage(timestamp, 0, null, null, publisherId, content)
+		return createMessage(timestamp, 0, null, null, TestingAddresses.PUBLISHER_ID, content)
 	}
 
 	protected StreamMessage createMessage(long timestamp = 0, long sequenceNumber = 0, Long previousTimestamp = null, Long previousSequenceNumber = null, Address publisherId = new Address("publisherId"), Map content = [:], String msgChainId = "msgChainId") {

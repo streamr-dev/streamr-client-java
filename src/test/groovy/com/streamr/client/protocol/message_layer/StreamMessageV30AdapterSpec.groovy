@@ -1,6 +1,7 @@
 package com.streamr.client.protocol.message_layer
 
 import com.streamr.client.protocol.common.MessageRef
+import com.streamr.client.testing.TestingAddresses
 
 class StreamMessageV30AdapterSpec extends StreamrSpecification {
 	StreamMessageAdapter adapter
@@ -15,7 +16,7 @@ class StreamMessageV30AdapterSpec extends StreamrSpecification {
 				.withStreamPartition(0)
 				.withTimestamp(1528228173462L)
 				.withSequenceNumber(0)
-				.withPublisherId(publisherId)
+				.withPublisherId(TestingAddresses.PUBLISHER_ID)
 				.withMsgChainId("1")
 				.createMessageId()
 		msg = new StreamMessage.Builder()
@@ -44,7 +45,7 @@ class StreamMessageV30AdapterSpec extends StreamrSpecification {
 		msg.getTimestamp() == 1528228173462L
 		msg.getTimestampAsDate() == new Date(1528228173462L)
 		msg.getSequenceNumber() == 0
-		msg.getPublisherId() == publisherId
+		msg.getPublisherId() == TestingAddresses.PUBLISHER_ID
 		msg.getMsgChainId() == "1"
 		msg.getPreviousMessageRef().getTimestamp() == 1528228170000L
 		msg.getPreviousMessageRef().getTimestampAsDate() == new Date(1528228170000L)
@@ -70,7 +71,7 @@ class StreamMessageV30AdapterSpec extends StreamrSpecification {
 		msg.getTimestamp() == 1528228173462L
 		msg.getTimestampAsDate() == new Date(1528228173462L)
 		msg.getSequenceNumber() == 0
-		msg.getPublisherId() == publisherId
+		msg.getPublisherId() == TestingAddresses.PUBLISHER_ID
 		msg.getMsgChainId() == "1"
 		msg.getPreviousMessageRef() == null
 		msg.getMessageType() == StreamMessage.MessageType.STREAM_MESSAGE
@@ -94,7 +95,7 @@ class StreamMessageV30AdapterSpec extends StreamrSpecification {
 		msg.getTimestamp() == 1528228173462L
 		msg.getTimestampAsDate() == new Date(1528228173462L)
 		msg.getSequenceNumber() == 0
-		msg.getPublisherId() == publisherId
+		msg.getPublisherId() == TestingAddresses.PUBLISHER_ID
 		msg.getMsgChainId() == "1"
 		msg.getPreviousMessageRef() == null
 		msg.getMessageType() == StreamMessage.MessageType.STREAM_MESSAGE

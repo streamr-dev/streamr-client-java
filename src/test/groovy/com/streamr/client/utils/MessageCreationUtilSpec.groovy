@@ -40,7 +40,7 @@ class MessageCreationUtilSpec extends StreamrSpecification {
         signingUtil = new SigningUtil(account)
 
         encryptionUtil = new EncryptionUtil()
-        msgCreationUtil = new MessageCreationUtil(publisherId, signingUtil)
+        msgCreationUtil = new MessageCreationUtil(TestingAddresses.PUBLISHER_ID, signingUtil)
     }
 
     void "createStreamMessage() creates a StreamMessage with correct values"() {
@@ -54,7 +54,7 @@ class MessageCreationUtilSpec extends StreamrSpecification {
         msg.getStreamPartition() == 0
         msg.getTimestamp() == timestamp.getTime()
         msg.getSequenceNumber() == 0L
-        msg.getPublisherId() == publisherId
+        msg.getPublisherId() == TestingAddresses.PUBLISHER_ID
         msg.getMsgChainId().length() == 20
         msg.previousMessageRef == null
         msg.messageType == StreamMessage.MessageType.STREAM_MESSAGE
@@ -66,7 +66,7 @@ class MessageCreationUtilSpec extends StreamrSpecification {
     }
 
     void "createStreamMessage() doesn't sign messages if SigningUtil is not defined"() {
-        MessageCreationUtil msgCreationUtil2 = new MessageCreationUtil(publisherId, null)
+        MessageCreationUtil msgCreationUtil2 = new MessageCreationUtil(TestingAddresses.PUBLISHER_ID, null)
 
         when:
         StreamMessage msg = msgCreationUtil2.createStreamMessage(stream, message, new Date())
@@ -183,7 +183,7 @@ class MessageCreationUtilSpec extends StreamrSpecification {
         msgCreationUtil = new MessageCreationUtil(TestingAddresses.SUBSCRIBER_ID, null)
 
         when:
-        msgCreationUtil.createGroupKeyRequest(publisherId, "streamId", "", ["keyId1"])
+        msgCreationUtil.createGroupKeyRequest(TestingAddresses.PUBLISHER_ID, "streamId", "", ["keyId1"])
         then:
         thrown SigningRequiredException
     }
@@ -193,11 +193,11 @@ class MessageCreationUtilSpec extends StreamrSpecification {
 
         when:
         StreamMessage msg = util.createGroupKeyRequest(
-                publisherId, "streamId", "rsaPublicKey", ["keyId1"])
+                TestingAddresses.PUBLISHER_ID, "streamId", "rsaPublicKey", ["keyId1"])
         GroupKeyRequest request = (GroupKeyRequest) AbstractGroupKeyMessage.deserialize(msg.getSerializedContent(), StreamMessage.MessageType.GROUP_KEY_REQUEST)
 
         then:
-        msg.getStreamId() == KeyExchangeUtil.getKeyExchangeStreamId(publisherId)
+        msg.getStreamId() == KeyExchangeUtil.getKeyExchangeStreamId(TestingAddresses.PUBLISHER_ID)
         msg.getPublisherId() == TestingAddresses.SUBSCRIBER_ID
         msg.getMessageType() == StreamMessage.MessageType.GROUP_KEY_REQUEST
         msg.getEncryptionType() == StreamMessage.EncryptionType.NONE
@@ -208,7 +208,7 @@ class MessageCreationUtilSpec extends StreamrSpecification {
     }
 
     void "createGroupKeyResponse() should throw if SigningUtil is not set"() {
-        msgCreationUtil = new MessageCreationUtil(publisherId, null)
+        msgCreationUtil = new MessageCreationUtil(TestingAddresses.PUBLISHER_ID, null)
         GroupKey key = GroupKey.generate()
         GroupKeyRequest request = new GroupKeyRequest("requestId", "streamId", "publicKey", [key.getGroupKeyId()])
 
@@ -241,7 +241,7 @@ class MessageCreationUtilSpec extends StreamrSpecification {
     }
 
     void "createGroupKeyAnnounce() should throw if SigningUtil is not set"() {
-        msgCreationUtil = new MessageCreationUtil(publisherId, null)
+        msgCreationUtil = new MessageCreationUtil(TestingAddresses.PUBLISHER_ID, null)
         GroupKey key = GroupKey.generate()
 
         when:
@@ -271,7 +271,7 @@ class MessageCreationUtilSpec extends StreamrSpecification {
     }
 
     void "createGroupKeyErrorResponse() should throw if SigningUtil is not set"() {
-        msgCreationUtil = new MessageCreationUtil(publisherId, null)
+        msgCreationUtil = new MessageCreationUtil(TestingAddresses.PUBLISHER_ID, null)
 
         when:
         msgCreationUtil.createGroupKeyErrorResponse(TestingAddresses.SUBSCRIBER_ID, new GroupKeyRequest("requestId", "streamId", "rsaPublicKey" ,["keyId1"]), new Exception())

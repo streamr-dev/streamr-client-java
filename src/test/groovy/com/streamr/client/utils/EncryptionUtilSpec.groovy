@@ -6,6 +6,7 @@ import com.streamr.client.protocol.common.MessageRef
 import com.streamr.client.protocol.message_layer.MessageId
 import com.streamr.client.protocol.message_layer.StreamMessage
 import com.streamr.client.protocol.message_layer.StreamrSpecification
+import com.streamr.client.testing.TestingAddresses
 import com.streamr.client.testing.TestingJson
 import java.nio.charset.StandardCharsets
 import java.security.KeyPair
@@ -31,7 +32,7 @@ class EncryptionUtilSpec extends StreamrSpecification {
                 .withStreamPartition(0)
                 .withTimestamp(1L)
                 .withSequenceNumber(0L)
-                .withPublisherId(publisherId)
+                .withPublisherId(TestingAddresses.PUBLISHER_ID)
                 .withMsgChainId("msgChainId")
                 .createMessageId()
         streamMessage = new StreamMessage.Builder()
