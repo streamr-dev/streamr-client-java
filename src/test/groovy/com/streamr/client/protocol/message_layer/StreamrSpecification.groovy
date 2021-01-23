@@ -1,8 +1,9 @@
 package com.streamr.client.protocol.message_layer
 
-import com.streamr.client.protocol.common.MessageRef
+
 import com.streamr.client.testing.TestingAddresses
 import com.streamr.client.testing.TestingJson
+import com.streamr.client.testing.TestingMessageRef
 import com.streamr.client.utils.Address
 import spock.lang.Specification
 
@@ -33,19 +34,9 @@ class StreamrSpecification extends Specification {
                 .createMessageId()
 		return new StreamMessage.Builder()
                 .withMessageId(messageId)
-                .withPreviousMessageRef(createMessageRef(previousTimestamp, previousSequenceNumber))
+                .withPreviousMessageRef(TestingMessageRef.createMessageRef(previousTimestamp, previousSequenceNumber))
                 .withSerializedContent(TestingJson.toJson(content))
                 .createStreamMessage()
 	}
 
-	public static MessageRef createMessageRef(final Long previousTimestamp, final Long previousSequenceNumber) {
-		if (previousTimestamp != null) {
-			Long sequenceNumber = 0L
-			if (previousSequenceNumber != null) {
-				sequenceNumber = previousSequenceNumber
-			}
-			return new MessageRef(previousTimestamp, sequenceNumber)
-		}
-		return null
-	}
 }
