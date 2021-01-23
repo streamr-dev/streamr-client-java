@@ -12,13 +12,6 @@ import spock.lang.Specification
 class StreamrSpecification extends Specification {
 	private int seqNo = 0
 
-	// Some reusable addresses for tests to use
-	final String publisherPrivateKey = "d462a6f2ccd995a346a841d110e8c6954930a1c22851c0032d3116d8ccd2296a"
-	final Address publisher = new Address("0x6807295093ac5da6fb2a10f7dedc5edd620804fb")
-	final String subscriberPrivateKey = "81fe39ed83c4ab997f64564d0c5a630e34c621ad9bbe51ad2754fac575fc0c46"
-	final Address subscriber = new Address("0xbe0ab87a1f5b09afe9101b09e3c86fd8f4162527")
-
-
 	protected StreamMessage createMessage(Map content) {
 		return createMessage(new Date().getTime(), seqNo++, null, null, TestingAddresses.PUBLISHER_ID, content)
 	}
