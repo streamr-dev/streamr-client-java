@@ -66,6 +66,9 @@ codenarc {
 	ignoreFailures = false
 	reportFormat = 'html'
 	reportsDir = file("${project.projectDir}/build/reports/codenarc")
+	maxPriority1Violations = 1
+	maxPriority2Violations = 2
+	maxPriority3Violations = 4
 }
 tasks.withType(Test) {
 	useJUnitPlatform {
