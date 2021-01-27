@@ -1,6 +1,6 @@
 package com.streamr.client.protocol.control_layer
 
-import com.streamr.client.protocol.message_layer.MessageRef
+import com.streamr.client.protocol.common.MessageRef
 import spock.lang.Specification
 
 class ResendFromRequestAdapterSpec extends Specification {

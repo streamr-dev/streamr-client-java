@@ -1,17 +1,18 @@
 package com.streamr.client.utils
 
-import com.streamr.client.protocol.message_layer.Json
-import com.streamr.client.protocol.message_layer.MessageID
-import com.streamr.client.protocol.message_layer.MessageRef
+import com.streamr.client.protocol.common.MessageRef
+import com.streamr.client.protocol.message_layer.MessageId
 import com.streamr.client.protocol.message_layer.StreamMessage
-import com.streamr.client.protocol.message_layer.StreamrSpecification
+import com.streamr.client.testing.TestingAddresses
+import com.streamr.client.testing.TestingContent
 import org.web3j.crypto.ECKeyPair
+import spock.lang.Specification
 
-class SigningUtilSpec extends StreamrSpecification {
+class SigningUtilSpec extends Specification {
     ECKeyPair account
     Address address
     SigningUtil signingUtil
-    MessageID msgId
+    MessageId msgId
 
     void setup() {
         // The EthereumAuthenticationMethod accepts a private key with or without the '0x' prefix. It is removed if present to work with ECKey.fromPrivate.
@@ -22,7 +23,14 @@ class SigningUtilSpec extends StreamrSpecification {
         assert address.toString() == "0xa5374e3C19f15E1847881979Dd0C6C9ffe846BD5".toLowerCase()
 
         signingUtil = new SigningUtil(account)
-        msgId = new MessageID("streamId", 0, 425235315L, 0L, publisherId, "msgChainId")
+        msgId = new MessageId.Builder()
+                .withStreamId("streamId")
+                .withStreamPartition(0)
+                .withTimestamp(425235315L)
+                .withSequenceNumber(0L)
+                .withPublisherId(TestingAddresses.PUBLISHER_ID)
+                .withMsgChainId("msgChainId")
+                .createMessageId()
     }
 
     void "should correctly sign arbitrary data"() {
@@ -37,7 +45,7 @@ class SigningUtilSpec extends StreamrSpecification {
         StreamMessage msg = new StreamMessage.Builder()
                 .withMessageId(msgId)
                 .withPreviousMessageRef(null)
-                .withSerializedContent(Json.mapAdapter.toJson([foo: 'bar']))
+                .withContent(TestingContent.fromJsonMap([foo: 'bar']))
                 .createStreamMessage()
         String expectedPayload = "streamId04252353150publisheridmsgChainId"+'{"foo":"bar"}'
         when:
@@ -51,7 +59,7 @@ class SigningUtilSpec extends StreamrSpecification {
         StreamMessage msg = new StreamMessage.Builder()
                 .withMessageId(msgId)
                 .withPreviousMessageRef(new MessageRef(100, 1))
-                .withSerializedContent(Json.mapAdapter.toJson([foo: 'bar']))
+                .withContent(TestingContent.fromJsonMap([foo: 'bar']))
                 .createStreamMessage()
         String expectedPayload = "streamId04252353150publisheridmsgChainId1001"+'{"foo":"bar"}'
         when:
@@ -65,7 +73,7 @@ class SigningUtilSpec extends StreamrSpecification {
         StreamMessage msg = new StreamMessage.Builder()
                 .withMessageId(msgId)
                 .withPreviousMessageRef(new MessageRef(100, 1))
-                .withSerializedContent(Json.mapAdapter.toJson([foo: 'bar']))
+                .withContent(TestingContent.fromJsonMap([foo: 'bar']))
                 .withNewGroupKey(new EncryptedGroupKey("groupKeyId", "keyHex"))
                 .createStreamMessage()
         String expectedPayload = "streamId04252353150publisheridmsgChainId1001"+'{"foo":"bar"}'+'["groupKeyId","keyHex"]'
@@ -81,7 +89,7 @@ class SigningUtilSpec extends StreamrSpecification {
         StreamMessage msg = new StreamMessage.Builder()
                 .withMessageId(msgId)
                 .withPreviousMessageRef(null)
-                .withSerializedContent(Json.mapAdapter.toJson([foo: 'bar']))
+                .withContent(TestingContent.fromJsonMap([foo: 'bar']))
                 .createStreamMessage()
         then:
         !SigningUtil.hasValidSignature(msg)
@@ -91,7 +99,7 @@ class SigningUtilSpec extends StreamrSpecification {
         StreamMessage msg = new StreamMessage.Builder()
                 .withMessageId(msgId)
                 .withPreviousMessageRef(null)
-                .withSerializedContent(Json.mapAdapter.toJson([foo: 'bar']))
+                .withContent(TestingContent.fromJsonMap([foo: 'bar']))
                 .withSignature("0x787cd72924153c88350e808de68b68c88030cbc34d053a5c696a5893d5e6fec1687c1b6205ec99aeb3375a81bf5cb8857ae39c1b55a41b32ed6399ae8da456a61b")
                 .withSignatureType(StreamMessage.SignatureType.ETH)
                 .createStreamMessage()
@@ -101,11 +109,18 @@ class SigningUtilSpec extends StreamrSpecification {
     }
 
     void "returns true if correct signature"() {
-        MessageID msgId = new MessageID("streamId", 0, 425235315L, 0L, address, "msgChainId")
+        MessageId msgId = new MessageId.Builder()
+                .withStreamId("streamId")
+                .withStreamPartition(0)
+                .withTimestamp(425235315L)
+                .withSequenceNumber(0L)
+                .withPublisherId(address)
+                .withMsgChainId("msgChainId")
+                .createMessageId()
         StreamMessage msg = new StreamMessage.Builder()
                 .withMessageId(msgId)
                 .withPreviousMessageRef(null)
-                .withSerializedContent(Json.mapAdapter.toJson([foo: 'bar']))
+                .withContent(TestingContent.fromJsonMap([foo: 'bar']))
                 .createStreamMessage()
         msg = signingUtil.signStreamMessage(msg)
 
@@ -115,11 +130,18 @@ class SigningUtilSpec extends StreamrSpecification {
 
     void "returns true for correct signature of publisher address has upper and lower case letters"() {
         Address address1 = new Address("0x752C8dCAC0788759aCB1B4BB7A9103596BEe3e6c")
-        MessageID msgId = new MessageID("ogzCJrTdQGuKQO7nkLd3Rw", 0, 1567003338767L, 2L, address1, "kxYyLiSUQO0SRvMx6gA1")
+        MessageId msgId = new MessageId.Builder()
+                .withStreamId("ogzCJrTdQGuKQO7nkLd3Rw")
+                .withStreamPartition(0)
+                .withTimestamp(1567003338767L)
+                .withSequenceNumber(2L)
+                .withPublisherId(address1)
+                .withMsgChainId("kxYyLiSUQO0SRvMx6gA1")
+                .createMessageId()
         StreamMessage msg = new StreamMessage.Builder()
                 .withMessageId(msgId)
                 .withPreviousMessageRef(new MessageRef(1567003338767L, 1L))
-                .withSerializedContent(Json.mapAdapter.toJson([numero: 86]))
+                .withContent(TestingContent.fromJsonMap([numero: 86]))
                 .withSignature("0xc97f1fbb4f506a53ecb838db59017f687892494a9073315f8a187846865bf8325333315b116f1142921a97e49e3881eced2b176c69f9d60666b98b7641ad11e01b")
                 .withSignatureType(StreamMessage.SignatureType.ETH)
                 .createStreamMessage()

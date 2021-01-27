@@ -1,4 +1,4 @@
-package com.streamr.client.protocol.message_layer;
+package com.streamr.client.rest;
 
 import com.squareup.moshi.FromJson;
 import com.squareup.moshi.ToJson;
@@ -6,7 +6,7 @@ import java.time.Instant;
 import java.time.format.DateTimeFormatter;
 import java.util.Objects;
 
-public class InstantJsonAdapter {
+final class InstantJsonAdapter {
   @FromJson
   public Instant fromJson(final String s) {
     if (Objects.equals(s, null)) {

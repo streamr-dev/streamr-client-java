@@ -3,7 +3,7 @@ package com.streamr.client.protocol.control_layer;
 import com.squareup.moshi.JsonAdapter;
 import com.squareup.moshi.JsonReader;
 import com.squareup.moshi.JsonWriter;
-import com.streamr.client.exceptions.UnsupportedMessageException;
+import com.streamr.client.protocol.common.UnsupportedMessageException;
 import java.io.IOException;
 import java.util.HashMap;
 import java.util.Map;

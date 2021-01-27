@@ -1,8 +1,7 @@
 package com.streamr.client.protocol.message_layer;
 
-import com.streamr.client.exceptions.MalformedMessageException;
+import com.streamr.client.protocol.common.MessageRef;
 import com.streamr.client.protocol.message_layer.StreamMessage.MessageType;
-import com.streamr.client.utils.ValidationUtil;
 import java.io.IOException;
 import java.util.HashMap;
 import java.util.Map;
@@ -55,13 +54,14 @@ public abstract class AbstractGroupKeyMessage {
   }
 
   public StreamMessage.Builder toStreamMessageBuilder(
-      final MessageID messageID, final MessageRef prevMsgRef) {
+      final MessageId messageId, final MessageRef prevMsgRef) {
+    final StreamMessage.Content content =
+        StreamMessage.Content.Factory.withJsonAsPayload(serialize());
     return new StreamMessage.Builder()
-        .withMessageId(messageID)
+        .withMessageId(messageId)
         .withPreviousMessageRef(prevMsgRef)
         .withMessageType(getMessageType())
-        .withSerializedContent(serialize())
-        .withContentType(StreamMessage.ContentType.JSON)
+        .withContent(content)
         .withEncryptionType(StreamMessage.EncryptionType.NONE)
         .withGroupKeyId(null)
         .withNewGroupKey(null)

@@ -3,7 +3,8 @@ package com.streamr.client.protocol.message_layer;
 import com.squareup.moshi.JsonAdapter;
 import com.squareup.moshi.JsonReader;
 import com.squareup.moshi.JsonWriter;
-import com.streamr.client.exceptions.MalformedMessageException;
+import com.streamr.client.protocol.common.MessageRef;
+import com.streamr.client.protocol.common.MessageRefAdapter;
 import com.streamr.client.protocol.message_layer.StreamMessage.EncryptionType;
 import com.streamr.client.protocol.message_layer.StreamMessage.SignatureType;
 import com.streamr.client.utils.EncryptedGroupKey;
@@ -17,7 +18,7 @@ public class StreamMessageV32Adapter extends JsonAdapter<StreamMessage> {
   private static final Logger log = LoggerFactory.getLogger(StreamMessageV32Adapter.class);
 
   private static final int VERSION = 32;
-  private static final MessageIDAdapter msgIdAdapter = new MessageIDAdapter();
+  private static final MessageIdAdapter msgIdAdapter = new MessageIdAdapter();
   private static final MessageRefAdapter msgRefAdapter = new MessageRefAdapter();
 
   private static <T> T nullSafeRead(JsonReader reader, Callable<T> unsafeGetter) throws Exception {
@@ -33,12 +34,12 @@ public class StreamMessageV32Adapter extends JsonAdapter<StreamMessage> {
     try {
       // top-level array has already been opened in StreamMessageAdapter
       // version field has already been read in StreamMessageAdapter
-      MessageID messageID = msgIdAdapter.fromJson(reader);
+      MessageId messageId = msgIdAdapter.fromJson(reader);
       MessageRef previousMessageRef = nullSafeRead(reader, () -> msgRefAdapter.fromJson(reader));
       StreamMessage.MessageType messageType =
           StreamMessage.MessageType.fromId((byte) reader.nextInt());
-      StreamMessage.ContentType contentType =
-          StreamMessage.ContentType.fromId((byte) reader.nextInt());
+      StreamMessage.Content.Type contentType =
+          StreamMessage.Content.Type.fromId((byte) reader.nextInt());
       EncryptionType encryptionType = EncryptionType.fromId((byte) reader.nextInt());
       String groupKeyId = nullSafeRead(reader, reader::nextString);
       String serializedContent = reader.nextString();
@@ -48,11 +49,10 @@ public class StreamMessageV32Adapter extends JsonAdapter<StreamMessage> {
       // top-level array will be closed in StreamMessageAdapter
 
       return new StreamMessage.Builder()
-          .withMessageId(messageID)
+          .withMessageId(messageId)
           .withPreviousMessageRef(previousMessageRef)
           .withMessageType(messageType)
-          .withSerializedContent(serializedContent)
-          .withContentType(contentType)
+          .withContent(StreamMessage.Content.Factory.withJsonAsPayload(serializedContent))
           .withEncryptionType(encryptionType)
           .withGroupKeyId(groupKeyId)
           .withNewGroupKey(
@@ -72,7 +72,7 @@ public class StreamMessageV32Adapter extends JsonAdapter<StreamMessage> {
   public void toJson(JsonWriter writer, StreamMessage value) throws IOException {
     writer.beginArray();
     writer.value(VERSION);
-    msgIdAdapter.toJson(writer, value.getMessageID());
+    msgIdAdapter.toJson(writer, value.getMessageId());
 
     if (value.getPreviousMessageRef() != null) {
       msgRefAdapter.toJson(writer, value.getPreviousMessageRef());

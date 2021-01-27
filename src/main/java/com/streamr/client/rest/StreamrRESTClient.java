@@ -1,15 +1,17 @@
 package com.streamr.client.rest;
 
 import com.squareup.moshi.JsonAdapter;
+import com.squareup.moshi.Moshi;
 import com.squareup.moshi.Types;
 import com.streamr.client.options.StreamrClientOptions;
-import com.streamr.client.protocol.message_layer.Json;
 import com.streamr.client.utils.Address;
 import java.io.IOException;
+import java.lang.reflect.ParameterizedType;
 import java.net.HttpURLConnection;
 import java.util.List;
 import okhttp3.Call;
 import okhttp3.HttpUrl;
+import okhttp3.MediaType;
 import okhttp3.OkHttpClient;
 import okhttp3.Request;
 import okhttp3.RequestBody;
@@ -19,18 +21,23 @@ import okio.BufferedSource;
 
 /** This class exposes the RESTful API endpoints. */
 public abstract class StreamrRESTClient extends AbstractStreamrClient {
-  public static final JsonAdapter<Stream> streamJsonAdapter = MOSHI.adapter(Stream.class);
-  public static final JsonAdapter<Permission> permissionJsonAdapter =
-      MOSHI.adapter(Permission.class);
-  public static final JsonAdapter<UserInfo> userInfoJsonAdapter = MOSHI.adapter(UserInfo.class);
-  public static final JsonAdapter<Publishers> publishersJsonAdapter =
-      MOSHI.adapter(Publishers.class);
-  public static final JsonAdapter<Subscribers> subscribersJsonAdapter =
-      MOSHI.adapter(Subscribers.class);
-  public static final JsonAdapter<List<Stream>> streamListJsonAdapter =
-      MOSHI.adapter(Types.newParameterizedType(List.class, Stream.class));
+  private final JsonAdapter<Stream> streamJsonAdapter;
+  private final JsonAdapter<Permission> permissionJsonAdapter;
+  private final JsonAdapter<UserInfo> userInfoJsonAdapter;
+  private final JsonAdapter<Publishers> publishersJsonAdapter;
+  private final JsonAdapter<Subscribers> subscribersJsonAdapter;
+  private final JsonAdapter<List<Stream>> streamListJsonAdapter;
 
-  // private final Publisher publisher;
+  {
+    final Moshi moshi = Json.newMoshiBuilder().build();
+    streamJsonAdapter = moshi.adapter(Stream.class);
+    permissionJsonAdapter = moshi.adapter(Permission.class);
+    userInfoJsonAdapter = moshi.adapter(UserInfo.class);
+    publishersJsonAdapter = moshi.adapter(Publishers.class);
+    subscribersJsonAdapter = moshi.adapter(Subscribers.class);
+    final ParameterizedType pt = Types.newParameterizedType(List.class, Stream.class);
+    streamListJsonAdapter = moshi.adapter(pt);
+  }
 
   /** Creates a StreamrClient with default options */
   public StreamrRESTClient() {
@@ -116,8 +123,9 @@ public abstract class StreamrRESTClient extends AbstractStreamrClient {
   private <T> T post(
       HttpUrl url, String requestBody, JsonAdapter<T> adapter, boolean retryIfSessionExpired)
       throws IOException {
-    Request.Builder builder =
-        new Request.Builder().url(url).post(RequestBody.create(requestBody, Json.jsonType));
+    final MediaType contentTypeJson = MediaType.parse("application/json");
+    final RequestBody content = RequestBody.create(requestBody, contentTypeJson);
+    Request.Builder builder = new Request.Builder().url(url).post(content);
     return executeWithRetry(builder, adapter, retryIfSessionExpired);
   }
 
@@ -242,21 +250,20 @@ public abstract class StreamrRESTClient extends AbstractStreamrClient {
   static void assertSuccessful(Response response) throws IOException {
     if (!response.isSuccessful()) {
       String action = response.request().method() + " " + response.request().url().toString();
-
-      switch (response.code()) {
-        case HttpURLConnection.HTTP_NOT_FOUND:
-          throw new ResourceNotFoundException(action);
-        case HttpURLConnection.HTTP_UNAUTHORIZED:
+      final int httpStatusCode = response.code();
+      switch (httpStatusCode) {
+        case HttpURLConnection.HTTP_UNAUTHORIZED: // 401
           throw new AuthenticationException(action);
-        case HttpURLConnection.HTTP_FORBIDDEN:
+        case HttpURLConnection.HTTP_PAYMENT_REQUIRED: // 402
+        default: // fallthrough
+          final String body = response.body().string();
+          final String message =
+              String.format("%s failed with HTTP status %d:%s", action, httpStatusCode, body);
+          throw new RuntimeException(message);
+        case HttpURLConnection.HTTP_FORBIDDEN: // 403
           throw new PermissionDeniedException(action);
-        default:
-          throw new RuntimeException(
-              action
-                  + " failed with HTTP status "
-                  + response.code()
-                  + ":"
-                  + response.body().string());
+        case HttpURLConnection.HTTP_NOT_FOUND: // 404
+          throw new ResourceNotFoundException(action);
       }
     }
   }

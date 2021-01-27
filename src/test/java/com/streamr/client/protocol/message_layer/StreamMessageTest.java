@@ -7,9 +7,6 @@ import org.junit.jupiter.api.Test;
 class StreamMessageTest {
   @Test
   void equalsContract() {
-    EqualsVerifier.forClass(StreamMessage.class)
-        .withIgnoredFields("parsedContent")
-        .suppress(Warning.NULL_FIELDS)
-        .verify();
+    EqualsVerifier.forClass(StreamMessage.class).suppress(Warning.NULL_FIELDS).verify();
   }
 }

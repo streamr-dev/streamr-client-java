@@ -1,7 +1,6 @@
 package com.streamr.client.protocol.message_layer;
 
 import com.streamr.client.utils.EncryptedGroupKey;
-import com.streamr.client.utils.ValidationUtil;
 import java.util.List;
 import java.util.Objects;
 

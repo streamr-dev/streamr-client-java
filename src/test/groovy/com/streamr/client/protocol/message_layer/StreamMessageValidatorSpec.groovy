@@ -1,18 +1,25 @@
-package com.streamr.client.utils
+package com.streamr.client.protocol.message_layer
 
 import com.streamr.client.exceptions.ValidationException
 import com.streamr.client.options.SigningOptions.SignatureVerificationPolicy
-import com.streamr.client.protocol.message_layer.AbstractGroupKeyMessage
-import com.streamr.client.protocol.message_layer.GroupKeyRequest
-import com.streamr.client.protocol.message_layer.Json
-import com.streamr.client.protocol.message_layer.MessageID
-import com.streamr.client.protocol.message_layer.StreamMessage
-import com.streamr.client.protocol.message_layer.StreamrSpecification
 import com.streamr.client.rest.Stream
+import com.streamr.client.testing.TestingAddresses
+import com.streamr.client.testing.TestingContent
+import com.streamr.client.utils.Address
+import com.streamr.client.utils.AddressValidityUtil
+import com.streamr.client.utils.EncryptionUtil
+import com.streamr.client.utils.GroupKey
+import com.streamr.client.utils.MessageCreationUtil
+import com.streamr.client.utils.SigningUtil
 import org.web3j.crypto.ECKeyPair
+import spock.lang.Specification
 
-class StreamMessageValidatorSpec extends StreamrSpecification {
-    StreamMessageValidator validator
+class StreamMessageValidatorSpec extends Specification {
+	private final String publisherPrivateKey = "d462a6f2ccd995a346a841d110e8c6954930a1c22851c0032d3116d8ccd2296a"
+    private final Address publisher = new Address("0x6807295093ac5da6fb2a10f7dedc5edd620804fb")
+    private final String subscriberPrivateKey = "81fe39ed83c4ab997f64564d0c5a630e34c621ad9bbe51ad2754fac575fc0c46"
+    private final Address subscriber = new Address("0xbe0ab87a1f5b09afe9101b09e3c86fd8f4162527")
+	StreamMessageValidator validator
 
     final GroupKey groupKey = GroupKey.generate()
     final EncryptionUtil encryptionUtil = new EncryptionUtil()
@@ -27,14 +34,21 @@ class StreamMessageValidatorSpec extends StreamrSpecification {
     StreamMessage groupKeyErrorResponse
 
     String signature = "0x787cd72924153c88350e808de68b68c88030cbc34d053a5c696a5893d5e6fec1687c1b6205ec99aeb3375a81bf5cb8857ae39c1b55a41b32ed6399ae8da456a61b"
-    MessageID msgId = new MessageID("streamId", 0, 425235315L, 0L, publisherId, "msgChainId")
+    MessageId msgId = new MessageId.Builder()
+            .withStreamId("streamId")
+            .withStreamPartition(0)
+            .withTimestamp(425235315L)
+            .withSequenceNumber(0L)
+            .withPublisherId(TestingAddresses.PUBLISHER_ID)
+            .withMsgChainId("msgChainId")
+            .createMessageId()
 
     // The signature of this message is invalid but still in a correct format
     StreamMessage msgInvalid = new StreamMessage.Builder()
             .withMessageId(msgId)
             .withPreviousMessageRef(null)
             .withMessageType(StreamMessage.MessageType.STREAM_MESSAGE)
-            .withSerializedContent(Json.mapAdapter.toJson([foo: 'bar']))
+            .withContent(TestingContent.fromJsonMap([foo: 'bar']))
             .withEncryptionType(StreamMessage.EncryptionType.NONE)
             .withGroupKeyId(null)
             .withSignatureType(StreamMessage.SignatureType.ETH)
@@ -46,7 +60,7 @@ class StreamMessageValidatorSpec extends StreamrSpecification {
             .withMessageId(msgId)
             .withPreviousMessageRef(null)
             .withMessageType(StreamMessage.MessageType.STREAM_MESSAGE)
-            .withSerializedContent(Json.mapAdapter.toJson([foo: 'bar']))
+            .withContent(TestingContent.fromJsonMap([foo: 'bar']))
             .withEncryptionType(StreamMessage.EncryptionType.NONE)
             .withGroupKeyId(null)
             .withSignatureType(StreamMessage.SignatureType.ETH)
@@ -57,7 +71,7 @@ class StreamMessageValidatorSpec extends StreamrSpecification {
             .withMessageId(msgId)
             .withPreviousMessageRef(null)
             .withMessageType(StreamMessage.MessageType.STREAM_MESSAGE)
-            .withSerializedContent(Json.mapAdapter.toJson([foo: 'bar']))
+            .withContent(TestingContent.fromJsonMap([foo: 'bar']))
             .withEncryptionType(StreamMessage.EncryptionType.NONE)
             .withGroupKeyId(null)
             .withSignatureType(StreamMessage.SignatureType.NONE)
@@ -95,7 +109,7 @@ class StreamMessageValidatorSpec extends StreamrSpecification {
         groupKeyErrorResponse = publisherMsgCreationUtil.createGroupKeyErrorResponse(subscriber, (GroupKeyRequest) AbstractGroupKeyMessage.fromStreamMessage(groupKeyRequest), new Exception("Test exception"))
 
         validator = getValidator(SignatureVerificationPolicy.ALWAYS)
-        publishers = [publisherId, publisher]
+        publishers = [TestingAddresses.PUBLISHER_ID, publisher]
         subscribers = [subscriber]
     }
 

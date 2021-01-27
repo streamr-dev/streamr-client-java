@@ -3,13 +3,16 @@ package com.streamr.client.subs
 import com.streamr.client.MessageHandler
 import com.streamr.client.options.ResendLastOption
 import com.streamr.client.options.ResendOption
-import com.streamr.client.protocol.message_layer.StreamrSpecification
+import com.streamr.client.protocol.message_layer.MessageId
 import com.streamr.client.protocol.message_layer.StreamMessage
+import com.streamr.client.testing.TestingAddresses
+import com.streamr.client.testing.TestingContent
 import com.streamr.client.utils.Address
 import com.streamr.client.utils.EncryptionUtil
 import com.streamr.client.utils.GroupKey
 import com.streamr.client.utils.GroupKeyStore
 import com.streamr.client.utils.KeyExchangeUtil
+import spock.lang.Specification
 import spock.util.concurrent.PollingConditions
 
 /**
@@ -17,7 +20,7 @@ import spock.util.concurrent.PollingConditions
  * Most of the code is already tested in BasicSubscriptionSpec.
  * These tests focus on testing the additional code in HistoricalSubscription.
  */
-class HistoricalSubscriptionSpec extends StreamrSpecification {
+class HistoricalSubscriptionSpec extends Specification {
     StreamMessage msg
     GroupKeyStore keyStore
     KeyExchangeUtil keyExchangeUtil
@@ -26,14 +29,22 @@ class HistoricalSubscriptionSpec extends StreamrSpecification {
     boolean doneHandlerCalled
 
     def setup() {
-        msg = createMessage()
-        keyStore = Mock(GroupKeyStore)
-        keyExchangeUtil = Mock(KeyExchangeUtil)
-        received = []
-        sub = createSub()
-        groupKeyFunctionCallCount = 0
-        doneHandlerCalled = false
-    }
+		final MessageId messageId = new MessageId.Builder()
+				.withStreamId("streamId")
+				.withPublisherId(TestingAddresses.PUBLISHER_ID)
+				.withMsgChainId("msgChainId")
+				.createMessageId()
+		msg = new StreamMessage.Builder()
+				.withMessageId(messageId)
+				.withContent(TestingContent.emptyMessage())
+				.createStreamMessage()
+		keyStore = Mock(GroupKeyStore)
+		keyExchangeUtil = Mock(KeyExchangeUtil)
+		received = []
+		sub = createSub()
+		groupKeyFunctionCallCount = 0
+		doneHandlerCalled = false
+	}
 
 	MessageHandler defaultHandler = new MessageHandler() {
         @Override
