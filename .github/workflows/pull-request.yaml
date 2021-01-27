@@ -30,8 +30,8 @@ jobs:
         run: make -f Makefile.ci test-unit
       - uses: actions/upload-artifact@v2.2.2
         with:
-          name: jacoco-html-report
-          path: build/jacoco/html
+          name: reports
+          path: build/reports
           retention-days: 90
   integration-test:
     name: Integration test

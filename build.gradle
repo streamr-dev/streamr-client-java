@@ -57,7 +57,7 @@ jacocoTestReport {
 	reports {
 		xml.enabled false
 		csv.enabled false
-		html.destination file("${buildDir}/jacoco/html")
+		html.destination file("${buildDir}/reports/coverage")
 	}
 }
 tasks.withType(Test) {
