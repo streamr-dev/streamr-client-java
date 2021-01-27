@@ -88,48 +88,31 @@ java {
 	withJavadocJar()
 	withSourcesJar()
 }
-def commonJavaOptions = [
-		'-Xlint:auxiliaryclass',
-		'-Xlint:cast',
-		'-Xlint:classfile',
-		'-Xlint:deprecation',
-		'-Xlint:dep-ann',
-		'-Xlint:divzero',
-		'-Xlint:empty',
-		'-Xlint:fallthrough',
-		'-Xlint:finally',
-		'-Xlint:options',
-		'-Xlint:overloads',
-		'-Xlint:overrides',
-		'-Xlint:path',
-		'-Xlint:processing',
-		'-Xlint:rawtypes',
-		'-Xlint:-serial',
-		'-Xlint:static',
-		'-Xlint:try',
-		'-Xlint:unchecked',
-		'-Xlint:varargs',
-]
-compileJava {
+tasks.withType(JavaCompile) {
 	options.encoding = 'UTF-8'
 	options.compilerArgs += [
 			'-Werror',
+			'-Xlint:auxiliaryclass',
+			'-Xlint:cast',
+			'-Xlint:classfile',
+			'-Xlint:deprecation',
+			'-Xlint:dep-ann',
+			'-Xlint:divzero',
+			'-Xlint:empty',
+			'-Xlint:fallthrough',
+			'-Xlint:finally',
+			'-Xlint:options',
+			'-Xlint:overloads',
+			'-Xlint:overrides',
+			'-Xlint:path',
+			'-Xlint:processing',
+			'-Xlint:rawtypes',
+			'-Xlint:-serial',
+			'-Xlint:static',
+			'-Xlint:try',
+			'-Xlint:unchecked',
+			'-Xlint:varargs',
 	]
-	options.compilerArgs.addAll(commonJavaOptions)
-}
-compileTestJava {
-	options.encoding = 'UTF-8'
-	options.compilerArgs += [
-			'-Werror',
-	]
-	options.compilerArgs.addAll(commonJavaOptions)
-}
-compileIntegrationTestJava {
-	options.encoding = 'UTF-8'
-	options.compilerArgs += [
-			'-Werror',
-	]
-	options.compilerArgs.addAll(commonJavaOptions)
 }
 javadoc {
 	options.encoding = 'UTF-8'
