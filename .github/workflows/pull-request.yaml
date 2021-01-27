@@ -11,6 +11,8 @@ jobs:
     name: Check source format, build and unit test
     runs-on: ubuntu-latest
     steps:
+      - run: |
+          echo "datetime=$(date +'%Y-%m-%d-%H:%M:%S')" >> $GITHUB_ENV
       - uses: actions/checkout@v2.3.4
         with:
           fetch-depth: 0
@@ -30,7 +32,7 @@ jobs:
         run: make -f Makefile.ci test-unit
       - uses: actions/upload-artifact@v2.2.2
         with:
-          name: reports
+          name: streamr-client-java-report-${{ env.datetime }}-${{ github.job }}
           path: build/reports
           retention-days: 90
   integration-test:
