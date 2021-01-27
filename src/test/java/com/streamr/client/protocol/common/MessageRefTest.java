@@ -1,4 +1,4 @@
-package com.streamr.client.protocol.message_layer;
+package com.streamr.client.protocol.common;
 
 import nl.jqno.equalsverifier.EqualsVerifier;
 import org.junit.jupiter.api.Test;

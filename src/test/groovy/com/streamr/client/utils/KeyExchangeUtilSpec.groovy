@@ -3,28 +3,39 @@ package com.streamr.client.utils
 import com.streamr.client.protocol.message_layer.GroupKeyAnnounce
 import com.streamr.client.protocol.message_layer.GroupKeyRequest
 import com.streamr.client.protocol.message_layer.GroupKeyResponse
-import com.streamr.client.protocol.message_layer.MessageID
+import com.streamr.client.protocol.message_layer.MessageId
 import com.streamr.client.protocol.message_layer.StreamMessage
-import com.streamr.client.protocol.message_layer.StreamrSpecification
+import com.streamr.client.testing.TestingAddresses
+import java.nio.charset.StandardCharsets
 import java.time.Clock
 import java.time.Duration
 import java.time.Instant
 import java.util.function.Consumer
 import java.util.function.Function
+import spock.lang.Specification
 
-class KeyExchangeUtilSpec extends StreamrSpecification {
+class KeyExchangeUtilSpec extends Specification {
     KeyExchangeUtil util
     GroupKeyStore keyStore
     MessageCreationUtil messageCreationUtil
     Consumer<StreamMessage> publish
     KeyExchangeUtil.OnNewKeysFunction onNewKeysFunction
     ArrayList<StreamMessage> published
+    MessageId messageId = new MessageId.Builder()
+            .withStreamId("subscriberId")
+            .withStreamPartition(0)
+            .withTimestamp(5145)
+            .withSequenceNumber(0)
+            .withPublisherId(TestingAddresses.PUBLISHER_ID)
+            .withMsgChainId("")
+            .createMessageId()
+    final byte[] payload = "response".getBytes(StandardCharsets.UTF_8);
+    final StreamMessage.Content content = StreamMessage.Content.Factory.withJsonAsPayload(payload);
     StreamMessage response = new StreamMessage.Builder()
-            .withMessageId(new MessageID("subscriberId", 0, 5145, 0, publisherId, ""))
+            .withMessageId(messageId)
             .withMessageType(null)
             .withMessageType(StreamMessage.MessageType.GROUP_KEY_RESPONSE)
-            .withSerializedContent("response")
-            .withContentType(StreamMessage.ContentType.JSON)
+            .withContent(content)
             .withEncryptionType(StreamMessage.EncryptionType.RSA)
             .withGroupKeyId(null)
             .withNewGroupKey(null)
@@ -57,7 +68,14 @@ class KeyExchangeUtilSpec extends StreamrSpecification {
     }
 
     void "handleGroupKeyRequest() should send group key response for the requested keys"() {
-        MessageID id = new MessageID("publisherInbox", 0, 414, 0, subscriberId, "msgChainId")
+        MessageId id = new MessageId.Builder()
+                .withStreamId("publisherInbox")
+                .withStreamPartition(0)
+                .withTimestamp(414)
+                .withSequenceNumber(0)
+                .withPublisherId(TestingAddresses.SUBSCRIBER_ID)
+                .withMsgChainId("msgChainId")
+                .createMessageId()
         GroupKey key1 = GroupKey.generate()
         GroupKey key2 = GroupKey.generate()
 
@@ -72,7 +90,7 @@ class KeyExchangeUtilSpec extends StreamrSpecification {
         1 * keyStore.get("streamId", key1.groupKeyId) >> key1
         1 * keyStore.get("streamId", key2.groupKeyId) >> key2
         1 * messageCreationUtil.createGroupKeyResponse(_, _, _) >> { Address subId, GroupKeyRequest req, List<GroupKey> keys ->
-            assert subId == subscriberId
+            assert subId == TestingAddresses.SUBSCRIBER_ID
             assert req == request
             assert keys == [key1, key2]
             return response
@@ -82,11 +100,18 @@ class KeyExchangeUtilSpec extends StreamrSpecification {
 
         then:
         // Remember the public key of the subscriber
-        util.getKnownPublicKeysByPublisher().get(subscriberId) == encryptionUtil.publicKeyAsPemString
+        util.getKnownPublicKeysByPublisher().get(TestingAddresses.SUBSCRIBER_ID) == encryptionUtil.publicKeyAsPemString
     }
 
     void "handleGroupKeyResponse() should decrypt keys, add keys to keyStore, and call onNewKeys function"() {
-        MessageID id = new MessageID("subscriberInbox", 0, 414, 0, publisherId, "msgChainId")
+        MessageId id = new MessageId.Builder()
+                .withStreamId("subscriberInbox")
+                .withStreamPartition(0)
+                .withTimestamp(414)
+                .withSequenceNumber(0)
+                .withPublisherId(TestingAddresses.PUBLISHER_ID)
+                .withMsgChainId("msgChainId")
+                .createMessageId()
         GroupKey key = GroupKey.generate()
         EncryptedGroupKey encryptedKey = EncryptionUtil.encryptWithPublicKey(key, encryptionUtil.publicKey)
 
@@ -104,7 +129,14 @@ class KeyExchangeUtilSpec extends StreamrSpecification {
     }
 
     void "handleGroupKeyAnnounce() should RSA decrypt keys, add them to keyStore, and call onNewKeys function"() {
-        MessageID id = new MessageID("subscriberInbox", 0, 414, 0, publisherId, "msgChainId")
+        MessageId id = new MessageId.Builder()
+                .withStreamId("subscriberInbox")
+                .withStreamPartition(0)
+                .withTimestamp(414)
+                .withSequenceNumber(0)
+                .withPublisherId(TestingAddresses.PUBLISHER_ID)
+                .withMsgChainId("msgChainId")
+                .createMessageId()
         GroupKey key = GroupKey.generate()
         EncryptedGroupKey encryptedKey = EncryptionUtil.encryptWithPublicKey(key, encryptionUtil.publicKey)
 
@@ -122,7 +154,14 @@ class KeyExchangeUtilSpec extends StreamrSpecification {
     }
 
     void "handleGroupKeyAnnounce() should AES decrypt keys, add them to keyStore, and call onNewKeys function"() {
-        MessageID id = new MessageID("subscriberInbox", 0, 414, 0, publisherId, "msgChainId")
+        MessageId id = new MessageId.Builder()
+                .withStreamId("subscriberInbox")
+                .withStreamPartition(0)
+                .withTimestamp(414)
+                .withSequenceNumber(0)
+                .withPublisherId(TestingAddresses.PUBLISHER_ID)
+                .withMsgChainId("msgChainId")
+                .createMessageId()
         GroupKey keyToEncrypt = GroupKey.generate()
         GroupKey keyToEncryptWith = GroupKey.generate()
         EncryptedGroupKey encryptedKey = EncryptionUtil.encryptGroupKey(keyToEncrypt, keyToEncryptWith)
@@ -202,17 +241,18 @@ class KeyExchangeUtilSpec extends StreamrSpecification {
         util = new KeyExchangeUtil(keyStore, messageCreationUtil, encryptionUtil, addressValidityUtil2, publish, onNewKeysFunction)
 
         // Set some public keys for subscribers
-        util.getKnownPublicKeysByPublisher().put(getSubscriberId(1), new EncryptionUtil().publicKeyAsPemString)
-        util.getKnownPublicKeysByPublisher().put(getSubscriberId(2), new EncryptionUtil().publicKeyAsPemString)
-        util.getKnownPublicKeysByPublisher().put(getSubscriberId(3), new EncryptionUtil().publicKeyAsPemString)
+        util.getKnownPublicKeysByPublisher().put(TestingAddresses.createSubscriberId(1), new EncryptionUtil().publicKeyAsPemString)
+        util.getKnownPublicKeysByPublisher().put(TestingAddresses.createSubscriberId(2), new EncryptionUtil().publicKeyAsPemString)
+        util.getKnownPublicKeysByPublisher().put(TestingAddresses.createSubscriberId(3), new EncryptionUtil().publicKeyAsPemString)
 
-        def msgId = new MessageID(
-                "keyexchange-sub1",
-                0,
-                0,
-                0,
-                publisherId,
-                "msgChainId")
+        MessageId msgId = new MessageId.Builder()
+                .withStreamId("keyexchange-sub1")
+                .withStreamPartition(0)
+                .withTimestamp(0)
+                .withSequenceNumber(0)
+                .withPublisherId(TestingAddresses.PUBLISHER_ID)
+                .withMsgChainId("msgChainId")
+                .createMessageId()
         StreamMessage announce1 = new GroupKeyAnnounce("streamId", [])
                 .toStreamMessageBuilder(msgId, null)
                 .createStreamMessage()
@@ -225,12 +265,12 @@ class KeyExchangeUtilSpec extends StreamrSpecification {
 
         then:
         // Should check current subscribers with AddressValidityUtil, which responds that subscribers 1 and 3 are still active
-        1 * addressValidityUtil2.getSubscribersSet("streamId", true) >> [getSubscriberId(1), getSubscriberId(3)].toSet()
+        1 * addressValidityUtil2.getSubscribersSet("streamId", true) >> [TestingAddresses.createSubscriberId(1), TestingAddresses.createSubscriberId(3)].toSet()
         // Add new key to keystore
         1 * keyStore.add("streamId", _)
-        1 * messageCreationUtil.createGroupKeyAnnounce(getSubscriberId(1), "streamId", _, _) >> announce1
-        0 * messageCreationUtil.createGroupKeyAnnounce(getSubscriberId(2), "streamId", _, _) // don't call for subscriber 2
-        1 * messageCreationUtil.createGroupKeyAnnounce(getSubscriberId(3), "streamId", _, _) >> announce3
+        1 * messageCreationUtil.createGroupKeyAnnounce(TestingAddresses.createSubscriberId(1), "streamId", _, _) >> announce1
+        0 * messageCreationUtil.createGroupKeyAnnounce(TestingAddresses.createSubscriberId(2), "streamId", _, _) // don't call for subscriber 2
+        1 * messageCreationUtil.createGroupKeyAnnounce(TestingAddresses.createSubscriberId(3), "streamId", _, _) >> announce3
 
         published.size() == 2
         published[0] == announce1

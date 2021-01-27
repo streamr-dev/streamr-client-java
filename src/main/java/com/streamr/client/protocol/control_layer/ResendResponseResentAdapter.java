@@ -4,7 +4,7 @@ import com.squareup.moshi.JsonReader;
 import com.squareup.moshi.JsonWriter;
 import java.io.IOException;
 
-public class ResendResponseResentAdapter extends ControlLayerAdapter<ResendResponseResent> {
+final class ResendResponseResentAdapter extends ControlLayerAdapter<ResendResponseResent> {
 
   ResendResponseResentAdapter() {
     super(ResendResponseResent.class);

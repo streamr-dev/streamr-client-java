@@ -6,7 +6,6 @@ import com.streamr.client.protocol.control_layer.SubscribeRequest;
 import com.streamr.client.protocol.control_layer.SubscribeResponse;
 import com.streamr.client.protocol.message_layer.StreamMessage;
 import com.streamr.client.rest.Stream;
-import com.streamr.client.utils.Address;
 import com.streamr.client.utils.MessageCreationUtil;
 import java.io.IOException;
 import java.net.InetSocketAddress;
@@ -27,7 +26,7 @@ import org.slf4j.LoggerFactory;
 public class TestWebSocketServer extends WebSocketServer {
   private static final Logger log = LoggerFactory.getLogger(TestWebSocketServer.class);
   private final MessageCreationUtil msgCreationUtil =
-      new MessageCreationUtil(new Address("publisherId"), null);
+      new MessageCreationUtil(TestingAddresses.PUBLISHER_ID, null);
   private final List<ReceivedControlMessage> receivedControlMessages =
       Collections.synchronizedList(new LinkedList<>());
   private final String wsUrl;

@@ -19,7 +19,7 @@ public class GroupKeyRequestAdapter extends AbstractGroupKeyMessageAdapter<Group
     String requestId = reader.nextString();
     String streamId = reader.nextString();
     String rsaPublicKey = reader.nextString();
-    List<String> groupKeyIds = Json.listAdapter.fromJson(reader);
+    List<String> groupKeyIds = listOfStrings.fromJson(reader);
     reader.endArray();
 
     return new GroupKeyRequest(requestId, streamId, rsaPublicKey, groupKeyIds);
@@ -31,7 +31,7 @@ public class GroupKeyRequestAdapter extends AbstractGroupKeyMessageAdapter<Group
     writer.value(message.getRequestId());
     writer.value(message.getStreamId());
     writer.value(message.getPublicKey());
-    Json.listAdapter.toJson(writer, message.getGroupKeyIds());
+    listOfStrings.toJson(writer, message.getGroupKeyIds());
     writer.endArray();
   }
 }

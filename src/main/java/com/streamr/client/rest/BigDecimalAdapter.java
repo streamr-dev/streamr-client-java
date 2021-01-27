@@ -1,4 +1,4 @@
-package com.streamr.client.protocol.message_layer;
+package com.streamr.client.rest;
 
 import com.squareup.moshi.JsonAdapter;
 import com.squareup.moshi.JsonReader;

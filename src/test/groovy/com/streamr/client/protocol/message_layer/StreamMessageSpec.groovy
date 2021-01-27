@@ -1,9 +1,8 @@
-package com.streamr.client.protocol
+package com.streamr.client.protocol.message_layer
 
-import com.streamr.client.exceptions.EncryptedContentNotParsableException
-import com.streamr.client.protocol.message_layer.Json
-import com.streamr.client.protocol.message_layer.StreamMessage
 import com.streamr.client.protocol.message_layer.StreamMessage.EncryptionType
+import com.streamr.client.testing.StreamMessageExamples
+import com.streamr.client.testing.TestingContent
 import spock.lang.Specification
 
 class StreamMessageSpec extends Specification {
@@ -15,14 +14,14 @@ class StreamMessageSpec extends Specification {
 
 	void "constructor that takes Map content sets the correct serializedContent"() {
 		String serializedContent = msg.getSerializedContent()
-		Map<String, Object> mapContent = Json.mapAdapter.fromJson(serializedContent)
+		StreamMessage.Content content = TestingContent.fromJsonString(serializedContent)
 
 		when:
 		msg = new StreamMessage.Builder(msg)
-				.withSerializedContent(Json.mapAdapter.toJson(mapContent))
+				.withContent(content)
 				.createStreamMessage()
 		then:
-		msg.getParsedContent() == mapContent
+		msg.getParsedContent() == content.toMap()
 		msg.getSerializedContent() == serializedContent
 	}
 

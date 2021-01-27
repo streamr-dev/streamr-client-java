@@ -2,12 +2,12 @@ package com.streamr.client.protocol.control_layer;
 
 import com.squareup.moshi.JsonReader;
 import com.squareup.moshi.JsonWriter;
-import com.streamr.client.protocol.message_layer.MessageRef;
-import com.streamr.client.protocol.message_layer.MessageRefAdapter;
+import com.streamr.client.protocol.common.MessageRef;
+import com.streamr.client.protocol.common.MessageRefAdapter;
 import com.streamr.client.utils.Address;
 import java.io.IOException;
 
-public class ResendRangeRequestAdapter extends ControlLayerAdapter<ResendRangeRequest> {
+final class ResendRangeRequestAdapter extends ControlLayerAdapter<ResendRangeRequest> {
   private static final MessageRefAdapter msgRefAdapter = new MessageRefAdapter();
 
   ResendRangeRequestAdapter() {
