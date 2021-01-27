@@ -61,6 +61,12 @@ jacocoTestReport {
 		html.destination file("${buildDir}/reports/coverage")
 	}
 }
+codenarc {
+	configFile = file("${project.projectDir}/config/codenarc/codenarc.xml")
+	ignoreFailures = false
+	reportFormat = 'html'
+	reportsDir = file("${project.projectDir}/build/reports/codenarc")
+}
 tasks.withType(Test) {
 	useJUnitPlatform {
 		systemProperties = [
