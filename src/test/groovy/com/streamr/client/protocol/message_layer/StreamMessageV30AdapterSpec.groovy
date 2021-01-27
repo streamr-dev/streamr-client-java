@@ -51,7 +51,7 @@ class StreamMessageV30AdapterSpec extends Specification {
 		msg.getPreviousMessageRef().getTimestampAsDate() == new Date(1528228170000L)
 		msg.getPreviousMessageRef().getSequenceNumber() == 0
 		msg.getMessageType() == StreamMessage.MessageType.STREAM_MESSAGE
-		msg.getContentType() == StreamMessage.Content.ContentType.JSON
+		msg.getContentType() == StreamMessage.Content.Type.JSON
 		msg.getEncryptionType() == StreamMessage.EncryptionType.NONE
 		msg.getParsedContent() instanceof Map
 		msg.getParsedContent().desi == "2"
@@ -75,7 +75,7 @@ class StreamMessageV30AdapterSpec extends Specification {
 		msg.getMsgChainId() == "1"
 		msg.getPreviousMessageRef() == null
 		msg.getMessageType() == StreamMessage.MessageType.STREAM_MESSAGE
-		msg.getContentType() == StreamMessage.Content.ContentType.JSON
+		msg.getContentType() == StreamMessage.Content.Type.JSON
 		msg.getEncryptionType() == StreamMessage.EncryptionType.NONE
 		msg.getParsedContent() instanceof Map
 		msg.getParsedContent().desi == "2"
@@ -99,7 +99,7 @@ class StreamMessageV30AdapterSpec extends Specification {
 		msg.getMsgChainId() == "1"
 		msg.getPreviousMessageRef() == null
 		msg.getMessageType() == StreamMessage.MessageType.STREAM_MESSAGE
-		msg.getContentType() == StreamMessage.Content.ContentType.JSON
+		msg.getContentType() == StreamMessage.Content.Type.JSON
 		msg.getEncryptionType() == StreamMessage.EncryptionType.NONE
 		msg.getParsedContent() instanceof Map
 		msg.getParsedContent().desi == "2"

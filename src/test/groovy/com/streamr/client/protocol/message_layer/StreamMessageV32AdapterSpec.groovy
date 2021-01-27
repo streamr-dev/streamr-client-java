@@ -72,7 +72,7 @@ class StreamMessageV32AdapterSpec extends Specification {
 		msg.getMsgChainId() == "msgChainId"
 		msg.getPreviousMessageRef() == null
 		msg.getMessageType() == StreamMessage.MessageType.STREAM_MESSAGE
-		msg.getContentType() == StreamMessage.Content.ContentType.JSON
+		msg.getContentType() == StreamMessage.Content.Type.JSON
 		msg.getEncryptionType() == StreamMessage.EncryptionType.NONE
 		msg.getParsedContent() instanceof Map
 		msg.getSignatureType() == StreamMessage.SignatureType.NONE
@@ -97,7 +97,7 @@ class StreamMessageV32AdapterSpec extends Specification {
 		msg.getMsgChainId() == "msgChainId"
 		msg.getPreviousMessageRef() == new MessageRef(122L, 0)
 		msg.getMessageType() == StreamMessage.MessageType.STREAM_MESSAGE
-		msg.getContentType() == StreamMessage.Content.ContentType.JSON
+		msg.getContentType() == StreamMessage.Content.Type.JSON
 		msg.getEncryptionType() == StreamMessage.EncryptionType.AES
 		msg.getSerializedContent() == "encrypted-content"
 		msg.getNewGroupKey() == new EncryptedGroupKey("newGroupKeyId", "encryptedGroupKeyHex")
