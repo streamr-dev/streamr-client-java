@@ -1,26 +1,25 @@
 package com.streamr.client.protocol.message_layer;
 
-import com.squareup.moshi.JsonAdapter;
-import com.squareup.moshi.Moshi;
-import com.squareup.moshi.Types;
 import com.streamr.client.protocol.common.MessageRef;
 import com.streamr.client.protocol.common.UnsupportedMessageException;
 import com.streamr.client.utils.Address;
 import com.streamr.client.utils.EncryptedGroupKey;
 import java.io.IOException;
 import java.nio.charset.StandardCharsets;
+import java.util.Arrays;
+import java.util.Collection;
+import java.util.Collections;
 import java.util.Date;
+import java.util.HashMap;
 import java.util.Map;
 import java.util.Objects;
+import java.util.Set;
+import okio.Buffer;
+import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
 
 public final class StreamMessage implements ITimestamped {
   public static final int LATEST_VERSION = 32;
-  private final JsonAdapter<Map<String, Object>> mapStringObjectAdapter =
-      new Moshi.Builder()
-          .add(Date.class, new StringOrMillisDateJsonAdapter().nullSafe())
-          .build()
-          .<Map<String, Object>>adapter(
-              Types.newParameterizedType(Map.class, String.class, Object.class));
 
   public enum MessageType {
     STREAM_MESSAGE((byte) 27),
@@ -52,27 +51,6 @@ public final class StreamMessage implements ITimestamped {
         return GROUP_KEY_ERROR_RESPONSE;
       }
       throw new UnsupportedMessageException("Unrecognized content type: " + id);
-    }
-  }
-
-  public enum ContentType {
-    JSON((byte) 0);
-
-    private final byte id;
-
-    ContentType(final byte id) {
-      this.id = id;
-    }
-
-    public byte getId() {
-      return this.id;
-    }
-
-    public static ContentType fromId(final byte id) {
-      if (id == JSON.id) {
-        return JSON;
-      }
-      throw new UnsupportedMessageException("Unrecognized ContentType: " + id);
     }
   }
 
@@ -130,13 +108,178 @@ public final class StreamMessage implements ITimestamped {
     }
   }
 
+  public static final class Content {
+    private final ContentType type;
+    private final byte[] payload;
+
+    private final ContentAdapter adapter = new ContentAdapter();
+    private Map<String, Object> cache = Collections.unmodifiableMap(new HashMap<>());
+
+    private Content(final ContentType contentType, final byte[] payload) {
+      Objects.requireNonNull(contentType);
+      this.type = contentType;
+      Objects.requireNonNull(payload);
+      this.payload = payload;
+    }
+
+    public Map<String, Object> toMap() {
+      if (type != ContentType.JSON) {
+        throw new RuntimeException("Unknown contentType encountered: " + type);
+      }
+      try {
+        parseContentCache();
+      } catch (final IOException e) {
+        throw new RuntimeException("Failed to parse message content: " + toString());
+      }
+      return cache;
+    }
+
+    public void parseContentCache() throws IOException {
+      try (final Buffer buffer = new Buffer()) {
+        buffer.write(payload);
+        cache = adapter.fromJson(buffer);
+      }
+    }
+
+    @Override
+    public String toString() {
+      return new String(payload, StandardCharsets.UTF_8);
+    }
+
+    @Override
+    public boolean equals(final Object obj) {
+      if (this == obj) return true;
+      if (obj == null || getClass() != obj.getClass()) return false;
+      final Content content = (Content) obj;
+      return type == content.type && Arrays.equals(payload, content.payload);
+    }
+
+    @Override
+    public int hashCode() {
+      int result = Objects.hash(type);
+      result = 31 * result + Arrays.hashCode(payload);
+      return result;
+    }
+
+    public int size() {
+      return cache.size();
+    }
+
+    public boolean isEmpty() {
+      return cache.isEmpty();
+    }
+
+    public boolean containsKey(final Object key) {
+      return cache.containsKey(key);
+    }
+
+    public boolean containsValue(final Object value) {
+      return this.cache.containsValue(value);
+    }
+
+    public Object get(final Object key) {
+      return cache.get(key);
+    }
+
+    @Nullable
+    public Object put(final String key, final Object value) {
+      return this.cache.put(key, value);
+    }
+
+    public Object remove(final Object key) {
+      return cache.remove(key);
+    }
+
+    public void putAll(@NotNull final Map<? extends String, ?> m) {
+      cache.putAll(m);
+    }
+
+    public void clear() {
+      cache.clear();
+    }
+
+    @NotNull
+    public Set<String> keySet() {
+      return cache.keySet();
+    }
+
+    @NotNull
+    public Collection<Object> values() {
+      return cache.values();
+    }
+
+    @NotNull
+    public Set<Map.Entry<String, Object>> entrySet() {
+      return cache.entrySet();
+    }
+
+    public enum ContentType {
+      JSON((byte) 0);
+
+      private final byte id;
+
+      ContentType(final byte id) {
+        this.id = id;
+      }
+
+      public byte getId() {
+        return this.id;
+      }
+
+      public static ContentType fromId(final byte id) {
+        if (id == JSON.id) {
+          return JSON;
+        }
+        throw new UnsupportedMessageException("Unrecognized ContentType: " + id);
+      }
+    }
+
+    public static class Builder {
+      private ContentType type = ContentType.JSON;
+      private byte[] payload = new byte[0];
+
+      public Builder() {}
+
+      public Builder(final Content content) {
+        Objects.requireNonNull(content);
+        this.payload = content.payload;
+        this.type = content.type;
+      }
+
+      public StreamMessage.Content.Builder withContentType(final ContentType contentType) {
+        this.type = contentType;
+        return this;
+      }
+
+      public StreamMessage.Content.Builder withPayload(final byte[] payload) {
+        Objects.requireNonNull(payload);
+        this.payload = payload;
+        return this;
+      }
+
+      public Content createContent() {
+        return new Content(type, payload);
+      }
+    }
+
+    public static class Factory {
+      public static StreamMessage.Content withJsonAsPayload(final String payload) {
+        return withJsonAsPayload(payload.getBytes(StandardCharsets.UTF_8));
+      }
+
+      public static StreamMessage.Content withJsonAsPayload(final byte[] payload) {
+        return new Content.Builder()
+            .withContentType(Content.ContentType.JSON)
+            .withPayload(payload)
+            .createContent();
+      }
+    }
+  }
+
   private final MessageId messageId;
   private final MessageRef previousMessageRef;
   private final MessageType messageType;
-  // Might need to change parsedContent to Object when non-JSON contentTypes are introduced
-  private Map<String, Object> parsedContent;
-  private final String serializedContent;
-  private final ContentType contentType;
+  private final Content content;
   private final EncryptionType encryptionType;
   private final String groupKeyId;
   private final EncryptedGroupKey newGroupKey;
@@ -150,8 +293,7 @@ public final class StreamMessage implements ITimestamped {
       final MessageId messageId,
       final MessageRef previousMessageRef,
       final MessageType messageType,
-      final String serializedContent,
-      final ContentType contentType,
+      final Content content,
       final EncryptionType encryptionType,
       final String groupKeyId,
       final EncryptedGroupKey newGroupKey,
@@ -160,8 +302,8 @@ public final class StreamMessage implements ITimestamped {
     this.messageId = messageId;
     this.previousMessageRef = previousMessageRef;
     this.messageType = messageType;
-    this.serializedContent = serializedContent;
-    this.contentType = contentType;
+    Objects.requireNonNull(content);
+    this.content = content;
     this.encryptionType = encryptionType;
     this.groupKeyId = groupKeyId;
     this.newGroupKey = newGroupKey;
@@ -222,38 +364,28 @@ public final class StreamMessage implements ITimestamped {
     return messageType;
   }
 
-  public ContentType getContentType() {
-    return contentType;
+  public Content.ContentType getContentType() {
+    return content.type;
   }
 
   public EncryptionType getEncryptionType() {
     return encryptionType;
   }
 
+  // Soon @Deprecated
   public Map<String, Object> getParsedContent() {
-    if (parsedContent == null) {
-      if (encryptionType != EncryptionType.NONE) {
-        throw new EncryptedContentNotParsableException(encryptionType);
-      }
-      if (contentType == ContentType.JSON) {
-        try {
-          this.parsedContent = mapStringObjectAdapter.fromJson(serializedContent);
-        } catch (IOException e) {
-          throw new RuntimeException("Failed to parse message content: " + serializedContent);
-        }
-      } else {
-        throw new RuntimeException("Unknown contentType encountered: " + contentType);
-      }
+    if (encryptionType != EncryptionType.NONE) {
+      throw new EncryptedContentNotParsableException(encryptionType);
     }
-    return parsedContent;
+    return content.toMap();
   }
 
   public String getSerializedContent() {
-    return serializedContent;
+    return content.toString();
   }
 
   public byte[] getSerializedContentAsBytes() {
-    return serializedContent.getBytes(StandardCharsets.UTF_8);
+    return content.payload;
   }
 
   public String getGroupKeyId() {
@@ -287,12 +419,11 @@ public final class StreamMessage implements ITimestamped {
   @Override
   public String toString() {
     return String.format(
-        "%s{messageId=%s, previousMessageRef=%s, content='%s', contentType=%s, encryptionType=%s, groupKeyId='%s', newGroupKey='%s', signatureType=%s, signature='%s'}",
+        "%s{messageId=%s, previousMessageRef=%s, content=%s, encryptionType=%s, groupKeyId='%s', newGroupKey='%s', signatureType=%s, signature='%s'}",
         messageType,
         messageId,
         previousMessageRef,
-        serializedContent,
-        contentType,
+        content,
         encryptionType,
         groupKeyId,
         newGroupKey,
@@ -317,8 +448,7 @@ public final class StreamMessage implements ITimestamped {
     private MessageId messageId;
     private MessageRef previousMessageRef;
     private MessageType messageType = MessageType.STREAM_MESSAGE;
-    private String serializedContent;
-    private ContentType contentType = ContentType.JSON;
+    private Content content;
     private EncryptionType encryptionType = EncryptionType.NONE;
     private String groupKeyId = null;
     private EncryptedGroupKey newGroupKey = null;
@@ -328,11 +458,11 @@ public final class StreamMessage implements ITimestamped {
     public Builder() {}
 
     public Builder(final StreamMessage message) {
+      Objects.requireNonNull(message);
       this.messageId = message.messageId;
       this.previousMessageRef = message.previousMessageRef;
       this.messageType = message.messageType;
-      this.serializedContent = message.serializedContent;
-      this.contentType = message.contentType;
+      this.content = message.content;
       this.encryptionType = message.encryptionType;
       this.groupKeyId = message.groupKeyId;
       this.newGroupKey = message.newGroupKey;
@@ -355,18 +485,9 @@ public final class StreamMessage implements ITimestamped {
       return this;
     }
 
-    public Builder withSerializedContent(final String serializedContent) {
-      this.serializedContent = serializedContent;
-      return this;
-    }
-
-    public Builder withSerializedContent(final byte[] serializedContent) {
-      this.serializedContent = new String(serializedContent, StandardCharsets.UTF_8);
-      return this;
-    }
-
-    public Builder withContentType(final ContentType contentType) {
-      this.contentType = contentType;
+    public Builder withContent(final Content content) {
+      Objects.requireNonNull(content);
+      this.content = content;
       return this;
     }
 
@@ -407,8 +528,7 @@ public final class StreamMessage implements ITimestamped {
           messageId,
           previousMessageRef,
           messageType,
-          serializedContent,
-          contentType,
+          content,
           encryptionType,
           groupKeyId,
           newGroupKey,

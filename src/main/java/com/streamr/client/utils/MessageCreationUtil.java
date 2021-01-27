@@ -80,11 +80,12 @@ public class MessageCreationUtil {
 
     Pair<MessageId, MessageRef> pair =
         createMsgIdAndRef(stream.getId(), streamPartition, timestamp.getTime());
+    final String jsonMessage = mapOfStringAndObjectAdapter.toJson(payload);
     StreamMessage streamMessage =
         new StreamMessage.Builder()
             .withMessageId(pair.getLeft())
             .withPreviousMessageRef(pair.getRight())
-            .withSerializedContent(mapOfStringAndObjectAdapter.toJson(payload))
+            .withContent(StreamMessage.Content.Factory.withJsonAsPayload(jsonMessage))
             .createStreamMessage();
 
     // Encrypt content if the GroupKey is provided

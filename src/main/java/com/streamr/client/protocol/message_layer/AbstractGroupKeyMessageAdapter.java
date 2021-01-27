@@ -4,6 +4,7 @@ import com.squareup.moshi.JsonAdapter;
 import com.squareup.moshi.Moshi;
 import com.squareup.moshi.Types;
 import com.streamr.client.utils.EncryptedGroupKey;
+import java.lang.reflect.ParameterizedType;
 import java.util.Date;
 import java.util.List;
 
@@ -14,19 +15,20 @@ public abstract class AbstractGroupKeyMessageAdapter<T extends AbstractGroupKeyM
   protected final JsonAdapter<List<EncryptedGroupKey>> keyListAdapter;
 
   {
-    final Moshi.Builder builder = new Moshi.Builder();
-    listOfStrings =
-        builder
-            .add(Date.class, new StringOrMillisDateJsonAdapter().nullSafe())
-            .build()
-            .<List<String>>adapter(Types.newParameterizedType(List.class, String.class));
+    final Moshi.Builder builder =
+        new Moshi.Builder().add(Date.class, new StringOrMillisDateJsonAdapter().nullSafe());
+
+    final ParameterizedType listOfStringsAdapterType =
+        Types.newParameterizedType(List.class, String.class);
+    listOfStrings = builder.build().adapter(listOfStringsAdapterType);
+
+    final ParameterizedType listOfEncryptedGroupKeysAdapterType =
+        Types.newParameterizedType(List.class, EncryptedGroupKey.class);
     keyListAdapter =
         builder
-            .add(Date.class, new StringOrMillisDateJsonAdapter().nullSafe())
             .add(EncryptedGroupKey.class, new EncryptedGroupKeyAdapter())
             .build()
-            .<List<EncryptedGroupKey>>adapter(
-                Types.newParameterizedType(List.class, EncryptedGroupKey.class));
+            .adapter(listOfEncryptedGroupKeysAdapterType);
   }
 
   AbstractGroupKeyMessageAdapter(final Class<T> groupKeyMessageClass) {

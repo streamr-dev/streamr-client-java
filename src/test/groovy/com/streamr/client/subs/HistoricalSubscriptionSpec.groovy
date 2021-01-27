@@ -6,7 +6,7 @@ import com.streamr.client.options.ResendOption
 import com.streamr.client.protocol.message_layer.MessageId
 import com.streamr.client.protocol.message_layer.StreamMessage
 import com.streamr.client.testing.TestingAddresses
-import com.streamr.client.testing.TestingJson
+import com.streamr.client.testing.TestingContent
 import com.streamr.client.utils.Address
 import com.streamr.client.utils.EncryptionUtil
 import com.streamr.client.utils.GroupKey
@@ -36,7 +36,7 @@ class HistoricalSubscriptionSpec extends Specification {
 				.createMessageId()
 		msg = new StreamMessage.Builder()
 				.withMessageId(messageId)
-				.withSerializedContent(TestingJson.toJson([:]))
+				.withContent(TestingContent.emptyMessage())
 				.createStreamMessage()
 		keyStore = Mock(GroupKeyStore)
 		keyExchangeUtil = Mock(KeyExchangeUtil)

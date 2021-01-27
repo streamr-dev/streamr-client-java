@@ -1,12 +1,13 @@
 package com.streamr.client.protocol.message_layer;
 
 import nl.jqno.equalsverifier.EqualsVerifier;
-import nl.jqno.equalsverifier.Warning;
 import org.junit.jupiter.api.Test;
 
-class StreamMessageTest {
+class ContentTest {
   @Test
   void equalsContract() {
-    EqualsVerifier.forClass(StreamMessage.class).suppress(Warning.NULL_FIELDS).verify();
+    EqualsVerifier.forClass(StreamMessage.Content.class)
+        .withIgnoredFields("adapter", "cache")
+        .verify();
   }
 }

@@ -5,8 +5,9 @@ import com.streamr.client.protocol.common.MessageRef
 import com.streamr.client.protocol.message_layer.MessageId
 import com.streamr.client.protocol.message_layer.StreamMessage
 import com.streamr.client.testing.TestingAddresses
-import com.streamr.client.testing.TestingJson
+import com.streamr.client.testing.TestingContent
 import com.streamr.client.testing.TestingMessageRef
+import java.nio.charset.StandardCharsets
 import java.util.function.Consumer
 import java.util.function.Function
 import java.util.stream.Collectors
@@ -14,30 +15,30 @@ import spock.lang.Specification
 import spock.util.concurrent.PollingConditions
 
 class OrderedMsgChainSpec extends Specification {
-    final String content = TestingJson.toJson(new HashMap<String, Object>())
+    final StreamMessage.Content content = TestingContent.emptyMessage()
     final StreamMessage msg1 = new StreamMessage.Builder()
             .withMessageId(new MessageId.Builder().withTimestamp(1).withSequenceNumber(0).withStreamId("streamId").withPublisherId(TestingAddresses.PUBLISHER_ID).withMsgChainId("msgChainId").createMessageId())
-            .withSerializedContent(content)
+            .withContent(content)
             .createStreamMessage()
     final StreamMessage msg2 = new StreamMessage.Builder()
             .withMessageId(new MessageId.Builder().withTimestamp(2).withSequenceNumber(0).withStreamId("streamId").withPublisherId(TestingAddresses.PUBLISHER_ID).withMsgChainId("msgChainId").createMessageId())
             .withPreviousMessageRef(TestingMessageRef.createMessageRef(1, 0))
-            .withSerializedContent(content)
+            .withContent(content)
             .createStreamMessage()
     final StreamMessage msg3 = new StreamMessage.Builder()
             .withMessageId(new MessageId.Builder().withTimestamp(3).withSequenceNumber(0).withStreamId("streamId").withPublisherId(TestingAddresses.PUBLISHER_ID).withMsgChainId("msgChainId").createMessageId())
             .withPreviousMessageRef(TestingMessageRef.createMessageRef(2, 0))
-            .withSerializedContent(content)
+            .withContent(content)
             .createStreamMessage()
     final StreamMessage msg4 = new StreamMessage.Builder()
             .withMessageId(new MessageId.Builder().withTimestamp(4).withStreamId("streamId").withPublisherId(TestingAddresses.PUBLISHER_ID).withMsgChainId("msgChainId").createMessageId())
             .withPreviousMessageRef(TestingMessageRef.createMessageRef(3, 0))
-            .withSerializedContent(content)
+            .withContent(content)
             .createStreamMessage()
     final StreamMessage msg5 = new StreamMessage.Builder()
             .withMessageId(new MessageId.Builder().withTimestamp(5).withStreamId("streamId").withPublisherId(TestingAddresses.PUBLISHER_ID).withMsgChainId("msgChainId").createMessageId())
             .withPreviousMessageRef(TestingMessageRef.createMessageRef(4, 0))
-            .withSerializedContent(content)
+            .withContent(content)
             .createStreamMessage()
 
     final Address publisherId = new Address("0x12345")
@@ -108,7 +109,7 @@ class OrderedMsgChainSpec extends Specification {
         StreamMessage m2 = new StreamMessage.Builder()
                 .withMessageId(messageId2)
                 .withPreviousMessageRef(TestingMessageRef.createMessageRef(null, null))
-                .withSerializedContent(TestingJson.toJson([:]))
+                .withContent(TestingContent.emptyMessage())
                 .createStreamMessage()
         final MessageId messageId1 = new MessageId.Builder()
                 .withStreamId("streamId")
@@ -120,7 +121,7 @@ class OrderedMsgChainSpec extends Specification {
         StreamMessage m3 = new StreamMessage.Builder()
                 .withMessageId(messageId1)
                 .withPreviousMessageRef(TestingMessageRef.createMessageRef(null, null))
-                .withSerializedContent(TestingJson.toJson([:]))
+                .withContent(TestingContent.emptyMessage())
                 .createStreamMessage()
         final MessageId messageId = new MessageId.Builder()
                 .withStreamId("streamId")
@@ -132,7 +133,7 @@ class OrderedMsgChainSpec extends Specification {
         StreamMessage m4 = new StreamMessage.Builder()
                 .withMessageId(messageId)
                 .withPreviousMessageRef(TestingMessageRef.createMessageRef(null, null))
-                .withSerializedContent(TestingJson.toJson([:]))
+                .withContent(TestingContent.emptyMessage())
                 .createStreamMessage()
         ArrayList<StreamMessage> received = []
         OrderedMsgChain util = new OrderedMsgChain(publisherId, "msgChainId",
@@ -227,10 +228,12 @@ class OrderedMsgChainSpec extends Specification {
                     .withPublisherId(TestingAddresses.PUBLISHER_ID)
                     .withMsgChainId("msgChainId")
                     .createMessageId()
+            final byte[] payload = "response".getBytes(StandardCharsets.UTF_8);
+            final StreamMessage.Content content = StreamMessage.Content.Factory.withJsonAsPayload(payload);
             final StreamMessage msg = new StreamMessage.Builder()
                     .withMessageId(messageId)
                     .withPreviousMessageRef(TestingMessageRef.createMessageRef(i - 1, 0))
-                    .withSerializedContent(TestingJson.toJson([:]))
+                    .withContent(content)
                     .createStreamMessage()
             expected.add(msg)
             shuffled.add(msg)
@@ -296,7 +299,7 @@ class OrderedMsgChainSpec extends Specification {
         util.add(new StreamMessage.Builder()
                 .withMessageId(messageId1)
                 .withPreviousMessageRef(TestingMessageRef.createMessageRef(null, null))
-                .withSerializedContent(TestingJson.toJson([:]))
+                .withContent(TestingContent.emptyMessage())
                 .createStreamMessage())
         // there's a gap between the above and the below messages, so below messages are queued
         for (int i=1; i<=OrderedMsgChain.MAX_QUEUE_SIZE + 1; i++) {
@@ -310,7 +313,7 @@ class OrderedMsgChainSpec extends Specification {
             util.add(new StreamMessage.Builder()
                     .withMessageId(messageId)
                     .withPreviousMessageRef(TestingMessageRef.createMessageRef(i - 1, 0))
-                    .withSerializedContent(TestingJson.toJson([:]))
+                    .withContent(TestingContent.emptyMessage())
                     .createStreamMessage())
         }
 
@@ -338,7 +341,7 @@ class OrderedMsgChainSpec extends Specification {
         util.add(new StreamMessage.Builder()
                 .withMessageId(messageId1)
                 .withPreviousMessageRef(TestingMessageRef.createMessageRef(null, null))
-                .withSerializedContent(TestingJson.toJson([:]))
+                .withContent(TestingContent.emptyMessage())
                 .createStreamMessage())
         // there's a gap between the above and the below messages, so below messages are queued
         for (int i=1; i <= OrderedMsgChain.MAX_QUEUE_SIZE; i++) {
@@ -352,7 +355,7 @@ class OrderedMsgChainSpec extends Specification {
             util.add(new StreamMessage.Builder()
                     .withMessageId(messageId)
                     .withPreviousMessageRef(TestingMessageRef.createMessageRef(i - 1, 0))
-                    .withSerializedContent(TestingJson.toJson([:]))
+                    .withContent(TestingContent.emptyMessage())
                     .createStreamMessage())
         }
 
@@ -369,7 +372,7 @@ class OrderedMsgChainSpec extends Specification {
         util.add(new StreamMessage.Builder()
                 .withMessageId(messageId)
                 .withPreviousMessageRef(TestingMessageRef.createMessageRef(OrderedMsgChain.MAX_QUEUE_SIZE + 95, 0))
-                .withSerializedContent(TestingJson.toJson([:]))
+                .withContent(TestingContent.emptyMessage())
                 .createStreamMessage())
 
         then:
@@ -400,7 +403,7 @@ class OrderedMsgChainSpec extends Specification {
                 util.add(new StreamMessage.Builder()
                         .withMessageId(messageId)
                         .withPreviousMessageRef(TestingMessageRef.createMessageRef((i == 0 ? null : i - 1), 0))
-                        .withSerializedContent(TestingJson.toJson([:]))
+                        .withContent(TestingContent.emptyMessage())
                         .createStreamMessage())
             }
         }

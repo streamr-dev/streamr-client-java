@@ -23,7 +23,7 @@ import com.streamr.client.rest.Stream
 import com.streamr.client.subs.Subscription
 import com.streamr.client.testing.TestWebSocketServer
 import com.streamr.client.testing.TestingAddresses
-import com.streamr.client.testing.TestingJson
+import com.streamr.client.testing.TestingContent
 import com.streamr.client.testing.TestingStreamrClient
 import com.streamr.client.utils.Address
 import com.streamr.client.utils.EncryptionUtil
@@ -129,7 +129,7 @@ class StreamrClientSpec extends Specification {
         return new StreamMessage.Builder()
                 .withMessageId(msgId)
                 .withPreviousMessageRef(prev)
-                .withSerializedContent(TestingJson.toJson(map))
+                .withContent(TestingContent.fromJsonMap(map))
                 .createStreamMessage()
     }
 

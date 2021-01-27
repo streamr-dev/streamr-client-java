@@ -55,12 +55,13 @@ public abstract class AbstractGroupKeyMessage {
 
   public StreamMessage.Builder toStreamMessageBuilder(
       final MessageId messageId, final MessageRef prevMsgRef) {
+    final StreamMessage.Content content =
+        StreamMessage.Content.Factory.withJsonAsPayload(serialize());
     return new StreamMessage.Builder()
         .withMessageId(messageId)
         .withPreviousMessageRef(prevMsgRef)
         .withMessageType(getMessageType())
-        .withSerializedContent(serialize())
-        .withContentType(StreamMessage.ContentType.JSON)
+        .withContent(content)
         .withEncryptionType(StreamMessage.EncryptionType.NONE)
         .withGroupKeyId(null)
         .withNewGroupKey(null)

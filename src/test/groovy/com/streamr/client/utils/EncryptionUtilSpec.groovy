@@ -6,7 +6,7 @@ import com.streamr.client.protocol.common.MessageRef
 import com.streamr.client.protocol.message_layer.MessageId
 import com.streamr.client.protocol.message_layer.StreamMessage
 import com.streamr.client.testing.TestingAddresses
-import com.streamr.client.testing.TestingJson
+import com.streamr.client.testing.TestingContent
 import java.nio.charset.StandardCharsets
 import java.security.KeyPair
 import java.security.SecureRandom
@@ -18,7 +18,7 @@ import spock.lang.Specification
 
 class EncryptionUtilSpec extends Specification {
 
-    final Map plaintextContent = [foo: 'bar']
+    final Map<String, Object> plaintextContent = [foo: 'bar']
     final String serializedPlaintextContent = "{\"foo\":\"bar\"}"
     final byte[] plaintextBytes = "some random text".getBytes(StandardCharsets.UTF_8)
 
@@ -38,7 +38,7 @@ class EncryptionUtilSpec extends Specification {
         streamMessage = new StreamMessage.Builder()
                 .withMessageId(messageId)
                 .withPreviousMessageRef(new MessageRef(0L, 0L))
-                .withSerializedContent(TestingJson.toJson(plaintextContent))
+                .withContent(TestingContent.fromJsonMap(plaintextContent))
                 .createStreamMessage()
         util = new EncryptionUtil()
         key = GroupKey.generate()

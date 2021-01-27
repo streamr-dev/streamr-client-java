@@ -32,7 +32,7 @@ public class StreamMessageV30Adapter extends JsonAdapter<StreamMessage> {
         previousMessageRef = msgRefAdapter.fromJson(reader);
       }
       MessageType messageType = MessageType.fromId((byte) reader.nextInt());
-      String serializedContent = reader.nextString();
+      final String payload = reader.nextString();
       SignatureType signatureType = SignatureType.fromId((byte) reader.nextInt());
       String signature = null;
       if (signatureType != SignatureType.NONE) {
@@ -45,8 +45,7 @@ public class StreamMessageV30Adapter extends JsonAdapter<StreamMessage> {
           .withMessageId(messageId)
           .withPreviousMessageRef(previousMessageRef)
           .withMessageType(messageType)
-          .withSerializedContent(serializedContent)
-          .withContentType(StreamMessage.ContentType.JSON)
+          .withContent(StreamMessage.Content.Factory.withJsonAsPayload(payload))
           .withEncryptionType(StreamMessage.EncryptionType.NONE)
           .withGroupKeyId(null)
           .withNewGroupKey(null)

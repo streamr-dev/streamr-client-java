@@ -8,7 +8,7 @@ import com.streamr.client.protocol.message_layer.MessageId
 import com.streamr.client.protocol.message_layer.StreamMessage
 import com.streamr.client.subs.BasicSubscription.GroupKeyRequestFunction
 import com.streamr.client.testing.TestingAddresses
-import com.streamr.client.testing.TestingJson
+import com.streamr.client.testing.TestingContent
 import com.streamr.client.testing.TestingMessageRef
 import com.streamr.client.utils.Address
 import com.streamr.client.utils.EncryptionUtil
@@ -46,7 +46,7 @@ class BasicSubscriptionSpec extends Specification {
         msg = new StreamMessage.Builder()
                 .withMessageId(messageId)
                 .withPreviousMessageRef(TestingMessageRef.createMessageRef(null, null))
-                .withSerializedContent(TestingJson.toJson([:]))
+                .withContent(TestingContent.emptyMessage())
                 .createStreamMessage()
         keyStore = Mock(GroupKeyStore)
         keyExchangeUtil = Mock(KeyExchangeUtil)
@@ -100,7 +100,7 @@ class BasicSubscriptionSpec extends Specification {
             msgs.add(new StreamMessage.Builder()
                     .withMessageId(messageId)
                     .withPreviousMessageRef(TestingMessageRef.createMessageRef(null, 0))
-                    .withSerializedContent(TestingJson.toJson([:]))
+                    .withContent(TestingContent.emptyMessage())
                     .createStreamMessage())
         }
 
@@ -144,7 +144,7 @@ class BasicSubscriptionSpec extends Specification {
         StreamMessage msg1 = new StreamMessage.Builder()
                 .withMessageId(messageId1)
                 .withPreviousMessageRef(TestingMessageRef.createMessageRef(null, 0))
-                .withSerializedContent(TestingJson.toJson([:]))
+                .withContent(TestingContent.emptyMessage())
                 .createStreamMessage()
         final MessageId messageId = new MessageId.Builder()
                 .withStreamId("streamId")
@@ -156,7 +156,7 @@ class BasicSubscriptionSpec extends Specification {
         StreamMessage msg4 = new StreamMessage.Builder()
                 .withMessageId(messageId)
                 .withPreviousMessageRef(TestingMessageRef.createMessageRef(3, 0))
-                .withSerializedContent(TestingJson.toJson([:]))
+                .withContent(TestingContent.emptyMessage())
                 .createStreamMessage()
         GapDetectedException ex
         sub.setGapHandler(new OrderedMsgChain.GapHandlerFunction() {
@@ -196,7 +196,7 @@ class BasicSubscriptionSpec extends Specification {
         StreamMessage msg1 = new StreamMessage.Builder()
                 .withMessageId(messageId1)
                 .withPreviousMessageRef(TestingMessageRef.createMessageRef(null, 0))
-                .withSerializedContent(TestingJson.toJson([:]))
+                .withContent(TestingContent.emptyMessage())
                 .createStreamMessage()
         final MessageId messageId = new MessageId.Builder()
                 .withStreamId("streamId")
@@ -208,7 +208,7 @@ class BasicSubscriptionSpec extends Specification {
         StreamMessage msg4 = new StreamMessage.Builder()
                 .withMessageId(messageId)
                 .withPreviousMessageRef(TestingMessageRef.createMessageRef(3, 0))
-                .withSerializedContent(TestingJson.toJson([:]))
+                .withContent(TestingContent.emptyMessage())
                 .createStreamMessage()
 
         when:
@@ -230,7 +230,7 @@ class BasicSubscriptionSpec extends Specification {
         StreamMessage msg1 = new StreamMessage.Builder()
                 .withMessageId(messageId1)
                 .withPreviousMessageRef(TestingMessageRef.createMessageRef(null, 0))
-                .withSerializedContent(TestingJson.toJson([:]))
+                .withContent(TestingContent.emptyMessage())
                 .createStreamMessage()
         final MessageId messageId = new MessageId.Builder()
                 .withStreamId("streamId")
@@ -242,7 +242,7 @@ class BasicSubscriptionSpec extends Specification {
         StreamMessage msg4 = new StreamMessage.Builder()
                 .withMessageId(messageId)
                 .withPreviousMessageRef(TestingMessageRef.createMessageRef(1, 3))
-                .withSerializedContent(TestingJson.toJson([:]))
+                .withContent(TestingContent.emptyMessage())
                 .createStreamMessage()
         GapDetectedException ex
         sub.setGapHandler(new OrderedMsgChain.GapHandlerFunction() {
@@ -282,7 +282,7 @@ class BasicSubscriptionSpec extends Specification {
         StreamMessage msg1 = new StreamMessage.Builder()
                 .withMessageId(messageId2)
                 .withPreviousMessageRef(TestingMessageRef.createMessageRef(null, 0))
-                .withSerializedContent(TestingJson.toJson([:]))
+                .withContent(TestingContent.emptyMessage())
                 .createStreamMessage()
         final MessageId messageId1 = new MessageId.Builder()
                 .withStreamId("streamId")
@@ -294,7 +294,7 @@ class BasicSubscriptionSpec extends Specification {
         StreamMessage msg2 = new StreamMessage.Builder()
                 .withMessageId(messageId1)
                 .withPreviousMessageRef(TestingMessageRef.createMessageRef(1, 0))
-                .withSerializedContent(TestingJson.toJson([:]))
+                .withContent(TestingContent.emptyMessage())
                 .createStreamMessage()
         final MessageId messageId = new MessageId.Builder()
                 .withStreamId("streamId")
@@ -306,7 +306,7 @@ class BasicSubscriptionSpec extends Specification {
         StreamMessage msg3 = new StreamMessage.Builder()
                 .withMessageId(messageId)
                 .withPreviousMessageRef(TestingMessageRef.createMessageRef(1, 1))
-                .withSerializedContent(TestingJson.toJson([:]))
+                .withContent(TestingContent.emptyMessage())
                 .createStreamMessage()
 
         sub.setGapHandler(new OrderedMsgChain.GapHandlerFunction() {
@@ -334,10 +334,10 @@ class BasicSubscriptionSpec extends Specification {
                 .withPublisherId(TestingAddresses.PUBLISHER_ID)
                 .withMsgChainId("msgChainId")
                 .createMessageId()
-        Map plaintext = [foo: 'bar']
+        Map<String, Object> plaintext = [foo: 'bar']
         StreamMessage msg1 = new StreamMessage.Builder()
                 .withMessageId(messageId)
-                .withSerializedContent(TestingJson.toJson(plaintext))
+                .withContent(TestingContent.fromJsonMap(plaintext))
                 .createStreamMessage()
         GroupKey groupKey = GroupKey.generate()
         msg1 = EncryptionUtil.encryptStreamMessage(msg1, groupKey)
@@ -363,7 +363,7 @@ class BasicSubscriptionSpec extends Specification {
         StreamMessage msg = new StreamMessage.Builder()
                 .withMessageId(messageId)
                 .withPreviousMessageRef(TestingMessageRef.createMessageRef(null, null))
-                .withSerializedContent(TestingJson.toJson([:]))
+                .withContent(TestingContent.emptyMessage())
                 .createStreamMessage()
         msg = EncryptionUtil.encryptStreamMessage(msg, oldKey)
         msg = new StreamMessage.Builder(msg)
@@ -446,7 +446,7 @@ class BasicSubscriptionSpec extends Specification {
                 .createMessageId()
         StreamMessage msg1 = new StreamMessage.Builder()
                 .withMessageId(messageId1)
-                .withSerializedContent(TestingJson.toJson([foo: 'bar1']))
+                .withContent(TestingContent.fromJsonMap([foo: 'bar1']))
                 .createStreamMessage()
         final MessageId messageId2 = new MessageId.Builder()
                 .withStreamId("streamId")
@@ -456,7 +456,7 @@ class BasicSubscriptionSpec extends Specification {
                 .createMessageId()
         StreamMessage msg2 = new StreamMessage.Builder()
                 .withMessageId(messageId2)
-                .withSerializedContent(TestingJson.toJson([foo: 'bar2']))
+                .withContent(TestingContent.fromJsonMap([foo: 'bar2']))
                 .createStreamMessage()
 
         GroupKey groupKey = GroupKey.generate()
@@ -506,7 +506,7 @@ class BasicSubscriptionSpec extends Specification {
         StreamMessage msg1pub1 = new StreamMessage.Builder()
                 .withMessageId(messageId3)
                 .withPreviousMessageRef(TestingMessageRef.createMessageRef(null, null))
-                .withSerializedContent(TestingJson.toJson([foo: 'bar1']))
+                .withContent(TestingContent.fromJsonMap([foo: 'bar1']))
                 .createStreamMessage()
         final MessageId messageId2 = new MessageId.Builder()
                 .withStreamId("streamId")
@@ -518,7 +518,7 @@ class BasicSubscriptionSpec extends Specification {
         StreamMessage msg2pub1 = new StreamMessage.Builder()
                 .withMessageId(messageId2)
                 .withPreviousMessageRef(TestingMessageRef.createMessageRef(null, null))
-                .withSerializedContent(TestingJson.toJson([foo: 'bar2']))
+                .withContent(TestingContent.fromJsonMap([foo: 'bar2']))
                 .createStreamMessage()
         final MessageId messageId1 = new MessageId.Builder()
                 .withStreamId("streamId")
@@ -530,7 +530,7 @@ class BasicSubscriptionSpec extends Specification {
         StreamMessage msg1pub2 = new StreamMessage.Builder()
                 .withMessageId(messageId1)
                 .withPreviousMessageRef(TestingMessageRef.createMessageRef(null, null))
-                .withSerializedContent(TestingJson.toJson([foo: 'bar3']))
+                .withContent(TestingContent.fromJsonMap([foo: 'bar3']))
                 .createStreamMessage()
         final MessageId messageId = new MessageId.Builder()
                 .withStreamId("streamId")
@@ -542,7 +542,7 @@ class BasicSubscriptionSpec extends Specification {
         StreamMessage msg2pub2 = new StreamMessage.Builder()
                 .withMessageId(messageId)
                 .withPreviousMessageRef(TestingMessageRef.createMessageRef(null, null))
-                .withSerializedContent(TestingJson.toJson([foo: 'bar4']))
+                .withContent(TestingContent.fromJsonMap([foo: 'bar4']))
                 .createStreamMessage()
 
         GroupKey groupKeyPub1 = GroupKey.generate()
@@ -618,7 +618,7 @@ class BasicSubscriptionSpec extends Specification {
         StreamMessage msg1pub1 = new StreamMessage.Builder()
                 .withMessageId(messageId4)
                 .withPreviousMessageRef(TestingMessageRef.createMessageRef(null, null))
-                .withSerializedContent(TestingJson.toJson([foo: 'bar1']))
+                .withContent(TestingContent.fromJsonMap([foo: 'bar1']))
                 .createStreamMessage()
         final MessageId messageId3 = new MessageId.Builder()
                 .withStreamId("streamId")
@@ -630,7 +630,7 @@ class BasicSubscriptionSpec extends Specification {
         StreamMessage msg2pub1 = new StreamMessage.Builder()
                 .withMessageId(messageId3)
                 .withPreviousMessageRef(TestingMessageRef.createMessageRef(null, null))
-                .withSerializedContent(TestingJson.toJson([foo: 'bar2']))
+                .withContent(TestingContent.fromJsonMap([foo: 'bar2']))
                 .createStreamMessage()
         final MessageId messageId2 = new MessageId.Builder()
                 .withStreamId("streamId")
@@ -642,7 +642,7 @@ class BasicSubscriptionSpec extends Specification {
         StreamMessage msg3pub1 = new StreamMessage.Builder()
                 .withMessageId(messageId2)
                 .withPreviousMessageRef(TestingMessageRef.createMessageRef(null, null))
-                .withSerializedContent(TestingJson.toJson([foo: 'bar3']))
+                .withContent(TestingContent.fromJsonMap([foo: 'bar3']))
                 .createStreamMessage()
         final MessageId messageId1 = new MessageId.Builder()
                 .withStreamId("streamId")
@@ -654,7 +654,7 @@ class BasicSubscriptionSpec extends Specification {
         StreamMessage msg1pub2 = new StreamMessage.Builder()
                 .withMessageId(messageId1)
                 .withPreviousMessageRef(TestingMessageRef.createMessageRef(null, null))
-                .withSerializedContent(TestingJson.toJson([foo: 'bar4']))
+                .withContent(TestingContent.fromJsonMap([foo: 'bar4']))
                 .createStreamMessage()
         final MessageId messageId = new MessageId.Builder()
                 .withStreamId("streamId")
@@ -666,7 +666,7 @@ class BasicSubscriptionSpec extends Specification {
         StreamMessage msg2pub2 = new StreamMessage.Builder()
                 .withMessageId(messageId)
                 .withPreviousMessageRef(TestingMessageRef.createMessageRef(null, null))
-                .withSerializedContent(TestingJson.toJson([foo: 'bar5']))
+                .withContent(TestingContent.fromJsonMap([foo: 'bar5']))
                 .createStreamMessage()
 
         GroupKey groupKeyPub1 = GroupKey.generate()
@@ -754,7 +754,7 @@ class BasicSubscriptionSpec extends Specification {
         StreamMessage key1msg1 = new StreamMessage.Builder()
                 .withMessageId(messageId3)
                 .withPreviousMessageRef(TestingMessageRef.createMessageRef(null, null))
-                .withSerializedContent(TestingJson.toJson([n: 1]))
+                .withContent(TestingContent.fromJsonMap([n: 1]))
                 .createStreamMessage()
         final MessageId messageId2 = new MessageId.Builder()
                 .withStreamId("streamId")
@@ -766,7 +766,7 @@ class BasicSubscriptionSpec extends Specification {
         StreamMessage key1msg2 = new StreamMessage.Builder()
                 .withMessageId(messageId2)
                 .withPreviousMessageRef(TestingMessageRef.createMessageRef(null, null))
-                .withSerializedContent(TestingJson.toJson([n: 2]))
+                .withContent(TestingContent.fromJsonMap([n: 2]))
                 .createStreamMessage()
         final MessageId messageId1 = new MessageId.Builder()
                 .withStreamId("streamId")
@@ -778,7 +778,7 @@ class BasicSubscriptionSpec extends Specification {
         StreamMessage key2msg1 = new StreamMessage.Builder()
                 .withMessageId(messageId1)
                 .withPreviousMessageRef(TestingMessageRef.createMessageRef(null, null))
-                .withSerializedContent(TestingJson.toJson([n: 3]))
+                .withContent(TestingContent.fromJsonMap([n: 3]))
                 .createStreamMessage()
         final MessageId messageId = new MessageId.Builder()
                 .withStreamId("streamId")
@@ -790,7 +790,7 @@ class BasicSubscriptionSpec extends Specification {
         StreamMessage key2msg2 = new StreamMessage.Builder()
                 .withMessageId(messageId)
                 .withPreviousMessageRef(TestingMessageRef.createMessageRef(null, null))
-                .withSerializedContent(TestingJson.toJson([n: 4]))
+                .withContent(TestingContent.fromJsonMap([n: 4]))
                 .createStreamMessage()
 
         GroupKey key1 = GroupKey.generate()

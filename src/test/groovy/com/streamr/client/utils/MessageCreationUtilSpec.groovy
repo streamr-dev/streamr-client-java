@@ -58,7 +58,7 @@ class MessageCreationUtilSpec extends Specification {
         msg.getMsgChainId().length() == 20
         msg.previousMessageRef == null
         msg.messageType == StreamMessage.MessageType.STREAM_MESSAGE
-        msg.contentType == StreamMessage.ContentType.JSON
+        msg.contentType == StreamMessage.Content.ContentType.JSON
         msg.encryptionType == StreamMessage.EncryptionType.NONE
         msg.parsedContent == message
         msg.signatureType == StreamMessage.SignatureType.ETH

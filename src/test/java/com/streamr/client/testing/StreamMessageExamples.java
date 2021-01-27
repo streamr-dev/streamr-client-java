@@ -1,13 +1,9 @@
 package com.streamr.client.testing;
 
-import com.squareup.moshi.Moshi;
-import com.squareup.moshi.Types;
 import com.streamr.client.protocol.common.MessageRef;
 import com.streamr.client.protocol.message_layer.MessageId;
 import com.streamr.client.protocol.message_layer.StreamMessage;
-import com.streamr.client.protocol.message_layer.StringOrMillisDateJsonAdapter;
 import com.streamr.client.utils.Address;
-import java.util.Date;
 import java.util.HashMap;
 import java.util.Map;
 
@@ -27,21 +23,15 @@ public class StreamMessageExamples {
               .withMsgChainId("1")
               .createMessageId();
 
-      final Map<String, Object> content = new HashMap<>();
-      content.put("hello", "world");
-      final String serializedContent =
-          new Moshi.Builder()
-              .add(Date.class, new StringOrMillisDateJsonAdapter().nullSafe())
-              .build()
-              .adapter(Types.newParameterizedType(Map.class, String.class, Object.class))
-              .toJson(content);
-
+      final Map<String, Object> payload = new HashMap<>();
+      payload.put("hello", "world");
+      final StreamMessage.Content content = TestingContent.fromJsonMap(payload);
       helloWorld =
           new StreamMessage.Builder()
               .withMessageId(id)
               .withPreviousMessageRef(new MessageRef(1528228170000L, 0))
               .withMessageType(StreamMessage.MessageType.STREAM_MESSAGE)
-              .withSerializedContent(serializedContent)
+              .withContent(content)
               .withEncryptionType(StreamMessage.EncryptionType.NONE)
               .withGroupKeyId(null)
               .withSignatureType(StreamMessage.SignatureType.ETH)

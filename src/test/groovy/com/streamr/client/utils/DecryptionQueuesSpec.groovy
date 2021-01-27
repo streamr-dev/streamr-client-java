@@ -3,7 +3,7 @@ package com.streamr.client.utils
 import com.streamr.client.protocol.message_layer.MessageId
 import com.streamr.client.protocol.message_layer.StreamMessage
 import com.streamr.client.testing.TestingAddresses
-import com.streamr.client.testing.TestingJson
+import com.streamr.client.testing.TestingContent
 import com.streamr.client.testing.TestingMessageRef
 import spock.lang.Specification
 
@@ -20,7 +20,7 @@ class DecryptionQueuesSpec extends Specification {
 		GroupKey key2 = GroupKey.generate()
 		GroupKey pub2key = GroupKey.generate()
 
-		final String content = TestingJson.toJson(new HashMap<String, Object>())
+		final StreamMessage.Content content = TestingContent.emptyMessage()
 		// msgChain1 has messages with two different keys
 		final MessageId messageId6 = new MessageId.Builder()
 				.withStreamId("streamId")
@@ -31,7 +31,7 @@ class DecryptionQueuesSpec extends Specification {
 				.createMessageId()
 		StreamMessage chain1key1msg1 = new StreamMessage.Builder()
 				.withMessageId(messageId6)
-				.withSerializedContent(content)
+				.withContent(content)
 				.createStreamMessage()
 		final MessageId messageId5 = new MessageId.Builder()
 				.withStreamId("streamId")
@@ -43,7 +43,7 @@ class DecryptionQueuesSpec extends Specification {
 		StreamMessage chain1key1msg2 = new StreamMessage.Builder()
 				.withMessageId(messageId5)
 				.withPreviousMessageRef(TestingMessageRef.createMessageRef(0, 0))
-				.withSerializedContent(content)
+				.withContent(content)
 				.createStreamMessage()
 		final MessageId messageId4 = new MessageId.Builder()
 				.withStreamId("streamId")
@@ -55,7 +55,7 @@ class DecryptionQueuesSpec extends Specification {
 		StreamMessage chain1key1msg3 = new StreamMessage.Builder()
 				.withMessageId(messageId4)
 				.withPreviousMessageRef(TestingMessageRef.createMessageRef(0, 0))
-				.withSerializedContent(content)
+				.withContent(content)
 				.createStreamMessage()
 		final MessageId messageId3 = new MessageId.Builder()
 				.withStreamId("streamId")
@@ -67,7 +67,7 @@ class DecryptionQueuesSpec extends Specification {
 		StreamMessage chain1key2msg4 = new StreamMessage.Builder()
 				.withMessageId(messageId3)
 				.withPreviousMessageRef(TestingMessageRef.createMessageRef(0, 0))
-				.withSerializedContent(content)
+				.withContent(content)
 				.createStreamMessage()
 
 		// Also there's another msgChain from the same publisher
@@ -80,7 +80,7 @@ class DecryptionQueuesSpec extends Specification {
 				.createMessageId()
 		StreamMessage chain2key2msg1 = new StreamMessage.Builder()
 				.withMessageId(messageId2)
-				.withSerializedContent(content)
+				.withContent(content)
 				.createStreamMessage()
 		final MessageId messageId1 = new MessageId.Builder()
 				.withStreamId("streamId")
@@ -92,7 +92,7 @@ class DecryptionQueuesSpec extends Specification {
 		StreamMessage chain2key2msg2 = new StreamMessage.Builder()
 				.withMessageId(messageId1)
 				.withPreviousMessageRef(TestingMessageRef.createMessageRef(0, 0))
-				.withSerializedContent(content)
+				.withContent(content)
 				.createStreamMessage()
 
 		// And a completely different publisher
@@ -105,7 +105,7 @@ class DecryptionQueuesSpec extends Specification {
 				.createMessageId()
 		StreamMessage pub2msg1 = new StreamMessage.Builder()
 				.withMessageId(messageId)
-				.withSerializedContent(content)
+				.withContent(content)
 				.createStreamMessage()
 
 		// Encrypt each message with appropriate key and add to the decryptionQueues

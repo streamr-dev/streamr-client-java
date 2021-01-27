@@ -2,6 +2,7 @@ package com.streamr.client.protocol.message_layer
 
 import com.streamr.client.protocol.common.MessageRef
 import com.streamr.client.testing.TestingAddresses
+import java.nio.charset.StandardCharsets
 import spock.lang.Specification
 
 class StreamMessageV31AdapterSpec extends Specification {
@@ -23,8 +24,7 @@ class StreamMessageV31AdapterSpec extends Specification {
 				.withMessageId(messageId)
 				.withPreviousMessageRef(new MessageRef(1528228170000L, 0))
 				.withMessageType(StreamMessage.MessageType.STREAM_MESSAGE)
-				.withSerializedContent(serializedContent)
-				.withContentType(StreamMessage.ContentType.JSON)
+				.withContent(StreamMessage.Content.Factory.withJsonAsPayload(serializedContent))
 				.withEncryptionType(StreamMessage.EncryptionType.NONE)
 				.withGroupKeyId(null)
 				.withNewGroupKey(null)
@@ -51,7 +51,7 @@ class StreamMessageV31AdapterSpec extends Specification {
 		msg.getPreviousMessageRef().getTimestampAsDate() == new Date(1528228170000L)
 		msg.getPreviousMessageRef().getSequenceNumber() == 0
 		msg.getMessageType() == StreamMessage.MessageType.STREAM_MESSAGE
-		msg.getContentType() == StreamMessage.ContentType.JSON
+		msg.getContentType() == StreamMessage.Content.ContentType.JSON
 		msg.getEncryptionType() == StreamMessage.EncryptionType.NONE
 		msg.getParsedContent() instanceof Map
 		msg.getParsedContent().desi == "2"
@@ -75,7 +75,7 @@ class StreamMessageV31AdapterSpec extends Specification {
 		msg.getMsgChainId() == "1"
 		msg.getPreviousMessageRef() == null
 		msg.getMessageType() == StreamMessage.MessageType.STREAM_MESSAGE
-		msg.getContentType() == StreamMessage.ContentType.JSON
+		msg.getContentType() == StreamMessage.Content.ContentType.JSON
 		msg.getEncryptionType() == StreamMessage.EncryptionType.NONE
 		msg.getParsedContent() instanceof Map
 		msg.getParsedContent().desi == "2"
@@ -99,7 +99,7 @@ class StreamMessageV31AdapterSpec extends Specification {
 		msg.getMsgChainId() == "1"
 		msg.getPreviousMessageRef() == null
 		msg.getMessageType() == StreamMessage.MessageType.STREAM_MESSAGE
-		msg.getContentType() == StreamMessage.ContentType.JSON
+		msg.getContentType() == StreamMessage.Content.ContentType.JSON
 		msg.getEncryptionType() == StreamMessage.EncryptionType.NONE
 		msg.getParsedContent() instanceof Map
 		msg.getParsedContent().desi == "2"

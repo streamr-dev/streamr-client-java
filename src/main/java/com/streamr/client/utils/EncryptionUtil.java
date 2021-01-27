@@ -8,6 +8,7 @@ import java.io.IOException;
 import java.io.StringWriter;
 import java.lang.reflect.Field;
 import java.lang.reflect.Modifier;
+import java.nio.charset.StandardCharsets;
 import java.security.Key;
 import java.security.KeyFactory;
 import java.security.KeyPair;
@@ -71,9 +72,11 @@ public final class EncryptionUtil {
     if (msg.getEncryptionType() != StreamMessage.EncryptionType.RSA) {
       throw new IllegalArgumentException("Given StreamMessage is not encrypted with RSA!");
     }
+    final byte[] payload = decryptWithPrivateKey(msg.getSerializedContent());
+    final StreamMessage.Content content = StreamMessage.Content.Factory.withJsonAsPayload(payload);
     return new StreamMessage.Builder(msg)
         .withEncryptionType(StreamMessage.EncryptionType.NONE)
-        .withSerializedContent(decryptWithPrivateKey(msg.getSerializedContent()))
+        .withContent(content)
         .createStreamMessage();
   }
 
@@ -87,11 +90,13 @@ public final class EncryptionUtil {
 
   private static StreamMessage encryptWithPublicKey(
       final StreamMessage msg, final String publicKey) {
-    final String content = encryptWithPublicKey(msg.getSerializedContentAsBytes(), publicKey);
+    final String message = encryptWithPublicKey(msg.getSerializedContentAsBytes(), publicKey);
+    final byte[] payload = message.getBytes(StandardCharsets.UTF_8);
+    final StreamMessage.Content content = StreamMessage.Content.Factory.withJsonAsPayload(payload);
     return new StreamMessage.Builder(msg)
         .withEncryptionType(StreamMessage.EncryptionType.RSA)
         .withGroupKeyId(publicKey)
-        .withSerializedContent(content)
+        .withContent(content)
         .createStreamMessage();
   }
 
@@ -176,9 +181,10 @@ public final class EncryptionUtil {
    */
   static StreamMessage encryptStreamMessage(
       final StreamMessage streamMessage, final GroupKey groupKey) throws InvalidGroupKeyException {
-    final String content = encrypt(streamMessage.getSerializedContentAsBytes(), groupKey);
+    final String message = encrypt(streamMessage.getSerializedContentAsBytes(), groupKey);
+    final StreamMessage.Content content = StreamMessage.Content.Factory.withJsonAsPayload(message);
     return new StreamMessage.Builder(streamMessage)
-        .withSerializedContent(content)
+        .withContent(content)
         .withEncryptionType(StreamMessage.EncryptionType.AES)
         .withGroupKeyId(groupKey.getGroupKeyId())
         .createStreamMessage();
@@ -193,8 +199,10 @@ public final class EncryptionUtil {
 
     try {
       final byte[] decryptedContent = decrypt(streamMessage.getSerializedContent(), groupKey);
+      final StreamMessage.Content content =
+          StreamMessage.Content.Factory.withJsonAsPayload(decryptedContent);
       return new StreamMessage.Builder(streamMessage)
-          .withSerializedContent(decryptedContent)
+          .withContent(content)
           .withEncryptionType(StreamMessage.EncryptionType.NONE)
           .createStreamMessage();
     } catch (Exception e) {

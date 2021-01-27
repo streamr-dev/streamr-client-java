@@ -6,6 +6,7 @@ import com.streamr.client.protocol.message_layer.GroupKeyResponse
 import com.streamr.client.protocol.message_layer.MessageId
 import com.streamr.client.protocol.message_layer.StreamMessage
 import com.streamr.client.testing.TestingAddresses
+import java.nio.charset.StandardCharsets
 import java.time.Clock
 import java.time.Duration
 import java.time.Instant
@@ -28,12 +29,13 @@ class KeyExchangeUtilSpec extends Specification {
             .withPublisherId(TestingAddresses.PUBLISHER_ID)
             .withMsgChainId("")
             .createMessageId()
+    final byte[] payload = "response".getBytes(StandardCharsets.UTF_8);
+    final StreamMessage.Content content = StreamMessage.Content.Factory.withJsonAsPayload(payload);
     StreamMessage response = new StreamMessage.Builder()
             .withMessageId(messageId)
             .withMessageType(null)
             .withMessageType(StreamMessage.MessageType.GROUP_KEY_RESPONSE)
-            .withSerializedContent("response")
-            .withContentType(StreamMessage.ContentType.JSON)
+            .withContent(content)
             .withEncryptionType(StreamMessage.EncryptionType.RSA)
             .withGroupKeyId(null)
             .withNewGroupKey(null)

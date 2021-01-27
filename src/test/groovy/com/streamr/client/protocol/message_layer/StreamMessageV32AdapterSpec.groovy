@@ -2,7 +2,7 @@ package com.streamr.client.protocol.message_layer
 
 import com.streamr.client.protocol.common.MessageRef
 import com.streamr.client.testing.TestingAddresses
-import com.streamr.client.testing.TestingJson
+import com.streamr.client.testing.TestingContent
 import com.streamr.client.utils.EncryptedGroupKey
 import spock.lang.Specification
 
@@ -27,7 +27,7 @@ class StreamMessageV32AdapterSpec extends Specification {
 		msg = new StreamMessage.Builder()
 				.withMessageId(messageId)
 				.withPreviousMessageRef(null)
-				.withSerializedContent(TestingJson.toJson([:]))
+				.withContent(TestingContent.emptyMessage())
 				.createStreamMessage()
 	}
 
@@ -44,7 +44,7 @@ class StreamMessageV32AdapterSpec extends Specification {
 		msg = new StreamMessage.Builder(msg)
 				.withSignature("signature")
 				.withSignatureType(StreamMessage.SignatureType.ETH)
-				.withSerializedContent("encrypted-content")
+				.withContent(TestingContent.fromJsonString("encrypted-content"))
 				.withPreviousMessageRef(new MessageRef(122L, 0))
 				.withEncryptionType(StreamMessage.EncryptionType.AES)
 				.withGroupKeyId("groupKeyId")
@@ -72,7 +72,7 @@ class StreamMessageV32AdapterSpec extends Specification {
 		msg.getMsgChainId() == "msgChainId"
 		msg.getPreviousMessageRef() == null
 		msg.getMessageType() == StreamMessage.MessageType.STREAM_MESSAGE
-		msg.getContentType() == StreamMessage.ContentType.JSON
+		msg.getContentType() == StreamMessage.Content.ContentType.JSON
 		msg.getEncryptionType() == StreamMessage.EncryptionType.NONE
 		msg.getParsedContent() instanceof Map
 		msg.getSignatureType() == StreamMessage.SignatureType.NONE
@@ -97,7 +97,7 @@ class StreamMessageV32AdapterSpec extends Specification {
 		msg.getMsgChainId() == "msgChainId"
 		msg.getPreviousMessageRef() == new MessageRef(122L, 0)
 		msg.getMessageType() == StreamMessage.MessageType.STREAM_MESSAGE
-		msg.getContentType() == StreamMessage.ContentType.JSON
+		msg.getContentType() == StreamMessage.Content.ContentType.JSON
 		msg.getEncryptionType() == StreamMessage.EncryptionType.AES
 		msg.getSerializedContent() == "encrypted-content"
 		msg.getNewGroupKey() == new EncryptedGroupKey("newGroupKeyId", "encryptedGroupKeyHex")

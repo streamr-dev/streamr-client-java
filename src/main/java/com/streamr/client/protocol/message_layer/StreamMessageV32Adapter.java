@@ -38,8 +38,8 @@ public class StreamMessageV32Adapter extends JsonAdapter<StreamMessage> {
       MessageRef previousMessageRef = nullSafeRead(reader, () -> msgRefAdapter.fromJson(reader));
       StreamMessage.MessageType messageType =
           StreamMessage.MessageType.fromId((byte) reader.nextInt());
-      StreamMessage.ContentType contentType =
-          StreamMessage.ContentType.fromId((byte) reader.nextInt());
+      StreamMessage.Content.ContentType contentType =
+          StreamMessage.Content.ContentType.fromId((byte) reader.nextInt());
       EncryptionType encryptionType = EncryptionType.fromId((byte) reader.nextInt());
       String groupKeyId = nullSafeRead(reader, reader::nextString);
       String serializedContent = reader.nextString();
@@ -52,8 +52,7 @@ public class StreamMessageV32Adapter extends JsonAdapter<StreamMessage> {
           .withMessageId(messageId)
           .withPreviousMessageRef(previousMessageRef)
           .withMessageType(messageType)
-          .withSerializedContent(serializedContent)
-          .withContentType(contentType)
+          .withContent(StreamMessage.Content.Factory.withJsonAsPayload(serializedContent))
           .withEncryptionType(encryptionType)
           .withGroupKeyId(groupKeyId)
           .withNewGroupKey(

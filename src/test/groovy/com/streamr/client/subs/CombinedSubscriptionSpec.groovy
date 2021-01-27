@@ -7,7 +7,7 @@ import com.streamr.client.protocol.common.MessageRef
 import com.streamr.client.protocol.message_layer.MessageId
 import com.streamr.client.protocol.message_layer.StreamMessage
 import com.streamr.client.testing.TestingAddresses
-import com.streamr.client.testing.TestingJson
+import com.streamr.client.testing.TestingContent
 import com.streamr.client.testing.TestingMessageRef
 import com.streamr.client.utils.Address
 import com.streamr.client.utils.GroupKeyStore
@@ -27,7 +27,7 @@ class CombinedSubscriptionSpec extends Specification {
 				.createMessageId()
 		StreamMessage msg1 = new StreamMessage.Builder()
 				.withMessageId(messageId2)
-				.withSerializedContent(TestingJson.toJson([:]))
+				.withContent(TestingContent.emptyMessage())
 				.createStreamMessage()
 		final MessageId messageId1 = new MessageId.Builder()
 				.withStreamId("streamId")
@@ -38,7 +38,7 @@ class CombinedSubscriptionSpec extends Specification {
 				.createMessageId()
 		StreamMessage afterMsg1 = new StreamMessage.Builder()
 				.withMessageId(messageId1)
-				.withSerializedContent(TestingJson.toJson([:]))
+				.withContent(TestingContent.emptyMessage())
 				.createStreamMessage()
 		final MessageId messageId = new MessageId.Builder()
 				.withStreamId("streamId")
@@ -50,7 +50,7 @@ class CombinedSubscriptionSpec extends Specification {
 		StreamMessage msg4 = new StreamMessage.Builder()
 				.withMessageId(messageId)
 				.withPreviousMessageRef(TestingMessageRef.createMessageRef(3, 0))
-				.withSerializedContent(TestingJson.toJson([:]))
+				.withContent(TestingContent.emptyMessage())
 				.createStreamMessage()
 		CombinedSubscription sub = new CombinedSubscription(msg1.getStreamId(), 0, new MessageHandler() {
 			@Override

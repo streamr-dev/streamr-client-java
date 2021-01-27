@@ -4,7 +4,7 @@ import com.streamr.client.exceptions.ValidationException
 import com.streamr.client.options.SigningOptions.SignatureVerificationPolicy
 import com.streamr.client.rest.Stream
 import com.streamr.client.testing.TestingAddresses
-import com.streamr.client.testing.TestingJson
+import com.streamr.client.testing.TestingContent
 import com.streamr.client.utils.Address
 import com.streamr.client.utils.AddressValidityUtil
 import com.streamr.client.utils.EncryptionUtil
@@ -48,7 +48,7 @@ class StreamMessageValidatorSpec extends Specification {
             .withMessageId(msgId)
             .withPreviousMessageRef(null)
             .withMessageType(StreamMessage.MessageType.STREAM_MESSAGE)
-            .withSerializedContent(TestingJson.toJson([foo: 'bar']))
+            .withContent(TestingContent.fromJsonMap([foo: 'bar']))
             .withEncryptionType(StreamMessage.EncryptionType.NONE)
             .withGroupKeyId(null)
             .withSignatureType(StreamMessage.SignatureType.ETH)
@@ -60,7 +60,7 @@ class StreamMessageValidatorSpec extends Specification {
             .withMessageId(msgId)
             .withPreviousMessageRef(null)
             .withMessageType(StreamMessage.MessageType.STREAM_MESSAGE)
-            .withSerializedContent(TestingJson.toJson([foo: 'bar']))
+            .withContent(TestingContent.fromJsonMap([foo: 'bar']))
             .withEncryptionType(StreamMessage.EncryptionType.NONE)
             .withGroupKeyId(null)
             .withSignatureType(StreamMessage.SignatureType.ETH)
@@ -71,7 +71,7 @@ class StreamMessageValidatorSpec extends Specification {
             .withMessageId(msgId)
             .withPreviousMessageRef(null)
             .withMessageType(StreamMessage.MessageType.STREAM_MESSAGE)
-            .withSerializedContent(TestingJson.toJson([foo: 'bar']))
+            .withContent(TestingContent.fromJsonMap([foo: 'bar']))
             .withEncryptionType(StreamMessage.EncryptionType.NONE)
             .withGroupKeyId(null)
             .withSignatureType(StreamMessage.SignatureType.NONE)
