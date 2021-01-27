@@ -121,7 +121,12 @@ public class TestWebSocketServer extends WebSocketServer {
   }
 
   private boolean isAvailable(int port) {
-    try (ServerSocket ignored = new ServerSocket(port)) {
+    try {
+      final ServerSocket socket = new ServerSocket(port);
+      try {
+        socket.close();
+      } catch (final IOException ignored) {
+      }
       return true;
     } catch (IOException e) {
       return false;

@@ -124,6 +124,13 @@ compileTestJava {
 	]
 	options.compilerArgs.addAll(commonJavaOptions)
 }
+compileIntegrationTestJava {
+	options.encoding = 'UTF-8'
+	options.compilerArgs += [
+			'-Werror',
+	]
+	options.compilerArgs.addAll(commonJavaOptions)
+}
 javadoc {
 	options.encoding = 'UTF-8'
 	if (JavaVersion.current().isJava9Compatible()) {
