@@ -15,7 +15,6 @@ plugins {
 	id 'maven-publish'
 	id 'com.github.ben-manes.versions' version '0.36.0'
 	id 'com.diffplug.spotless' version '5.9.0'
-	id 'ru.vyarus.quality' version '4.4.0'
 	id 'org.unbroken-dome.test-sets' version '3.0.1'
 }
 
@@ -293,40 +292,4 @@ spotless {
 		}
 		googleJavaFormat('1.7')
 	}
-}
-// https://xvik.github.io/gradle-quality-plugin/
-quality {
-	strict = false
-	exclude = [
-			'src/main/java/com/streamr/client/dataunion/contracts/**',
-	]
-	lintOptions = [
-			'deprecation',
-			'unchecked',
-			'auxiliaryclass',
-			'cast',
-			'classfile',
-			'deprecation',
-			'dep-ann',
-			'divzero',
-			'empty',
-			'fallthrough',
-			'finally',
-			'options',
-			'overloads',
-			'overrides',
-			'path',
-			'processing',
-			'rawtypes',
-			'static',
-			'try',
-			'unchecked',
-			'varargs',
-	]
-	checkstyle = false
-	pmd = false
-	cpd = false
-	spotbugs = true
-	spotbugsEffort = 'min'
-	codenarc = false
 }
