@@ -7,16 +7,12 @@ import com.streamr.client.utils.EncryptedGroupKey;
 import java.io.IOException;
 import java.nio.charset.StandardCharsets;
 import java.util.Arrays;
-import java.util.Collection;
 import java.util.Collections;
 import java.util.Date;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.Objects;
-import java.util.Set;
 import okio.Buffer;
-import org.jetbrains.annotations.NotNull;
-import org.jetbrains.annotations.Nullable;
 
 public final class StreamMessage implements ITimestamped {
   public static final int LATEST_VERSION = 32;
@@ -159,58 +155,6 @@ public final class StreamMessage implements ITimestamped {
       int result = Objects.hash(type);
       result = 31 * result + Arrays.hashCode(payload);
       return result;
-    }
-
-    public int size() {
-      return cache.size();
-    }
-
-    public boolean isEmpty() {
-      return cache.isEmpty();
-    }
-
-    public boolean containsKey(final Object key) {
-      return cache.containsKey(key);
-    }
-
-    public boolean containsValue(final Object value) {
-      return this.cache.containsValue(value);
-    }
-
-    public Object get(final Object key) {
-      return cache.get(key);
-    }
-
-    @Nullable
-    public Object put(final String key, final Object value) {
-      return this.cache.put(key, value);
-    }
-
-    public Object remove(final Object key) {
-      return cache.remove(key);
-    }
-
-    public void putAll(@NotNull final Map<? extends String, ?> m) {
-      cache.putAll(m);
-    }
-
-    public void clear() {
-      cache.clear();
-    }
-
-    @NotNull
-    public Set<String> keySet() {
-      return cache.keySet();
-    }
-
-    @NotNull
-    public Collection<Object> values() {
-      return cache.values();
-    }
-
-    @NotNull
-    public Set<Map.Entry<String, Object>> entrySet() {
-      return cache.entrySet();
     }
 
     public enum Type {
@@ -372,7 +316,7 @@ public final class StreamMessage implements ITimestamped {
     return encryptionType;
   }
 
-  // Soon @Deprecated
+  // Soon @Deprecated almost exclusively used by tests
   public Map<String, Object> getParsedContent() {
     if (encryptionType != EncryptionType.NONE) {
       throw new EncryptedContentNotParsableException(encryptionType);

@@ -2,7 +2,6 @@ package com.streamr.client.protocol.message_layer
 
 import com.streamr.client.protocol.common.MessageRef
 import com.streamr.client.testing.TestingAddresses
-import java.nio.charset.StandardCharsets
 import spock.lang.Specification
 
 class StreamMessageV30AdapterSpec extends Specification {
