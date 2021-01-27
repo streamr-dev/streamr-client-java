@@ -109,21 +109,21 @@ public final class StreamMessage implements ITimestamped {
   }
 
   public static final class Content {
-    private final ContentType type;
+    private final Type type;
     private final byte[] payload;
 
     private final ContentAdapter adapter = new ContentAdapter();
     private Map<String, Object> cache = Collections.unmodifiableMap(new HashMap<>());
 
-    private Content(final ContentType contentType, final byte[] payload) {
-      Objects.requireNonNull(contentType);
-      this.type = contentType;
+    private Content(final Type type, final byte[] payload) {
+      Objects.requireNonNull(type);
+      this.type = type;
       Objects.requireNonNull(payload);
       this.payload = payload;
     }
 
     public Map<String, Object> toMap() {
-      if (type != ContentType.JSON) {
+      if (type != Type.JSON) {
         throw new RuntimeException("Unknown contentType encountered: " + type);
       }
       try {
@@ -213,12 +213,12 @@ public final class StreamMessage implements ITimestamped {
       return cache.entrySet();
     }
 
-    public enum ContentType {
+    public enum Type {
       JSON((byte) 0);
 
       private final byte id;
 
-      ContentType(final byte id) {
+      Type(final byte id) {
         this.id = id;
       }
 
@@ -226,7 +226,7 @@ public final class StreamMessage implements ITimestamped {
         return this.id;
       }
 
-      public static ContentType fromId(final byte id) {
+      public static Type fromId(final byte id) {
         if (id == JSON.id) {
           return JSON;
         }
@@ -235,7 +235,7 @@ public final class StreamMessage implements ITimestamped {
     }
 
     public static class Builder {
-      private ContentType type = ContentType.JSON;
+      private Type type = Type.JSON;
       private byte[] payload = new byte[0];
 
       public Builder() {}
@@ -246,7 +246,7 @@ public final class StreamMessage implements ITimestamped {
         this.type = content.type;
       }
 
-      public StreamMessage.Content.Builder withContentType(final ContentType contentType) {
+      public StreamMessage.Content.Builder withContentType(final Type contentType) {
         this.type = contentType;
         return this;
       }
@@ -269,7 +269,7 @@ public final class StreamMessage implements ITimestamped {
 
       public static StreamMessage.Content withJsonAsPayload(final byte[] payload) {
         return new Content.Builder()
-            .withContentType(Content.ContentType.JSON)
+            .withContentType(Type.JSON)
             .withPayload(payload)
             .createContent();
       }
@@ -364,7 +364,7 @@ public final class StreamMessage implements ITimestamped {
     return messageType;
   }
 
-  public Content.ContentType getContentType() {
+  public Content.Type getContentType() {
     return content.type;
   }
 
