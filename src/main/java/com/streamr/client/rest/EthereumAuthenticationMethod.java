@@ -21,7 +21,6 @@ public class EthereumAuthenticationMethod extends AuthenticationMethod {
       Json.newMoshiBuilder().build().adapter(ChallengeResponse.class);
 
   public EthereumAuthenticationMethod(String ethereumPrivateKey) {
-    super();
     String withoutPrefix = privateKeyWithoutPrefix(ethereumPrivateKey);
     this.account = ECKeyPair.create(new BigInteger(withoutPrefix, 16));
     this.address = KeyUtil.toHex(this.account.getPublicKey());

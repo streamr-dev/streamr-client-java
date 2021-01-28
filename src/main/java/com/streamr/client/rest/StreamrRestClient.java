@@ -20,7 +20,7 @@ import okhttp3.ResponseBody;
 import okio.BufferedSource;
 
 /** This class exposes the RESTful API endpoints. */
-public abstract class StreamrRESTClient extends AbstractStreamrClient {
+public abstract class StreamrRestClient extends AbstractStreamrClient {
   private final JsonAdapter<Stream> streamJsonAdapter;
   private final JsonAdapter<Permission> permissionJsonAdapter;
   private final JsonAdapter<UserInfo> userInfoJsonAdapter;
@@ -40,15 +40,15 @@ public abstract class StreamrRESTClient extends AbstractStreamrClient {
   }
 
   /** Creates a StreamrClient with default options */
-  public StreamrRESTClient() {
+  public StreamrRestClient() {
     this(new StreamrClientOptions());
   }
 
-  public StreamrRESTClient(AuthenticationMethod authenticationMethod) {
+  public StreamrRestClient(AuthenticationMethod authenticationMethod) {
     this(new StreamrClientOptions(authenticationMethod));
   }
 
-  public StreamrRESTClient(StreamrClientOptions options) {
+  public StreamrRestClient(StreamrClientOptions options) {
     super(options);
   }
 
