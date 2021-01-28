@@ -304,6 +304,8 @@ publishing {
 // https://github.com/diffplug/spotless/tree/main/plugin-gradle
 // https://github.com/google/google-java-format
 // https://google.github.io/styleguide/javaguide.html
+// Enable below once ratchetFrom is removed
+// compileJava.dependsOn 'spotlessApply'
 spotless {
 	ratchetFrom 'origin/master'
 	format 'misc', {
