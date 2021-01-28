@@ -775,7 +775,7 @@ public class StreamrClient extends StreamrRestClient {
     }
   }
 
-  private static class StreamrWebSocketClient extends WebSocketClient {
+  public static class StreamrWebSocketClient extends WebSocketClient {
     private final Logger log = LoggerFactory.getLogger(StreamrWebSocketClient.class);
     private final StreamrClient streamrClient;
 

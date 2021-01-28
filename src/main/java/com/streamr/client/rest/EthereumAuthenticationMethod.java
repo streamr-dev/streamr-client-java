@@ -10,6 +10,7 @@ import okhttp3.Response;
 import okhttp3.ResponseBody;
 import okio.BufferedSource;
 import org.web3j.crypto.ECKeyPair;
+import org.web3j.utils.Numeric;
 
 public class EthereumAuthenticationMethod extends AuthenticationMethod {
   private final ECKeyPair account;
@@ -21,16 +22,9 @@ public class EthereumAuthenticationMethod extends AuthenticationMethod {
       Json.newMoshiBuilder().build().adapter(ChallengeResponse.class);
 
   public EthereumAuthenticationMethod(String ethereumPrivateKey) {
-    String withoutPrefix = privateKeyWithoutPrefix(ethereumPrivateKey);
+    String withoutPrefix = Numeric.cleanHexPrefix(ethereumPrivateKey);
     this.account = ECKeyPair.create(new BigInteger(withoutPrefix, 16));
     this.address = KeyUtil.toHex(this.account.getPublicKey());
-  }
-
-  private String privateKeyWithoutPrefix(String ethereumPrivateKey) {
-    if (ethereumPrivateKey.startsWith("0x")) {
-      return ethereumPrivateKey.substring(2);
-    }
-    return ethereumPrivateKey;
   }
 
   @Override
