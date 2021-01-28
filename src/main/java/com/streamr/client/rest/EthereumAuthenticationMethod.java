@@ -1,7 +1,6 @@
 package com.streamr.client.rest;
 
 import com.squareup.moshi.JsonAdapter;
-import com.streamr.client.utils.KeyUtil;
 import com.streamr.client.utils.SigningUtil;
 import java.io.IOException;
 import java.math.BigInteger;
@@ -10,6 +9,7 @@ import okhttp3.Response;
 import okhttp3.ResponseBody;
 import okio.BufferedSource;
 import org.web3j.crypto.ECKeyPair;
+import org.web3j.crypto.Keys;
 import org.web3j.utils.Numeric;
 
 public class EthereumAuthenticationMethod extends AuthenticationMethod {
@@ -24,7 +24,8 @@ public class EthereumAuthenticationMethod extends AuthenticationMethod {
   public EthereumAuthenticationMethod(String ethereumPrivateKey) {
     String withoutPrefix = Numeric.cleanHexPrefix(ethereumPrivateKey);
     this.account = ECKeyPair.create(new BigInteger(withoutPrefix, 16));
-    this.address = KeyUtil.toHex(this.account.getPublicKey());
+    final String addr = Keys.getAddress(this.account.getPublicKey());
+    this.address = Numeric.prependHexPrefix(addr);
   }
 
   @Override
