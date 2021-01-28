@@ -15,6 +15,7 @@ plugins {
 	id 'maven-publish'
 	id 'jacoco'
 	id 'codenarc'
+	id 'pmd'
 	id 'com.github.ben-manes.versions' version '0.36.0'
 	id 'com.diffplug.spotless' version '5.9.0'
 	id 'org.unbroken-dome.test-sets' version '3.0.1'
@@ -23,6 +24,8 @@ plugins {
 group = 'com.streamr'
 version = '2.0.3-alpha.3'
 description = 'A Java library to interact with Streamr Network'
+
+final boolean isLocalDevEnv = (System.getenv("CI") == null)
 
 sourceSets {
 	main {
@@ -71,6 +74,14 @@ codenarc {
 	maxPriority2Violations = 2
 	maxPriority3Violations = 4
 }
+// https://docs.gradle.org/current/userguide/pmd_plugin.html
+pmd {
+	toolVersion = '6.30.0'
+	consoleOutput = isLocalDevEnv
+	ignoreFailures = false
+	rulesMinimumPriority = 5
+	ruleSets = ["${project.projectDir}/gradle/config/pmd/ruleset.xml"]
+}
 tasks.withType(Test) {
 	useJUnitPlatform {
 		systemProperties = [
@@ -85,7 +96,7 @@ tasks.withType(Test) {
 				TestLogEvent.FAILED,
 		]
 		exceptionFormat TestExceptionFormat.SHORT
-		if (System.getenv("CI") == null) {
+		if (isLocalDevEnv) {
 			exceptionFormat TestExceptionFormat.FULL
 			events += TestLogEvent.PASSED
 		}

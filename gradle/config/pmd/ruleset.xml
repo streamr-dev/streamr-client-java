@@ -7,11 +7,21 @@
         General Java quality rules.
     </description>
 
-    <!-- Best practices (https://pmd.github.io/pmd-6.0.1/pmd_rules_java_bestpractices.html) -->
+    <!-- Best practices https://pmd.github.io/latest/pmd_rules_java_bestpractices.html -->
     <rule ref="category/java/bestpractices.xml">
+        <exclude name="AvoidReassigningParameters"/> <!-- TODO: include rule -->
+        <exclude name="UnusedPrivateField"/> <!-- TODO: include rule -->
+        <exclude name="UnusedLocalVariable"/> <!-- TODO: include rule -->
+        <exclude name="OneDeclarationPerLine"/> <!-- TODO: include rule -->
+        <exclude name="UseVarargs"/> <!-- TODO: include rule -->
+        <exclude name="UnusedImports"/> <!-- TODO: include rule -->
+        <exclude name="PreserveStackTrace"/> <!-- TODO: include rule -->
+        <exclude name="MissingOverride"/> <!-- TODO: include rule -->
+        <exclude name="DefaultLabelNotLastInSwitchStmt"/> <!-- TODO: include rule -->
+        <exclude name="LooseCoupling"/> <!-- TODO: include rule -->
+        <exclude name="UnusedPrivateMethod"/> <!-- TODO: include rule -->
+        <exclude name="JUnitTestContainsTooManyAsserts"/> <!-- TODO: include rule -->
         <exclude name="AbstractClassWithoutAbstractMethod"/>
-        <!-- disabled as it's important for android and doesn't matter for general java (also fixes will
-             conflict with checkstyle's VisibilityModifier check -->
         <exclude name="AccessorMethodGeneration"/>
         <exclude name="ArrayIsStoredDirectly"/>
         <exclude name="GuardLogStatement"/>
@@ -23,9 +33,8 @@
         <exclude name="JUnit4TestShouldUseTestAnnotation"/>
     </rule>
 
-
-    <!-- Code style (https://pmd.github.io/pmd-6.0.1/pmd_rules_java_codestyle.html) -->
-    <rule ref="category/java/codestyle.xml">
+    <!-- Code style https://pmd.github.io/latest/pmd_rules_java_codestyle.html -->
+    <!--rule ref="category/java/codestyle.xml">
         <exclude name="AbstractNaming"/>
         <exclude name="AtLeastOneConstructor"/>
         <exclude name="AvoidFinalLocalVariable"/>
@@ -33,14 +42,13 @@
         <exclude name="CommentDefaultAccessModifier"/>
         <exclude name="ConfusingTernary"/>
         <exclude name="ClassNamingConventions"/>
-        <exclude name="LocalHomeNamingConvention"/> <!-- earlier j2ee group-->
-        <exclude name="LocalInterfaceSessionNamingConvention"/> <!-- earlier j2ee group-->
+        <exclude name="LocalHomeNamingConvention"/>
+        <exclude name="LocalInterfaceSessionNamingConvention"/>
         <exclude name="LocalVariableCouldBeFinal"/>
         <exclude name="LongVariable"/>
-        <exclude name="MDBAndSessionBeanNamingConvention"/> <!-- earlier j2ee group-->
-        <exclude name="OnlyOneReturn"/> <!-- disabled in favour of checkstyle ReturnCount check -->
-        <exclude name="RemoteInterfaceNamingConvention"/> <!-- earlier j2ee group-->
-        <exclude name="RemoteSessionInterfaceNamingConvention"/> <!-- earlier j2ee group-->
+        <exclude name="MDBAndSessionBeanNamingConvention"/>
+        <exclude name="RemoteInterfaceNamingConvention"/>
+        <exclude name="RemoteSessionInterfaceNamingConvention"/>
         <exclude name="ShortClassName"/>
         <exclude name="ShortMethodName"/>
         <exclude name="ShortVariable"/>
@@ -51,16 +59,15 @@
         <properties>
             <property name="enumConstantPattern" value="[A-Z][a-zA-Z_0-9]*"/>
         </properties>
-    </rule>
+    </rule-->
 
-
-    <!-- Design (https://pmd.github.io/pmd-6.0.1/pmd_rules_java_design.html) -->
-    <rule ref="category/java/design.xml">
+    <!-- Design https://pmd.github.io/latest/pmd_rules_java_design.html -->
+    <!--rule ref="category/java/design.xml">
         <exclude name="AvoidCatchingGenericException"/>
         <exclude name="AvoidUncheckedExceptionsInSignatures"/>
         <exclude name="DataClass"/>
-        <exclude name="ExcessiveClassLength"/> <!-- replaced by NcssCount -->
-        <exclude name="ExcessiveMethodLength"/> <!-- replaced by NcssCount -->
+        <exclude name="ExcessiveClassLength"/>
+        <exclude name="ExcessiveMethodLength"/>
         <exclude name="LawOfDemeter"/>
         <exclude name="LoosePackageCoupling"/>
         <exclude name="ModifiedCyclomaticComplexity"/>
@@ -94,22 +101,20 @@
         <properties>
             <property name="maxmethods" value="20"/>
         </properties>
-    </rule>
+    </rule -->
 
-
-    <!-- Documentation (https://pmd.github.io/pmd-6.0.1/pmd_rules_java_documentation.html) -->
-    <rule ref="category/java/documentation.xml">
+    <!-- Documentation https://pmd.github.io/latest/pmd_rules_java_documentation.html -->
+    <!--rule ref="category/java/documentation.xml">
         <exclude name="CommentRequired"/>
         <exclude name="CommentSize"/>
-    </rule>
+    </rule -->
 
-
-    <!-- Error prone (https://pmd.github.io/pmd-6.0.1/pmd_rules_java_errorprone.html) -->
-    <rule ref="category/java/errorprone.xml">
+    <!-- Error prone https://pmd.github.io/latest/pmd_rules_java_errorprone.html -->
+    <!--rule ref="category/java/errorprone.xml">
         <exclude name="AvoidCatchingThrowable"/>
         <exclude name="BeanMembersShouldSerialize"/>
         <exclude name="DataflowAnomalyAnalysis"/>
-        <exclude name="DoNotCallSystemExit"/> <!-- earlier j2ee group-->
+        <exclude name="DoNotCallSystemExit"/>
         <exclude name="EmptyFinalizer"/>
         <exclude name="FinalizeOnlyCallsSuperFinalize"/>
         <exclude name="FinalizeDoesNotCallSuperFinalize"/>
@@ -118,11 +123,10 @@
         <exclude name="InvalidLogMessageFormat"/>
         <exclude name="LoggerIsNotStaticFinal"/>
         <exclude name="MissingSerialVersionUID"/>
-        <exclude name="NullAssignment"/> <!-- disabled due to false positive for initialization with ternary operator -->
-        <exclude name="StaticEJBFieldShouldBeFinal"/> <!-- earlier j2ee group-->
+        <exclude name="StaticEJBFieldShouldBeFinal"/>
         <exclude name="UseCorrectExceptionLogging"/>
         <exclude name="UseLocaleWithCaseConversions"/>
-        <exclude name="UseProperClassLoader"/> <!-- earlier j2ee group-->
+        <exclude name="UseProperClassLoader"/>
     </rule>
     <rule ref="category/java/errorprone.xml/AvoidDuplicateLiterals">
         <properties>
@@ -136,24 +140,18 @@
     </rule>
     <rule ref="category/java/errorprone.xml/CloseResource">
         <properties>
-            <!-- AutoClosable removed from value because it produces too many false positives -->
             <property name="types" value="java.sql.Connection,java.sql.Statement,java.sql.ResultSet" />
         </properties>
-    </rule>
+    </rule-->
 
+    <!-- Error prone https://pmd.github.io/latest/pmd_rules_java_multithreading.html -->
+    <!--rule ref="category/java/multithreading.xml">
+    </rule-->
 
-    <!-- Error prone (https://pmd.github.io/pmd-6.0.1/pmd_rules_java_multithreading.html) -->
-    <rule ref="category/java/multithreading.xml">
-        <exclude name="DoNotUseThreads"/> <!-- earlier j2ee group-->
-        <exclude name="UseConcurrentHashMap"/>
-    </rule>
+    <!-- Performance https://pmd.github.io/latest/pmd_rules_java_performance.html -->
+    <!--rule ref="category/java/performance.xml"/-->
 
-
-    <!-- Performance (https://pmd.github.io/pmd-6.0.1/pmd_rules_java_performance.html) -->
-    <rule ref="category/java/performance.xml"/>
-
-
-    <!-- Security (no rules) -->
-    <rule ref="category/java/security.xml"/>
+    <!-- Security no rules -->
+    <!--rule ref="category/java/security.xml"/-->
 
 </ruleset>
