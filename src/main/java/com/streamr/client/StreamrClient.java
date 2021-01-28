@@ -28,7 +28,7 @@ import com.streamr.client.protocol.message_layer.StreamMessageValidator;
 import com.streamr.client.rest.AuthenticationMethod;
 import com.streamr.client.rest.EthereumAuthenticationMethod;
 import com.streamr.client.rest.Stream;
-import com.streamr.client.rest.StreamrRESTClient;
+import com.streamr.client.rest.StreamrRestClient;
 import com.streamr.client.subs.BasicSubscription;
 import com.streamr.client.subs.CombinedSubscription;
 import com.streamr.client.subs.HistoricalSubscription;
@@ -69,8 +69,8 @@ import org.java_websocket.handshake.ServerHandshake;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-/** Extends the StreamrRESTClient with methods for using the websocket protocol. */
-public class StreamrClient extends StreamrRESTClient {
+/** Extends the StreamrRestClient with methods for using the websocket protocol. */
+public class StreamrClient extends StreamrRestClient {
 
   private static final Logger log = LoggerFactory.getLogger(StreamrClient.class);
 

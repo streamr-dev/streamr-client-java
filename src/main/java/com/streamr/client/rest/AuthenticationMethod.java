@@ -47,7 +47,7 @@ public abstract class AuthenticationMethod {
 
     // Execute the request and retrieve the response.
     Response response = client.newCall(request).execute();
-    StreamrRESTClient.assertSuccessful(response);
+    StreamrRestClient.assertSuccessful(response);
     return response;
   }
 
