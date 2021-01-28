@@ -61,8 +61,9 @@ jacocoTestReport {
 		html.destination file("${buildDir}/reports/coverage")
 	}
 }
+// https://docs.gradle.org/current/userguide/codenarc_plugin.html
 codenarc {
-	configFile = file("${project.projectDir}/config/codenarc/codenarc.xml")
+	configFile = file("${project.projectDir}/gradle/config/codenarc/codenarc.xml")
 	ignoreFailures = false
 	reportFormat = 'html'
 	reportsDir = file("${project.projectDir}/build/reports/codenarc")
