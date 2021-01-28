@@ -6,6 +6,8 @@ import com.streamr.client.protocol.message_layer.StreamMessage
 import com.streamr.client.testing.TestingAddresses
 import com.streamr.client.testing.TestingContent
 import org.web3j.crypto.ECKeyPair
+import org.web3j.crypto.Keys
+import org.web3j.utils.Numeric
 import spock.lang.Specification
 
 class SigningUtilSpec extends Specification {
@@ -19,7 +21,9 @@ class SigningUtilSpec extends Specification {
         // Since we are testing an internal component (SigningUtil), the private key is without prefix.
         BigInteger privateKey = new BigInteger("23bead9b499af21c4c16e4511b3b6b08c3e22e76e0591f5ab5ba8d4c3a5b1820", 16)
         account = ECKeyPair.create(privateKey)
-        address = new Address(KeyUtil.toHex(account.getPublicKey()))
+        final String addr = Keys.getAddress(account.getPublicKey());
+        final String hex = Numeric.prependHexPrefix(addr)
+        address = new Address(hex)
         assert address.toString() == "0xa5374e3C19f15E1847881979Dd0C6C9ffe846BD5".toLowerCase()
 
         signingUtil = new SigningUtil(account)
