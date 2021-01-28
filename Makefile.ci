@@ -21,3 +21,11 @@ test-integration:
 .PHONY: fmt
 fmt:
 	$(gradle) spotlessCheck
+
+.PHONY: codenarc
+codenarc:
+	$(gradle) codenarcTest codenarcIntegrationTest
+
+.PHONY: pmd
+pmd:
+	$(gradle) pmdMain pmdTest pmdIntegrationTest
