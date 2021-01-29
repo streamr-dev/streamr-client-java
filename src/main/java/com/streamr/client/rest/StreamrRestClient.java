@@ -3,7 +3,6 @@ package com.streamr.client.rest;
 import com.squareup.moshi.JsonAdapter;
 import com.squareup.moshi.Moshi;
 import com.squareup.moshi.Types;
-import com.streamr.client.options.StreamrClientOptions;
 import com.streamr.client.utils.Address;
 import java.io.IOException;
 import java.lang.reflect.ParameterizedType;
@@ -20,7 +19,11 @@ import okhttp3.ResponseBody;
 import okio.BufferedSource;
 
 /** This class exposes the RESTful API endpoints. */
-public abstract class StreamrRestClient extends AbstractStreamrClient {
+public class StreamrRestClient {
+  public static final String REST_API_URL = "https://www.streamr.com/api/v1";
+  private final String restApiUrl;
+  private final Session session;
+
   private final JsonAdapter<Stream> streamJsonAdapter;
   private final JsonAdapter<Permission> permissionJsonAdapter;
   private final JsonAdapter<UserInfo> userInfoJsonAdapter;
@@ -39,8 +42,17 @@ public abstract class StreamrRestClient extends AbstractStreamrClient {
     streamListJsonAdapter = moshi.adapter(pt);
   }
 
-  public StreamrRestClient(StreamrClientOptions options) {
-    super(options);
+  public StreamrRestClient(final String restApiUrl, final String privateKey) {
+    if (restApiUrl != null) {
+      this.restApiUrl = restApiUrl;
+    } else {
+      this.restApiUrl = REST_API_URL;
+    }
+    EthereumAuthenticationMethod authenticationMethod = null;
+    if (privateKey != null) {
+      authenticationMethod = new EthereumAuthenticationMethod(privateKey);
+    }
+    session = new Session(restApiUrl, authenticationMethod);
   }
 
   /*
@@ -230,7 +242,7 @@ public abstract class StreamrRestClient extends AbstractStreamrClient {
   }
 
   private HttpUrl getEndpointUrl(String... pathSegments) {
-    HttpUrl.Builder builder = HttpUrl.parse(options.getRestApiUrl()).newBuilder();
+    HttpUrl.Builder builder = HttpUrl.parse(restApiUrl).newBuilder();
     for (String segment : pathSegments) {
       builder = builder.addPathSegment(segment);
     }
@@ -257,5 +269,12 @@ public abstract class StreamrRestClient extends AbstractStreamrClient {
           throw new ResourceNotFoundException(action);
       }
     }
+  }
+
+  public String getSessionToken() {
+    if (session == null) {
+      return null;
+    }
+    return session.getSessionToken();
   }
 }

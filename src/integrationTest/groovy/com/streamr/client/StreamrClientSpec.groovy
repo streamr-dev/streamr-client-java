@@ -81,7 +81,8 @@ class StreamrClientSpec extends Specification {
     void setup() {
         server.clear()
 
-        EthereumAuthenticationMethod authenticationMethod = new EthereumAuthenticationMethod("d462a6f2ccd995a346a841d110e8c6954930a1c22851c0032d3116d8ccd2296a") {
+        final String privateKey = "d462a6f2ccd995a346a841d110e8c6954930a1c22851c0032d3116d8ccd2296a"
+        EthereumAuthenticationMethod authenticationMethod = new EthereumAuthenticationMethod(privateKey) {
             // Override login so that this doesn't call the REST API
             @Override
             public LoginResponse login(final String restApiUrl) throws IOException {
@@ -92,11 +93,17 @@ class StreamrClientSpec extends Specification {
         // Turn off autoRevoke, otherwise it will try and to REST API calls
         EncryptionOptions encryptionOptions = new EncryptionOptions(new InMemoryGroupKeyStore(), null, null, false)
 
-        StreamrClientOptions options = new StreamrClientOptions(authenticationMethod, SigningOptions.getDefault(), encryptionOptions, server.getWsUrl(), "dont-call-this-rest-api-url", gapFillTimeout, retryResendAfter, false)
+        StreamrClientOptions options = new StreamrClientOptions(
+                authenticationMethod,
+                SigningOptions.getDefault(),
+                encryptionOptions, server.getWsUrl(),
+                gapFillTimeout,
+                retryResendAfter,
+                false)
         options.reconnectRetryInterval = 1000
         options.connectionTimeoutMillis = 1000
 
-        client = new TestingStreamrClient(options)
+        client = new TestingStreamrClient(options, privateKey)
         client.connect()
 
         expect:

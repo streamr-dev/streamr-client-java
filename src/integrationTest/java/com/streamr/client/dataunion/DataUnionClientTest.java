@@ -9,6 +9,7 @@ import com.streamr.client.dataunion.contracts.IERC20;
 import com.streamr.client.options.EncryptionOptions;
 import com.streamr.client.options.SigningOptions;
 import com.streamr.client.options.StreamrClientOptions;
+import com.streamr.client.rest.StreamrRestClient;
 import com.streamr.client.testing.TestingMeta;
 import java.math.BigInteger;
 import java.util.Arrays;
@@ -74,13 +75,12 @@ class DataUnionClientTest {
             null,
             SigningOptions.getDefault(),
             EncryptionOptions.getDefault(),
-            TestingMeta.WEBSOCKET_URL,
-            TestingMeta.REST_URL);
+            TestingMeta.WEBSOCKET_URL);
     opts.setSidechainRpcUrl(DEV_SIDECHAIN_RPC);
     opts.setMainnetRpcUrl(DEV_MAINCHAIN_RPC);
     opts.setDataUnionMainnetFactoryAddress(DEV_MAINCHAIN_FACTORY);
     opts.setDataUnionSidechainFactoryAddress(DEV_SIDECHAIN_FACTORY);
-    streamrClient = new StreamrClient(opts);
+    streamrClient = new StreamrClient(opts, new StreamrRestClient(TestingMeta.REST_URL, null));
   }
 
   @AfterAll
