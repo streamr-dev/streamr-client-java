@@ -118,7 +118,7 @@ public class KeyExchangeUtil {
     StreamMessage response = messageCreationUtil.createGroupKeyResponse(sender, request, foundKeys);
 
     // For re-keys, remember the public key for this subscriber
-    publicKeys.put(sender, request.getPublicKey());
+    publicKeys.put(sender, request.getRsaPublicKey());
 
     publishFunction.accept(response);
   }

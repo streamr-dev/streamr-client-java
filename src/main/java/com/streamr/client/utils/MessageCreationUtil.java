@@ -144,7 +144,7 @@ public class MessageCreationUtil {
             .map(
                 key -> {
                   RSAPublicKey publicKey =
-                      EncryptionUtil.getPublicKeyFromString(request.getPublicKey());
+                      EncryptionUtil.getPublicKeyFromString(request.getRsaPublicKey());
                   return EncryptionUtil.encryptWithPublicKey(key, publicKey);
                 })
             .collect(Collectors.toList());
@@ -158,7 +158,7 @@ public class MessageCreationUtil {
         response
             .toStreamMessageBuilder(pair.getLeft(), pair.getRight())
             .withEncryptionType(StreamMessage.EncryptionType.RSA)
-            .withGroupKeyId(request.getPublicKey())
+            .withGroupKeyId(request.getRsaPublicKey())
             .createStreamMessage();
 
     // Always sign

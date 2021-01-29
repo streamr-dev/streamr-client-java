@@ -10,12 +10,10 @@ public final class GroupKeyResponse extends AbstractGroupKeyMessage {
 
   public GroupKeyResponse(String requestId, String streamId, List<EncryptedGroupKey> keys) {
     super(streamId);
-
-    ValidationUtil.checkNotNull(requestId, "requestId");
-    ValidationUtil.checkNotNull(keys, "keys");
-    ValidationUtil.checkNotEmpty(keys, "keys");
-
+    Objects.requireNonNull(requestId, "requestId");
     this.requestId = requestId;
+    Objects.requireNonNull(keys, "keys");
+    Objects.requireNonNull(keys, "keys");
     this.keys = keys;
   }
 

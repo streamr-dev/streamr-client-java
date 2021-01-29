@@ -186,7 +186,7 @@ class MessageCreationUtilSpec extends Specification {
         msg.getEncryptionType() == StreamMessage.EncryptionType.NONE
         msg.getSignature() != null
         request.getStreamId() == "streamId"
-        request.getPublicKey() == "rsaPublicKey"
+        request.getRsaPublicKey() == "rsaPublicKey"
         request.getGroupKeyIds() == ["keyId1"]
     }
 

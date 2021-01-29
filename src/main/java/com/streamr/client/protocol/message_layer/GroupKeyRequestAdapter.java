@@ -30,7 +30,7 @@ public class GroupKeyRequestAdapter extends AbstractGroupKeyMessageAdapter<Group
     writer.beginArray();
     writer.value(message.getRequestId());
     writer.value(message.getStreamId());
-    writer.value(message.getPublicKey());
+    writer.value(message.getRsaPublicKey());
     listOfStrings.toJson(writer, message.getGroupKeyIds());
     writer.endArray();
   }
