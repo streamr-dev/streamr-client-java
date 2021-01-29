@@ -59,7 +59,7 @@ public class EthereumAuthenticationMethod {
     }
   }
 
-  public Challenge getChallenge(String restApiUrl) throws IOException {
+  private Challenge getChallenge(String restApiUrl) throws IOException {
     Response response = null;
     ResponseBody body = null;
     BufferedSource source = null;
