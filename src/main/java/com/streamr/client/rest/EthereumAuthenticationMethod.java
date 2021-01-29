@@ -17,6 +17,7 @@ import org.web3j.utils.Numeric;
 
 public class EthereumAuthenticationMethod {
   private final ECKeyPair account;
+  private final BigInteger privateKey;
   // address is prefixed with "0x"
   private final String address;
   private final JsonAdapter<Challenge> challengeAdapter =
@@ -28,14 +29,15 @@ public class EthereumAuthenticationMethod {
 
   public EthereumAuthenticationMethod(String ethereumPrivateKey) {
     String withoutPrefix = Numeric.cleanHexPrefix(ethereumPrivateKey);
-    this.account = ECKeyPair.create(new BigInteger(withoutPrefix, 16));
+    this.privateKey = new BigInteger(withoutPrefix, 16);
+    this.account = ECKeyPair.create(privateKey);
     final String addr = Keys.getAddress(this.account.getPublicKey());
     this.address = Numeric.prependHexPrefix(addr);
   }
 
   public LoginResponse login(String restApiUrl) throws IOException {
     Challenge challenge = getChallenge(restApiUrl);
-    String signature = SigningUtil.sign(challenge.getChallenge(), account);
+    String signature = SigningUtil.sign(privateKey, challenge.getChallenge());
     ChallengeResponse response = new ChallengeResponse(challenge, signature, address);
     Response resp = null;
     ResponseBody body = null;
@@ -86,8 +88,8 @@ public class EthereumAuthenticationMethod {
     return address;
   }
 
-  public ECKeyPair getAccount() {
-    return account;
+  public BigInteger getPrivateKey() {
+    return privateKey;
   }
 
   /**

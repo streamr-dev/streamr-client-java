@@ -12,30 +12,23 @@ import org.web3j.crypto.Keys;
 import org.web3j.crypto.Sign;
 import org.web3j.utils.Numeric;
 
-public class SigningUtil {
+public final class SigningUtil {
   private static final String SIGN_MAGIC = "\u0019Ethereum Signed Message:\n";
-  private final ECKeyPair account;
 
-  public SigningUtil(ECKeyPair account) {
-    this.account = account;
+  private SigningUtil() {}
+
+  public static StreamMessage signStreamMessage(
+      final BigInteger privateKey, final StreamMessage msg) {
+    final String signature =
+        sign(privateKey, getPayloadToSignOrVerify(msg, StreamMessage.SignatureType.ETH));
+    return new StreamMessage.Builder(msg)
+        .withSignature(signature)
+        .withSignatureType(StreamMessage.SignatureType.ETH)
+        .createStreamMessage();
   }
 
-  private StreamMessage signStreamMessage(
-      final StreamMessage msg, final StreamMessage.SignatureType signatureType) {
-    final String signature = sign(getPayloadToSignOrVerify(msg, signatureType), account);
-    final StreamMessage m =
-        new StreamMessage.Builder(msg)
-            .withSignature(signature)
-            .withSignatureType(signatureType)
-            .createStreamMessage();
-    return m;
-  }
-
-  public StreamMessage signStreamMessage(final StreamMessage msg) {
-    return signStreamMessage(msg, StreamMessage.SignatureType.ETH);
-  }
-
-  public static String sign(String data, ECKeyPair account) {
+  public static String sign(final BigInteger privateKey, final String data) {
+    final ECKeyPair account = ECKeyPair.create(privateKey);
     byte[] msg = data.getBytes(StandardCharsets.UTF_8);
     Sign.SignatureData sign = Sign.signPrefixedMessage(msg, account);
     SignatureData signature = new SignatureData(sign);

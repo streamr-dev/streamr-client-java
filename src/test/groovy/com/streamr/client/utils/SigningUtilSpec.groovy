@@ -11,22 +11,18 @@ import org.web3j.utils.Numeric
 import spock.lang.Specification
 
 class SigningUtilSpec extends Specification {
-    ECKeyPair account
-    Address address
-    SigningUtil signingUtil
+    BigInteger privateKey
     MessageId msgId
 
     void setup() {
         // The EthereumAuthenticationMethod accepts a private key with or without the '0x' prefix. It is removed if present to work with ECKey.fromPrivate.
         // Since we are testing an internal component (SigningUtil), the private key is without prefix.
-        BigInteger privateKey = new BigInteger("23bead9b499af21c4c16e4511b3b6b08c3e22e76e0591f5ab5ba8d4c3a5b1820", 16)
-        account = ECKeyPair.create(privateKey)
+        privateKey = new BigInteger("23bead9b499af21c4c16e4511b3b6b08c3e22e76e0591f5ab5ba8d4c3a5b1820", 16)
+        final ECKeyPair account = ECKeyPair.create(privateKey)
         final String addr = Keys.getAddress(account.getPublicKey());
         final String hex = Numeric.prependHexPrefix(addr)
-        address = new Address(hex)
-        assert address.toString() == "0xa5374e3C19f15E1847881979Dd0C6C9ffe846BD5".toLowerCase()
+        assert new Address(hex).toString() == "0xa5374e3C19f15E1847881979Dd0C6C9ffe846BD5".toLowerCase()
 
-        signingUtil = new SigningUtil(account)
         msgId = new MessageId.Builder()
                 .withStreamId("streamId")
                 .withStreamPartition(0)
@@ -40,7 +36,7 @@ class SigningUtilSpec extends Specification {
     void "should correctly sign arbitrary data"() {
         String payload = "data-to-sign"
         when:
-        String signature = SigningUtil.sign(payload, account)
+        String signature = SigningUtil.sign(privateKey, payload)
         then:
         signature == "0x787cd72924153c88350e808de68b68c88030cbc34d053a5c696a5893d5e6fec1687c1b6205ec99aeb3375a81bf5cb8857ae39c1b55a41b32ed6399ae8da456a61b"
     }
@@ -53,10 +49,10 @@ class SigningUtilSpec extends Specification {
                 .createStreamMessage()
         String expectedPayload = "streamId04252353150publisheridmsgChainId"+'{"foo":"bar"}'
         when:
-        msg = signingUtil.signStreamMessage(msg)
+        msg = SigningUtil.signStreamMessage(privateKey, msg)
         then:
         msg.signatureType == StreamMessage.SignatureType.ETH
-        msg.signature == SigningUtil.sign(expectedPayload, account)
+        msg.signature == SigningUtil.sign(privateKey, expectedPayload)
     }
 
     void "should correctly sign a StreamMessage with non-null previous ref"() {
@@ -67,10 +63,10 @@ class SigningUtilSpec extends Specification {
                 .createStreamMessage()
         String expectedPayload = "streamId04252353150publisheridmsgChainId1001"+'{"foo":"bar"}'
         when:
-        msg = signingUtil.signStreamMessage(msg)
+        msg = SigningUtil.signStreamMessage(privateKey, msg)
         then:
         msg.signatureType == StreamMessage.SignatureType.ETH
-        msg.signature == SigningUtil.sign(expectedPayload, account)
+        msg.signature == SigningUtil.sign(privateKey, expectedPayload)
     }
 
     void "should correctly sign a StreamMessage with new group key"() {
@@ -82,10 +78,10 @@ class SigningUtilSpec extends Specification {
                 .createStreamMessage()
         String expectedPayload = "streamId04252353150publisheridmsgChainId1001"+'{"foo":"bar"}'+'["groupKeyId","keyHex"]'
         when:
-        msg = signingUtil.signStreamMessage(msg)
+        msg = SigningUtil.signStreamMessage(privateKey, msg)
         then:
         msg.signatureType == StreamMessage.SignatureType.ETH
-        msg.signature == SigningUtil.sign(expectedPayload, account)
+        msg.signature == SigningUtil.sign(privateKey, expectedPayload)
     }
 
     void "returns false if no signature"() {
@@ -118,7 +114,7 @@ class SigningUtilSpec extends Specification {
                 .withStreamPartition(0)
                 .withTimestamp(425235315L)
                 .withSequenceNumber(0L)
-                .withPublisherId(address)
+                .withPublisherId(new Address("0xa5374e3C19f15E1847881979Dd0C6C9ffe846BD5"))
                 .withMsgChainId("msgChainId")
                 .createMessageId()
         StreamMessage msg = new StreamMessage.Builder()
@@ -126,7 +122,7 @@ class SigningUtilSpec extends Specification {
                 .withPreviousMessageRef(null)
                 .withContent(TestingContent.fromJsonMap([foo: 'bar']))
                 .createStreamMessage()
-        msg = signingUtil.signStreamMessage(msg)
+        msg = SigningUtil.signStreamMessage(privateKey, msg)
 
         expect:
         SigningUtil.hasValidSignature(msg)
