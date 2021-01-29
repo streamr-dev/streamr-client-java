@@ -39,15 +39,6 @@ public abstract class StreamrRestClient extends AbstractStreamrClient {
     streamListJsonAdapter = moshi.adapter(pt);
   }
 
-  /** Creates a StreamrClient with default options */
-  public StreamrRestClient() {
-    this(new StreamrClientOptions());
-  }
-
-  public StreamrRestClient(EthereumAuthenticationMethod authenticationMethod) {
-    this(new StreamrClientOptions(authenticationMethod));
-  }
-
   public StreamrRestClient(StreamrClientOptions options) {
     super(options);
   }
