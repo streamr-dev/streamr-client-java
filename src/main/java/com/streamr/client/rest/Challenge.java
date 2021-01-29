@@ -1,6 +1,7 @@
 package com.streamr.client.rest;
 
 import java.util.Date;
+import java.util.Objects;
 
 public final class Challenge {
   private final String id;
@@ -23,6 +24,21 @@ public final class Challenge {
     this.id = id;
     this.challenge = challenge;
     this.expires = expires;
+  }
+
+  @Override
+  public boolean equals(final Object obj) {
+    if (this == obj) return true;
+    if (obj == null || getClass() != obj.getClass()) return false;
+    final Challenge challenge1 = (Challenge) obj;
+    return Objects.equals(id, challenge1.id)
+        && Objects.equals(challenge, challenge1.challenge)
+        && Objects.equals(expires, challenge1.expires);
+  }
+
+  @Override
+  public int hashCode() {
+    return Objects.hash(id, challenge, expires);
   }
 
   @Override
