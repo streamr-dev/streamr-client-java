@@ -6,11 +6,11 @@ package com.streamr.client.rest;
  */
 public class Session {
 
-  private final AuthenticationMethod authenticationMethod;
+  private final EthereumAuthenticationMethod authenticationMethod;
   private final String restApiUrl;
   private String sessionToken = null;
 
-  public Session(String restApiUrl, AuthenticationMethod authenticationMethod) {
+  public Session(String restApiUrl, EthereumAuthenticationMethod authenticationMethod) {
     this.authenticationMethod = authenticationMethod;
     this.restApiUrl = restApiUrl;
   }
