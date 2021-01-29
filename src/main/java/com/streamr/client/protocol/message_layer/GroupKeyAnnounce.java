@@ -9,7 +9,7 @@ public final class GroupKeyAnnounce extends AbstractGroupKeyMessage {
 
   public GroupKeyAnnounce(String streamId, List<EncryptedGroupKey> groupKeys) {
     super(streamId);
-    ValidationUtil.checkNotNull(groupKeys, "groupKeys");
+    Objects.requireNonNull(groupKeys, "groupKeys");
     this.groupKeys = groupKeys;
   }
 

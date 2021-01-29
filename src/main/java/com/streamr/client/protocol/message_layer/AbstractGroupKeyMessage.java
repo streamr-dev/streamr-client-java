@@ -5,6 +5,7 @@ import com.streamr.client.protocol.message_layer.StreamMessage.MessageType;
 import java.io.IOException;
 import java.util.HashMap;
 import java.util.Map;
+import java.util.Objects;
 
 public abstract class AbstractGroupKeyMessage {
   protected final String streamId;
@@ -22,7 +23,7 @@ public abstract class AbstractGroupKeyMessage {
   }
 
   public AbstractGroupKeyMessage(String streamId) {
-    ValidationUtil.checkNotNull(streamId, "streamId");
+    Objects.requireNonNull(streamId, "streamId");
     this.streamId = streamId;
   }
 
