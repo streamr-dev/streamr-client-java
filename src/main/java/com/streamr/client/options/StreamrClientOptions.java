@@ -7,7 +7,6 @@ public class StreamrClientOptions {
   private EthereumAuthenticationMethod authenticationMethod = null;
   private SigningOptions signingOptions = SigningOptions.getDefault();
   private EncryptionOptions encryptionOptions = EncryptionOptions.getDefault();
-  private boolean publishSignedMsgs = false;
   private WebsocketUrl websocketApiUrl = new WebsocketUrl();
 
   private String mainnetRpcUrl = "http://localhost:8545";
@@ -30,13 +29,6 @@ public class StreamrClientOptions {
       String websocketApiUrl) {
     this.authenticationMethod = authenticationMethod;
     this.signingOptions = signingOptions;
-    if (this.signingOptions.getPublishSigned()
-        == SigningOptions.SignatureComputationPolicy.ALWAYS) {
-      this.publishSignedMsgs = true;
-    } else if (this.signingOptions.getPublishSigned()
-        == SigningOptions.SignatureComputationPolicy.AUTO) {
-      this.publishSignedMsgs = true;
-    }
     this.encryptionOptions = encryptionOptions;
     this.websocketApiUrl = new WebsocketUrl(websocketApiUrl);
   }
@@ -95,10 +87,6 @@ public class StreamrClientOptions {
     this.reconnectRetryInterval = reconnectRetryInterval;
   }
 
-  public boolean getPublishSignedMsgs() {
-    return publishSignedMsgs;
-  }
-
   public SigningOptions getSigningOptions() {
     return signingOptions;
   }
@@ -117,10 +105,6 @@ public class StreamrClientOptions {
 
   public boolean getSkipGapsOnFullQueue() {
     return skipGapsOnFullQueue;
-  }
-
-  public void setSkipGapsOnFullQueue(boolean skipGapsOnFullQueue) {
-    this.skipGapsOnFullQueue = skipGapsOnFullQueue;
   }
 
   public String getDataUnionSidechainFactoryAddress() {
