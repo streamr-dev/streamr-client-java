@@ -17,8 +17,8 @@ import com.streamr.client.protocol.control_layer.SubscribeResponse
 import com.streamr.client.protocol.control_layer.UnicastMessage
 import com.streamr.client.protocol.message_layer.MessageId
 import com.streamr.client.protocol.message_layer.StreamMessage
-import com.streamr.client.rest.AuthenticationMethod
 import com.streamr.client.rest.EthereumAuthenticationMethod
+import com.streamr.client.rest.LoginResponse
 import com.streamr.client.rest.Stream
 import com.streamr.client.subs.Subscription
 import com.streamr.client.testing.TestWebSocketServer
@@ -81,11 +81,11 @@ class StreamrClientSpec extends Specification {
     void setup() {
         server.clear()
 
-        AuthenticationMethod authenticationMethod = new EthereumAuthenticationMethod("d462a6f2ccd995a346a841d110e8c6954930a1c22851c0032d3116d8ccd2296a") {
+        EthereumAuthenticationMethod authenticationMethod = new EthereumAuthenticationMethod("d462a6f2ccd995a346a841d110e8c6954930a1c22851c0032d3116d8ccd2296a") {
             // Override login so that this doesn't call the REST API
             @Override
-            protected AuthenticationMethod.LoginResponse login(String restApiUrl) throws IOException {
-                return new AuthenticationMethod.LoginResponse("sessionToken", new Date() + 365)
+            public LoginResponse login(final String restApiUrl) throws IOException {
+                return new LoginResponse("token", new Date() + 365)
             }
         }
 

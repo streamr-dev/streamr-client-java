@@ -1,13 +1,10 @@
 package com.streamr.client.options;
 
-import com.streamr.client.exceptions.InvalidOptionsException;
-import com.streamr.client.rest.AuthenticationMethod;
 import com.streamr.client.rest.EthereumAuthenticationMethod;
 import com.streamr.client.ws.WebsocketUrl;
 
 public class StreamrClientOptions {
-
-  private AuthenticationMethod authenticationMethod = null;
+  private EthereumAuthenticationMethod authenticationMethod = null;
   private SigningOptions signingOptions = SigningOptions.getDefault();
   private EncryptionOptions encryptionOptions = EncryptionOptions.getDefault();
   private boolean publishSignedMsgs = false;
@@ -27,32 +24,26 @@ public class StreamrClientOptions {
 
   public StreamrClientOptions() {}
 
-  public StreamrClientOptions(AuthenticationMethod authenticationMethod) {
+  public StreamrClientOptions(EthereumAuthenticationMethod authenticationMethod) {
     this.authenticationMethod = authenticationMethod;
-    this.publishSignedMsgs = authenticationMethod instanceof EthereumAuthenticationMethod;
+    this.publishSignedMsgs = true;
   }
 
   public StreamrClientOptions(
-      AuthenticationMethod authenticationMethod, SigningOptions signingOptions) {
+      EthereumAuthenticationMethod authenticationMethod, SigningOptions signingOptions) {
     this.authenticationMethod = authenticationMethod;
     this.signingOptions = signingOptions;
     if (this.signingOptions.getPublishSigned()
         == SigningOptions.SignatureComputationPolicy.ALWAYS) {
-      if (authenticationMethod instanceof EthereumAuthenticationMethod) {
-        this.publishSignedMsgs = true;
-      } else {
-        throw new InvalidOptionsException(
-            "SigningOptions.SignatureComputationPolicy.ALWAYS requires an EthereumAuthenticationMethod as"
-                + "AuthenticationMethod.(Need a private key to be able to sign).");
-      }
+      this.publishSignedMsgs = true;
     } else if (this.signingOptions.getPublishSigned()
         == SigningOptions.SignatureComputationPolicy.AUTO) {
-      this.publishSignedMsgs = authenticationMethod instanceof EthereumAuthenticationMethod;
+      this.publishSignedMsgs = true;
     }
   }
 
   public StreamrClientOptions(
-      AuthenticationMethod authenticationMethod,
+      EthereumAuthenticationMethod authenticationMethod,
       SigningOptions signingOptions,
       EncryptionOptions encryptionOptions,
       String websocketApiUrl,
@@ -64,7 +55,7 @@ public class StreamrClientOptions {
   }
 
   public StreamrClientOptions(
-      AuthenticationMethod authenticationMethod,
+      EthereumAuthenticationMethod authenticationMethod,
       SigningOptions signingOptions,
       EncryptionOptions encryptionOptions,
       String websocketApiUrl,
@@ -78,7 +69,7 @@ public class StreamrClientOptions {
     this.skipGapsOnFullQueue = skipGapsOnFullQueue;
   }
 
-  public AuthenticationMethod getAuthenticationMethod() {
+  public EthereumAuthenticationMethod getAuthenticationMethod() {
     return authenticationMethod;
   }
 

@@ -44,7 +44,7 @@ public abstract class StreamrRestClient extends AbstractStreamrClient {
     this(new StreamrClientOptions());
   }
 
-  public StreamrRestClient(AuthenticationMethod authenticationMethod) {
+  public StreamrRestClient(EthereumAuthenticationMethod authenticationMethod) {
     this(new StreamrClientOptions(authenticationMethod));
   }
 

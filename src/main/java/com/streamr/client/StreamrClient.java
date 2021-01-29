@@ -25,7 +25,6 @@ import com.streamr.client.protocol.message_layer.GroupKeyRequest;
 import com.streamr.client.protocol.message_layer.MalformedMessageException;
 import com.streamr.client.protocol.message_layer.StreamMessage;
 import com.streamr.client.protocol.message_layer.StreamMessageValidator;
-import com.streamr.client.rest.AuthenticationMethod;
 import com.streamr.client.rest.EthereumAuthenticationMethod;
 import com.streamr.client.rest.Stream;
 import com.streamr.client.rest.StreamrRestClient;
@@ -70,7 +69,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 /** Extends the StreamrRestClient with methods for using the websocket protocol. */
-public class StreamrClient extends StreamrRestClient {
+public class StreamrClient extends StreamrRestClient implements Streamr {
 
   private static final Logger log = LoggerFactory.getLogger(StreamrClient.class);
 
@@ -151,10 +150,8 @@ public class StreamrClient extends StreamrRestClient {
             addressValidityUtil,
             options.getSigningOptions().getVerifySignatures());
 
-    if (options.getAuthenticationMethod() instanceof EthereumAuthenticationMethod) {
-      publisherId =
-          new Address(
-              ((EthereumAuthenticationMethod) options.getAuthenticationMethod()).getAddress());
+    if (options.getAuthenticationMethod() != null) {
+      publisherId = new Address(options.getAuthenticationMethod().getAddress());
 
       // The key exchange stream is a system stream.
       // It doesn't explicitly exist, but as per spec, we can subscribe to it anyway.
@@ -167,10 +164,8 @@ public class StreamrClient extends StreamrRestClient {
               .createStream();
     }
     SigningUtil signingUtil = null;
-    if (options.getPublishSignedMsgs()) {
-      signingUtil =
-          new SigningUtil(
-              ((EthereumAuthenticationMethod) options.getAuthenticationMethod()).getAccount());
+    if (options.getAuthenticationMethod() != null) {
+      signingUtil = new SigningUtil(options.getAuthenticationMethod().getAccount());
     }
 
     // Create key storage
@@ -196,7 +191,7 @@ public class StreamrClient extends StreamrRestClient {
             });
   }
 
-  public StreamrClient(AuthenticationMethod authenticationMethod) {
+  public StreamrClient(EthereumAuthenticationMethod authenticationMethod) {
     this(new StreamrClientOptions(authenticationMethod));
   }
 

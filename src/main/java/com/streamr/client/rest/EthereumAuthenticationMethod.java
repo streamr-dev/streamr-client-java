@@ -4,7 +4,10 @@ import com.squareup.moshi.JsonAdapter;
 import com.streamr.client.utils.SigningUtil;
 import java.io.IOException;
 import java.math.BigInteger;
-import java.util.Date;
+import okhttp3.MediaType;
+import okhttp3.OkHttpClient;
+import okhttp3.Request;
+import okhttp3.RequestBody;
 import okhttp3.Response;
 import okhttp3.ResponseBody;
 import okio.BufferedSource;
@@ -12,14 +15,16 @@ import org.web3j.crypto.ECKeyPair;
 import org.web3j.crypto.Keys;
 import org.web3j.utils.Numeric;
 
-public class EthereumAuthenticationMethod extends AuthenticationMethod {
+public class EthereumAuthenticationMethod {
   private final ECKeyPair account;
   // address is prefixed with "0x"
   private final String address;
-  private JsonAdapter<Challenge> challengeAdapter =
+  private final JsonAdapter<Challenge> challengeAdapter =
       Json.newMoshiBuilder().build().adapter(Challenge.class);
-  private JsonAdapter<ChallengeResponse> challengeResponseAdapter =
+  private final JsonAdapter<ChallengeResponse> challengeResponseAdapter =
       Json.newMoshiBuilder().build().adapter(ChallengeResponse.class);
+  private final JsonAdapter<LoginResponse> loginResponseAdapter =
+      Json.newMoshiBuilder().build().adapter(LoginResponse.class);
 
   public EthereumAuthenticationMethod(String ethereumPrivateKey) {
     String withoutPrefix = Numeric.cleanHexPrefix(ethereumPrivateKey);
@@ -28,10 +33,9 @@ public class EthereumAuthenticationMethod extends AuthenticationMethod {
     this.address = Numeric.prependHexPrefix(addr);
   }
 
-  @Override
-  protected LoginResponse login(String restApiUrl) throws IOException {
+  public LoginResponse login(String restApiUrl) throws IOException {
     Challenge challenge = getChallenge(restApiUrl);
-    String signature = signChallenge(challenge.challenge);
+    String signature = SigningUtil.sign(challenge.getChallenge(), account);
     ChallengeResponse response = new ChallengeResponse(challenge, signature, address);
     Response resp = null;
     ResponseBody body = null;
@@ -40,7 +44,7 @@ public class EthereumAuthenticationMethod extends AuthenticationMethod {
       resp = post(restApiUrl + "/login/response", challengeResponseAdapter.toJson(response));
       body = resp.body();
       source = body.source();
-      LoginResponse result = parse(source);
+      LoginResponse result = loginResponseAdapter.fromJson(source);
       return result;
     } finally {
       if (source != null) {
@@ -86,25 +90,30 @@ public class EthereumAuthenticationMethod extends AuthenticationMethod {
     return account;
   }
 
-  private String signChallenge(String challengeToSign) {
-    return SigningUtil.sign(challengeToSign, account);
-  }
-
-  static class Challenge {
-    String id;
-    String challenge;
-    Date expires;
-  }
-
-  static class ChallengeResponse {
-    Challenge challenge;
-    String signature;
-    String address;
-
-    public ChallengeResponse(Challenge challenge, String signature, String address) {
-      this.challenge = challenge;
-      this.signature = signature;
-      this.address = address;
+  /**
+   * Uses the credentials represented by this class to login and obtain a new, valid sessionToken.
+   */
+  public String newSessionToken(String restApiUrl) {
+    try {
+      LoginResponse loginResponse = login(restApiUrl);
+      return loginResponse.getToken();
+    } catch (IOException e) {
+      throw new RuntimeException(e);
     }
+  }
+
+  private Response post(String endpoint, String requestBody) throws IOException {
+    OkHttpClient client = new OkHttpClient();
+
+    Request request =
+        new Request.Builder()
+            .url(endpoint)
+            .post(RequestBody.create(requestBody, MediaType.parse("application/json")))
+            .build();
+
+    // Execute the request and retrieve the response.
+    Response response = client.newCall(request).execute();
+    StreamrRestClient.assertSuccessful(response);
+    return response;
   }
 }
