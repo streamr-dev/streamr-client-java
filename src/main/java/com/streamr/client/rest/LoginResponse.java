@@ -12,16 +12,12 @@ public final class LoginResponse {
     this.expires = expires;
   }
 
-  /**
-   * Get session token.
-   */
+  /** Get session token. */
   public String getToken() {
     return token;
   }
 
-  /**
-   * Get expiration date for session token.
-   */
+  /** Get expiration date for session token. */
   public Date getExpiration() {
     return expires;
   }

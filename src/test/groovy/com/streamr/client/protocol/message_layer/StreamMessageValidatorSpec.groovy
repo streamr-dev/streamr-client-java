@@ -10,8 +10,6 @@ import com.streamr.client.utils.AddressValidityUtil
 import com.streamr.client.utils.EncryptionUtil
 import com.streamr.client.utils.GroupKey
 import com.streamr.client.utils.MessageCreationUtil
-import com.streamr.client.utils.SigningUtil
-import org.web3j.crypto.ECKeyPair
 import spock.lang.Specification
 
 class StreamMessageValidatorSpec extends Specification {
@@ -24,8 +22,8 @@ class StreamMessageValidatorSpec extends Specification {
     final GroupKey groupKey = GroupKey.generate()
     final EncryptionUtil encryptionUtil = new EncryptionUtil()
 
-    final MessageCreationUtil publisherMsgCreationUtil = new MessageCreationUtil(publisher, new SigningUtil(ECKeyPair.create(new BigInteger(publisherPrivateKey, 16))))
-    final MessageCreationUtil subscriberMsgCreationUtil = new MessageCreationUtil(subscriber, new SigningUtil(ECKeyPair.create(new BigInteger(subscriberPrivateKey, 16))))
+    final MessageCreationUtil publisherMsgCreationUtil = new MessageCreationUtil(new BigInteger(publisherPrivateKey, 16), publisher)
+    final MessageCreationUtil subscriberMsgCreationUtil = new MessageCreationUtil(new BigInteger(subscriberPrivateKey, 16), subscriber)
 
     StreamMessage msgSigned
     StreamMessage groupKeyRequest

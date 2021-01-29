@@ -10,38 +10,21 @@ import com.streamr.client.protocol.message_layer.GroupKeyResponse
 import com.streamr.client.protocol.message_layer.StreamMessage
 import com.streamr.client.rest.Stream
 import com.streamr.client.testing.TestingAddresses
-import java.security.SecureRandom
-import org.web3j.crypto.ECKeyPair
 import spock.lang.Specification
 
 class MessageCreationUtilSpec extends Specification {
-    MessageCreationUtil msgCreationUtil
-    SigningUtil signingUtil
-    EncryptionUtil encryptionUtil
-
-    Stream stream
-    SecureRandom secureRandom
-    Map message
-
-    void setup() {
-        stream = new Stream.Builder()
-                .withName("test-stream")
-                .withDescription("")
-                .withId("stream-id")
-                .withPartitions(1)
-                .withRequireSignedData(false)
-                .withRequireEncryptedData(false)
-                .createStream()
-        secureRandom = new SecureRandom()
-        message = [foo: "bar"]
-
-        String withoutPrefix = "23bead9b499af21c4c16e4511b3b6b08c3e22e76e0591f5ab5ba8d4c3a5b1820"
-        ECKeyPair account = ECKeyPair.create(new BigInteger(withoutPrefix, 16));
-        signingUtil = new SigningUtil(account)
-
-        encryptionUtil = new EncryptionUtil()
-        msgCreationUtil = new MessageCreationUtil(TestingAddresses.PUBLISHER_ID, signingUtil)
-    }
+    final BigInteger privateKey = new BigInteger("23bead9b499af21c4c16e4511b3b6b08c3e22e76e0591f5ab5ba8d4c3a5b1820", 16)
+    final Stream stream = new Stream.Builder()
+            .withName("test-stream")
+            .withDescription("")
+            .withId("stream-id")
+            .withPartitions(1)
+            .withRequireSignedData(false)
+            .withRequireEncryptedData(false)
+            .createStream()
+    final Map message = [foo: "bar"]
+    final MessageCreationUtil msgCreationUtil = new MessageCreationUtil(privateKey, TestingAddresses.PUBLISHER_ID)
+    final EncryptionUtil encryptionUtil = new EncryptionUtil()
 
     void "createStreamMessage() creates a StreamMessage with correct values"() {
         Date timestamp = new Date()
@@ -65,8 +48,8 @@ class MessageCreationUtilSpec extends Specification {
         msg.signature != null
     }
 
-    void "createStreamMessage() doesn't sign messages if SigningUtil is not defined"() {
-        MessageCreationUtil msgCreationUtil2 = new MessageCreationUtil(TestingAddresses.PUBLISHER_ID, null)
+    void "createStreamMessage() doesn't sign messages if private key is not defined"() {
+        MessageCreationUtil msgCreationUtil2 = new MessageCreationUtil(null, TestingAddresses.PUBLISHER_ID)
 
         when:
         StreamMessage msg = msgCreationUtil2.createStreamMessage(stream, message, new Date())
@@ -142,7 +125,7 @@ class MessageCreationUtilSpec extends Specification {
 
     void "createStreamMessage() with same timestamps on different partitions chains messages with sequenceNumber always zero"() {
         Date timestamp = new Date()
-        stream = new Stream.Builder(stream)
+        Stream stream = new Stream.Builder(stream)
                 .withPartitions(10)
                 .createStream()
 
@@ -165,7 +148,7 @@ class MessageCreationUtilSpec extends Specification {
 
     void "createStreamMessage() correctly assigns partitions based on the given partitionKey"() {
         when:
-        stream = new Stream.Builder(stream)
+        Stream stream = new Stream.Builder(stream)
                 .withPartitions(10)
                 .createStream()
         int[] partitions = [6, 7, 4, 4, 9, 1, 8, 0, 6, 6, 7, 6, 7, 3, 2, 2, 0, 9, 4, 9, 9, 5, 5, 1, 7, 3,
@@ -179,17 +162,17 @@ class MessageCreationUtilSpec extends Specification {
         }
     }
 
-    void "createGroupKeyRequest() should throw if SigningUtil is not set"() {
-        msgCreationUtil = new MessageCreationUtil(TestingAddresses.SUBSCRIBER_ID, null)
+    void "createGroupKeyRequest() should throw if private key is not set"() {
+        MessageCreationUtil util = new MessageCreationUtil(null, TestingAddresses.SUBSCRIBER_ID)
 
         when:
-        msgCreationUtil.createGroupKeyRequest(TestingAddresses.PUBLISHER_ID, "streamId", "", ["keyId1"])
+        util.createGroupKeyRequest(TestingAddresses.PUBLISHER_ID, "streamId", "", ["keyId1"])
         then:
         thrown SigningRequiredException
     }
 
     void "createGroupKeyRequest() creates correct group key request"() {
-        MessageCreationUtil util = new MessageCreationUtil(TestingAddresses.SUBSCRIBER_ID, signingUtil)
+        MessageCreationUtil util = new MessageCreationUtil(privateKey, TestingAddresses.SUBSCRIBER_ID)
 
         when:
         StreamMessage msg = util.createGroupKeyRequest(
@@ -207,13 +190,13 @@ class MessageCreationUtilSpec extends Specification {
         request.getGroupKeyIds() == ["keyId1"]
     }
 
-    void "createGroupKeyResponse() should throw if SigningUtil is not set"() {
-        msgCreationUtil = new MessageCreationUtil(TestingAddresses.PUBLISHER_ID, null)
+    void "createGroupKeyResponse() should throw if private key is not set"() {
+        MessageCreationUtil util = new MessageCreationUtil(null, TestingAddresses.PUBLISHER_ID)
         GroupKey key = GroupKey.generate()
         GroupKeyRequest request = new GroupKeyRequest("requestId", "streamId", "publicKey", [key.getGroupKeyId()])
 
         when:
-        msgCreationUtil.createGroupKeyResponse(TestingAddresses.SUBSCRIBER_ID, request, [key])
+        util.createGroupKeyResponse(TestingAddresses.SUBSCRIBER_ID, request, [key])
 
         then:
         thrown SigningRequiredException
@@ -240,12 +223,12 @@ class MessageCreationUtilSpec extends Specification {
         encryptionUtil.decryptWithPrivateKey(response.getKeys()[0]) == groupKey
     }
 
-    void "createGroupKeyAnnounce() should throw if SigningUtil is not set"() {
-        msgCreationUtil = new MessageCreationUtil(TestingAddresses.PUBLISHER_ID, null)
+    void "createGroupKeyAnnounce() should throw if private key is not set"() {
+        MessageCreationUtil util = new MessageCreationUtil(null, TestingAddresses.PUBLISHER_ID)
         GroupKey key = GroupKey.generate()
 
         when:
-        msgCreationUtil.createGroupKeyAnnounce(TestingAddresses.SUBSCRIBER_ID, "streamId", "publicKey", [key])
+        util.createGroupKeyAnnounce(TestingAddresses.SUBSCRIBER_ID, "streamId", "publicKey", [key])
         then:
         thrown SigningRequiredException
     }
@@ -270,11 +253,11 @@ class MessageCreationUtilSpec extends Specification {
         encryptionUtil.decryptWithPrivateKey(announce.getKeys()[0]) == groupKey
     }
 
-    void "createGroupKeyErrorResponse() should throw if SigningUtil is not set"() {
-        msgCreationUtil = new MessageCreationUtil(TestingAddresses.PUBLISHER_ID, null)
+    void "createGroupKeyErrorResponse() should throw if private key is not set"() {
+        MessageCreationUtil util = new MessageCreationUtil(null, TestingAddresses.PUBLISHER_ID)
 
         when:
-        msgCreationUtil.createGroupKeyErrorResponse(TestingAddresses.SUBSCRIBER_ID, new GroupKeyRequest("requestId", "streamId", "rsaPublicKey" ,["keyId1"]), new Exception())
+        util.createGroupKeyErrorResponse(TestingAddresses.SUBSCRIBER_ID, new GroupKeyRequest("requestId", "streamId", "rsaPublicKey" ,["keyId1"]), new Exception())
 
         then:
         thrown SigningRequiredException

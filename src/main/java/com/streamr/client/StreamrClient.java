@@ -44,9 +44,9 @@ import com.streamr.client.utils.IdGenerator;
 import com.streamr.client.utils.KeyExchangeUtil;
 import com.streamr.client.utils.MessageCreationUtil;
 import com.streamr.client.utils.OneTimeResend;
-import com.streamr.client.utils.SigningUtil;
 import com.streamr.client.utils.Subscriptions;
 import java.io.IOException;
+import java.math.BigInteger;
 import java.net.URI;
 import java.net.URISyntaxException;
 import java.nio.channels.NotYetConnectedException;
@@ -161,7 +161,9 @@ public class StreamrClient implements Streamr {
             addressValidityUtil,
             options.getSigningOptions().getVerifySignatures());
 
+    BigInteger privateKey = null;
     if (options.getAuthenticationMethod() != null) {
+      privateKey = options.getAuthenticationMethod().getPrivateKey();
       publisherId = new Address(options.getAuthenticationMethod().getAddress());
 
       // The key exchange stream is a system stream.
@@ -174,15 +176,11 @@ public class StreamrClient implements Streamr {
               .withPartitions(1)
               .createStream();
     }
-    SigningUtil signingUtil = null;
-    if (options.getAuthenticationMethod() != null) {
-      signingUtil = new SigningUtil(options.getAuthenticationMethod().getAccount());
-    }
 
     // Create key storage
     keyStore = options.getEncryptionOptions().getKeyStore();
 
-    msgCreationUtil = new MessageCreationUtil(publisherId, signingUtil);
+    msgCreationUtil = new MessageCreationUtil(privateKey, publisherId);
     encryptionUtil =
         new EncryptionUtil(
             options.getEncryptionOptions().getRsaPublicKey(),

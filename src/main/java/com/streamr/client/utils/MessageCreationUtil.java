@@ -17,6 +17,7 @@ import com.streamr.client.protocol.message_layer.MessageId;
 import com.streamr.client.protocol.message_layer.StreamMessage;
 import com.streamr.client.protocol.message_layer.StringOrMillisDateJsonAdapter;
 import com.streamr.client.rest.Stream;
+import java.math.BigInteger;
 import java.nio.ByteBuffer;
 import java.nio.charset.StandardCharsets;
 import java.security.MessageDigest;
@@ -37,14 +38,11 @@ import org.apache.commons.lang3.tuple.Pair;
  *
  * <p>- Maintains message chains by creating appropriate MessageIds and MessageRefs - Encrypts
  * created messages - Signs created messages
- *
- * <p>Does NOT: - Manage encryption keys
  */
 public class MessageCreationUtil {
+  private final BigInteger privateKey;
   private final Address publisherId;
   private final String msgChainId;
-  private final SigningUtil signingUtil;
-
   private final Map<String, MessageRef> refsPerStreamAndPartition = new HashMap<>();
   private final Map<String, Integer> cachedHashes = new HashMap<>();
   private final JsonAdapter<Map<String, Object>> mapOfStringAndObjectAdapter =
@@ -53,10 +51,10 @@ public class MessageCreationUtil {
           .build()
           .adapter(Types.newParameterizedType(Map.class, String.class, Object.class));
 
-  public MessageCreationUtil(Address publisherId, SigningUtil signingUtil) {
+  public MessageCreationUtil(final BigInteger privateKey, Address publisherId) {
+    this.privateKey = privateKey;
     this.publisherId = publisherId;
-    msgChainId = RandomStringUtils.randomAlphanumeric(20);
-    this.signingUtil = signingUtil;
+    this.msgChainId = RandomStringUtils.randomAlphanumeric(20);
   }
 
   public StreamMessage createStreamMessage(
@@ -106,16 +104,16 @@ public class MessageCreationUtil {
       }
     }
 
-    // Sign if signingUtil provided
-    if (signingUtil != null) {
-      streamMessage = signingUtil.signStreamMessage(streamMessage);
+    if (privateKey != null) {
+      streamMessage = SigningUtil.signStreamMessage(privateKey, streamMessage);
+      // TODO: streamMessage.sign(privateKey);
     }
     return streamMessage;
   }
 
   public StreamMessage createGroupKeyRequest(
       Address publisherAddress, String streamId, String rsaPublicKey, List<String> groupKeyIds) {
-    if (signingUtil == null) {
+    if (privateKey == null) {
       throw new SigningRequiredException(
           "Cannot create unsigned group key request. Must authenticate with an Ethereum account");
     }
@@ -129,13 +127,13 @@ public class MessageCreationUtil {
         request.toStreamMessageBuilder(pair.getLeft(), pair.getRight()).createStreamMessage();
 
     // Never encrypt but always sign
-    streamMessage = signingUtil.signStreamMessage(streamMessage);
+    streamMessage = SigningUtil.signStreamMessage(privateKey, streamMessage);
     return streamMessage;
   }
 
   public StreamMessage createGroupKeyResponse(
       Address subscriberAddress, GroupKeyRequest request, List<GroupKey> groupKeys) {
-    if (signingUtil == null) {
+    if (privateKey == null) {
       throw new SigningRequiredException(
           "Cannot create unsigned group key response. Must authenticate with an Ethereum account");
     }
@@ -164,13 +162,13 @@ public class MessageCreationUtil {
             .createStreamMessage();
 
     // Always sign
-    streamMessage = signingUtil.signStreamMessage(streamMessage);
+    streamMessage = SigningUtil.signStreamMessage(privateKey, streamMessage);
     return streamMessage;
   }
 
   public StreamMessage createGroupKeyAnnounce(
       Address subscriberAddress, String streamId, String publicKey, List<GroupKey> groupKeys) {
-    if (signingUtil == null) {
+    if (privateKey == null) {
       throw new SigningRequiredException(
           "Cannot create unsigned group key announce. Must authenticate with an Ethereum account");
     }
@@ -197,13 +195,13 @@ public class MessageCreationUtil {
             .createStreamMessage();
 
     // Always sign
-    streamMessage = signingUtil.signStreamMessage(streamMessage);
+    streamMessage = SigningUtil.signStreamMessage(privateKey, streamMessage);
     return streamMessage;
   }
 
   public StreamMessage createGroupKeyErrorResponse(
       Address destinationAddress, GroupKeyRequest request, Exception e) {
-    if (signingUtil == null) {
+    if (privateKey == null) {
       throw new SigningRequiredException(
           "Cannot create unsigned error message. Must authenticate with an Ethereum account");
     }
@@ -222,7 +220,7 @@ public class MessageCreationUtil {
         response.toStreamMessageBuilder(pair.getLeft(), pair.getRight()).createStreamMessage();
 
     // Never encrypt but always sign
-    streamMessage = signingUtil.signStreamMessage(streamMessage);
+    streamMessage = SigningUtil.signStreamMessage(privateKey, streamMessage);
     return streamMessage;
   }
 
