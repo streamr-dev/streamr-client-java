@@ -11,6 +11,7 @@ import com.streamr.client.protocol.message_layer.StreamMessage;
 import com.streamr.client.rest.EthereumAuthenticationMethod;
 import com.streamr.client.rest.ResourceNotFoundException;
 import com.streamr.client.rest.Stream;
+import com.streamr.client.rest.StreamrRestClient;
 import com.streamr.client.rest.UserInfo;
 import com.streamr.client.subs.Subscription;
 import java.io.IOException;
@@ -24,8 +25,13 @@ public class TestingStreamrClient extends StreamrClient {
   List<StreamMessage> receivedStreamMessages = new ArrayList<>();
   Map<String, Stream> mockStreams = new LinkedHashMap<>();
 
-  public TestingStreamrClient(final StreamrClientOptions options) {
-    super(options);
+  public TestingStreamrClient(final StreamrClientOptions options, final String privateKey) {
+    super(options, new StreamrRestClient(TestingMeta.REST_URL, privateKey) {
+      @Override
+      public String getSessionToken() {
+        return "sessionToken";
+      }
+    });
   }
 
   public static StreamrClient createUnauthenticatedClient() {
@@ -34,12 +40,14 @@ public class TestingStreamrClient extends StreamrClient {
             null,
             SigningOptions.getDefault(),
             EncryptionOptions.getDefault(),
-            TestingMeta.WEBSOCKET_URL,
-            TestingMeta.REST_URL));
+            TestingMeta.WEBSOCKET_URL),
+        new StreamrRestClient(TestingMeta.REST_URL, null));
   }
 
   public static StreamrClient createClientWithPrivateKey(final String privateKey) {
-    return new StreamrClient(createOptionsWithPrivateKey(privateKey));
+    return new StreamrClient(
+        createOptionsWithPrivateKey(privateKey),
+        new StreamrRestClient(TestingMeta.REST_URL, privateKey));
   }
 
   private static StreamrClientOptions createOptionsWithPrivateKey(final String privateKey) {
@@ -47,8 +55,7 @@ public class TestingStreamrClient extends StreamrClient {
         new EthereumAuthenticationMethod(privateKey),
         SigningOptions.getDefault(),
         EncryptionOptions.getDefault(),
-        TestingMeta.WEBSOCKET_URL,
-        TestingMeta.REST_URL);
+        TestingMeta.WEBSOCKET_URL);
   }
 
   @Override

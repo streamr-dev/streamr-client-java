@@ -171,7 +171,7 @@ class StreamEndpointsSpec extends Specification {
     }
 
     void "getUserInfo()"() {
-        EthereumAuthenticationMethod method = (EthereumAuthenticationMethod) client.getOptions().getAuthenticationMethod()
+        EthereumAuthenticationMethod method = client.getOptions().getAuthenticationMethod()
         when:
         UserInfo info = client.getUserInfo()
 

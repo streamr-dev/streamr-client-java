@@ -9,7 +9,6 @@ public class StreamrClientOptions {
   private EncryptionOptions encryptionOptions = EncryptionOptions.getDefault();
   private boolean publishSignedMsgs = false;
   private WebsocketUrl websocketApiUrl = new WebsocketUrl();
-  private String restApiUrl = "https://www.streamr.com/api/v1";
 
   private String mainnetRpcUrl = "http://localhost:8545";
   private String sidechainRpcUrl = "http://localhost:8546";
@@ -24,13 +23,11 @@ public class StreamrClientOptions {
 
   public StreamrClientOptions() {}
 
-  public StreamrClientOptions(EthereumAuthenticationMethod authenticationMethod) {
-    this.authenticationMethod = authenticationMethod;
-    this.publishSignedMsgs = true;
-  }
-
   public StreamrClientOptions(
-      EthereumAuthenticationMethod authenticationMethod, SigningOptions signingOptions) {
+      EthereumAuthenticationMethod authenticationMethod,
+      SigningOptions signingOptions,
+      EncryptionOptions encryptionOptions,
+      String websocketApiUrl) {
     this.authenticationMethod = authenticationMethod;
     this.signingOptions = signingOptions;
     if (this.signingOptions.getPublishSigned()
@@ -40,18 +37,8 @@ public class StreamrClientOptions {
         == SigningOptions.SignatureComputationPolicy.AUTO) {
       this.publishSignedMsgs = true;
     }
-  }
-
-  public StreamrClientOptions(
-      EthereumAuthenticationMethod authenticationMethod,
-      SigningOptions signingOptions,
-      EncryptionOptions encryptionOptions,
-      String websocketApiUrl,
-      String restApiUrl) {
-    this(authenticationMethod, signingOptions);
     this.encryptionOptions = encryptionOptions;
     this.websocketApiUrl = new WebsocketUrl(websocketApiUrl);
-    this.restApiUrl = restApiUrl;
   }
 
   public StreamrClientOptions(
@@ -59,11 +46,10 @@ public class StreamrClientOptions {
       SigningOptions signingOptions,
       EncryptionOptions encryptionOptions,
       String websocketApiUrl,
-      String restApiUrl,
       int propagationTimeout,
       int resendTimeout,
       boolean skipGapsOnFullQueue) {
-    this(authenticationMethod, signingOptions, encryptionOptions, websocketApiUrl, restApiUrl);
+    this(authenticationMethod, signingOptions, encryptionOptions, websocketApiUrl);
     this.propagationTimeout = propagationTimeout;
     this.resendTimeout = resendTimeout;
     this.skipGapsOnFullQueue = skipGapsOnFullQueue;
@@ -75,10 +61,6 @@ public class StreamrClientOptions {
 
   public String getWebsocketApiUrl() {
     return websocketApiUrl.toString();
-  }
-
-  public String getRestApiUrl() {
-    return restApiUrl;
   }
 
   public String getMainnetRpcUrl() {
@@ -95,10 +77,6 @@ public class StreamrClientOptions {
 
   public void setSidechainRpcUrl(String sidechainRpcUrl) {
     this.sidechainRpcUrl = sidechainRpcUrl;
-  }
-
-  public void setRestApiUrl(String restApiUrl) {
-    this.restApiUrl = restApiUrl;
   }
 
   public long getConnectionTimeoutMillis() {

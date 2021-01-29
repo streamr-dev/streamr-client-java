@@ -25,8 +25,11 @@ import com.streamr.client.protocol.message_layer.GroupKeyRequest;
 import com.streamr.client.protocol.message_layer.MalformedMessageException;
 import com.streamr.client.protocol.message_layer.StreamMessage;
 import com.streamr.client.protocol.message_layer.StreamMessageValidator;
+import com.streamr.client.rest.AmbiguousResultsException;
+import com.streamr.client.rest.Permission;
 import com.streamr.client.rest.Stream;
 import com.streamr.client.rest.StreamrRestClient;
+import com.streamr.client.rest.UserInfo;
 import com.streamr.client.subs.BasicSubscription;
 import com.streamr.client.subs.CombinedSubscription;
 import com.streamr.client.subs.HistoricalSubscription;
@@ -51,6 +54,7 @@ import java.util.Date;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 import java.util.concurrent.Executors;
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.TimeUnit;
@@ -68,9 +72,10 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 /** Extends the StreamrRestClient with methods for using the websocket protocol. */
-public class StreamrClient extends StreamrRestClient implements Streamr {
+public class StreamrClient implements Streamr {
 
   private static final Logger log = LoggerFactory.getLogger(StreamrClient.class);
+  private final StreamrRestClient restClient;
 
   // Underlying websocket implementation
   private WebSocketClient websocket = null;
@@ -100,9 +105,16 @@ public class StreamrClient extends StreamrRestClient implements Streamr {
   private final ScheduledExecutorService executorService =
       Executors.newSingleThreadScheduledExecutor();
   private int requestCounter = 0;
+  private final StreamrClientOptions options;
 
-  public StreamrClient(StreamrClientOptions options) {
-    super(options);
+  public StreamrClientOptions getOptions() {
+    return options;
+  }
+
+  public StreamrClient(StreamrClientOptions options, final StreamrRestClient restClient) {
+    this.options = options;
+    Objects.requireNonNull(restClient);
+    this.restClient = restClient;
     AddressValidityUtil addressValidityUtil =
         new AddressValidityUtil(
             streamId -> {
@@ -378,6 +390,69 @@ public class StreamrClient extends StreamrRestClient implements Streamr {
     return keyStore;
   }
 
+  @Override
+  public Stream createStream(final Stream stream) throws IOException {
+    return restClient.createStream(stream);
+  }
+
+  @Override
+  public Stream getStream(final String streamId) throws IOException {
+    return restClient.getStream(streamId);
+  }
+
+  @Override
+  public Stream getStreamByName(final String name) throws IOException, AmbiguousResultsException {
+    return restClient.getStreamByName(name);
+  }
+
+  @Override
+  public Permission grant(
+      final Stream stream, final Permission.Operation operation, final String user)
+      throws IOException {
+    return restClient.grant(stream, operation, user);
+  }
+
+  @Override
+  public Permission grantPublic(final Stream stream, final Permission.Operation operation)
+      throws IOException {
+    return restClient.grantPublic(stream, operation);
+  }
+
+  @Override
+  public UserInfo getUserInfo() throws IOException {
+    return restClient.getUserInfo();
+  }
+
+  @Override
+  public List<String> getPublishers(final String streamId) throws IOException {
+    return restClient.getPublishers(streamId);
+  }
+
+  @Override
+  public boolean isPublisher(final String streamId, final Address address) throws IOException {
+    return restClient.isPublisher(streamId, address);
+  }
+
+  @Override
+  public boolean isPublisher(final String streamId, final String ethAddress) throws IOException {
+    return restClient.isPublisher(streamId, ethAddress);
+  }
+
+  @Override
+  public List<String> getSubscribers(final String streamId) throws IOException {
+    return restClient.getSubscribers(streamId);
+  }
+
+  @Override
+  public boolean isSubscriber(final String streamId, final Address address) throws IOException {
+    return restClient.isSubscriber(streamId, address);
+  }
+
+  @Override
+  public boolean isSubscriber(final String streamId, final String ethAddress) throws IOException {
+    return restClient.isSubscriber(streamId, ethAddress);
+  }
+
   public DataUnionClient dataUnionClient(String mainnetAdminPrvKey, String sidechainAdminPrvKey) {
     return new DataUnionClient(
         options.getMainnetRpcUrl(),
@@ -388,6 +463,15 @@ public class StreamrClient extends StreamrRestClient implements Streamr {
         sidechainAdminPrvKey);
   }
 
+  @Override
+  public void logout() throws IOException {
+    restClient.logout();
+  }
+
+  @Override
+  public String getSessionToken() {
+    return restClient.getSessionToken();
+  }
   /*
    * Message handling
    */
@@ -532,7 +616,7 @@ public class StreamrClient extends StreamrRestClient implements Streamr {
   }
 
   private void publish(StreamMessage streamMessage) {
-    send(new PublishRequest(newRequestId("pub"), streamMessage, getSessionToken()));
+    send(new PublishRequest(newRequestId("pub"), streamMessage, restClient.getSessionToken()));
   }
 
   public GroupKey rekey(Stream stream) {
@@ -566,7 +650,8 @@ public class StreamrClient extends StreamrRestClient implements Streamr {
     }
 
     SubscribeRequest subscribeRequest =
-        new SubscribeRequest(newRequestId("sub"), stream.getId(), partition, getSessionToken());
+        new SubscribeRequest(
+            newRequestId("sub"), stream.getId(), partition, restClient.getSessionToken());
 
     Subscription sub;
     BasicSubscription.GroupKeyRequestFunction requestFunction =
@@ -621,7 +706,7 @@ public class StreamrClient extends StreamrRestClient implements Streamr {
                   to,
                   publisherId,
                   msgChainId,
-                  getSessionToken());
+                  restClient.getSessionToken());
           sub.setResending(true);
           send(req);
         });
@@ -634,7 +719,10 @@ public class StreamrClient extends StreamrRestClient implements Streamr {
   private void resubscribe(Subscription sub) {
     SubscribeRequest subscribeRequest =
         new SubscribeRequest(
-            newRequestId("resub"), sub.getStreamId(), sub.getPartition(), getSessionToken());
+            newRequestId("resub"),
+            sub.getStreamId(),
+            sub.getPartition(),
+            restClient.getSessionToken());
     sub.setState(Subscription.State.SUBSCRIBING);
     send(subscribeRequest);
   }
@@ -683,7 +771,7 @@ public class StreamrClient extends StreamrRestClient implements Streamr {
               newRequestId("resend"),
               res.getStreamId(),
               res.getStreamPartition(),
-              this.getSessionToken());
+              restClient.getSessionToken());
       send(req);
       OneTimeResend resend =
           new OneTimeResend(getWebsocket(), req, options.getResendTimeout(), sub);
