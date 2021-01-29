@@ -25,7 +25,6 @@ import com.streamr.client.protocol.message_layer.GroupKeyRequest;
 import com.streamr.client.protocol.message_layer.MalformedMessageException;
 import com.streamr.client.protocol.message_layer.StreamMessage;
 import com.streamr.client.protocol.message_layer.StreamMessageValidator;
-import com.streamr.client.rest.EthereumAuthenticationMethod;
 import com.streamr.client.rest.Stream;
 import com.streamr.client.rest.StreamrRestClient;
 import com.streamr.client.subs.BasicSubscription;
@@ -189,14 +188,6 @@ public class StreamrClient extends StreamrRestClient implements Streamr {
                 sub.onNewKeysAdded(publisherId, keys);
               }
             });
-  }
-
-  public StreamrClient(EthereumAuthenticationMethod authenticationMethod) {
-    this(new StreamrClientOptions(authenticationMethod));
-  }
-
-  public StreamrClient() {
-    this(new StreamrClientOptions());
   }
 
   private void initWebsocket() {
