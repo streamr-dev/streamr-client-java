@@ -16,24 +16,9 @@ import com.streamr.client.rest.UserInfo;
 import com.streamr.client.subs.Subscription;
 import java.io.IOException;
 import java.util.ArrayList;
-import java.util.LinkedHashMap;
 import java.util.List;
-import java.util.Map;
 
 public class TestingStreamrClient extends StreamrClient {
-
-  List<StreamMessage> receivedStreamMessages = new ArrayList<>();
-  Map<String, Stream> mockStreams = new LinkedHashMap<>();
-
-  public TestingStreamrClient(final StreamrClientOptions options, final String privateKey) {
-    super(options, new StreamrRestClient(TestingMeta.REST_URL, privateKey) {
-      @Override
-      public String getSessionToken() {
-        return "sessionToken";
-      }
-    });
-  }
-
   public static StreamrClient createUnauthenticatedClient() {
     return new StreamrClient(
         new StreamrClientOptions(
@@ -56,6 +41,32 @@ public class TestingStreamrClient extends StreamrClient {
         SigningOptions.getDefault(),
         EncryptionOptions.getDefault(),
         TestingMeta.WEBSOCKET_URL);
+  }
+
+  List<StreamMessage> receivedStreamMessages = new ArrayList<>();
+
+  public TestingStreamrClient(final StreamrClientOptions options, final String privateKey) {
+    super(
+        options,
+        new StreamrRestClient(TestingMeta.REST_URL, privateKey) {
+          @Override
+          public String getSessionToken() {
+            return "sessionToken";
+          }
+        });
+  }
+
+  public TestingStreamrClient(
+      final StreamrClientOptions options, final StreamrRestClient restClient) {
+    super(options, restClient);
+  }
+
+  public void receiveMessage(ControlMessage msg) {
+    handleMessage(msg.toJson());
+  }
+
+  public List<StreamMessage> getReceivedStreamMessages() {
+    return receivedStreamMessages;
   }
 
   @Override
@@ -84,33 +95,17 @@ public class TestingStreamrClient extends StreamrClient {
     return "sessionToken";
   }
 
-  public void receiveMessage(ControlMessage msg) {
-    handleMessage(msg.toJson());
-  }
-
-  public List<StreamMessage> getReceivedStreamMessages() {
-    return receivedStreamMessages;
-  }
-
-  public void addMockStream(Stream stream) {
-    mockStreams.put(stream.getId(), stream);
-  }
-
   @Override
   public Stream getStream(String streamId) throws IOException, ResourceNotFoundException {
-    if (mockStreams.containsKey(streamId)) {
-      return mockStreams.get(streamId);
-    } else {
-      // Return a default mock
-      Stream stream =
-          new Stream.Builder()
-              .withName("default mock stream from TestingStreamrClient")
-              .withDescription("")
-              .withId(streamId)
-              .withRequireSignedData(false)
-              .withRequireEncryptedData(false)
-              .createStream();
-      return stream;
-    }
+    // Return a default mock
+    Stream stream =
+        new Stream.Builder()
+            .withName("default mock stream from TestingStreamrClient")
+            .withDescription("")
+            .withId(streamId)
+            .withRequireSignedData(false)
+            .withRequireEncryptedData(false)
+            .createStream();
+    return stream;
   }
 }
