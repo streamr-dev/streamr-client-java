@@ -1,6 +1,6 @@
 package com.streamr.client.rest;
 
-import java.util.Objects;
+import com.streamr.client.java.util.Objects;
 
 public final class Permission {
   private final String id;
@@ -17,15 +17,21 @@ public final class Permission {
   }
 
   public Permission(
-      final String id, final Boolean anonymous, final Operation operation, final String user) {
+      final Operation operation, final String user, final String id, final Boolean anonymous) {
+    Objects.requireNonNull(id, "Permission(): 'id' cannot be null.");
     this.id = id;
+    Objects.requireNonNull(anonymous, "Permission(): 'anonymous' cannot be null.");
     this.anonymous = anonymous;
+    Objects.requireNonNull(operation, "Permission(): 'operation' cannot be null.");
     this.operation = operation;
+    Objects.requireNonNull(user, "Permission(): 'user' cannot be null.");
     this.user = user;
   }
 
   public Permission(final Operation operation, final String user) {
+    Objects.requireNonNull(operation, "Permission(): 'operation' cannot be null.");
     this.operation = operation;
+    Objects.requireNonNull(user, "Permission(): 'user' cannot be null.");
     this.user = user;
     this.anonymous = false;
     this.id = null;
@@ -33,6 +39,7 @@ public final class Permission {
 
   /** Public permission */
   public Permission(final Operation operation) {
+    Objects.requireNonNull(operation, "Permission(): 'operation' cannot be null.");
     this.operation = operation;
     this.anonymous = true;
     this.user = null;

@@ -1,7 +1,7 @@
 package com.streamr.client.rest;
 
+import com.streamr.client.java.util.Objects;
 import java.util.Date;
-import java.util.Objects;
 
 public final class Challenge {
   private final String id;
@@ -21,8 +21,11 @@ public final class Challenge {
   }
 
   public Challenge(final String id, final String challenge, final Date expires) {
+    Objects.requireNonNull(id);
     this.id = id;
+    Objects.requireNonNull(challenge);
     this.challenge = challenge;
+    Objects.requireNonNull(expires);
     this.expires = expires;
   }
 

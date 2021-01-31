@@ -1,7 +1,7 @@
 package com.streamr.client.rest;
 
 public class AmbiguousResultsException extends RuntimeException {
-  public AmbiguousResultsException(String message) {
+  public AmbiguousResultsException(final String message) {
     super(message);
   }
 }

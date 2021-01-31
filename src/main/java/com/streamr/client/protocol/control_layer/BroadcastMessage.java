@@ -1,7 +1,7 @@
 package com.streamr.client.protocol.control_layer;
 
+import com.streamr.client.java.util.Objects;
 import com.streamr.client.protocol.message_layer.StreamMessage;
-import java.util.Objects;
 
 public final class BroadcastMessage extends ControlMessage {
   public static final int TYPE = 0;

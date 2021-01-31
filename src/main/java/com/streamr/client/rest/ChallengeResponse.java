@@ -1,6 +1,6 @@
 package com.streamr.client.rest;
 
-import java.util.Objects;
+import com.streamr.client.java.util.Objects;
 
 public final class ChallengeResponse {
   private final Challenge challenge;
@@ -21,8 +21,11 @@ public final class ChallengeResponse {
 
   public ChallengeResponse(
       final Challenge challenge, final String signature, final String address) {
+    Objects.requireNonNull(challenge);
     this.challenge = challenge;
+    Objects.requireNonNull(signature);
     this.signature = signature;
+    Objects.requireNonNull(address);
     this.address = address;
   }
 

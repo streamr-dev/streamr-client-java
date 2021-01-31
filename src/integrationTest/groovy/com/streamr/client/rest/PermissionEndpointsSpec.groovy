@@ -13,7 +13,7 @@ class PermissionEndpointsSpec extends Specification {
 
     void setup() {
         grantor = TestingStreamrClient.createClientWithPrivateKey(TestingKeys.generatePrivateKey())
-        grantee = TestingStreamrClient.createClientWithPrivateKey(TestingKeys.generatePrivateKey())
+        grantee = TestingStreamrClient.createClientWithPrivateKey(new BigInteger("12beab9b499af21c4c16e4511b3b6b08c3e22e76e0591f5ab5ba8d4c3a5b1820", 16))
     }
 
     void cleanup() {

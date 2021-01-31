@@ -1,6 +1,6 @@
 package com.streamr.client.dataunion;
 
-import java.util.Objects;
+import com.streamr.client.java.util.Objects;
 import org.web3j.protocol.core.methods.response.TransactionReceipt;
 
 /** Streamr Ethereum transaction receipt. */

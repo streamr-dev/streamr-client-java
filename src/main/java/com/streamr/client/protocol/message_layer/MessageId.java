@@ -1,8 +1,8 @@
 package com.streamr.client.protocol.message_layer;
 
+import com.streamr.client.java.util.Objects;
 import com.streamr.client.utils.Address;
 import java.util.Date;
-import java.util.Objects;
 
 public final class MessageId {
   private final String streamId;

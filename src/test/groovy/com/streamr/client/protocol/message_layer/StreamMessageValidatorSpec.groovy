@@ -2,7 +2,9 @@ package com.streamr.client.protocol.message_layer
 
 import com.streamr.client.exceptions.ValidationException
 import com.streamr.client.options.SigningOptions.SignatureVerificationPolicy
+import com.streamr.client.rest.FieldConfig
 import com.streamr.client.rest.Stream
+import com.streamr.client.rest.StreamConfig
 import com.streamr.client.testing.TestingAddresses
 import com.streamr.client.testing.TestingContent
 import com.streamr.client.utils.Address
@@ -96,6 +98,7 @@ class StreamMessageValidatorSpec extends Specification {
                 .withDescription("")
                 .withId("streamId")
                 .withPartitions(1)
+                .withConfig(new StreamConfig(new FieldConfig("field", FieldConfig.Type.STRING)))
                 .withRequireSignedData(false)
                 .withRequireEncryptedData(false)
                 .createStream()
