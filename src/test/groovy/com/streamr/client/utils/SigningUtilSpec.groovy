@@ -15,8 +15,6 @@ class SigningUtilSpec extends Specification {
     MessageId msgId
 
     void setup() {
-        // The EthereumAuthenticationMethod accepts a private key with or without the '0x' prefix. It is removed if present to work with ECKey.fromPrivate.
-        // Since we are testing an internal component (SigningUtil), the private key is without prefix.
         privateKey = new BigInteger("23bead9b499af21c4c16e4511b3b6b08c3e22e76e0591f5ab5ba8d4c3a5b1820", 16)
         final ECKeyPair account = ECKeyPair.create(privateKey)
         final String addr = Keys.getAddress(account.getPublicKey());

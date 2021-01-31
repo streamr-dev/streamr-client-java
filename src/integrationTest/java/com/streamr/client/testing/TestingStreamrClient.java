@@ -8,13 +8,13 @@ import com.streamr.client.options.SigningOptions;
 import com.streamr.client.options.StreamrClientOptions;
 import com.streamr.client.protocol.control_layer.ControlMessage;
 import com.streamr.client.protocol.message_layer.StreamMessage;
-import com.streamr.client.rest.EthereumAuthenticationMethod;
 import com.streamr.client.rest.ResourceNotFoundException;
 import com.streamr.client.rest.Stream;
 import com.streamr.client.rest.StreamrRestClient;
 import com.streamr.client.rest.UserInfo;
 import com.streamr.client.subs.Subscription;
 import java.io.IOException;
+import java.math.BigInteger;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -22,36 +22,45 @@ public class TestingStreamrClient extends StreamrClient {
   public static StreamrClient createUnauthenticatedClient() {
     return new StreamrClient(
         new StreamrClientOptions(
-            null,
-            SigningOptions.getDefault(),
-            EncryptionOptions.getDefault(),
-            TestingMeta.WEBSOCKET_URL),
+            SigningOptions.getDefault(), EncryptionOptions.getDefault(), TestingMeta.WEBSOCKET_URL),
         new StreamrRestClient(TestingMeta.REST_URL, null));
   }
 
-  public static StreamrClient createClientWithPrivateKey(final String privateKey) {
+  public static StreamrClient createClientWithPrivateKey(final BigInteger privateKey) {
     return new StreamrClient(
-        createOptionsWithPrivateKey(privateKey),
-        new StreamrRestClient(TestingMeta.REST_URL, privateKey));
+        createOptions(), new StreamrRestClient(TestingMeta.REST_URL, privateKey));
   }
 
-  private static StreamrClientOptions createOptionsWithPrivateKey(final String privateKey) {
+  private static StreamrClientOptions createOptions() {
     return new StreamrClientOptions(
-        new EthereumAuthenticationMethod(privateKey),
-        SigningOptions.getDefault(),
-        EncryptionOptions.getDefault(),
-        TestingMeta.WEBSOCKET_URL);
+        SigningOptions.getDefault(), EncryptionOptions.getDefault(), TestingMeta.WEBSOCKET_URL);
   }
 
   List<StreamMessage> receivedStreamMessages = new ArrayList<>();
 
-  public TestingStreamrClient(final StreamrClientOptions options, final String privateKey) {
+  public TestingStreamrClient(final StreamrClientOptions options, final BigInteger privateKey) {
     super(
         options,
         new StreamrRestClient(TestingMeta.REST_URL, privateKey) {
           @Override
+          public UserInfo getUserInfo() {
+            return new UserInfo("name", "username");
+          }
+
+          @Override
           public String getSessionToken() {
             return "sessionToken";
+          }
+
+          @Override
+          public Stream getStream(String streamId) throws IOException, ResourceNotFoundException {
+            return new Stream.Builder()
+                .withName("default mock stream from TestingStreamrClient")
+                .withDescription("")
+                .withId(streamId)
+                .withRequireSignedData(false)
+                .withRequireEncryptedData(false)
+                .createStream();
           }
         });
   }
@@ -85,15 +94,16 @@ public class TestingStreamrClient extends StreamrClient {
     return super.subscribe(stream, partition, loggingHandler, resendOption, isExplicitResend);
   }
 
-  @Override
-  public UserInfo getUserInfo() {
-    return new UserInfo("name", "username");
-  }
+  /*
+    @Override
+    public UserInfo getUserInfo() {
+      return new UserInfo("name", "username");
+    }
 
-  @Override
-  public String getSessionToken() {
-    return "sessionToken";
-  }
+    @Override
+    public String getSessionToken() {
+      return "sessionToken";
+    }
 
   @Override
   public Stream getStream(String streamId) throws IOException, ResourceNotFoundException {
@@ -108,4 +118,5 @@ public class TestingStreamrClient extends StreamrClient {
             .createStream();
     return stream;
   }
+  */
 }

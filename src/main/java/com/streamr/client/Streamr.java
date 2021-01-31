@@ -11,6 +11,7 @@ import com.streamr.client.subs.Subscription;
 import com.streamr.client.utils.Address;
 import com.streamr.client.utils.GroupKey;
 import java.io.IOException;
+import java.math.BigInteger;
 import java.util.Date;
 import java.util.List;
 import java.util.Map;
@@ -65,6 +66,8 @@ interface Streamr {
       final String mainnetAdminPrvKey, final String sidechainAdminPrvKey);
 
   void logout() throws IOException;
+
+  void newLogin(final BigInteger privateKey) throws IOException;
 
   String getSessionToken();
 

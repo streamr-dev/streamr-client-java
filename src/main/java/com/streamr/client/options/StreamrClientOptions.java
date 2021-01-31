@@ -1,10 +1,8 @@
 package com.streamr.client.options;
 
-import com.streamr.client.rest.EthereumAuthenticationMethod;
 import com.streamr.client.ws.WebsocketUrl;
 
 public class StreamrClientOptions {
-  private EthereumAuthenticationMethod authenticationMethod = null;
   private SigningOptions signingOptions = SigningOptions.getDefault();
   private EncryptionOptions encryptionOptions = EncryptionOptions.getDefault();
   private WebsocketUrl websocketApiUrl = new WebsocketUrl();
@@ -23,32 +21,23 @@ public class StreamrClientOptions {
   public StreamrClientOptions() {}
 
   public StreamrClientOptions(
-      EthereumAuthenticationMethod authenticationMethod,
-      SigningOptions signingOptions,
-      EncryptionOptions encryptionOptions,
-      String websocketApiUrl) {
-    this.authenticationMethod = authenticationMethod;
+      SigningOptions signingOptions, EncryptionOptions encryptionOptions, String websocketApiUrl) {
     this.signingOptions = signingOptions;
     this.encryptionOptions = encryptionOptions;
     this.websocketApiUrl = new WebsocketUrl(websocketApiUrl);
   }
 
   public StreamrClientOptions(
-      EthereumAuthenticationMethod authenticationMethod,
       SigningOptions signingOptions,
       EncryptionOptions encryptionOptions,
       String websocketApiUrl,
       int propagationTimeout,
       int resendTimeout,
       boolean skipGapsOnFullQueue) {
-    this(authenticationMethod, signingOptions, encryptionOptions, websocketApiUrl);
+    this(signingOptions, encryptionOptions, websocketApiUrl);
     this.propagationTimeout = propagationTimeout;
     this.resendTimeout = resendTimeout;
     this.skipGapsOnFullQueue = skipGapsOnFullQueue;
-  }
-
-  public EthereumAuthenticationMethod getAuthenticationMethod() {
-    return authenticationMethod;
   }
 
   public String getWebsocketApiUrl() {

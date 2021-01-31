@@ -72,10 +72,7 @@ class DataUnionClientTest {
 
     StreamrClientOptions opts =
         new StreamrClientOptions(
-            null,
-            SigningOptions.getDefault(),
-            EncryptionOptions.getDefault(),
-            TestingMeta.WEBSOCKET_URL);
+            SigningOptions.getDefault(), EncryptionOptions.getDefault(), TestingMeta.WEBSOCKET_URL);
     opts.setSidechainRpcUrl(DEV_SIDECHAIN_RPC);
     opts.setMainnetRpcUrl(DEV_MAINCHAIN_RPC);
     opts.setDataUnionMainnetFactoryAddress(DEV_MAINCHAIN_FACTORY);

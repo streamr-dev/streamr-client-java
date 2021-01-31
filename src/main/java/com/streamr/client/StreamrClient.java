@@ -1,5 +1,6 @@
 package com.streamr.client;
 
+import com.streamr.client.crypto.Keys;
 import com.streamr.client.dataunion.DataUnionClient;
 import com.streamr.client.exceptions.ConnectionTimeoutException;
 import com.streamr.client.exceptions.PartitionNotSpecifiedException;
@@ -161,10 +162,9 @@ public class StreamrClient implements Streamr {
             addressValidityUtil,
             options.getSigningOptions().getVerifySignatures());
 
-    BigInteger privateKey = null;
-    if (options.getAuthenticationMethod() != null) {
-      privateKey = options.getAuthenticationMethod().getPrivateKey();
-      publisherId = new Address(options.getAuthenticationMethod().getAddress());
+    BigInteger privateKey = restClient.getPrivateKey();
+    if (privateKey != null) {
+      publisherId = new Address(Keys.privateKeyToAddressWithPrefix(privateKey));
 
       // The key exchange stream is a system stream.
       // It doesn't explicitly exist, but as per spec, we can subscribe to it anyway.
@@ -464,6 +464,11 @@ public class StreamrClient implements Streamr {
   @Override
   public void logout() throws IOException {
     restClient.logout();
+  }
+
+  @Override
+  public void newLogin(final BigInteger privateKey) throws IOException {
+    restClient.login(privateKey); // getSessionToken();
   }
 
   @Override
