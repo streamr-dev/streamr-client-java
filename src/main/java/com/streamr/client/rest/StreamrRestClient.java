@@ -66,18 +66,22 @@ public class StreamrRestClient {
    * Helper functions
    */
 
-  private Request.Builder addAuthenticationHeader(Request.Builder builder, boolean newToken) {
+  private Request.Builder addAuthenticationHeader(
+      final Request.Builder builder, final boolean newToken) {
     if (!session.isAuthenticated()) {
       return builder;
     } else {
-      String sessionToken = newToken ? session.getNewSessionToken() : session.getSessionToken();
-      builder.removeHeader("Authorization");
-      return builder.addHeader("Authorization", "Bearer " + sessionToken);
+      final String sessionToken =
+          newToken ? session.getNewSessionToken() : session.getSessionToken();
+      final String authorizationHeader = "Authorization";
+      builder.removeHeader(authorizationHeader);
+      return builder.addHeader(authorizationHeader, String.format("Bearer %s", sessionToken));
     }
   }
 
-  private <T> T execute(Request request, JsonAdapter<T> adapter) throws IOException {
-    OkHttpClient client = new OkHttpClient();
+  private <T> T execute(final Request request, final JsonAdapter<T> bodyJsonAdapter)
+      throws IOException {
+    final OkHttpClient client = new OkHttpClient();
 
     // Execute the request and retrieve the response.
     final Call call = client.newCall(request);
@@ -86,7 +90,7 @@ public class StreamrRestClient {
       assertSuccessful(response);
 
       // Deserialize HTTP response to concrete type.
-      if (adapter == null) {
+      if (bodyJsonAdapter == null) {
         return null;
       } else {
         final ResponseBody body = response.body();
@@ -96,7 +100,7 @@ public class StreamrRestClient {
         }
         T result = null;
         if (source != null) {
-          result = adapter.fromJson(source);
+          result = bodyJsonAdapter.fromJson(source);
         }
         return result;
       }
@@ -106,14 +110,16 @@ public class StreamrRestClient {
   }
 
   private <T> T executeWithRetry(
-      Request.Builder builder, JsonAdapter<T> adapter, boolean retryIfSessionExpired)
+      final Request.Builder builder,
+      final JsonAdapter<T> adapter,
+      final boolean retryIfSessionExpired)
       throws IOException {
-    Request request = addAuthenticationHeader(builder, false).build();
+    final Request request = addAuthenticationHeader(builder, false).build();
     try {
       return execute(request, adapter);
-    } catch (AuthenticationException e) {
+    } catch (final AuthenticationException e) {
       if (retryIfSessionExpired) {
-        Request request2 = addAuthenticationHeader(builder, true).build();
+        final Request request2 = addAuthenticationHeader(builder, true).build();
         return execute(request2, adapter);
       } else {
         throw e;
@@ -121,21 +127,25 @@ public class StreamrRestClient {
     }
   }
 
-  private <T> T get(HttpUrl url, JsonAdapter<T> adapter) throws IOException {
-    Request.Builder builder = new Request.Builder().url(url);
+  private <T> T get(final HttpUrl url, final JsonAdapter<T> adapter) throws IOException {
+    final Request.Builder builder = new Request.Builder().url(url);
     return executeWithRetry(builder, adapter, true);
   }
 
-  private <T> T post(HttpUrl url, String requestBody, JsonAdapter<T> adapter) throws IOException {
+  private <T> T post(final HttpUrl url, final String requestBody, final JsonAdapter<T> adapter)
+      throws IOException {
     return post(url, requestBody, adapter, true);
   }
 
   private <T> T post(
-      HttpUrl url, String requestBody, JsonAdapter<T> adapter, boolean retryIfSessionExpired)
+      final HttpUrl url,
+      final String requestBody,
+      final JsonAdapter<T> adapter,
+      final boolean retryIfSessionExpired)
       throws IOException {
     final MediaType contentTypeJson = MediaType.parse("application/json");
     final RequestBody content = RequestBody.create(requestBody, contentTypeJson);
-    Request.Builder builder = new Request.Builder().url(url).post(content);
+    final Request.Builder builder = new Request.Builder().url(url).post(content);
     return executeWithRetry(builder, adapter, retryIfSessionExpired);
   }
 
@@ -148,7 +158,7 @@ public class StreamrRestClient {
       throw new IllegalArgumentException("streamId cannot be null!");
     }
 
-    HttpUrl url = getEndpointUrl("streams", streamId);
+    final HttpUrl url = getEndpointUrl("streams", streamId);
     return get(url, streamJsonAdapter);
   }
 
@@ -157,9 +167,10 @@ public class StreamrRestClient {
       throw new IllegalArgumentException("Stream name must be specified!");
     }
 
-    HttpUrl url = getEndpointUrl("streams").newBuilder().setQueryParameter("name", name).build();
+    final HttpUrl url =
+        getEndpointUrl("streams").newBuilder().setQueryParameter("name", name).build();
 
-    List<Stream> matches = get(url, streamListJsonAdapter);
+    final List<Stream> matches = get(url, streamListJsonAdapter);
     if (matches.size() == 1) {
       return matches.get(0);
     } else if (matches.isEmpty()) {
@@ -171,7 +182,7 @@ public class StreamrRestClient {
   }
 
   public Stream createStream(final Stream stream) throws IOException {
-    HttpUrl url = getEndpointUrl("streams");
+    final HttpUrl url = getEndpointUrl("streams");
     return post(url, streamJsonAdapter.toJson(stream), streamJsonAdapter);
   }
 
@@ -182,9 +193,9 @@ public class StreamrRestClient {
       throw new IllegalArgumentException("Must give all of stream, operation, and user!");
     }
 
-    Permission permission = new Permission(operation, user);
+    final Permission permission = new Permission(operation, user);
 
-    HttpUrl url = getEndpointUrl("streams", stream.getId(), "permissions");
+    final HttpUrl url = getEndpointUrl("streams", stream.getId(), "permissions");
     return post(url, permissionJsonAdapter.toJson(permission), permissionJsonAdapter);
   }
 
@@ -194,19 +205,19 @@ public class StreamrRestClient {
       throw new IllegalArgumentException("Must give stream and operation!");
     }
 
-    Permission permission = new Permission(operation);
+    final Permission permission = new Permission(operation);
 
-    HttpUrl url = getEndpointUrl("streams", stream.getId(), "permissions");
+    final HttpUrl url = getEndpointUrl("streams", stream.getId(), "permissions");
     return post(url, permissionJsonAdapter.toJson(permission), permissionJsonAdapter);
   }
 
   public UserInfo getUserInfo() throws IOException {
-    HttpUrl url = getEndpointUrl("users", "me");
+    final HttpUrl url = getEndpointUrl("users", "me");
     return get(url, userInfoJsonAdapter);
   }
 
   public List<String> getPublishers(final String streamId) throws IOException {
-    HttpUrl url = getEndpointUrl("streams", streamId, "publishers");
+    final HttpUrl url = getEndpointUrl("streams", streamId, "publishers");
     return get(url, publishersJsonAdapter).getAddresses();
   }
 
@@ -215,7 +226,7 @@ public class StreamrRestClient {
   }
 
   public boolean isPublisher(final String streamId, final String ethAddress) throws IOException {
-    HttpUrl url = getEndpointUrl("streams", streamId, "publisher", ethAddress);
+    final HttpUrl url = getEndpointUrl("streams", streamId, "publisher", ethAddress);
     try {
       get(url, null);
       return true;
@@ -225,7 +236,7 @@ public class StreamrRestClient {
   }
 
   public List<String> getSubscribers(final String streamId) throws IOException {
-    HttpUrl url = getEndpointUrl("streams", streamId, "subscribers");
+    final HttpUrl url = getEndpointUrl("streams", streamId, "subscribers");
     return get(url, subscribersJsonAdapter).getAddresses();
   }
 
@@ -234,7 +245,7 @@ public class StreamrRestClient {
   }
 
   public boolean isSubscriber(final String streamId, final String ethAddress) throws IOException {
-    HttpUrl url = getEndpointUrl("streams", streamId, "subscriber", ethAddress);
+    final HttpUrl url = getEndpointUrl("streams", streamId, "subscriber", ethAddress);
     try {
       get(url, null);
       return true;
@@ -244,7 +255,7 @@ public class StreamrRestClient {
   }
 
   public void logout() throws IOException {
-    HttpUrl url = getEndpointUrl("logout");
+    final HttpUrl url = getEndpointUrl("logout");
     post(url, "", null, false);
   }
 
@@ -259,21 +270,22 @@ public class StreamrRestClient {
   /** You might have to close {@code response} if {@code assertSuccessful()} fails. */
   private static void assertSuccessful(final Response response) throws IOException {
     if (!response.isSuccessful()) {
-      String action = response.request().method() + " " + response.request().url().toString();
+      final Request request = response.request();
+      final String action = String.format("%s %s", request.method(), request.url().toString());
       final int httpStatusCode = response.code();
       switch (httpStatusCode) {
         case HttpURLConnection.HTTP_UNAUTHORIZED: // 401
           throw new AuthenticationException(action);
+        case HttpURLConnection.HTTP_FORBIDDEN: // 403
+          throw new PermissionDeniedException(action);
+        case HttpURLConnection.HTTP_NOT_FOUND: // 404
+          throw new ResourceNotFoundException(action);
         case HttpURLConnection.HTTP_PAYMENT_REQUIRED: // 402
         default: // fallthrough
           final String body = response.body().string();
           final String message =
               String.format("%s failed with HTTP status %d:%s", action, httpStatusCode, body);
           throw new RuntimeException(message);
-        case HttpURLConnection.HTTP_FORBIDDEN: // 403
-          throw new PermissionDeniedException(action);
-        case HttpURLConnection.HTTP_NOT_FOUND: // 404
-          throw new ResourceNotFoundException(action);
       }
     }
   }
@@ -296,26 +308,19 @@ public class StreamrRestClient {
   }
 
   public LoginResponse login(final BigInteger privateKey) throws IOException {
-    Challenge challenge = getChallenge(privateKey);
-    String signature = SigningUtil.sign(privateKey, challenge.getChallenge());
+    final Challenge challenge = getChallenge(privateKey);
+    final String signature = SigningUtil.sign(privateKey, challenge.getChallenge());
     final String address = toAddress(privateKey);
-    ChallengeResponse response = new ChallengeResponse(challenge, signature, address);
+    final ChallengeResponse response = new ChallengeResponse(challenge, signature, address);
+
     Response resp = null;
-    ResponseBody body = null;
-    BufferedSource source = null;
     try {
       resp = post(restApiUrl + "/login/response", challengeResponseAdapter.toJson(response));
-      body = resp.body();
-      source = body.source();
-      LoginResponse result = loginResponseAdapter.fromJson(source);
+      final ResponseBody body = resp.body();
+      final BufferedSource source = body.source();
+      final LoginResponse result = loginResponseAdapter.fromJson(source);
       return result;
     } finally {
-      if (source != null) {
-        source.close();
-      }
-      if (body != null) {
-        body.close();
-      }
       if (resp != null) {
         resp.close();
       }
@@ -324,22 +329,14 @@ public class StreamrRestClient {
 
   private Challenge getChallenge(final BigInteger privateKey) throws IOException {
     Response response = null;
-    ResponseBody body = null;
-    BufferedSource source = null;
     try {
       final String address = toAddress(privateKey);
       response = post(restApiUrl + "/login/challenge/" + address, "");
-      body = response.body();
-      source = body.source();
-      Challenge result = challengeAdapter.fromJson(source);
+      final ResponseBody body = response.body();
+      final BufferedSource source = body.source();
+      final Challenge result = challengeAdapter.fromJson(source);
       return result;
     } finally {
-      if (source != null) {
-        source.close();
-      }
-      if (body != null) {
-        body.close();
-      }
       if (response != null) {
         response.close();
       }
@@ -347,16 +344,16 @@ public class StreamrRestClient {
   }
 
   private Response post(String endpoint, String requestBody) throws IOException {
-    OkHttpClient client = new OkHttpClient();
+    final OkHttpClient client = new OkHttpClient();
 
-    Request request =
+    final Request request =
         new Request.Builder()
             .url(endpoint)
             .post(RequestBody.create(requestBody, MediaType.parse("application/json")))
             .build();
 
     // Execute the request and retrieve the response.
-    Response response = client.newCall(request).execute();
+    final Response response = client.newCall(request).execute();
     assertSuccessful(response);
     return response;
   }
