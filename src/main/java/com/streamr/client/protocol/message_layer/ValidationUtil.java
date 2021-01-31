@@ -1,7 +1,7 @@
 package com.streamr.client.protocol.message_layer;
 
+import com.streamr.client.java.util.Objects;
 import java.util.Collection;
-import java.util.Objects;
 
 class ValidationUtil {
   static <T> void checkNotEmpty(final Collection<T> collection, final String fieldName) {

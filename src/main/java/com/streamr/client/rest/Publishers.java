@@ -1,12 +1,13 @@
 package com.streamr.client.rest;
 
+import com.streamr.client.java.util.Objects;
 import java.util.List;
-import java.util.Objects;
 
 public final class Publishers {
   private final List<String> addresses;
 
   public Publishers(final List<String> addresses) {
+    Objects.requireNonNull(addresses);
     this.addresses = addresses;
   }
 

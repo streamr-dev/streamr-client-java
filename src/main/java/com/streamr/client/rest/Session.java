@@ -1,11 +1,11 @@
 package com.streamr.client.rest;
 
+import com.streamr.client.java.util.Objects;
 import java.io.IOException;
 import java.math.BigInteger;
-import java.util.Objects;
 
 /** Holds Ethereum private key for getting new sessionTokens, and holds the current sessionToken. */
-public class Session {
+public final class Session {
   private final BigInteger privateKey;
   private final StreamrRestClient restClient;
   private String sessionToken = null;

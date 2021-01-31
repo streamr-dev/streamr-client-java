@@ -1,8 +1,8 @@
 package com.streamr.client.utils;
 
+import com.streamr.client.java.util.Objects;
 import com.streamr.client.protocol.message_layer.EncryptedGroupKeyAdapter;
 import java.io.IOException;
-import java.util.Objects;
 
 /**
  * A container for encrypted group keys. Used to get compile-time checking that encrypted and

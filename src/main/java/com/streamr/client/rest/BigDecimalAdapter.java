@@ -8,12 +8,12 @@ import java.math.BigDecimal;
 
 public class BigDecimalAdapter extends JsonAdapter<BigDecimal> {
   @Override
-  public BigDecimal fromJson(JsonReader reader) throws IOException {
+  public BigDecimal fromJson(final JsonReader reader) throws IOException {
     return new BigDecimal(reader.nextString());
   }
 
   @Override
-  public void toJson(JsonWriter writer, BigDecimal value) throws IOException {
+  public void toJson(final JsonWriter writer, final BigDecimal value) throws IOException {
     writer.value(value.doubleValue());
   }
 }

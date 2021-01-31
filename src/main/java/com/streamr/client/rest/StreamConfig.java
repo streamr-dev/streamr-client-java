@@ -1,9 +1,9 @@
 package com.streamr.client.rest;
 
+import com.streamr.client.java.util.Objects;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
-import java.util.Objects;
 
 /**
  * {@code StreamConfig} holds a configuration of {@code FieldConfig } objects.
@@ -50,6 +50,7 @@ public final class StreamConfig {
   }
 
   public StreamConfig(final FieldConfig... fields) {
+    Objects.requireNonNull(fields);
     this.fields = Arrays.asList(fields);
   }
 

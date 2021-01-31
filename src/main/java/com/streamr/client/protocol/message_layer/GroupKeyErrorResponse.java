@@ -1,7 +1,7 @@
 package com.streamr.client.protocol.message_layer;
 
+import com.streamr.client.java.util.Objects;
 import java.util.List;
-import java.util.Objects;
 
 public final class GroupKeyErrorResponse extends AbstractGroupKeyMessage {
   private final String requestId;

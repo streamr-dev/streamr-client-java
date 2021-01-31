@@ -1,14 +1,16 @@
 package com.streamr.client.rest;
 
+import com.streamr.client.java.util.Objects;
 import java.util.Date;
-import java.util.Objects;
 
 public final class LoginResponse {
   private final String token;
   private final Date expires;
 
   public LoginResponse(final String token, final Date expires) {
+    Objects.requireNonNull(token);
     this.token = token;
+    Objects.requireNonNull(expires);
     this.expires = expires;
   }
 
