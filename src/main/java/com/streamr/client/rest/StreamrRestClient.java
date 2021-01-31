@@ -4,8 +4,10 @@ import com.squareup.moshi.JsonAdapter;
 import com.squareup.moshi.Moshi;
 import com.squareup.moshi.Types;
 import com.streamr.client.utils.Address;
+import com.streamr.client.utils.SigningUtil;
 import java.io.IOException;
 import java.lang.reflect.ParameterizedType;
+import java.math.BigInteger;
 import java.net.HttpURLConnection;
 import java.util.List;
 import okhttp3.Call;
@@ -17,6 +19,9 @@ import okhttp3.RequestBody;
 import okhttp3.Response;
 import okhttp3.ResponseBody;
 import okio.BufferedSource;
+import org.web3j.crypto.ECKeyPair;
+import org.web3j.crypto.Keys;
+import org.web3j.utils.Numeric;
 
 /** This class exposes the RESTful API endpoints. */
 public class StreamrRestClient {
@@ -30,6 +35,7 @@ public class StreamrRestClient {
   private final JsonAdapter<Publishers> publishersJsonAdapter;
   private final JsonAdapter<Subscribers> subscribersJsonAdapter;
   private final JsonAdapter<List<Stream>> streamListJsonAdapter;
+  private final BigInteger privateKey;
 
   {
     final Moshi moshi = Json.newMoshiBuilder().build();
@@ -42,17 +48,18 @@ public class StreamrRestClient {
     streamListJsonAdapter = moshi.adapter(pt);
   }
 
-  public StreamrRestClient(final String restApiUrl, final String privateKey) {
+  public BigInteger getPrivateKey() {
+    return privateKey;
+  }
+
+  public StreamrRestClient(final String restApiUrl, final BigInteger privateKey) {
     if (restApiUrl != null) {
       this.restApiUrl = restApiUrl;
     } else {
       this.restApiUrl = REST_API_URL;
     }
-    EthereumAuthenticationMethod authenticationMethod = null;
-    if (privateKey != null) {
-      authenticationMethod = new EthereumAuthenticationMethod(privateKey);
-    }
-    session = new Session(restApiUrl, authenticationMethod);
+    this.privateKey = privateKey;
+    session = new Session(privateKey, this);
   }
 
   /*
@@ -136,7 +143,7 @@ public class StreamrRestClient {
    * Stream endpoints
    */
 
-  public Stream getStream(String streamId) throws IOException, ResourceNotFoundException {
+  public Stream getStream(final String streamId) throws IOException, ResourceNotFoundException {
     if (streamId == null) {
       throw new IllegalArgumentException("streamId cannot be null!");
     }
@@ -145,7 +152,7 @@ public class StreamrRestClient {
     return get(url, streamJsonAdapter);
   }
 
-  public Stream getStreamByName(String name) throws IOException, AmbiguousResultsException {
+  public Stream getStreamByName(final String name) throws IOException, AmbiguousResultsException {
     if (name == null || name.isEmpty()) {
       throw new IllegalArgumentException("Stream name must be specified!");
     }
@@ -241,7 +248,7 @@ public class StreamrRestClient {
     post(url, "", null, false);
   }
 
-  private HttpUrl getEndpointUrl(String... pathSegments) {
+  private HttpUrl getEndpointUrl(final String... pathSegments) {
     HttpUrl.Builder builder = HttpUrl.parse(restApiUrl).newBuilder();
     for (String segment : pathSegments) {
       builder = builder.addPathSegment(segment);
@@ -250,7 +257,7 @@ public class StreamrRestClient {
   }
 
   /** You might have to close {@code response} if {@code assertSuccessful()} fails. */
-  static void assertSuccessful(Response response) throws IOException {
+  private static void assertSuccessful(final Response response) throws IOException {
     if (!response.isSuccessful()) {
       String action = response.request().method() + " " + response.request().url().toString();
       final int httpStatusCode = response.code();
@@ -272,9 +279,85 @@ public class StreamrRestClient {
   }
 
   public String getSessionToken() {
-    if (session == null) {
-      return null;
-    }
     return session.getSessionToken();
+  }
+
+  private final JsonAdapter<Challenge> challengeAdapter =
+      Json.newMoshiBuilder().build().adapter(Challenge.class);
+  private final JsonAdapter<ChallengeResponse> challengeResponseAdapter =
+      Json.newMoshiBuilder().build().adapter(ChallengeResponse.class);
+  private final JsonAdapter<LoginResponse> loginResponseAdapter =
+      Json.newMoshiBuilder().build().adapter(LoginResponse.class);
+
+  private String toAddress(final BigInteger privateKey) {
+    final ECKeyPair account = ECKeyPair.create(privateKey);
+    final String addr = Keys.getAddress(account.getPublicKey());
+    return Numeric.prependHexPrefix(addr);
+  }
+
+  public LoginResponse login(final BigInteger privateKey) throws IOException {
+    Challenge challenge = getChallenge(privateKey);
+    String signature = SigningUtil.sign(privateKey, challenge.getChallenge());
+    final String address = toAddress(privateKey);
+    ChallengeResponse response = new ChallengeResponse(challenge, signature, address);
+    Response resp = null;
+    ResponseBody body = null;
+    BufferedSource source = null;
+    try {
+      resp = post(restApiUrl + "/login/response", challengeResponseAdapter.toJson(response));
+      body = resp.body();
+      source = body.source();
+      LoginResponse result = loginResponseAdapter.fromJson(source);
+      return result;
+    } finally {
+      if (source != null) {
+        source.close();
+      }
+      if (body != null) {
+        body.close();
+      }
+      if (resp != null) {
+        resp.close();
+      }
+    }
+  }
+
+  private Challenge getChallenge(final BigInteger privateKey) throws IOException {
+    Response response = null;
+    ResponseBody body = null;
+    BufferedSource source = null;
+    try {
+      final String address = toAddress(privateKey);
+      response = post(restApiUrl + "/login/challenge/" + address, "");
+      body = response.body();
+      source = body.source();
+      Challenge result = challengeAdapter.fromJson(source);
+      return result;
+    } finally {
+      if (source != null) {
+        source.close();
+      }
+      if (body != null) {
+        body.close();
+      }
+      if (response != null) {
+        response.close();
+      }
+    }
+  }
+
+  private Response post(String endpoint, String requestBody) throws IOException {
+    OkHttpClient client = new OkHttpClient();
+
+    Request request =
+        new Request.Builder()
+            .url(endpoint)
+            .post(RequestBody.create(requestBody, MediaType.parse("application/json")))
+            .build();
+
+    // Execute the request and retrieve the response.
+    Response response = client.newCall(request).execute();
+    assertSuccessful(response);
+    return response;
   }
 }

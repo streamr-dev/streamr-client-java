@@ -17,13 +17,14 @@ import com.streamr.client.protocol.control_layer.SubscribeResponse
 import com.streamr.client.protocol.control_layer.UnicastMessage
 import com.streamr.client.protocol.message_layer.MessageId
 import com.streamr.client.protocol.message_layer.StreamMessage
-import com.streamr.client.rest.EthereumAuthenticationMethod
-import com.streamr.client.rest.LoginResponse
+import com.streamr.client.rest.ResourceNotFoundException
 import com.streamr.client.rest.Stream
+import com.streamr.client.rest.StreamrRestClient
 import com.streamr.client.subs.Subscription
 import com.streamr.client.testing.TestWebSocketServer
 import com.streamr.client.testing.TestingAddresses
 import com.streamr.client.testing.TestingContent
+import com.streamr.client.testing.TestingMeta
 import com.streamr.client.testing.TestingStreamrClient
 import com.streamr.client.utils.Address
 import com.streamr.client.utils.EncryptionUtil
@@ -80,31 +81,35 @@ class StreamrClientSpec extends Specification {
 
     void setup() {
         server.clear()
-
-        final String privateKey = "d462a6f2ccd995a346a841d110e8c6954930a1c22851c0032d3116d8ccd2296a"
-        EthereumAuthenticationMethod authenticationMethod = new EthereumAuthenticationMethod(privateKey) {
-            // Override login so that this doesn't call the REST API
-            @Override
-            public LoginResponse login(final String restApiUrl) throws IOException {
-                return new LoginResponse("token", new Date() + 365)
-            }
-        }
-
+        final BigInteger privateKey = new BigInteger("d462a6f2ccd995a346a841d110e8c6954930a1c22851c0032d3116d8ccd2296a", 16)
         // Turn off autoRevoke, otherwise it will try and to REST API calls
         EncryptionOptions encryptionOptions = new EncryptionOptions(new InMemoryGroupKeyStore(), null, null, false)
-
         StreamrClientOptions options = new StreamrClientOptions(
-                authenticationMethod,
                 SigningOptions.getDefault(),
-                encryptionOptions, server.getWsUrl(),
+                encryptionOptions,
+                server.getWsUrl(),
                 gapFillTimeout,
                 retryResendAfter,
                 false)
         options.reconnectRetryInterval = 1000
         options.connectionTimeoutMillis = 1000
 
-        client = new TestingStreamrClient(options, privateKey)
+        //client = new TestingStreamrClient(options, privateKey)
+        client = new TestingStreamrClient(options, new StreamrRestClient(TestingMeta.REST_URL, privateKey) {
+            @Override
+            public Stream getStream(String streamId) throws IOException, ResourceNotFoundException {
+                return new Stream.Builder()
+                        .withName("default mock stream from TestingStreamrClient")
+                        .withDescription("")
+                        .withId(streamId)
+                        .withRequireSignedData(false)
+                        .withRequireEncryptedData(false)
+                        .createStream();
+            }
+        })
         client.connect()
+        // TODO: client.login(privateKey)
+        client.getSessionToken()
 
         expect:
         // The client subscribes to key exchange stream on connect

@@ -1,27 +1,37 @@
 package com.streamr.client.rest;
 
-/**
- * Holds Ethereum authentication method for getting new sessionTokens, and holds the current
- * sessionToken.
- */
-public class Session {
+import java.io.IOException;
+import java.math.BigInteger;
+import java.util.Objects;
 
-  private final EthereumAuthenticationMethod authenticationMethod;
-  private final String restApiUrl;
+/** Holds Ethereum private key for getting new sessionTokens, and holds the current sessionToken. */
+public class Session {
+  private final BigInteger privateKey;
+  private final StreamrRestClient restClient;
   private String sessionToken = null;
 
-  public Session(String restApiUrl, EthereumAuthenticationMethod authenticationMethod) {
-    this.authenticationMethod = authenticationMethod;
-    this.restApiUrl = restApiUrl;
+  public Session(final BigInteger privateKey, final StreamrRestClient restClient) {
+    if (privateKey != null) {
+      this.privateKey = privateKey;
+    } else {
+      this.privateKey = null;
+    }
+    Objects.requireNonNull(restClient);
+    this.restClient = restClient;
   }
 
   public boolean isAuthenticated() {
-    return authenticationMethod != null;
+    return privateKey != null;
   }
 
   public String getSessionToken() {
     if (sessionToken == null && isAuthenticated()) {
-      sessionToken = authenticationMethod.newSessionToken(restApiUrl);
+      try {
+        final LoginResponse loginResponse = restClient.login(privateKey);
+        sessionToken = loginResponse.getToken();
+      } catch (final IOException e) {
+        throw new RuntimeException(e);
+      }
     }
     return sessionToken;
   }
