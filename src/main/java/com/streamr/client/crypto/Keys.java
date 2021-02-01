@@ -8,12 +8,13 @@ public final class Keys {
   private Keys() {}
 
   public static String privateKeyToAddressWithPrefix(final BigInteger privateKey) {
-    final BigInteger publicKey = Sign.publicKeyFromPrivate(privateKey);
-    return Numeric.prependHexPrefix(org.web3j.crypto.Keys.getAddress(publicKey));
+    final String address = privateKeyToAddressWithoutPrefix(privateKey);
+    return Numeric.prependHexPrefix(address);
   }
 
   public static String privateKeyToAddressWithoutPrefix(final BigInteger privateKey) {
-    final String address = privateKeyToAddressWithPrefix(privateKey);
+    final BigInteger publicKey = Sign.publicKeyFromPrivate(privateKey);
+    final String address = org.web3j.crypto.Keys.getAddress(publicKey);
     return address;
   }
 }
