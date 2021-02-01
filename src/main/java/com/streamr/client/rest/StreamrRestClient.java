@@ -2,6 +2,7 @@ package com.streamr.client.rest;
 
 import com.squareup.moshi.JsonAdapter;
 import com.squareup.moshi.Types;
+import com.streamr.client.crypto.Keys;
 import com.streamr.client.utils.Address;
 import com.streamr.client.utils.SigningUtil;
 import java.io.IOException;
@@ -18,9 +19,6 @@ import okhttp3.RequestBody;
 import okhttp3.Response;
 import okhttp3.ResponseBody;
 import okio.BufferedSource;
-import org.web3j.crypto.ECKeyPair;
-import org.web3j.crypto.Keys;
-import org.web3j.utils.Numeric;
 
 /** This class exposes the RESTful API endpoints. */
 public class StreamrRestClient {
@@ -294,16 +292,10 @@ public class StreamrRestClient {
     return session.getSessionToken();
   }
 
-  private String toAddress(final BigInteger privateKey) {
-    final ECKeyPair account = ECKeyPair.create(privateKey);
-    final String addr = Keys.getAddress(account.getPublicKey());
-    return Numeric.prependHexPrefix(addr);
-  }
-
   public LoginResponse login(final BigInteger privateKey) throws IOException {
     final Challenge challenge = getChallenge(privateKey);
     final String signature = SigningUtil.sign(privateKey, challenge.getChallenge());
-    final String address = toAddress(privateKey);
+    final String address = Keys.privateKeyToAddressWithPrefix(privateKey);
     final ChallengeResponse response = new ChallengeResponse(challenge, signature, address);
 
     final HttpUrl url = getEndpointUrl("login", "response");
@@ -320,7 +312,7 @@ public class StreamrRestClient {
   }
 
   private Challenge getChallenge(final BigInteger privateKey) throws IOException {
-    final String address = toAddress(privateKey);
+    final String address = Keys.privateKeyToAddressWithPrefix(privateKey);
     final HttpUrl url = getEndpointUrl("login", "challenge", address);
     final MediaType mediaType = MediaType.parse(APPLICATION_JSON);
     final RequestBody requestBody = RequestBody.create("", mediaType);
