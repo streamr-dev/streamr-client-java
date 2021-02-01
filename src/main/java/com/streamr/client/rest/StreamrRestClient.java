@@ -80,6 +80,29 @@ public class StreamrRestClient {
     }
   }
 
+  /** You might have to close {@code response} if {@code assertSuccessful()} fails. */
+  private void assertSuccessful(final Response response) throws IOException {
+    if (!response.isSuccessful()) {
+      final Request request = response.request();
+      final String action = String.format("%s %s", request.method(), request.url().toString());
+      final int httpStatusCode = response.code();
+      switch (httpStatusCode) {
+        case HttpURLConnection.HTTP_UNAUTHORIZED: // 401
+          throw new AuthenticationException(action);
+        case HttpURLConnection.HTTP_FORBIDDEN: // 403
+          throw new PermissionDeniedException(action);
+        case HttpURLConnection.HTTP_NOT_FOUND: // 404
+          throw new ResourceNotFoundException(action);
+        case HttpURLConnection.HTTP_PAYMENT_REQUIRED: // 402
+        default: // fallthrough
+          final String body = response.body().string();
+          final String message =
+              String.format("%s failed with HTTP status %d:%s", action, httpStatusCode, body);
+          throw new RuntimeException(message);
+      }
+    }
+  }
+
   private <T> T execute(final Request request, final JsonAdapter<T> bodyJsonAdapter)
       throws IOException {
     final OkHttpClient client = new OkHttpClient();
@@ -269,29 +292,6 @@ public class StreamrRestClient {
     return builder.build();
   }
 
-  /** You might have to close {@code response} if {@code assertSuccessful()} fails. */
-  private static void assertSuccessful(final Response response) throws IOException {
-    if (!response.isSuccessful()) {
-      final Request request = response.request();
-      final String action = String.format("%s %s", request.method(), request.url().toString());
-      final int httpStatusCode = response.code();
-      switch (httpStatusCode) {
-        case HttpURLConnection.HTTP_UNAUTHORIZED: // 401
-          throw new AuthenticationException(action);
-        case HttpURLConnection.HTTP_FORBIDDEN: // 403
-          throw new PermissionDeniedException(action);
-        case HttpURLConnection.HTTP_NOT_FOUND: // 404
-          throw new ResourceNotFoundException(action);
-        case HttpURLConnection.HTTP_PAYMENT_REQUIRED: // 402
-        default: // fallthrough
-          final String body = response.body().string();
-          final String message =
-              String.format("%s failed with HTTP status %d:%s", action, httpStatusCode, body);
-          throw new RuntimeException(message);
-      }
-    }
-  }
-
   public String getSessionToken() {
     return session.getSessionToken();
   }
@@ -315,48 +315,23 @@ public class StreamrRestClient {
     final String address = toAddress(privateKey);
     final ChallengeResponse response = new ChallengeResponse(challenge, signature, address);
 
-    Response resp = null;
-    try {
-      resp = post(restApiUrl + "/login/response", challengeResponseAdapter.toJson(response));
-      final ResponseBody body = resp.body();
-      final BufferedSource source = body.source();
-      final LoginResponse result = loginResponseAdapter.fromJson(source);
-      return result;
-    } finally {
-      if (resp != null) {
-        resp.close();
-      }
-    }
+    final HttpUrl url = getEndpointUrl("login", "response");
+    final MediaType mediaType = MediaType.parse(APPLICATION_JSON);
+    final RequestBody requestBody =
+        RequestBody.create(challengeResponseAdapter.toJson(response), mediaType);
+    final Request request = new Request.Builder().url(url).post(requestBody).build();
+    final LoginResponse result = execute(request, loginResponseAdapter);
+    return result;
   }
 
   private Challenge getChallenge(final BigInteger privateKey) throws IOException {
-    Response response = null;
-    try {
-      final String address = toAddress(privateKey);
-      response = post(restApiUrl + "/login/challenge/" + address, "");
-      final ResponseBody body = response.body();
-      final BufferedSource source = body.source();
-      final Challenge result = challengeAdapter.fromJson(source);
-      return result;
-    } finally {
-      if (response != null) {
-        response.close();
-      }
-    }
-  }
-
-  private Response post(String endpoint, String requestBody) throws IOException {
-    final OkHttpClient client = new OkHttpClient();
-
-    final Request request =
-        new Request.Builder()
-            .url(endpoint)
-            .post(RequestBody.create(requestBody, MediaType.parse(APPLICATION_JSON)))
-            .build();
-
-    // Execute the request and retrieve the response.
-    final Response response = client.newCall(request).execute();
-    assertSuccessful(response);
-    return response;
+    final String address = toAddress(privateKey);
+    final HttpUrl url = getEndpointUrl("login", "challenge", address);
+    final MediaType mediaType = MediaType.parse(APPLICATION_JSON);
+    final RequestBody requestBody =
+        RequestBody.create("", mediaType);
+    final Request request = new Request.Builder().url(url).post(requestBody).build();
+    final Challenge result = execute(request, challengeAdapter);
+    return result;
   }
 }
