@@ -93,30 +93,4 @@ public class TestingStreamrClient extends StreamrClient {
         };
     return super.subscribe(stream, partition, loggingHandler, resendOption, isExplicitResend);
   }
-
-  /*
-    @Override
-    public UserInfo getUserInfo() {
-      return new UserInfo("name", "username");
-    }
-
-    @Override
-    public String getSessionToken() {
-      return "sessionToken";
-    }
-
-  @Override
-  public Stream getStream(String streamId) throws IOException, ResourceNotFoundException {
-    // Return a default mock
-    Stream stream =
-        new Stream.Builder()
-            .withName("default mock stream from TestingStreamrClient")
-            .withDescription("")
-            .withId(streamId)
-            .withRequireSignedData(false)
-            .withRequireEncryptedData(false)
-            .createStream();
-    return stream;
-  }
-  */
 }
