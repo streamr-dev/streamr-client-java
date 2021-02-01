@@ -1,7 +1,6 @@
 package com.streamr.client.rest;
 
 import com.squareup.moshi.JsonAdapter;
-import com.squareup.moshi.Moshi;
 import com.squareup.moshi.Types;
 import com.streamr.client.utils.Address;
 import com.streamr.client.utils.SigningUtil;
@@ -29,25 +28,7 @@ public class StreamrRestClient {
   private static final String APPLICATION_JSON = "application/json";
   private final String restApiUrl;
   private final Session session;
-
-  private final JsonAdapter<Stream> streamJsonAdapter;
-  private final JsonAdapter<Permission> permissionJsonAdapter;
-  private final JsonAdapter<UserInfo> userInfoJsonAdapter;
-  private final JsonAdapter<Publishers> publishersJsonAdapter;
-  private final JsonAdapter<Subscribers> subscribersJsonAdapter;
-  private final JsonAdapter<List<Stream>> streamListJsonAdapter;
   private final BigInteger privateKey;
-
-  {
-    final Moshi moshi = Json.newMoshiBuilder().build();
-    streamJsonAdapter = moshi.adapter(Stream.class);
-    permissionJsonAdapter = moshi.adapter(Permission.class);
-    userInfoJsonAdapter = moshi.adapter(UserInfo.class);
-    publishersJsonAdapter = moshi.adapter(Publishers.class);
-    subscribersJsonAdapter = moshi.adapter(Subscribers.class);
-    final ParameterizedType pt = Types.newParameterizedType(List.class, Stream.class);
-    streamListJsonAdapter = moshi.adapter(pt);
-  }
 
   public BigInteger getPrivateKey() {
     return privateKey;
@@ -184,6 +165,8 @@ public class StreamrRestClient {
     }
 
     final HttpUrl url = getEndpointUrl("streams", streamId);
+    final JsonAdapter<Stream> streamJsonAdapter =
+        Json.newMoshiBuilder().build().adapter(Stream.class);
     return getWithRetry(url, streamJsonAdapter);
   }
 
@@ -195,6 +178,9 @@ public class StreamrRestClient {
     final HttpUrl url =
         getEndpointUrl("streams").newBuilder().setQueryParameter("name", name).build();
 
+    final ParameterizedType pt = Types.newParameterizedType(List.class, Stream.class);
+    final JsonAdapter<List<Stream>> streamListJsonAdapter =
+        Json.newMoshiBuilder().build().adapter(pt);
     final List<Stream> matches = getWithRetry(url, streamListJsonAdapter);
     if (matches.size() == 1) {
       return matches.get(0);
@@ -208,6 +194,8 @@ public class StreamrRestClient {
 
   public Stream createStream(final Stream stream) throws IOException {
     final HttpUrl url = getEndpointUrl("streams");
+    final JsonAdapter<Stream> streamJsonAdapter =
+        Json.newMoshiBuilder().build().adapter(Stream.class);
     return postWithRetry(url, streamJsonAdapter.toJson(stream), streamJsonAdapter);
   }
 
@@ -221,6 +209,8 @@ public class StreamrRestClient {
     final Permission permission = new Permission(operation, user);
 
     final HttpUrl url = getEndpointUrl("streams", stream.getId(), "permissions");
+    final JsonAdapter<Permission> permissionJsonAdapter =
+        Json.newMoshiBuilder().build().adapter(Permission.class);
     return postWithRetry(url, permissionJsonAdapter.toJson(permission), permissionJsonAdapter);
   }
 
@@ -233,16 +223,22 @@ public class StreamrRestClient {
     final Permission permission = new Permission(operation);
 
     final HttpUrl url = getEndpointUrl("streams", stream.getId(), "permissions");
+    final JsonAdapter<Permission> permissionJsonAdapter =
+        Json.newMoshiBuilder().build().adapter(Permission.class);
     return postWithRetry(url, permissionJsonAdapter.toJson(permission), permissionJsonAdapter);
   }
 
   public UserInfo getUserInfo() throws IOException {
     final HttpUrl url = getEndpointUrl("users", "me");
+    final JsonAdapter<UserInfo> userInfoJsonAdapter =
+        Json.newMoshiBuilder().build().adapter(UserInfo.class);
     return getWithRetry(url, userInfoJsonAdapter);
   }
 
   public List<String> getPublishers(final String streamId) throws IOException {
     final HttpUrl url = getEndpointUrl("streams", streamId, "publishers");
+    final JsonAdapter<Publishers> publishersJsonAdapter =
+        Json.newMoshiBuilder().build().adapter(Publishers.class);
     return getWithRetry(url, publishersJsonAdapter).getAddresses();
   }
 
@@ -262,6 +258,8 @@ public class StreamrRestClient {
 
   public List<String> getSubscribers(final String streamId) throws IOException {
     final HttpUrl url = getEndpointUrl("streams", streamId, "subscribers");
+    final JsonAdapter<Subscribers> subscribersJsonAdapter =
+        Json.newMoshiBuilder().build().adapter(Subscribers.class);
     return getWithRetry(url, subscribersJsonAdapter).getAddresses();
   }
 
@@ -296,13 +294,6 @@ public class StreamrRestClient {
     return session.getSessionToken();
   }
 
-  private final JsonAdapter<Challenge> challengeAdapter =
-      Json.newMoshiBuilder().build().adapter(Challenge.class);
-  private final JsonAdapter<ChallengeResponse> challengeResponseAdapter =
-      Json.newMoshiBuilder().build().adapter(ChallengeResponse.class);
-  private final JsonAdapter<LoginResponse> loginResponseAdapter =
-      Json.newMoshiBuilder().build().adapter(LoginResponse.class);
-
   private String toAddress(final BigInteger privateKey) {
     final ECKeyPair account = ECKeyPair.create(privateKey);
     final String addr = Keys.getAddress(account.getPublicKey());
@@ -317,9 +308,13 @@ public class StreamrRestClient {
 
     final HttpUrl url = getEndpointUrl("login", "response");
     final MediaType mediaType = MediaType.parse(APPLICATION_JSON);
+    final JsonAdapter<ChallengeResponse> challengeResponseAdapter =
+        Json.newMoshiBuilder().build().adapter(ChallengeResponse.class);
     final RequestBody requestBody =
         RequestBody.create(challengeResponseAdapter.toJson(response), mediaType);
     final Request request = new Request.Builder().url(url).post(requestBody).build();
+    final JsonAdapter<LoginResponse> loginResponseAdapter =
+        Json.newMoshiBuilder().build().adapter(LoginResponse.class);
     final LoginResponse result = execute(request, loginResponseAdapter);
     return result;
   }
@@ -328,9 +323,10 @@ public class StreamrRestClient {
     final String address = toAddress(privateKey);
     final HttpUrl url = getEndpointUrl("login", "challenge", address);
     final MediaType mediaType = MediaType.parse(APPLICATION_JSON);
-    final RequestBody requestBody =
-        RequestBody.create("", mediaType);
+    final RequestBody requestBody = RequestBody.create("", mediaType);
     final Request request = new Request.Builder().url(url).post(requestBody).build();
+    final JsonAdapter<Challenge> challengeAdapter =
+        Json.newMoshiBuilder().build().adapter(Challenge.class);
     final Challenge result = execute(request, challengeAdapter);
     return result;
   }
