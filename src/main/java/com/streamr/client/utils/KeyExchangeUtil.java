@@ -53,24 +53,6 @@ public class KeyExchangeUtil {
       EncryptionUtil encryptionUtil,
       AddressValidityUtil addressValidityUtil,
       Consumer<StreamMessage> publishFunction,
-      OnNewKeysFunction onNewKeysFunction) {
-    this(
-        keyStore,
-        messageCreationUtil,
-        encryptionUtil,
-        addressValidityUtil,
-        publishFunction,
-        onNewKeysFunction,
-        Clock.systemDefaultZone());
-  }
-
-  // constructor used for testing in KeyExchangeUtilSpec
-  public KeyExchangeUtil(
-      GroupKeyStore keyStore,
-      MessageCreationUtil messageCreationUtil,
-      EncryptionUtil encryptionUtil,
-      AddressValidityUtil addressValidityUtil,
-      Consumer<StreamMessage> publishFunction,
       OnNewKeysFunction onNewKeysFunction,
       Clock clock) {
     this.keyStore = keyStore;
@@ -165,7 +147,7 @@ public class KeyExchangeUtil {
     }
   }
 
-  public void handleNewRSAEncryptedKeys(
+  private void handleNewRSAEncryptedKeys(
       Collection<EncryptedGroupKey> encryptedKeys, String streamId, Address publisherId) {
     List<GroupKey> keys =
         encryptedKeys.stream()

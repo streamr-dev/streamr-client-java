@@ -64,7 +64,7 @@ class KeyExchangeUtilSpec extends Specification {
                 keysReportedToOnNewKeys.addAll(keys)
             }
         }
-        util = new KeyExchangeUtil(keyStore, messageCreationUtil, encryptionUtil, addressValidityUtil, publish, onNewKeysFunction)
+        util = new KeyExchangeUtil(keyStore, messageCreationUtil, encryptionUtil, addressValidityUtil, publish, onNewKeysFunction, Clock.systemDefaultZone())
     }
 
     void "handleGroupKeyRequest() should send group key response for the requested keys"() {
@@ -192,7 +192,7 @@ class KeyExchangeUtilSpec extends Specification {
                 return new ArrayList<>()
             }
         }, null,null, null)
-        util = new KeyExchangeUtil(keyStore, messageCreationUtil, encryptionUtil, addressValidityUtil2, publish, onNewKeysFunction)
+        util = new KeyExchangeUtil(keyStore, messageCreationUtil, encryptionUtil, addressValidityUtil2, publish, onNewKeysFunction, Clock.systemDefaultZone())
 
         when:
         boolean res = util.keyRevocationNeeded("streamId")
@@ -228,7 +228,7 @@ class KeyExchangeUtilSpec extends Specification {
 
     void "should revoke if threshold reached"() {
         AddressValidityUtil addressValidityUtil2 = Mock(AddressValidityUtil)
-        util = new KeyExchangeUtil(keyStore, messageCreationUtil, encryptionUtil, addressValidityUtil2, publish, onNewKeysFunction)
+        util = new KeyExchangeUtil(keyStore, messageCreationUtil, encryptionUtil, addressValidityUtil2, publish, onNewKeysFunction, Clock.systemDefaultZone())
         when:
         boolean res = util.keyRevocationNeeded("streamId")
         then:
@@ -238,7 +238,7 @@ class KeyExchangeUtilSpec extends Specification {
 
     void "should rekey by sending group key announce messages to key exchange streams"() {
         AddressValidityUtil addressValidityUtil2 = Mock(AddressValidityUtil)
-        util = new KeyExchangeUtil(keyStore, messageCreationUtil, encryptionUtil, addressValidityUtil2, publish, onNewKeysFunction)
+        util = new KeyExchangeUtil(keyStore, messageCreationUtil, encryptionUtil, addressValidityUtil2, publish, onNewKeysFunction, Clock.systemDefaultZone())
 
         // Set some public keys for subscribers
         util.getKnownPublicKeysByPublisher().put(TestingAddresses.createSubscriberId(1), new EncryptionUtil().publicKeyAsPemString)

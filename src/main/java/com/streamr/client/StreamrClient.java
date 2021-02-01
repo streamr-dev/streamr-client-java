@@ -52,6 +52,7 @@ import java.math.BigInteger;
 import java.net.URI;
 import java.net.URISyntaxException;
 import java.nio.channels.NotYetConnectedException;
+import java.time.Clock;
 import java.util.Date;
 import java.util.HashMap;
 import java.util.List;
@@ -197,7 +198,8 @@ public class StreamrClient implements Streamr {
               for (Subscription sub : subs.getAllForStreamId(streamId)) {
                 sub.onNewKeysAdded(publisherId, keys);
               }
-            });
+            },
+            Clock.systemDefaultZone());
   }
 
   private void initWebsocket() {
