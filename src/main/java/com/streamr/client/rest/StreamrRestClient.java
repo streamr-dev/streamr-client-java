@@ -51,8 +51,12 @@ public class StreamrRestClient {
     if (!session.isAuthenticated()) {
       return builder;
     } else {
-      final String sessionToken =
-          newToken ? session.getNewSessionToken() : session.getSessionToken();
+      final String sessionToken;
+      if (newToken) {
+        sessionToken = session.getNewSessionToken();
+      } else {
+        sessionToken = session.getSessionToken();
+      }
       final String authorizationHeader = "Authorization";
       builder.removeHeader(authorizationHeader);
       return builder.addHeader(authorizationHeader, String.format("Bearer %s", sessionToken));
