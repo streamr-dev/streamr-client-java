@@ -127,17 +127,18 @@ public class StreamrRestClient {
     }
   }
 
-  private <T> T get(final HttpUrl url, final JsonAdapter<T> adapter) throws IOException {
+  private <T> T getWithRetry(final HttpUrl url, final JsonAdapter<T> adapter) throws IOException {
     final Request.Builder builder = new Request.Builder().url(url);
     return executeWithRetry(builder, adapter, true);
   }
 
-  private <T> T post(final HttpUrl url, final String requestBody, final JsonAdapter<T> adapter)
+  private <T> T postWithRetry(
+      final HttpUrl url, final String requestBody, final JsonAdapter<T> adapter)
       throws IOException {
-    return post(url, requestBody, adapter, true);
+    return postWithRetry(url, requestBody, adapter, true);
   }
 
-  private <T> T post(
+  private <T> T postWithRetry(
       final HttpUrl url,
       final String requestBody,
       final JsonAdapter<T> adapter,
@@ -159,7 +160,7 @@ public class StreamrRestClient {
     }
 
     final HttpUrl url = getEndpointUrl("streams", streamId);
-    return get(url, streamJsonAdapter);
+    return getWithRetry(url, streamJsonAdapter);
   }
 
   public Stream getStreamByName(final String name) throws IOException, AmbiguousResultsException {
@@ -170,7 +171,7 @@ public class StreamrRestClient {
     final HttpUrl url =
         getEndpointUrl("streams").newBuilder().setQueryParameter("name", name).build();
 
-    final List<Stream> matches = get(url, streamListJsonAdapter);
+    final List<Stream> matches = getWithRetry(url, streamListJsonAdapter);
     if (matches.size() == 1) {
       return matches.get(0);
     } else if (matches.isEmpty()) {
@@ -183,7 +184,7 @@ public class StreamrRestClient {
 
   public Stream createStream(final Stream stream) throws IOException {
     final HttpUrl url = getEndpointUrl("streams");
-    return post(url, streamJsonAdapter.toJson(stream), streamJsonAdapter);
+    return postWithRetry(url, streamJsonAdapter.toJson(stream), streamJsonAdapter);
   }
 
   public Permission grant(
@@ -196,7 +197,7 @@ public class StreamrRestClient {
     final Permission permission = new Permission(operation, user);
 
     final HttpUrl url = getEndpointUrl("streams", stream.getId(), "permissions");
-    return post(url, permissionJsonAdapter.toJson(permission), permissionJsonAdapter);
+    return postWithRetry(url, permissionJsonAdapter.toJson(permission), permissionJsonAdapter);
   }
 
   public Permission grantPublic(final Stream stream, final Permission.Operation operation)
@@ -208,17 +209,17 @@ public class StreamrRestClient {
     final Permission permission = new Permission(operation);
 
     final HttpUrl url = getEndpointUrl("streams", stream.getId(), "permissions");
-    return post(url, permissionJsonAdapter.toJson(permission), permissionJsonAdapter);
+    return postWithRetry(url, permissionJsonAdapter.toJson(permission), permissionJsonAdapter);
   }
 
   public UserInfo getUserInfo() throws IOException {
     final HttpUrl url = getEndpointUrl("users", "me");
-    return get(url, userInfoJsonAdapter);
+    return getWithRetry(url, userInfoJsonAdapter);
   }
 
   public List<String> getPublishers(final String streamId) throws IOException {
     final HttpUrl url = getEndpointUrl("streams", streamId, "publishers");
-    return get(url, publishersJsonAdapter).getAddresses();
+    return getWithRetry(url, publishersJsonAdapter).getAddresses();
   }
 
   public boolean isPublisher(final String streamId, final Address address) throws IOException {
@@ -228,7 +229,7 @@ public class StreamrRestClient {
   public boolean isPublisher(final String streamId, final String ethAddress) throws IOException {
     final HttpUrl url = getEndpointUrl("streams", streamId, "publisher", ethAddress);
     try {
-      get(url, null);
+      getWithRetry(url, null);
       return true;
     } catch (ResourceNotFoundException e) {
       return false;
@@ -237,7 +238,7 @@ public class StreamrRestClient {
 
   public List<String> getSubscribers(final String streamId) throws IOException {
     final HttpUrl url = getEndpointUrl("streams", streamId, "subscribers");
-    return get(url, subscribersJsonAdapter).getAddresses();
+    return getWithRetry(url, subscribersJsonAdapter).getAddresses();
   }
 
   public boolean isSubscriber(final String streamId, final Address address) throws IOException {
@@ -247,7 +248,7 @@ public class StreamrRestClient {
   public boolean isSubscriber(final String streamId, final String ethAddress) throws IOException {
     final HttpUrl url = getEndpointUrl("streams", streamId, "subscriber", ethAddress);
     try {
-      get(url, null);
+      getWithRetry(url, null);
       return true;
     } catch (ResourceNotFoundException e) {
       return false;
@@ -256,7 +257,7 @@ public class StreamrRestClient {
 
   public void logout() throws IOException {
     final HttpUrl url = getEndpointUrl("logout");
-    post(url, "", null, false);
+    postWithRetry(url, "", null, false);
   }
 
   private HttpUrl getEndpointUrl(final String... pathSegments) {
