@@ -26,6 +26,7 @@ import org.web3j.utils.Numeric;
 /** This class exposes the RESTful API endpoints. */
 public class StreamrRestClient {
   public static final String REST_API_URL = "https://www.streamr.com/api/v1";
+  private static final String APPLICATION_JSON = "application/json";
   private final String restApiUrl;
   private final Session session;
 
@@ -144,7 +145,7 @@ public class StreamrRestClient {
       final JsonAdapter<T> adapter,
       final boolean retryIfSessionExpired)
       throws IOException {
-    final MediaType contentTypeJson = MediaType.parse("application/json");
+    final MediaType contentTypeJson = MediaType.parse(APPLICATION_JSON);
     final RequestBody content = RequestBody.create(requestBody, contentTypeJson);
     final Request.Builder builder = new Request.Builder().url(url).post(content);
     return executeWithRetry(builder, adapter, retryIfSessionExpired);
@@ -350,7 +351,7 @@ public class StreamrRestClient {
     final Request request =
         new Request.Builder()
             .url(endpoint)
-            .post(RequestBody.create(requestBody, MediaType.parse("application/json")))
+            .post(RequestBody.create(requestBody, MediaType.parse(APPLICATION_JSON)))
             .build();
 
     // Execute the request and retrieve the response.
