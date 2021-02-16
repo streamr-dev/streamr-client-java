@@ -1,12 +1,11 @@
 package com.streamr.client
 
-import com.streamr.client.authentication.AuthenticationMethod
-import com.streamr.client.authentication.EthereumAuthenticationMethod
 import com.streamr.client.options.EncryptionOptions
 import com.streamr.client.options.ResendLastOption
 import com.streamr.client.options.ResendOption
 import com.streamr.client.options.SigningOptions
 import com.streamr.client.options.StreamrClientOptions
+import com.streamr.client.protocol.common.MessageRef
 import com.streamr.client.protocol.control_layer.BroadcastMessage
 import com.streamr.client.protocol.control_layer.ErrorResponse
 import com.streamr.client.protocol.control_layer.PublishRequest
@@ -16,17 +15,19 @@ import com.streamr.client.protocol.control_layer.ResendResponseResent
 import com.streamr.client.protocol.control_layer.SubscribeRequest
 import com.streamr.client.protocol.control_layer.SubscribeResponse
 import com.streamr.client.protocol.control_layer.UnicastMessage
-import com.streamr.client.protocol.message_layer.MessageID
-import com.streamr.client.protocol.message_layer.MessageRef
+import com.streamr.client.protocol.message_layer.MessageId
 import com.streamr.client.protocol.message_layer.StreamMessage
+import com.streamr.client.rest.AuthenticationMethod
+import com.streamr.client.rest.EthereumAuthenticationMethod
 import com.streamr.client.rest.Stream
 import com.streamr.client.subs.Subscription
 import com.streamr.client.testing.TestWebSocketServer
+import com.streamr.client.testing.TestingAddresses
+import com.streamr.client.testing.TestingContent
 import com.streamr.client.testing.TestingStreamrClient
 import com.streamr.client.utils.Address
 import com.streamr.client.utils.EncryptionUtil
 import com.streamr.client.utils.GroupKey
-import com.streamr.client.utils.HttpUtils
 import com.streamr.client.utils.InMemoryGroupKeyStore
 import com.streamr.client.utils.KeyExchangeUtil
 import spock.lang.Shared
@@ -115,10 +116,21 @@ class StreamrClientSpec extends Specification {
     }
 
     StreamMessage createMsg(String streamId, long timestamp, long sequenceNumber, Long prevTimestamp, Long prevSequenceNumber) {
-        MessageID msgId = new MessageID(streamId, 0, timestamp, sequenceNumber, new Address("publisherId"), "msgChainId")
+        MessageId msgId = new MessageId.Builder()
+                .withStreamId(streamId)
+                .withStreamPartition(0)
+                .withTimestamp(timestamp)
+                .withSequenceNumber(sequenceNumber)
+                .withPublisherId(TestingAddresses.PUBLISHER_ID)
+                .withMsgChainId("msgChainId")
+                .createMessageId()
         MessageRef prev = prevTimestamp == null ? null : new MessageRef(prevTimestamp, prevSequenceNumber)
         def map = [hello: "world"]
-        return new StreamMessage.Builder().withMessageId(msgId).withPreviousMessageRef(prev).withSerializedContent(HttpUtils.mapAdapter.toJson(map)).createStreamMessage()
+        return new StreamMessage.Builder()
+                .withMessageId(msgId)
+                .withPreviousMessageRef(prev)
+                .withContent(TestingContent.fromJsonMap(map))
+                .createStreamMessage()
     }
 
     void "subscribe() sends SubscribeRequest and 1 ResendLastRequest after SubscribeResponse if answer received"() {
@@ -161,7 +173,7 @@ class StreamrClientSpec extends Specification {
         new PollingConditions().eventually {
             server.receivedControlMessages.size() == 2
         }
-        server.expect(new ResendRangeRequest(server.receivedControlMessages[1].message.requestId, stream.id, 0, new MessageRef(0, 1), new MessageRef(1, 0), new Address("publisherId"), "msgChainId", client.sessionToken))
+        server.expect(new ResendRangeRequest(server.receivedControlMessages[1].message.requestId, stream.id, 0, new MessageRef(0, 1), new MessageRef(1, 0), TestingAddresses.PUBLISHER_ID, "msgChainId", client.sessionToken))
 
         when:
         client.receiveMessage(new UnicastMessage(server.receivedControlMessages[1].message.requestId, createMsg("test-stream", 1, 0, 0, 0)))
@@ -183,8 +195,8 @@ class StreamrClientSpec extends Specification {
         new PollingConditions().eventually {
             server.receivedControlMessages.size() == 3
         }
-        server.expect(new ResendRangeRequest(server.receivedControlMessages[1].message.requestId, stream.id, 0, new MessageRef(0, 1), new MessageRef(1, 0), new Address("publisherId"), "msgChainId", client.sessionToken))
-        server.expect(new ResendRangeRequest(server.receivedControlMessages[2].message.requestId, stream.id, 0, new MessageRef(0, 1), new MessageRef(1, 0), new Address("publisherId"), "msgChainId", client.sessionToken))
+        server.expect(new ResendRangeRequest(server.receivedControlMessages[1].message.requestId, stream.id, 0, new MessageRef(0, 1), new MessageRef(1, 0), TestingAddresses.PUBLISHER_ID, "msgChainId", client.sessionToken))
+        server.expect(new ResendRangeRequest(server.receivedControlMessages[2].message.requestId, stream.id, 0, new MessageRef(0, 1), new MessageRef(1, 0), TestingAddresses.PUBLISHER_ID, "msgChainId", client.sessionToken))
     }
 
     void "publish() publishes with the latest key added to keyStore"() {

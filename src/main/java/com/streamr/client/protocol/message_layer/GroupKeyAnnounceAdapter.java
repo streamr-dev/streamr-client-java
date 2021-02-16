@@ -1,26 +1,13 @@
 package com.streamr.client.protocol.message_layer;
 
-import com.squareup.moshi.JsonAdapter;
 import com.squareup.moshi.JsonReader;
 import com.squareup.moshi.JsonWriter;
-import com.squareup.moshi.Moshi;
-import com.squareup.moshi.Types;
 import com.streamr.client.utils.EncryptedGroupKey;
-import com.streamr.client.utils.HttpUtils;
 import java.io.IOException;
 import java.util.List;
 import javax.annotation.Nullable;
 
 public class GroupKeyAnnounceAdapter extends AbstractGroupKeyMessageAdapter<GroupKeyAnnounce> {
-  private static final Moshi MOSHI =
-      HttpUtils.addDefaultAdapters
-          .apply(new Moshi.Builder())
-          .add(EncryptedGroupKey.class, new EncryptedGroupKeyAdapter())
-          .build();
-
-  JsonAdapter<List<EncryptedGroupKey>> keyListAdapter =
-      MOSHI.adapter(Types.newParameterizedType(List.class, EncryptedGroupKey.class));
-
   GroupKeyAnnounceAdapter() {
     super(GroupKeyAnnounce.class);
   }

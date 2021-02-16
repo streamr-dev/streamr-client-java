@@ -1,9 +1,13 @@
 package com.streamr.client.utils
 
+import com.streamr.client.protocol.message_layer.MessageId
 import com.streamr.client.protocol.message_layer.StreamMessage
-import com.streamr.client.protocol.message_layer.StreamrSpecification
+import com.streamr.client.testing.TestingAddresses
+import com.streamr.client.testing.TestingContent
+import com.streamr.client.testing.TestingMessageRef
+import spock.lang.Specification
 
-class DecryptionQueuesSpec extends StreamrSpecification {
+class DecryptionQueuesSpec extends Specification {
 
 	DecryptionQueues decryptionQueues
 
@@ -16,18 +20,93 @@ class DecryptionQueuesSpec extends StreamrSpecification {
 		GroupKey key2 = GroupKey.generate()
 		GroupKey pub2key = GroupKey.generate()
 
+		final StreamMessage.Content content = TestingContent.emptyMessage()
 		// msgChain1 has messages with two different keys
-		StreamMessage chain1key1msg1 = createMessage(0, 0, null, null, publisherId, [:], "msgChain1")
-		StreamMessage chain1key1msg2 = createMessage(1, 0, 0, 0, publisherId, [:], "msgChain1")
-		StreamMessage chain1key1msg3 = createMessage(2, 0, 0, 0, publisherId, [:], "msgChain1")
-		StreamMessage chain1key2msg4 = createMessage(3, 0, 0, 0, publisherId, [:], "msgChain1")
+		final MessageId messageId6 = new MessageId.Builder()
+				.withStreamId("streamId")
+				.withTimestamp(0)
+				.withSequenceNumber(0)
+				.withPublisherId(TestingAddresses.PUBLISHER_ID)
+				.withMsgChainId("msgChain1")
+				.createMessageId()
+		StreamMessage chain1key1msg1 = new StreamMessage.Builder()
+				.withMessageId(messageId6)
+				.withContent(content)
+				.createStreamMessage()
+		final MessageId messageId5 = new MessageId.Builder()
+				.withStreamId("streamId")
+				.withTimestamp(1)
+				.withSequenceNumber(0)
+				.withPublisherId(TestingAddresses.PUBLISHER_ID)
+				.withMsgChainId("msgChain1")
+				.createMessageId()
+		StreamMessage chain1key1msg2 = new StreamMessage.Builder()
+				.withMessageId(messageId5)
+				.withPreviousMessageRef(TestingMessageRef.createMessageRef(0, 0))
+				.withContent(content)
+				.createStreamMessage()
+		final MessageId messageId4 = new MessageId.Builder()
+				.withStreamId("streamId")
+				.withTimestamp(2)
+				.withSequenceNumber(0)
+				.withPublisherId(TestingAddresses.PUBLISHER_ID)
+				.withMsgChainId("msgChain1")
+				.createMessageId()
+		StreamMessage chain1key1msg3 = new StreamMessage.Builder()
+				.withMessageId(messageId4)
+				.withPreviousMessageRef(TestingMessageRef.createMessageRef(0, 0))
+				.withContent(content)
+				.createStreamMessage()
+		final MessageId messageId3 = new MessageId.Builder()
+				.withStreamId("streamId")
+				.withTimestamp(3)
+				.withSequenceNumber(0)
+				.withPublisherId(TestingAddresses.PUBLISHER_ID)
+				.withMsgChainId("msgChain1")
+				.createMessageId()
+		StreamMessage chain1key2msg4 = new StreamMessage.Builder()
+				.withMessageId(messageId3)
+				.withPreviousMessageRef(TestingMessageRef.createMessageRef(0, 0))
+				.withContent(content)
+				.createStreamMessage()
 
 		// Also there's another msgChain from the same publisher
-		StreamMessage chain2key2msg1 = createMessage(0, 0, null, null, publisherId, [:], "msgChain2")
-		StreamMessage chain2key2msg2 = createMessage(1, 0, 0, 0, publisherId, [:], "msgChain2")
+		final MessageId messageId2 = new MessageId.Builder()
+				.withStreamId("streamId")
+				.withTimestamp(0)
+				.withSequenceNumber(0)
+				.withPublisherId(TestingAddresses.PUBLISHER_ID)
+				.withMsgChainId("msgChain2")
+				.createMessageId()
+		StreamMessage chain2key2msg1 = new StreamMessage.Builder()
+				.withMessageId(messageId2)
+				.withContent(content)
+				.createStreamMessage()
+		final MessageId messageId1 = new MessageId.Builder()
+				.withStreamId("streamId")
+				.withTimestamp(1)
+				.withSequenceNumber(0)
+				.withPublisherId(TestingAddresses.PUBLISHER_ID)
+				.withMsgChainId("msgChain2")
+				.createMessageId()
+		StreamMessage chain2key2msg2 = new StreamMessage.Builder()
+				.withMessageId(messageId1)
+				.withPreviousMessageRef(TestingMessageRef.createMessageRef(0, 0))
+				.withContent(content)
+				.createStreamMessage()
 
 		// And a completely different publisher
-		StreamMessage pub2msg1 = createMessage(0, 0, null, null, getPublisherId(2), [:], "pub2msgChain")
+		final MessageId messageId = new MessageId.Builder()
+				.withStreamId("streamId")
+				.withTimestamp(0)
+				.withSequenceNumber(0)
+				.withPublisherId(TestingAddresses.createPublisherId(2))
+				.withMsgChainId("pub2msgChain")
+				.createMessageId()
+		StreamMessage pub2msg1 = new StreamMessage.Builder()
+				.withMessageId(messageId)
+				.withContent(content)
+				.createStreamMessage()
 
 		// Encrypt each message with appropriate key and add to the decryptionQueues
 		chain1key1msg1 = EncryptionUtil.encryptStreamMessage(chain1key1msg1, key1)
@@ -52,7 +131,7 @@ class DecryptionQueuesSpec extends StreamrSpecification {
 
 		when:
 		// Drain with key 1
-		Collection<StreamMessage> unlockedByKey1 = decryptionQueues.drainUnlockedMessages(publisherId, [key1]*.groupKeyId.toSet())
+		Collection<StreamMessage> unlockedByKey1 = decryptionQueues.drainUnlockedMessages(TestingAddresses.PUBLISHER_ID, [key1]*.groupKeyId.toSet())
 
 		then:
 		unlockedByKey1 == [chain1key1msg1, chain1key1msg2, chain1key1msg3]
@@ -60,7 +139,7 @@ class DecryptionQueuesSpec extends StreamrSpecification {
 
 		when:
 		// Drain with key 2
-		Collection<StreamMessage> unlockedByKey2 = decryptionQueues.drainUnlockedMessages(publisherId, [key2]*.groupKeyId.toSet())
+		Collection<StreamMessage> unlockedByKey2 = decryptionQueues.drainUnlockedMessages(TestingAddresses.PUBLISHER_ID, [key2]*.groupKeyId.toSet())
 
 		then:
 		unlockedByKey2 == [chain1key2msg4, chain2key2msg1, chain2key2msg2]
@@ -68,7 +147,7 @@ class DecryptionQueuesSpec extends StreamrSpecification {
 
 		when:
 		// Drain with publisher2's key
-		Collection<StreamMessage> unlockedByPub2 = decryptionQueues.drainUnlockedMessages(getPublisherId(2), [pub2key]*.groupKeyId.toSet())
+		Collection<StreamMessage> unlockedByPub2 = decryptionQueues.drainUnlockedMessages(TestingAddresses.createPublisherId(2), [pub2key]*.groupKeyId.toSet())
 
 		then:
 		unlockedByPub2 == [pub2msg1]

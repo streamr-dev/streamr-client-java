@@ -1,8 +1,9 @@
 package com.streamr.client.protocol.control_layer
 
-import spock.lang.Specification
+import static com.streamr.client.testing.StreamMessageExamples.InvalidSignature.helloWorld
+import static com.streamr.client.testing.StreamMessageExamples.InvalidSignature.helloWorldSerialized32
 
-import static com.streamr.client.protocol.StreamMessageExamples.InvalidSignature.*
+import spock.lang.Specification
 
 class PublishRequestAdapterSpec extends Specification {
 

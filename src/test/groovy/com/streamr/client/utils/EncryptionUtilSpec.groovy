@@ -2,10 +2,11 @@ package com.streamr.client.utils
 
 import com.streamr.client.exceptions.InvalidGroupKeyException
 import com.streamr.client.exceptions.InvalidRSAKeyException
-import com.streamr.client.protocol.message_layer.MessageID
-import com.streamr.client.protocol.message_layer.MessageRef
+import com.streamr.client.protocol.common.MessageRef
+import com.streamr.client.protocol.message_layer.MessageId
 import com.streamr.client.protocol.message_layer.StreamMessage
-import com.streamr.client.protocol.message_layer.StreamrSpecification
+import com.streamr.client.testing.TestingAddresses
+import com.streamr.client.testing.TestingContent
 import java.nio.charset.StandardCharsets
 import java.security.KeyPair
 import java.security.SecureRandom
@@ -13,10 +14,11 @@ import java.security.interfaces.RSAPrivateKey
 import java.security.interfaces.RSAPublicKey
 import javax.xml.bind.DatatypeConverter
 import org.web3j.utils.Numeric
+import spock.lang.Specification
 
-class EncryptionUtilSpec extends StreamrSpecification {
+class EncryptionUtilSpec extends Specification {
 
-    final Map plaintextContent = [foo: 'bar']
+    final Map<String, Object> plaintextContent = [foo: 'bar']
     final String serializedPlaintextContent = "{\"foo\":\"bar\"}"
     final byte[] plaintextBytes = "some random text".getBytes(StandardCharsets.UTF_8)
 
@@ -25,7 +27,19 @@ class EncryptionUtilSpec extends StreamrSpecification {
     GroupKey key
 
     def setup() {
-        streamMessage = new StreamMessage.Builder().withMessageId(new MessageID("stream-id", 0, 1L, 0L, publisherId, "msgChainId")).withPreviousMessageRef(new MessageRef(0L, 0L)).withSerializedContent(HttpUtils.mapAdapter.toJson(plaintextContent)).createStreamMessage()
+        def messageId = new MessageId.Builder()
+                .withStreamId("stream-id")
+                .withStreamPartition(0)
+                .withTimestamp(1L)
+                .withSequenceNumber(0L)
+                .withPublisherId(TestingAddresses.PUBLISHER_ID)
+                .withMsgChainId("msgChainId")
+                .createMessageId()
+        streamMessage = new StreamMessage.Builder()
+                .withMessageId(messageId)
+                .withPreviousMessageRef(new MessageRef(0L, 0L))
+                .withContent(TestingContent.fromJsonMap(plaintextContent))
+                .createStreamMessage()
         util = new EncryptionUtil()
         key = GroupKey.generate()
     }

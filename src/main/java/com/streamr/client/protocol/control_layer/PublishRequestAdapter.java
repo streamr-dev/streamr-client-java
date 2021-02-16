@@ -6,7 +6,7 @@ import com.streamr.client.protocol.message_layer.StreamMessage;
 import com.streamr.client.protocol.message_layer.StreamMessageAdapter;
 import java.io.IOException;
 
-public class PublishRequestAdapter extends ControlLayerAdapter<PublishRequest> {
+final class PublishRequestAdapter extends ControlLayerAdapter<PublishRequest> {
   private static final StreamMessageAdapter streamMessageAdapter = new StreamMessageAdapter();
 
   PublishRequestAdapter() {

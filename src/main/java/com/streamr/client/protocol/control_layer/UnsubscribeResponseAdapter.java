@@ -4,7 +4,7 @@ import com.squareup.moshi.JsonReader;
 import com.squareup.moshi.JsonWriter;
 import java.io.IOException;
 
-public class UnsubscribeResponseAdapter extends ControlLayerAdapter<UnsubscribeResponse> {
+final class UnsubscribeResponseAdapter extends ControlLayerAdapter<UnsubscribeResponse> {
 
   UnsubscribeResponseAdapter() {
     super(UnsubscribeResponse.class);

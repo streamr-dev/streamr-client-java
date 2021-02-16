@@ -33,7 +33,7 @@ class StreamrClientOptionsSpec extends Specification {
     }
     void "throws if invalid public key passed to constructor"() {
         when:
-        new EncryptionOptions(null, "wrong-format", null)
+        new EncryptionOptions(null, "wrong-format", null, true)
         then:
         InvalidRSAKeyException e = thrown InvalidRSAKeyException
         e.message == "Must be a valid RSA public key in the PEM format."
@@ -41,37 +41,10 @@ class StreamrClientOptionsSpec extends Specification {
     void "throws if invalid private key passed to constructor"() {
         EncryptionUtil util = new EncryptionUtil()
         when:
-        new EncryptionOptions(null, util.publicKeyAsPemString, "wrong-format")
+        new EncryptionOptions(null, util.publicKeyAsPemString, "wrong-format", true)
         then:
         InvalidRSAKeyException e = thrown InvalidRSAKeyException
         e.message == "Must be a valid RSA private key in the PEM format."
-    }
-    void "adds missing query string (in set method)"() {
-        String url = "some-url"
-        String expectedUrl = url + "?controlLayerVersion=" + ControlMessage.LATEST_VERSION + "&messageLayerVersion=" + StreamMessage.LATEST_VERSION
-        StreamrClientOptions options = new StreamrClientOptions(null, SigningOptions.getDefault(), EncryptionOptions.getDefault(), "", "")
-        when:
-        options.setWebsocketApiUrl(url)
-        then:
-        options.getWebsocketApiUrl() == expectedUrl
-    }
-    void "adds missing control layer version param (in set method)"() {
-        String url = "some-url?messageLayerVersion=31"
-        String expectedUrl = url + "&controlLayerVersion=" + ControlMessage.LATEST_VERSION
-        StreamrClientOptions options = new StreamrClientOptions(null, SigningOptions.getDefault(), EncryptionOptions.getDefault(), "", "")
-        when:
-        options.setWebsocketApiUrl(url)
-        then:
-        options.getWebsocketApiUrl() == expectedUrl
-    }
-    void "adds missing message layer version param (in set method)"() {
-        String url = "some-url?controlLayerVersion=1"
-        String expectedUrl = url + "&messageLayerVersion=" + StreamMessage.LATEST_VERSION
-        StreamrClientOptions options = new StreamrClientOptions(null, SigningOptions.getDefault(), EncryptionOptions.getDefault(), "", "")
-        when:
-        options.setWebsocketApiUrl(url)
-        then:
-        options.getWebsocketApiUrl() == expectedUrl
     }
 
     void "by default has correct versions in ws url"() {

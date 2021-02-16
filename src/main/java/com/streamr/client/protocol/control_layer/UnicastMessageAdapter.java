@@ -6,7 +6,7 @@ import com.streamr.client.protocol.message_layer.StreamMessage;
 import com.streamr.client.protocol.message_layer.StreamMessageAdapter;
 import java.io.IOException;
 
-public class UnicastMessageAdapter extends ControlLayerAdapter<UnicastMessage> {
+final class UnicastMessageAdapter extends ControlLayerAdapter<UnicastMessage> {
 
   private static final StreamMessageAdapter streamMessageAdapter = new StreamMessageAdapter();
 

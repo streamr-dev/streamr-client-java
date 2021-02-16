@@ -13,9 +13,11 @@ plugins {
 	id 'idea'
 	id 'eclipse'
 	id 'maven-publish'
+	id 'jacoco'
+	id 'codenarc'
+	id 'pmd'
 	id 'com.github.ben-manes.versions' version '0.36.0'
-	id 'com.diffplug.spotless' version '5.8.2'
-	id 'ru.vyarus.quality' version '4.4.0'
+	id 'com.diffplug.spotless' version '5.9.0'
 	id 'org.unbroken-dome.test-sets' version '3.0.1'
 }
 
@@ -23,15 +25,20 @@ group = 'com.streamr'
 version = '2.0.3-alpha.3'
 description = 'A Java library to interact with Streamr Network'
 
+final boolean isLocalDevEnv = (System.getenv("CI") == null)
+
 sourceSets {
 	main {
 		java {
 			srcDirs = ['src/main/java']
 		}
+		groovy {
+			srcDirs = []
+		}
 	}
 	test {
 		groovy {
-			srcDirs = ['src/test/groovy']
+			srcDirs = ['src/test/java', 'src/test/groovy']
 		}
 	}
 }
@@ -40,6 +47,41 @@ testSets {
 	integrationTest { extendsFrom unitTest }
 }
 check.dependsOn integrationTest
+// https://docs.gradle.org/current/userguide/jacoco_plugin.html
+test {
+	finalizedBy jacocoTestReport // report is always generated after tests run
+}
+jacocoTestReport {
+	dependsOn test // tests are required to run before generating the report
+}
+jacoco {
+	toolVersion = '0.8.6'
+}
+jacocoTestReport {
+	reports {
+		xml.enabled false
+		csv.enabled false
+		html.destination file("${buildDir}/reports/coverage")
+	}
+}
+// https://docs.gradle.org/current/userguide/codenarc_plugin.html
+codenarc {
+	configFile = file("${project.projectDir}/gradle/config/codenarc/codenarc.xml")
+	ignoreFailures = false
+	reportFormat = 'html'
+	reportsDir = file("${project.projectDir}/build/reports/codenarc")
+	maxPriority1Violations = 1
+	maxPriority2Violations = 2
+	maxPriority3Violations = 4
+}
+// https://docs.gradle.org/current/userguide/pmd_plugin.html
+pmd {
+	toolVersion = '6.30.0'
+	consoleOutput = isLocalDevEnv
+	ignoreFailures = false
+	rulesMinimumPriority = 5
+	ruleSets = ["${project.projectDir}/gradle/config/pmd/ruleset.xml"]
+}
 tasks.withType(Test) {
 	useJUnitPlatform {
 		systemProperties = [
@@ -54,6 +96,10 @@ tasks.withType(Test) {
 				TestLogEvent.FAILED,
 		]
 		exceptionFormat TestExceptionFormat.SHORT
+		if (isLocalDevEnv) {
+			exceptionFormat TestExceptionFormat.FULL
+			events += TestLogEvent.PASSED
+		}
 		info {
 			events = [
 					TestLogEvent.PASSED,
@@ -81,41 +127,31 @@ java {
 	withJavadocJar()
 	withSourcesJar()
 }
-def commonJavaOptions = [
-		'-Xlint:auxiliaryclass',
-		'-Xlint:cast',
-		'-Xlint:classfile',
-		'-Xlint:deprecation',
-		'-Xlint:dep-ann',
-		'-Xlint:divzero',
-		'-Xlint:empty',
-		'-Xlint:fallthrough',
-		'-Xlint:finally',
-		'-Xlint:options',
-		'-Xlint:overloads',
-		'-Xlint:overrides',
-		'-Xlint:path',
-		'-Xlint:processing',
-		'-Xlint:rawtypes',
-		'-Xlint:-serial',
-		'-Xlint:static',
-		'-Xlint:try',
-		'-Xlint:unchecked',
-		'-Xlint:varargs',
-]
-compileJava {
+tasks.withType(JavaCompile) {
 	options.encoding = 'UTF-8'
 	options.compilerArgs += [
 			'-Werror',
+			'-Xlint:auxiliaryclass',
+			'-Xlint:cast',
+			'-Xlint:classfile',
+			'-Xlint:deprecation',
+			'-Xlint:dep-ann',
+			'-Xlint:divzero',
+			'-Xlint:empty',
+			'-Xlint:fallthrough',
+			'-Xlint:finally',
+			'-Xlint:options',
+			'-Xlint:overloads',
+			'-Xlint:overrides',
+			'-Xlint:path',
+			'-Xlint:processing',
+			'-Xlint:rawtypes',
+			'-Xlint:-serial',
+			'-Xlint:static',
+			'-Xlint:try',
+			'-Xlint:unchecked',
+			'-Xlint:varargs',
 	]
-	options.compilerArgs.addAll(commonJavaOptions)
-}
-compileTestJava {
-	options.encoding = 'UTF-8'
-	options.compilerArgs += [
-			'-Werror',
-	]
-	options.compilerArgs.addAll(commonJavaOptions)
 }
 javadoc {
 	options.encoding = 'UTF-8'
@@ -148,28 +184,20 @@ task fatJar(type: Jar) {
 		configurations.compileClasspath.findAll { it.name.endsWith('jar') }.collect { zipTree(it) }
 	}
 }
-repositories {
-	jcenter()
-	// Ethereum Repository
-	maven {
-		url "https://dl.bintray.com/ethereum/maven/"
-	}
-	gradlePluginPortal()
-}
 ext {
 	slf4jApiVersion = '1.7.30'
 	okHttpVersion = '4.9.0'
 	moshiVersion = '1.11.0'
 	moshiAdaptersVersion = '1.11.0'
 	okIoVersion = '2.9.0'
-	commonsLangVersion = '3.1'
+	commonsLangVersion = '3.11'
 	javaWebSocketVersion = '1.5.1'
 	cache2kVersion = '1.6.0.Final'
 	web3jVersion = '4.8.3'
 	findbugsVersion = '3.0.2'
 	jetbrainsVersion = '17.0.0'
-	bouncyCastleVersion = '1.65'
-	equalsVerifierVersion = '3.5'
+	bouncyCastleVersion = '1.67'
+	equalsVerifierVersion = '3.5.2'
 	groovyVersion = '2.5.14'
 	spockVersion = '1.3-groovy-2.5'
 	byteBuddyVersion = '1.9.16'
@@ -287,6 +315,8 @@ publishing {
 // https://github.com/diffplug/spotless/tree/main/plugin-gradle
 // https://github.com/google/google-java-format
 // https://google.github.io/styleguide/javaguide.html
+// Enable below once ratchetFrom is removed
+// compileJava.dependsOn 'spotlessApply'
 spotless {
 	ratchetFrom 'origin/master'
 	format 'misc', {
@@ -304,40 +334,4 @@ spotless {
 		}
 		googleJavaFormat('1.7')
 	}
-}
-// https://xvik.github.io/gradle-quality-plugin/
-quality {
-	strict = false
-	exclude = [
-			'src/main/java/com/streamr/client/dataunion/contracts/**',
-	]
-	lintOptions = [
-			'deprecation',
-			'unchecked',
-			'auxiliaryclass',
-			'cast',
-			'classfile',
-			'deprecation',
-			'dep-ann',
-			'divzero',
-			'empty',
-			'fallthrough',
-			'finally',
-			'options',
-			'overloads',
-			'overrides',
-			'path',
-			'processing',
-			'rawtypes',
-			'static',
-			'try',
-			'unchecked',
-			'varargs',
-	]
-	checkstyle = false
-	pmd = false
-	cpd = false
-	spotbugs = true
-	spotbugsEffort = 'min'
-	codenarc = false
 }
