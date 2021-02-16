@@ -3,6 +3,7 @@ package com.streamr.client.rest;
 import com.squareup.moshi.JsonAdapter;
 import com.squareup.moshi.Types;
 import com.streamr.client.crypto.Keys;
+import com.streamr.client.java.util.Objects;
 import com.streamr.client.utils.Address;
 import com.streamr.client.utils.SigningUtil;
 import java.io.IOException;
@@ -27,19 +28,33 @@ public class StreamrRestClient {
   private final String restApiUrl;
   private final Session session;
   private final BigInteger privateKey;
+  private final OkHttpClient httpClient;
 
   public BigInteger getPrivateKey() {
     return privateKey;
   }
 
-  public StreamrRestClient(final String restApiUrl, final BigInteger privateKey) {
+  /**
+   * Construct a new {@code StreamrRestClient}.
+   *
+   * @param restApiUrl If null, defaults to {@code StreamrRestClient.REST_API_URL}
+   * @param httpClient Customized {@code OkHttpClient} instance
+   */
+  private StreamrRestClient(
+      final String restApiUrl, final OkHttpClient httpClient, final BigInteger privateKey) {
     if (restApiUrl != null) {
       this.restApiUrl = restApiUrl;
     } else {
       this.restApiUrl = REST_API_URL;
     }
+    Objects.requireNonNull(httpClient, "httpClient");
+    this.httpClient = httpClient;
     this.privateKey = privateKey;
-    session = new Session(privateKey, this);
+    this.session = new Session(privateKey, this);
+  }
+
+  public StreamrRestClient(final String restApiUrl, final BigInteger privateKey) {
+    this(restApiUrl, new OkHttpClient(), privateKey);
   }
 
   /*
@@ -88,10 +103,8 @@ public class StreamrRestClient {
 
   private <T> T execute(final Request request, final JsonAdapter<T> bodyJsonAdapter)
       throws IOException {
-    final OkHttpClient client = new OkHttpClient();
-
     // Execute the request and retrieve the response.
-    final Call call = client.newCall(request);
+    final Call call = httpClient.newCall(request);
     final Response response = call.execute();
     try {
       assertSuccessful(response);
