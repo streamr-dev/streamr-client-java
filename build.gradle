@@ -186,7 +186,7 @@ task fatJar(type: Jar) {
 }
 ext {
 	slf4jApiVersion = '1.7.30'
-	okHttpVersion = '4.9.0'
+	okHttpVersion = '4.9.1'
 	moshiVersion = '1.11.0'
 	moshiAdaptersVersion = '1.11.0'
 	okIoVersion = '2.9.0'
