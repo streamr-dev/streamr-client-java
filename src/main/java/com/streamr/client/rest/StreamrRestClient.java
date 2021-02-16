@@ -23,7 +23,7 @@ import okio.BufferedSource;
 /** This class exposes the RESTful API endpoints. */
 public class StreamrRestClient {
   public static final String REST_API_URL = "https://www.streamr.com/api/v1";
-  private static final String APPLICATION_JSON = "application/json";
+  private static final String APPLICATION_JSON = "application/json; charset=utf-8";
   private final String restApiUrl;
   private final Session session;
   private final BigInteger privateKey;
