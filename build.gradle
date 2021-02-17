@@ -203,7 +203,7 @@ ext {
 	byteBuddyVersion = '1.9.16'
 	objenesisVersion = '3.1'
 	junitJupiterVersion = '5.7.0'
-	junitPlatformVersion = '1.7.0'
+	junitPlatformVersion = '1.7.1'
 }
 // https://docs.gradle.org/current/userguide/java_library_plugin.html
 dependencies {
