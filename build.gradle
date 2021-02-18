@@ -193,7 +193,7 @@ ext {
 	commonsLangVersion = '3.11'
 	javaWebSocketVersion = '1.5.1'
 	cache2kVersion = '1.6.0.Final'
-	web3jVersion = '4.8.3'
+	web3jVersion = '4.8.4'
 	findbugsVersion = '3.0.2'
 	jetbrainsVersion = '17.0.0'
 	bouncyCastleVersion = '1.67'
