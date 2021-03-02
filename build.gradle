@@ -190,7 +190,7 @@ ext {
 	moshiVersion = '1.11.0'
 	moshiAdaptersVersion = '1.11.0'
 	okIoVersion = '2.9.0'
-	commonsLangVersion = '3.11'
+	commonsLangVersion = '3.12.0'
 	javaWebSocketVersion = '1.5.1'
 	cache2kVersion = '1.6.0.Final'
 	web3jVersion = '5.0.0'
