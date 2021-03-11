@@ -17,6 +17,7 @@ This library covers the following functionality:
 - [Looking up Streams](#looking-up-streams)
 - [Publishing events to Streams](#publishing)
 - [Subscribing and unsubscribing to Streams](#subscribing-unsubscribing)
+- [Data Unions](#data-unions)
 
 [![Build Status](https://travis-ci.com/streamr-dev/streamr-client-java.svg?branch=master)](https://travis-ci.com/streamr-dev/streamr-client-java)
 
@@ -359,6 +360,70 @@ To stop receiving events from a stream, pass the `Subscription` object you got w
 
 ```java
 client.unsubscribe(sub);
+```
+
+<a name="data-unions"></a>
+## Data Unions
+This library provides functions for working with Data Unions. To get a DataUnion client instance, call
+`client.dataUnionClient(mainnetAdminPrivateKey, sideChainAdminPrivateKey)`. To deploy a new DataUnion, call
+`dataUnionClient.deployDataUnion(name, adminAddress, adminFeeFractionWei, agents)`. To get an existing instance of
+Data Union call `dataUnionClient.dataUnionFromName(name)`.
+
+### Functions
+
+| Name          | Returns  | Description |
+| :------------ | :------ | :----------- |
+| isDeployed() | boolean | Check if Data Union deployment has completed |
+| addMembers(members...) | Transaction receipt | Add members |
+| partMembers(members...) | Transaction receipt | Remove members from Data Union |
+| withdrawTokensForSelfOrAsAdmin(memberAddress, amount) | Transaction receipt | Withdraw members tokens to given address |
+| withdrawTokensForMember(privateKey, to, amount) | Transaction receipt | Withdraw members tokens |
+
+Here's an example how to deploy a data union contract and set the admin fee:
+
+```java
+DataUnionClient dataUnionClient = new StreamrClient(new StreamrClientOptions()).dataUnionClient("mainnetAdminPrvKey", "sidechainAdminPrvKey");
+BigInteger adminFee = BigInteger.TWO;
+List<String> agents = Arrays.asList("<private key>");
+DataUnion dataUnion = dataUnionClient.deployDataUnion("Cool Data Union", adminAddress, adminFee, agents);
+```
+
+### Member functions
+
+| Name                                  | Returns  |
+| :------------------------------------ | :------- |
+| isMemberActive(memberAddress)         | boolean  |
+| isMemberInactive(memberAddress)       | boolean  |
+| withdrawAllTokensForMember(from, to, signedWithdrawalRequest) | Transaction receipt |
+
+Here's an example how to sign off on a withdraw to (any) recipientAddress:
+
+```java
+BigInteger withdrawerPrivateKey = new BigInteger("0x...");
+String to = "0x....";
+EthereumTransactionReceipt receipt = dataUnion.withdrawAllTokensForMember(withdrawerPrivateKey, to)
+```
+
+### Query functions
+
+These are available for everyone and anyone, to query publicly available info from a Data Union:
+
+| Name             | Returns   |
+| :--------------- | :-------- |
+| totalEarnings() | BigInteger |
+| totalEarningsWithdrawn() | BigInteger |
+| activeMemberCount() | BigInteger |
+| inactiveMemberCount() | BigInteger |
+| lifetimeMemberEarnings() | BigInteger |
+| joinPartAgentCount() | BigInteger |
+| getEarnings(String member) | BigInteger |
+| getWithdrawn(String member) | BigInteger |
+| getWithdrawableEarnings(String member) | BigInteger |
+
+Here's an example how to get a member's withdrawable token balance (in "wei", where 1 DATA = 10^18 wei)
+
+```java
+BigInteger withdrawable = dataUnion.getEarnings(member);
 ```
 
 ## Contributions
