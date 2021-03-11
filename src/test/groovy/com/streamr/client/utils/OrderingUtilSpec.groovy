@@ -1,17 +1,35 @@
 package com.streamr.client.utils
 
-import com.streamr.client.protocol.StreamrSpecification
-import com.streamr.client.protocol.message_layer.MessageRef
+import com.streamr.client.protocol.common.MessageRef
+import com.streamr.client.protocol.message_layer.MessageId
 import com.streamr.client.protocol.message_layer.StreamMessage
-
+import com.streamr.client.testing.TestingAddresses
+import com.streamr.client.testing.TestingContent
+import com.streamr.client.testing.TestingMessageRef
 import java.util.function.Consumer
+import spock.lang.Specification
 
-class OrderingUtilSpec extends StreamrSpecification {
-
-    StreamMessage msg1 = createMessage(1, 0)
-    StreamMessage msg2 = createMessage(2, 0, 1, 0)
-    StreamMessage msg3 = createMessage(3, 0, 2, 0)
-    StreamMessage msg4 = createMessage(4, 0, 3, 0)
+class OrderingUtilSpec extends Specification {
+    final StreamMessage.Content content = TestingContent.emptyMessage()
+    final StreamMessage msg1 = new StreamMessage.Builder()
+            .withMessageId(new MessageId.Builder().withTimestamp(1).withStreamId("streamId").withPublisherId(TestingAddresses.PUBLISHER_ID).withMsgChainId("msgChainId").createMessageId())
+            .withContent(content)
+            .createStreamMessage()
+    final StreamMessage msg2 = new StreamMessage.Builder()
+            .withMessageId(new MessageId.Builder().withTimestamp(2).withStreamId("streamId").withPublisherId(TestingAddresses.PUBLISHER_ID).withMsgChainId("msgChainId").createMessageId())
+            .withPreviousMessageRef(TestingMessageRef.createMessageRef(1, 0))
+            .withContent(content)
+            .createStreamMessage()
+    final StreamMessage msg3 = new StreamMessage.Builder()
+            .withMessageId(new MessageId.Builder().withTimestamp(3).withStreamId("streamId").withPublisherId(TestingAddresses.PUBLISHER_ID).withMsgChainId("msgChainId").createMessageId())
+            .withPreviousMessageRef(TestingMessageRef.createMessageRef(2, 0))
+            .withContent(content)
+            .createStreamMessage()
+    final StreamMessage msg4 = new StreamMessage.Builder()
+            .withMessageId(new MessageId.Builder().withTimestamp(4).withStreamId("streamId").withPublisherId(TestingAddresses.PUBLISHER_ID).withMsgChainId("msgChainId").createMessageId())
+            .withPreviousMessageRef(TestingMessageRef.createMessageRef(3, 0))
+            .withContent(content)
+            .createStreamMessage()
 
     void "calls the message handler when a message is received"() {
         StreamMessage received

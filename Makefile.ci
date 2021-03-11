@@ -1,0 +1,31 @@
+LANG := en_US.UTF-8
+SHELL := bash
+PATH := .:$(PATH)
+.SHELLFLAGS := -eu -o pipefail -c # run '/bin/bash ... -c /bin/cmd'
+.DEFAULT_GOAL := build
+
+gradle := gradlew
+
+.PHONY: build
+build:
+	$(gradle) --exclude-task check build
+
+.PHONY: test-unit
+test-unit:
+	$(gradle) test
+
+.PHONY: test-integration
+test-integration:
+	$(gradle) integrationTest
+
+.PHONY: fmt
+fmt:
+	$(gradle) spotlessCheck
+
+.PHONY: codenarc
+codenarc:
+	$(gradle) codenarcTest codenarcIntegrationTest
+
+.PHONY: pmd
+pmd:
+	$(gradle) pmdMain pmdTest pmdIntegrationTest

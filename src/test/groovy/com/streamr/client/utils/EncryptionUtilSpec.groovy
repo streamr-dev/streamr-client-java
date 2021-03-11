@@ -2,22 +2,23 @@ package com.streamr.client.utils
 
 import com.streamr.client.exceptions.InvalidGroupKeyException
 import com.streamr.client.exceptions.InvalidRSAKeyException
-import com.streamr.client.protocol.StreamrSpecification
-import com.streamr.client.protocol.message_layer.MessageID
-import com.streamr.client.protocol.message_layer.MessageRef
+import com.streamr.client.protocol.common.MessageRef
+import com.streamr.client.protocol.message_layer.MessageId
 import com.streamr.client.protocol.message_layer.StreamMessage
-import org.apache.commons.codec.binary.Hex
-
-import javax.xml.bind.DatatypeConverter
+import com.streamr.client.testing.TestingAddresses
+import com.streamr.client.testing.TestingContent
 import java.nio.charset.StandardCharsets
 import java.security.KeyPair
 import java.security.SecureRandom
 import java.security.interfaces.RSAPrivateKey
 import java.security.interfaces.RSAPublicKey
+import javax.xml.bind.DatatypeConverter
+import org.web3j.utils.Numeric
+import spock.lang.Specification
 
-class EncryptionUtilSpec extends StreamrSpecification {
+class EncryptionUtilSpec extends Specification {
 
-    final Map plaintextContent = [foo: 'bar']
+    final Map<String, Object> plaintextContent = [foo: 'bar']
     final String serializedPlaintextContent = "{\"foo\":\"bar\"}"
     final byte[] plaintextBytes = "some random text".getBytes(StandardCharsets.UTF_8)
 
@@ -26,10 +27,19 @@ class EncryptionUtilSpec extends StreamrSpecification {
     GroupKey key
 
     def setup() {
-        streamMessage = new StreamMessage(
-                new MessageID("stream-id", 0, 1L, 0L, publisherId, "msgChainId"),
-                new MessageRef(0L, 0L),
-                plaintextContent)
+        def messageId = new MessageId.Builder()
+                .withStreamId("stream-id")
+                .withStreamPartition(0)
+                .withTimestamp(1L)
+                .withSequenceNumber(0L)
+                .withPublisherId(TestingAddresses.PUBLISHER_ID)
+                .withMsgChainId("msgChainId")
+                .createMessageId()
+        streamMessage = new StreamMessage.Builder()
+                .withMessageId(messageId)
+                .withPreviousMessageRef(new MessageRef(0L, 0L))
+                .withContent(TestingContent.fromJsonMap(plaintextContent))
+                .createStreamMessage()
         util = new EncryptionUtil()
         key = GroupKey.generate()
     }
@@ -43,20 +53,20 @@ class EncryptionUtilSpec extends StreamrSpecification {
 
     void "rsa decryption after encryption equals the initial plaintext (hex string)"() {
         when:
-        String ciphertext = EncryptionUtil.encryptWithPublicKey(Hex.encodeHexString(plaintextBytes), util.getPublicKeyAsPemString())
+        String ciphertext = EncryptionUtil.encryptWithPublicKey(Numeric.toHexStringNoPrefix(plaintextBytes), util.getPublicKeyAsPemString())
         then:
         util.decryptWithPrivateKey(ciphertext) == plaintextBytes
     }
 
     void "rsa decryption after encryption equals the initial plaintext (StreamMessage)"() {
         when:
-        EncryptionUtil.encryptWithPublicKey(streamMessage, util.getPublicKeyAsPemString())
+        streamMessage = EncryptionUtil.encryptWithPublicKey(streamMessage, util.getPublicKeyAsPemString())
         then:
         streamMessage.getSerializedContent() != serializedPlaintextContent
         streamMessage.getEncryptionType() == StreamMessage.EncryptionType.RSA
 
         when:
-        util.decryptWithPrivateKey(streamMessage)
+        streamMessage = util.decryptWithPrivateKey(streamMessage)
         then:
         streamMessage.getSerializedContent() == serializedPlaintextContent
         streamMessage.getParsedContent() == plaintextContent
@@ -101,7 +111,7 @@ class EncryptionUtilSpec extends StreamrSpecification {
     }
     void "encryptStreamMessage() encrypts the message"() {
         when:
-        EncryptionUtil.encryptStreamMessage(streamMessage, key)
+        streamMessage = EncryptionUtil.encryptStreamMessage(streamMessage, key)
 
         then:
         streamMessage.serializedContent != serializedPlaintextContent
@@ -109,8 +119,8 @@ class EncryptionUtilSpec extends StreamrSpecification {
     }
     void "encryptStreamMessage, then decryptStreamMessage() equals original message "() {
         when:
-        EncryptionUtil.encryptStreamMessage(streamMessage, key)
-        EncryptionUtil.decryptStreamMessage(streamMessage, key)
+        streamMessage = EncryptionUtil.encryptStreamMessage(streamMessage, key)
+        streamMessage = EncryptionUtil.decryptStreamMessage(streamMessage, key)
 
         then:
         streamMessage.serializedContent == serializedPlaintextContent
@@ -154,7 +164,7 @@ class EncryptionUtilSpec extends StreamrSpecification {
         secureRandom.nextBytes(keyBytes)
 
         when:
-        EncryptionUtil.validateGroupKey(Hex.encodeHexString(keyBytes))
+        EncryptionUtil.validateGroupKey(Numeric.toHexStringNoPrefix(keyBytes))
         then:
         InvalidGroupKeyException e = thrown InvalidGroupKeyException
         e.message == "Group key must be 256 bits long, but got a key length of " + (30 * 8) + " bits."
@@ -164,7 +174,7 @@ class EncryptionUtilSpec extends StreamrSpecification {
         SecureRandom secureRandom = new SecureRandom()
         secureRandom.nextBytes(keyBytes)
         when:
-        EncryptionUtil.validateGroupKey(Hex.encodeHexString(keyBytes))
+        EncryptionUtil.validateGroupKey(Numeric.toHexStringNoPrefix(keyBytes))
         then:
         noExceptionThrown()
     }

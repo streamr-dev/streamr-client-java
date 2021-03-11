@@ -1,66 +1,71 @@
 package com.streamr.client.protocol.message_layer;
 
-import com.streamr.client.utils.ValidationUtil;
-
 import java.util.List;
+import java.util.Objects;
 
-public class GroupKeyErrorResponse extends AbstractGroupKeyMessage {
-    private final String requestId;
-    private final String code;
-    private final String message;
-    private final List<String> groupKeyIds;
+public final class GroupKeyErrorResponse extends AbstractGroupKeyMessage {
+  private final String requestId;
+  private final String code;
+  private final String message;
+  private final List<String> groupKeyIds;
 
-    public GroupKeyErrorResponse(String requestId, String streamId, String code, String message, List<String> groupKeyIds) {
-        super(streamId);
-        ValidationUtil.checkNotNull(requestId, "requestId");
-        ValidationUtil.checkNotNull(code, "code");
-        ValidationUtil.checkNotNull(message, "message");
-        ValidationUtil.checkNotNull(groupKeyIds, "groupKeyIds");
-        ValidationUtil.checkNotEmpty(groupKeyIds, "groupKeyIds");
+  public GroupKeyErrorResponse(
+      String requestId, String streamId, String code, String message, List<String> groupKeyIds) {
+    super(streamId);
+    ValidationUtil.checkNotNull(requestId, "requestId");
+    ValidationUtil.checkNotNull(code, "code");
+    ValidationUtil.checkNotNull(message, "message");
+    ValidationUtil.checkNotNull(groupKeyIds, "groupKeyIds");
+    ValidationUtil.checkNotEmpty(groupKeyIds, "groupKeyIds");
 
-        this.requestId = requestId;
-        this.code = code;
-        this.message = message;
-        this.groupKeyIds = groupKeyIds;
-    }
+    this.requestId = requestId;
+    this.code = code;
+    this.message = message;
+    this.groupKeyIds = groupKeyIds;
+  }
 
-    public String getRequestId() {
-        return requestId;
-    }
+  public String getRequestId() {
+    return requestId;
+  }
 
-    public String getCode() {
-        return code;
-    }
+  public String getCode() {
+    return code;
+  }
 
-    public String getMessage() {
-        return message;
-    }
+  public String getMessage() {
+    return message;
+  }
 
-    public List<String> getGroupKeyIds() {
-        return groupKeyIds;
-    }
+  public List<String> getGroupKeyIds() {
+    return groupKeyIds;
+  }
 
-    @Override
-    protected StreamMessage.MessageType getMessageType() {
-        return StreamMessage.MessageType.GROUP_KEY_ERROR_RESPONSE;
-    }
+  @Override
+  protected StreamMessage.MessageType getMessageType() {
+    return StreamMessage.MessageType.GROUP_KEY_ERROR_RESPONSE;
+  }
 
-    @Override
-    public boolean equals(Object o) {
-        if (this == o) return true;
-        if (o == null || getClass() != o.getClass()) return false;
+  @Override
+  public boolean equals(final Object o) {
+    if (this == o) return true;
+    if (o == null || getClass() != o.getClass()) return false;
+    final GroupKeyErrorResponse that = (GroupKeyErrorResponse) o;
+    return Objects.equals(requestId, that.requestId)
+        && Objects.equals(code, that.code)
+        && Objects.equals(message, that.message)
+        && Objects.equals(groupKeyIds, that.groupKeyIds)
+        && Objects.equals(streamId, that.streamId);
+  }
 
-        GroupKeyErrorResponse that = (GroupKeyErrorResponse) o;
+  @Override
+  public int hashCode() {
+    return Objects.hash(requestId, code, message, groupKeyIds, streamId);
+  }
 
-        if (!streamId.equals(that.streamId)) return false;
-        if (!requestId.equals(that.requestId)) return false;
-        if (!code.equals(that.code)) return false;
-        if (!message.equals(that.message)) return false;
-        return groupKeyIds.equals(that.groupKeyIds);
-    }
-
-    @Override
-    public String toString() {
-        return String.format("GroupKeyErrorResponse{requestId=%s, streamId=%s, code=%s, message=%s}", requestId, streamId, code, message);
-    }
+  @Override
+  public String toString() {
+    return String.format(
+        "GroupKeyErrorResponse{requestId=%s, streamId=%s, code=%s, message=%s}",
+        requestId, streamId, code, message);
+  }
 }

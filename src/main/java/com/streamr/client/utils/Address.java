@@ -1,38 +1,40 @@
 package com.streamr.client.utils;
 
-import org.apache.commons.codec.binary.Hex;
+import java.util.Objects;
+import org.web3j.utils.Numeric;
 
 /**
- * For making sure that Ethereum addresses are always treated similarly everywhere (e.g. lower-cased)
+ * For making sure that Ethereum addresses are always treated similarly everywhere (e.g.
+ * lower-cased)
  */
 public class Address {
-    private final String address;
+  private final String value;
 
-    public Address(byte[] bytes) {
-        this("0x" + Hex.encodeHexString(bytes));
-    }
+  public Address(final byte[] value) {
+    final String withoutPrefix = Numeric.toHexString(value);
+    final String withPrefix = Numeric.prependHexPrefix(withoutPrefix);
+    this.value = withPrefix.toLowerCase();
+  }
 
-    public Address(String address) {
-        this.address = address.toLowerCase();
-    }
+  public Address(final String value) {
+    this.value = value.toLowerCase();
+  }
 
-    @Override
-    public boolean equals(Object o) {
-        if (this == o) return true;
-        if (o == null || getClass() != o.getClass()) return false;
+  @Override
+  public final boolean equals(final Object obj) {
+    if (this == obj) return true;
+    if (!(obj instanceof Address)) return false;
+    final Address address1 = (Address) obj;
+    return Objects.equals(value, address1.value);
+  }
 
-        Address address1 = (Address) o;
+  @Override
+  public final int hashCode() {
+    return Objects.hash(value);
+  }
 
-        return address.equals(address1.address);
-    }
-
-    @Override
-    public int hashCode() {
-        return address.hashCode();
-    }
-
-    @Override
-    public String toString() {
-        return address;
-    }
+  @Override
+  public final String toString() {
+    return value;
+  }
 }
