@@ -9,7 +9,7 @@ env:
 
 jobs:
   build:
-    name: Check source format, build and unit test
+    name: Build and unit test
     runs-on: ubuntu-latest
     steps:
       - run: |
