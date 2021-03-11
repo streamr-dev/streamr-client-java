@@ -68,8 +68,8 @@ public class DataUnionClient {
         this.sidechain = Web3j.build(new HttpService(sidechainUrl));
         this.sidechainFactory = sidechainFactory;
         this.sidechainCred = Credentials.create(sidechainAdminPrvKey);
-        mainnetGasProvider = new EstimatedGasProvider(mainnet);
-        sidechainGasProvider = new EstimatedGasProvider(sidechain);
+        mainnetGasProvider = new EstimatedGasProvider(mainnet, 730000);
+        sidechainGasProvider = new EstimatedGasProvider(sidechain, 3000000);
     }
 
     public long getBridgePollInterval(){

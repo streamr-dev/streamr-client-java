@@ -30,10 +30,11 @@ public class EstimatedGasProvider implements ContractGasProvider {
     private static final Logger log = LoggerFactory.getLogger(EstimatedGasProvider.class);
 
     private final Web3j web3j;
-    private BigInteger gasLimit = BigInteger.valueOf(6_000_000);
+    private BigInteger gasLimit;
 
-    public EstimatedGasProvider(Web3j web3j) {
+    public EstimatedGasProvider(Web3j web3j, long maxGas) {
         this.web3j = web3j;
+        gasLimit = BigInteger.valueOf(maxGas);
     }
 
     @Override
