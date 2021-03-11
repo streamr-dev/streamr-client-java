@@ -8,7 +8,7 @@ gradle := gradlew
 
 .PHONY: build
 build:
-	$(gradle) --exclude-task check build signArchives
+	$(gradle) --exclude-task check --exclude-task signArchives build
 
 .PHONY: test-unit
 test-unit:
