@@ -87,7 +87,7 @@ class DataUnionClientSpec extends StreamrIntegrationSpecification{
         BigInteger recipientBal = mainnetToken.balanceOf(new Address(recipient)).send().getValue();
         EthereumTransactionReceipt tr;
         when:
-        tr = du.withdrawAllTokensForSelfOrAsAdmin(recipient)
+        tr = du.withdrawAllTokensForSelfOrAsAdmin(recipient, true)
         client.portTxsToMainnet(tr, wallets[0].getEcKeyPair().getPrivateKey())
 
         then:
@@ -100,7 +100,7 @@ class DataUnionClientSpec extends StreamrIntegrationSpecification{
         BigInteger recipientBal = mainnetToken.balanceOf(new Address(recipient)).send().getValue();
         EthereumTransactionReceipt tr;
         when:
-        tr = du.withdrawAllTokensForMember(wallets[1].getEcKeyPair().getPrivateKey(), recipient)
+        tr = du.withdrawAllTokensForMember(wallets[1].getEcKeyPair().getPrivateKey(), recipient, true)
         client.portTxsToMainnet(tr, wallets[0].getEcKeyPair().getPrivateKey())
 
         then:
