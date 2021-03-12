@@ -72,6 +72,23 @@ public class DataUnionClient {
         sidechainGasProvider = new EstimatedGasProvider(sidechain, 3000000);
     }
 
+    public void setMainnetMaxGasPrice(long maxPrice){
+        mainnetGasProvider.setMaxGasPrice(maxPrice);
+    }
+
+    public void setSidechainMaxGasPrice(long maxPrice){
+        sidechainGasProvider.setMaxGasPrice(maxPrice);
+    }
+
+    public void setMainnetMaxGas(BigInteger maxGas){
+        mainnetGasProvider.setGasLimit(maxGas);
+    }
+
+    public void setSidechainMaxGas(BigInteger maxGas){
+        sidechainGasProvider.setGasLimit(maxGas);
+    }
+
+
     public long getBridgePollInterval(){
         return bridgePollInterval;
     }
