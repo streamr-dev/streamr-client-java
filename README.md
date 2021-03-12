@@ -374,10 +374,10 @@ Data Union call `dataUnionClient.dataUnionFromName(name)`.
 | Name          | Returns  | Description |
 | :------------ | :------ | :----------- |
 | isDeployed() | boolean | Check if Data Union deployment has completed |
-| addMembers(members...) | Transaction receipt | Add members |
-| partMembers(members...) | Transaction receipt | Remove members from Data Union |
-| withdrawTokensForSelfOrAsAdmin(memberAddress, amount) | Transaction receipt | Withdraw members tokens to given address |
-| withdrawTokensForMember(privateKey, to, amount) | Transaction receipt | Withdraw members tokens |
+| addMembers(String ...members) | Transaction receipt | Add members |
+| partMembers(String ...members) | Transaction receipt | Remove members from Data Union |
+| withdrawTokensForSelfOrAsAdmin(String memberAddress, BigInteger amount) | Transaction receipt | Withdraw members tokens to given address |
+| withdrawTokensForMember(BigInteger privateKey, String to, BigInteger amount) | Transaction receipt | Withdraw members tokens |
 
 Here's an example how to deploy a data union contract and set the admin fee:
 
@@ -392,9 +392,9 @@ DataUnion dataUnion = dataUnionClient.deployDataUnion("Cool Data Union", adminAd
 
 | Name                                  | Returns  |
 | :------------------------------------ | :------- |
-| isMemberActive(memberAddress)         | boolean  |
-| isMemberInactive(memberAddress)       | boolean  |
-| withdrawAllTokensForMember(from, to, signedWithdrawalRequest) | Transaction receipt |
+| isMemberActive(String memberAddress)         | boolean  |
+| isMemberInactive(String memberAddress)       | boolean  |
+| withdrawAllTokensForMember(String from, String to, byte[] signedWithdrawalRequest) | Transaction receipt |
 
 Here's an example how to sign off on a withdraw to (any) recipientAddress:
 
