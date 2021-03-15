@@ -1,4 +1,4 @@
-def VERSION = '2.0.2'
+def VERSION = '2.1.0'
 
 group 'com.streamr'
 version VERSION
