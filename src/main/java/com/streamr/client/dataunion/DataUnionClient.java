@@ -68,9 +68,26 @@ public class DataUnionClient {
         this.sidechain = Web3j.build(new HttpService(sidechainUrl));
         this.sidechainFactory = sidechainFactory;
         this.sidechainCred = Credentials.create(sidechainAdminPrvKey);
-        mainnetGasProvider = new EstimatedGasProvider(mainnet);
-        sidechainGasProvider = new EstimatedGasProvider(sidechain);
+        mainnetGasProvider = new EstimatedGasProvider(mainnet, 730000);
+        sidechainGasProvider = new EstimatedGasProvider(sidechain, 3000000);
     }
+
+    public void setMainnetMaxGasPrice(long maxPrice){
+        mainnetGasProvider.setMaxGasPrice(maxPrice);
+    }
+
+    public void setSidechainMaxGasPrice(long maxPrice){
+        sidechainGasProvider.setMaxGasPrice(maxPrice);
+    }
+
+    public void setMainnetMaxGas(BigInteger maxGas){
+        mainnetGasProvider.setGasLimit(maxGas);
+    }
+
+    public void setSidechainMaxGas(BigInteger maxGas){
+        sidechainGasProvider.setGasLimit(maxGas);
+    }
+
 
     public long getBridgePollInterval(){
         return bridgePollInterval;

@@ -42,7 +42,7 @@ class DataUnionClientSpec extends StreamrIntegrationSpecification{
         du = client.dataUnionFromName(duname);
         //    public static IERC20 load(String contractAddress, Web3j web3j, Credentials credentials, ContractGasProvider contractGasProvider)
         Web3j mainnet = Web3j.build(new HttpService(DEV_MAINCHAIN_RPC))
-        mainnetToken = IERC20.load(client.mainnetTokenAddress(), mainnet, wallets[0], new EstimatedGasProvider(mainnet))
+        mainnetToken = IERC20.load(client.mainnetTokenAddress(), mainnet, wallets[0], new EstimatedGasProvider(mainnet, 730000))
     }
 
     void "create DU"() {
@@ -87,7 +87,7 @@ class DataUnionClientSpec extends StreamrIntegrationSpecification{
         BigInteger recipientBal = mainnetToken.balanceOf(new Address(recipient)).send().getValue();
         EthereumTransactionReceipt tr;
         when:
-        tr = du.withdrawAllTokensForSelfOrAsAdmin(recipient)
+        tr = du.withdrawAllTokensForSelfOrAsAdmin(recipient, true)
         client.portTxsToMainnet(tr, wallets[0].getEcKeyPair().getPrivateKey())
 
         then:
@@ -100,7 +100,7 @@ class DataUnionClientSpec extends StreamrIntegrationSpecification{
         BigInteger recipientBal = mainnetToken.balanceOf(new Address(recipient)).send().getValue();
         EthereumTransactionReceipt tr;
         when:
-        tr = du.withdrawAllTokensForMember(wallets[1].getEcKeyPair().getPrivateKey(), recipient)
+        tr = du.withdrawAllTokensForMember(wallets[1].getEcKeyPair().getPrivateKey(), recipient, true)
         client.portTxsToMainnet(tr, wallets[0].getEcKeyPair().getPrivateKey())
 
         then:
