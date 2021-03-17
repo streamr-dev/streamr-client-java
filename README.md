@@ -362,22 +362,55 @@ To stop receiving events from a stream, pass the `Subscription` object you got w
 client.unsubscribe(sub);
 ```
 
+
+
 <a name="data-unions"></a>
 ## Data Unions
-This library provides functions for working with Data Unions. To get a DataUnion client instance, call
-`client.dataUnionClient(mainnetAdminPrivateKey, sideChainAdminPrivateKey)`. To deploy a new DataUnion, call
-`dataUnionClient.deployDataUnion(name, adminAddress, adminFeeFractionWei, agents)`. To get an existing instance of
-Data Union call `dataUnionClient.dataUnionFromName(name)`.
+This library provides functions for working with [Data Unions](https://github.com/streamr-dev/data-union-solidity). The Data Union is a system of efficient revenue splitting contracts that have components on the mainnet and a sidechain. Please see the Data Unions [README](https://github.com/streamr-dev/data-union-solidity) for more details. 
 
-### Functions
+To get a DataUnion client instance, call
+`client.dataUnionClient(mainnetAdminPrivateKey, sideChainAdminPrivateKey)`. The client can be used to deploy and connect to existing DataUnions.
 
+To deploy a new DataUnion, call `dataUnionClient.deployDataUnion(name, adminAddress, adminFeeFractionWei, agents)`. Note that the **deployed address is a function of name + mainnetKey**.
+
+To get an existing instance of
+Data Union, call `dataUnionFromMainnetAddress(mainnetAddress)` or `dataUnionClient.dataUnionFromName(name)`.
+
+### Functions that trigger mainnet transactions (possibly expensive)
+| Name          | Returns  | Description |
+| :------------ | :------ | :----------- |
+| DataUnionClient.deployDataUnion() | DataUnion | deploy new DU |
+| DataUnionClient.portTxToMainnet(txHash, prvKey) | none | port a mainnet withdrawal TX from sidechain to mainnet |
+| DataUnion.sendTokensToBridge() | none | sends tokens stored in mainnet DU to sidechain DU |
+
+
+### Functions that trigger sidechain transactions (cheap)
+| Name          | Returns  | Description |
+| :------------ | :------ | :----------- |
+| addMembers(String ...members) | Transaction receipt | Add members |
+| partMembers(String ...members) | Transaction receipt | Remove members from Data Union |
+| withdrawTokensForSelfOrAsAdmin(String memberAddress, BigInteger amount, boolean sendToMainnet) | Transaction receipt | Withdraw members tokens to given address |
+| withdrawTokensForMember(BigInteger privateKey, String to, BigInteger amount, boolean sendToMainnet) | Transaction receipt | Withdraw members tokens |
+
+When withdrawing, you can choose to send tokens to sidechain or mainnet with the sendToMainnet boolean. If you withdraw to mainnet, you must port the resulting TransactionReceipt with ``DataUnionClientportTxToMainnet(txReceipt, prvKey)``, which costs ETH. If you keep tokens on sidechain, you can use the [xDai bridge](https://omni.xdaichain.com/) to transfer them to mainnet at a later time.
+
+
+### Read-only functions (free)
 | Name          | Returns  | Description |
 | :------------ | :------ | :----------- |
 | isDeployed() | boolean | Check if Data Union deployment has completed |
-| addMembers(String ...members) | Transaction receipt | Add members |
-| partMembers(String ...members) | Transaction receipt | Remove members from Data Union |
-| withdrawTokensForSelfOrAsAdmin(String memberAddress, BigInteger amount) | Transaction receipt | Withdraw members tokens to given address |
-| withdrawTokensForMember(BigInteger privateKey, String to, BigInteger amount) | Transaction receipt | Withdraw members tokens |
+| getWithdrawableEarnings(member) | BigInteger | get member's earnings |
+| isMemberActive(String memberAddress)         | boolean  | true if member is active |
+| isMemberInactive(String memberAddress)       | boolean  | true if member was removed |
+| totalEarnings() | BigInteger |  |
+| totalEarningsWithdrawn() | BigInteger |  |
+| activeMemberCount() | BigInteger |  |
+| inactiveMemberCount() | BigInteger |  |
+| lifetimeMemberEarnings() | BigInteger |  |
+| joinPartAgentCount() | BigInteger |  |
+| getEarnings(String member) | BigInteger |  |
+| getWithdrawn(String member) | BigInteger |  |
+| getWithdrawableEarnings(String member) | BigInteger |  |
 
 Here's an example how to deploy a data union contract and set the admin fee:
 
@@ -388,14 +421,6 @@ List<String> agents = Arrays.asList("<private key>");
 DataUnion dataUnion = dataUnionClient.deployDataUnion("Cool Data Union", adminAddress, adminFee, agents);
 ```
 
-### Member functions
-
-| Name                                  | Returns  |
-| :------------------------------------ | :------- |
-| isMemberActive(String memberAddress)         | boolean  |
-| isMemberInactive(String memberAddress)       | boolean  |
-| withdrawAllTokensForMember(String from, String to, byte[] signedWithdrawalRequest) | Transaction receipt |
-
 Here's an example how to sign off on a withdraw to (any) recipientAddress:
 
 ```java
@@ -403,22 +428,6 @@ BigInteger withdrawerPrivateKey = new BigInteger("0x...");
 String to = "0x....";
 EthereumTransactionReceipt receipt = dataUnion.withdrawAllTokensForMember(withdrawerPrivateKey, to)
 ```
-
-### Query functions
-
-These are available for everyone and anyone, to query publicly available info from a Data Union:
-
-| Name             | Returns   |
-| :--------------- | :-------- |
-| totalEarnings() | BigInteger |
-| totalEarningsWithdrawn() | BigInteger |
-| activeMemberCount() | BigInteger |
-| inactiveMemberCount() | BigInteger |
-| lifetimeMemberEarnings() | BigInteger |
-| joinPartAgentCount() | BigInteger |
-| getEarnings(String member) | BigInteger |
-| getWithdrawn(String member) | BigInteger |
-| getWithdrawableEarnings(String member) | BigInteger |
 
 Here's an example how to get a member's withdrawable token balance (in "wei", where 1 DATA = 10^18 wei)
 
