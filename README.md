@@ -369,9 +369,9 @@ client.unsubscribe(sub);
 This library provides functions for working with [Data Unions](https://github.com/streamr-dev/data-union-solidity). The Data Union is a system of efficient revenue splitting contracts that have components on the mainnet and a sidechain. Please see the Data Unions [README](https://github.com/streamr-dev/data-union-solidity) for more details. 
 
 To get a DataUnion client instance, call
-`client.dataUnionClient(mainnetPrivateKey, sideChainPrivateKey)`. The client can be used to deploy and connect to existing DataUnions.
+`client.dataUnionClient(mainnetPrivateKey, sideChainPrivateKey)`. The client can be used to deploy and connect to existing DataUnions. `mainnetPrivateKey` and `sideChainPrivateKey` are the keys that will be used to sign transactions in this sessions.
 
-To deploy a new DataUnion, call `dataUnionClient.deployDataUnion(name, adminAddress, adminFeeFractionWei, agents)`. Note that the **deployed address is a function of name + mainnetKey**.
+To deploy a new DataUnion, call `dataUnionClient.deployDataUnion(name, adminAddress, adminFeeFraction, agents)`. Note that the **deployed address is a function of name + mainnetKey**.
 
 To get an existing instance of
 Data Union, call `dataUnionFromMainnetAddress(mainnetAddress)` or `dataUnionClient.dataUnionFromName(name)`.
@@ -382,17 +382,18 @@ Data Union, call `dataUnionFromMainnetAddress(mainnetAddress)` or `dataUnionClie
 | DataUnionClient.deployDataUnion() | DataUnion | deploy new DU |
 | DataUnionClient.portTxToMainnet(txHash, prvKey) | none | port a mainnet withdrawal TX from sidechain to mainnet |
 | DataUnion.sendTokensToBridge() | none | sends tokens stored in mainnet DU to sidechain DU |
+| DataUnion.setAdminFeeFraction(fraction) | TransactionReceipt | sets the fraction that will be kept by admin (admin-only function) |
 
 
 ### Functions that trigger sidechain transactions (cheap)
 | Name          | Returns  | Description |
 | :------------ | :------ | :----------- |
-| addMembers(String ...members) | Transaction receipt | Add members |
-| partMembers(String ...members) | Transaction receipt | Remove members from Data Union |
-| withdrawTokensForSelfOrAsAdmin(String memberAddress, BigInteger amount, boolean sendToMainnet) | Transaction receipt | Withdraw members tokens to given address |
-| withdrawTokensForMember(BigInteger privateKey, String to, BigInteger amount, boolean sendToMainnet) | Transaction receipt | Withdraw members tokens |
+| addMembers(String ...members) | TransactionReceipt | Add members |
+| partMembers(String ...members) | TransactionReceipt | Remove members from Data Union |
+| withdrawTokensForSelfOrAsAdmin(String memberAddress, BigInteger amount, boolean sendToMainnet) | TransactionReceipt | Withdraw members tokens to given address |
+| withdrawTokensForMember(BigInteger privateKey, String to, BigInteger amount, boolean sendToMainnet) | TransactionReceipt | Withdraw members tokens |
 
-When withdrawing, you can choose to send tokens to sidechain or mainnet with the `sendToMainnet` boolean. If you withdraw to mainnet, you must port the resulting TransactionReceipt with ``DataUnionClient.portTxToMainnet(txReceipt, prvKey)``, which costs ETH. If you keep tokens on sidechain, you can use the [xDai bridge](https://omni.xdaichain.com/) to transfer them to mainnet at a later time.
+When withdrawing, you can choose to send tokens to sidechain or mainnet with the `sendToMainnet` boolean. If you withdraw to mainnet, you must **port** the resulting TransactionReceipt across the bridge with ``DataUnionClient.portTxToMainnet(txReceipt, prvKey)``, which costs ETH. If you keep tokens on sidechain, you can use the [xDai bridge](https://omni.xdaichain.com/) to transfer them to mainnet at a later time.
 
 
 ### Read-only functions (free)
@@ -412,7 +413,9 @@ When withdrawing, you can choose to send tokens to sidechain or mainnet with the
 | getWithdrawn(String member) | BigInteger |  |
 | getWithdrawableEarnings(String member) | BigInteger |  |
 
-Here's an example how to deploy a data union contract and set the admin fee:
+### Code Examples
+
+Deploy a data union contract and set the admin fee:
 
 ```java
 DataUnionClient dataUnionClient = new StreamrClient(new StreamrClientOptions()).dataUnionClient("mainnetAdminPrvKey", "sidechainAdminPrvKey");
@@ -422,13 +425,14 @@ List<String> agents = Arrays.asList("0x<address of agent>");
 DataUnion dataUnion = dataUnionClient.deployDataUnion("Cool Data Union", adminAddress, adminFeeFraction, agents);
 ```
 
-Here's an example how to withdraw for another (ie withdrawer key signs TX, DataUnionClient key pays for it) :
+Withdraw for another (ie withdrawer key signs TX, DataUnionClient key pays for it) :
 
 ```java
 BigInteger withdrawerPrivateKey = new BigInteger("0x...");
 String to = "0x....";
 EthereumTransactionReceipt receipt = dataUnion.withdrawAllTokensForMember(withdrawerPrivateKey, to)
 ```
+see also `DataUnion.createWithdrawRequest`, which creates the withdrawl request that the above code signs. The above method creates and signs the request, but the signature can be created by withdrawer separately.
 
 Here's an example how to get a member's withdrawable token balance (in "wei", where 1 DATA = 10^18 wei)
 
