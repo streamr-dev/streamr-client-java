@@ -409,9 +409,11 @@ When withdrawing, you can choose to send tokens to sidechain or mainnet with the
 | inactiveMemberCount() | BigInteger |  |
 | lifetimeMemberEarnings() | BigInteger |  |
 | joinPartAgentCount() | BigInteger |  |
+| getAdminFeeFraction() | BigInteger | fee fraction expressed in wei (ie 10^18 means 1) |
 | getEarnings(String member) | BigInteger |  |
 | getWithdrawn(String member) | BigInteger |  |
 | getWithdrawableEarnings(String member) | BigInteger |  |
+
 
 ### Code Examples
 
