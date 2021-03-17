@@ -390,10 +390,10 @@ Data Union, call `dataUnionFromMainnetAddress(mainnetAddress)` or `dataUnionClie
 | :------------ | :------ | :----------- |
 | addMembers(String ...members) | TransactionReceipt | Add members |
 | partMembers(String ...members) | TransactionReceipt | Remove members from Data Union |
-| withdrawTokensForSelfOrAsAdmin(String memberAddress, BigInteger amount, boolean sendToMainnet) | TransactionReceipt | Withdraw members tokens to given address |
-| withdrawTokensForMember(BigInteger privateKey, String to, BigInteger amount, boolean sendToMainnet) | TransactionReceipt | Withdraw members tokens |
+| withdrawTokensForSelfOrAsAdmin(String memberAddress, BigInteger amount, boolean sendWithdrawToMainnet) | TransactionReceipt | Withdraw members tokens to given address |
+| withdrawTokensForMember(BigInteger privateKey, String to, BigInteger amount, boolean sendWithdrawToMainnet) | TransactionReceipt | Withdraw members tokens |
 
-When withdrawing, you can choose to send tokens to sidechain or mainnet with the `sendToMainnet` boolean. If you withdraw to mainnet, you must **port** the resulting TransactionReceipt across the bridge with ``DataUnionClient.portTxToMainnet(txReceipt, prvKey)``, which costs ETH. If you keep tokens on sidechain, you can use the [xDai bridge](https://omni.xdaichain.com/) to transfer them to mainnet at a later time.
+When withdrawing, you can choose to send tokens to sidechain or mainnet with the `sendWithdrawToMainnet` boolean. If you withdraw to mainnet, you must **port** the resulting TransactionReceipt across the bridge with `DataUnionClient.portTxToMainnet(txReceipt, prvKey)`, which costs ETH. If you keep tokens on sidechain, you can use the [xDai bridge](https://omni.xdaichain.com/) to transfer them to mainnet at a later time.
 
 
 ### Read-only functions (free)
