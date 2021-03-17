@@ -362,19 +362,25 @@ To stop receiving events from a stream, pass the `Subscription` object you got w
 client.unsubscribe(sub);
 ```
 
-
-
 <a name="data-unions"></a>
 ## Data Unions
 This library provides functions for working with [Data Unions](https://github.com/streamr-dev/data-union-solidity). The Data Union is a system of efficient revenue splitting contracts that have components on the mainnet and a sidechain. Please see the Data Unions [README](https://github.com/streamr-dev/data-union-solidity) for more details. The mainnet contract is basically a conduit to the sidechain contract, which handles member addition and removal, does accounting, and stores tokens.
 
-To get a DataUnion client instance, call
-`client.dataUnionClient(mainnetPrivateKey, sideChainPrivateKey)`. The client can be used to deploy and connect to existing DataUnions. `mainnetPrivateKey` and `sideChainPrivateKey` are the keys that will be used to sign transactions in this sessions.
+To get a Data Union client instance, call:
 
-To deploy a new DataUnion, call `dataUnionClient.deployDataUnion(name, adminAddress, adminFeeFraction, agents)`. Note that the **deployed address is a function of name + mainnetKey**.
+`client.dataUnionClient(mainnetPrivateKey, sideChainPrivateKey)`
 
-To get an existing instance of
-Data Union, call `dataUnionFromMainnetAddress(mainnetAddress)` or `dataUnionClient.dataUnionFromName(name)`.
+The client can be used to deploy and connect to existing DataUnions. `mainnetPrivateKey` and `sideChainPrivateKey` are the keys that will be used to sign transactions in this sessions.
+
+To deploy a new Data Union, call:
+
+`dataUnionClient.deployDataUnion(name, adminAddress, adminFeeFraction, agents)`
+
+Note that the **deployed address is a function of name + mainnetKey**.
+
+To get an existing instance of Data Union, call:
+
+`dataUnionFromMainnetAddress(mainnetAddress)` or `dataUnionClient.dataUnionFromName(name)`
 
 ### Functions that trigger mainnet transactions (possibly expensive)
 | Name          | Returns  | Description |
@@ -436,7 +442,7 @@ EthereumTransactionReceipt receipt = dataUnion.withdrawAllTokensForMember(withdr
 ```
 see also `DataUnion.createWithdrawRequest`, which creates the withdrawl request that the above code signs. The above method creates and signs the request, but the signature can be created by withdrawer separately.
 
-Here's an example how to get a member's withdrawable token balance (in "wei", where 1 DATA = 10^18 wei)
+Here's an example on how to get a member's withdrawable token balance (in "wei", where 1 DATA = 10^18 wei)
 
 ```java
 BigInteger withdrawable = dataUnion.getEarnings(member);
