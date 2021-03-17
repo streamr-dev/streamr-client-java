@@ -259,7 +259,16 @@ public class DataUnion {
         return createWithdrawRequest(from, to, BigInteger.ZERO);
     }
 
-    protected byte[] createWithdrawRequest(String from, String to, BigInteger amount) throws Exception {
+    /**
+     * creates the blob that must be signed in order to withdraw for another
+     * 
+     * @param from
+     * @param to
+     * @param amount
+     * @return
+     * @throws Exception
+     */
+    public byte[] createWithdrawRequest(String from, String to, BigInteger amount) throws Exception {
         Uint256 withdrawn = sidechain.getWithdrawn(new Address(from)).send();
         //TypeEncode doesnt expose a non-padding encode() :(
         String messageHex = TypeEncoder.encode(new Address(to)).substring(24) +
