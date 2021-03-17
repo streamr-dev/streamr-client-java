@@ -232,6 +232,28 @@ public class DataUnion {
         return sidechain.getWithdrawableEarnings(new Address(member)).send().getValue();
     }
 
+
+    public BigInteger getAdminFeeFraction() throws Exception {
+        return mainnet.adminFeeFraction().send().getValue();
+    }
+
+    /**
+     *
+     * @param fractionInWei a fraction expressed in wei (ie 10^18 means 1)
+     * @return
+     * @throws Exception
+     */
+    public EthereumTransactionReceipt setAdminFeeFraction(BigInteger fractionInWei) throws Exception {
+        checkRange(fractionInWei, BigInteger.ZERO, BigInteger.TEN.pow(18));
+        return new EthereumTransactionReceipt(mainnet.setAdminFee(new Uint256(fractionInWei)).send());
+    }
+
+    public EthereumTransactionReceipt setAdminFeeFraction(double fraction) throws Exception {
+        return setAdminFeeFraction(toWei(fraction));
+    }
+
+
+
     //create unsigned blob. must be signed to submit
     protected byte[] createWithdrawAllRequest(String from, String to) throws Exception {
         return createWithdrawRequest(from, to, BigInteger.ZERO);
