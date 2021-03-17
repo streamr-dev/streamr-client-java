@@ -366,7 +366,7 @@ client.unsubscribe(sub);
 
 <a name="data-unions"></a>
 ## Data Unions
-This library provides functions for working with [Data Unions](https://github.com/streamr-dev/data-union-solidity). The Data Union is a system of efficient revenue splitting contracts that have components on the mainnet and a sidechain. Please see the Data Unions [README](https://github.com/streamr-dev/data-union-solidity) for more details. 
+This library provides functions for working with [Data Unions](https://github.com/streamr-dev/data-union-solidity). The Data Union is a system of efficient revenue splitting contracts that have components on the mainnet and a sidechain. Please see the Data Unions [README](https://github.com/streamr-dev/data-union-solidity) for more details. The mainnet contract is basically a conduit to the sidechain contract, which handles member addition and removal, does accounting, and stores tokens.
 
 To get a DataUnion client instance, call
 `client.dataUnionClient(mainnetPrivateKey, sideChainPrivateKey)`. The client can be used to deploy and connect to existing DataUnions. `mainnetPrivateKey` and `sideChainPrivateKey` are the keys that will be used to sign transactions in this sessions.
