@@ -369,7 +369,7 @@ client.unsubscribe(sub);
 This library provides functions for working with [Data Unions](https://github.com/streamr-dev/data-union-solidity). The Data Union is a system of efficient revenue splitting contracts that have components on the mainnet and a sidechain. Please see the Data Unions [README](https://github.com/streamr-dev/data-union-solidity) for more details. 
 
 To get a DataUnion client instance, call
-`client.dataUnionClient(mainnetAdminPrivateKey, sideChainAdminPrivateKey)`. The client can be used to deploy and connect to existing DataUnions.
+`client.dataUnionClient(mainnetPrivateKey, sideChainPrivateKey)`. The client can be used to deploy and connect to existing DataUnions.
 
 To deploy a new DataUnion, call `dataUnionClient.deployDataUnion(name, adminAddress, adminFeeFractionWei, agents)`. Note that the **deployed address is a function of name + mainnetKey**.
 
@@ -392,7 +392,7 @@ Data Union, call `dataUnionFromMainnetAddress(mainnetAddress)` or `dataUnionClie
 | withdrawTokensForSelfOrAsAdmin(String memberAddress, BigInteger amount, boolean sendToMainnet) | Transaction receipt | Withdraw members tokens to given address |
 | withdrawTokensForMember(BigInteger privateKey, String to, BigInteger amount, boolean sendToMainnet) | Transaction receipt | Withdraw members tokens |
 
-When withdrawing, you can choose to send tokens to sidechain or mainnet with the sendToMainnet boolean. If you withdraw to mainnet, you must port the resulting TransactionReceipt with ``DataUnionClientportTxToMainnet(txReceipt, prvKey)``, which costs ETH. If you keep tokens on sidechain, you can use the [xDai bridge](https://omni.xdaichain.com/) to transfer them to mainnet at a later time.
+When withdrawing, you can choose to send tokens to sidechain or mainnet with the `sendToMainnet` boolean. If you withdraw to mainnet, you must port the resulting TransactionReceipt with ``DataUnionClient.portTxToMainnet(txReceipt, prvKey)``, which costs ETH. If you keep tokens on sidechain, you can use the [xDai bridge](https://omni.xdaichain.com/) to transfer them to mainnet at a later time.
 
 
 ### Read-only functions (free)
@@ -416,12 +416,13 @@ Here's an example how to deploy a data union contract and set the admin fee:
 
 ```java
 DataUnionClient dataUnionClient = new StreamrClient(new StreamrClientOptions()).dataUnionClient("mainnetAdminPrvKey", "sidechainAdminPrvKey");
-BigInteger adminFee = BigInteger.TWO;
-List<String> agents = Arrays.asList("<private key>");
-DataUnion dataUnion = dataUnionClient.deployDataUnion("Cool Data Union", adminAddress, adminFee, agents);
+// 2% of mainnet revenue will go to admin fee
+double adminFeeFraction = 0.02;
+List<String> agents = Arrays.asList("0x<address of agent>");
+DataUnion dataUnion = dataUnionClient.deployDataUnion("Cool Data Union", adminAddress, adminFeeFraction, agents);
 ```
 
-Here's an example how to sign off on a withdraw to (any) recipientAddress:
+Here's an example how to withdraw for another (ie withdrawer key signs TX, DataUnionClient key pays for it) :
 
 ```java
 BigInteger withdrawerPrivateKey = new BigInteger("0x...");
