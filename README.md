@@ -386,8 +386,8 @@ To get an existing instance of Data Union, call:
 | Name          | Returns  | Description |
 | :------------ | :------ | :----------- |
 | DataUnionClient.deployDataUnion() | DataUnion | deploy new DU |
-| DataUnionClient.portTxToMainnet(txHash, prvKey) | none | port a mainnet withdrawal TX from sidechain to mainnet |
-| DataUnion.sendTokensToBridge() | none | sends tokens stored in mainnet DU to sidechain DU |
+| DataUnionClient.portTxsToMainnet(txHash, prvKey) | List<TransactionReceipt> | takes a sidechain TX as input, and ports all triggered bridge TXs to mainnet |
+| DataUnion.sendTokensToBridge() | TransactionReceipt | sends tokens stored in mainnet DU to sidechain DU |
 | DataUnion.setAdminFeeFraction(fraction) | TransactionReceipt | sets the fraction that will be kept by admin (admin-only function) |
 
 
@@ -399,7 +399,7 @@ To get an existing instance of Data Union, call:
 | withdrawTokensForSelfOrAsAdmin(String memberAddress, BigInteger amount, boolean sendWithdrawToMainnet) | TransactionReceipt | Withdraw members tokens to given address |
 | withdrawTokensForMember(BigInteger privateKey, String to, BigInteger amount, boolean sendWithdrawToMainnet) | TransactionReceipt | Withdraw members tokens |
 
-When withdrawing, you can choose to send tokens to sidechain or mainnet with the `sendWithdrawToMainnet` boolean. If you withdraw to mainnet, you must **port** the resulting TransactionReceipt across the bridge with `DataUnionClient.portTxToMainnet(txReceipt, prvKey)`, which costs ETH. If you keep tokens on sidechain, you can use the [xDai bridge](https://omni.xdaichain.com/) to transfer them to mainnet at a later time.
+When withdrawing, you can choose to send tokens to sidechain or mainnet with the `sendWithdrawToMainnet` boolean. If you withdraw to mainnet, you must **port** the resulting TransactionReceipt across the bridge with `DataUnionClient.portTxsToMainnet(sidechainTxReceipt, prvKey)`, which costs ETH. If you keep tokens on sidechain, you can use the [xDai bridge](https://omni.xdaichain.com/) to transfer them to mainnet at a later time.
 
 
 ### Read-only functions (free)
