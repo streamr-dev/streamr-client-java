@@ -386,7 +386,7 @@ To get an existing instance of Data Union, call:
 | Name          | Returns  | Description |
 | :------------ | :------ | :----------- |
 | DataUnionClient.deployDataUnion() | DataUnion | deploy new DU |
-| DataUnionClient.portTxsToMainnet(txHash, prvKey) | List<TransactionReceipt> | takes a sidechain TX as input, and ports all triggered bridge TXs to mainnet |
+| DataUnionClient.portTxsToMainnet(txHash, prvKey) | `List<TransactionReceipt>` | takes a sidechain TX as input, and ports all triggered bridge TXs to mainnet |
 | DataUnion.sendTokensToBridge() | TransactionReceipt | sends tokens stored in mainnet DU to sidechain DU |
 | DataUnion.setAdminFeeFraction(fraction) | TransactionReceipt | sets the fraction that will be kept by admin (admin-only function) |
 
