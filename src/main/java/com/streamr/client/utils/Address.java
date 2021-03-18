@@ -38,7 +38,7 @@ public class Address {
         return address;
     }
 
-    static Address createRandom() {
+    public static Address createRandom() {
         byte[] array = new byte[20];
         new Random().nextBytes(array);
         return new Address(array);
