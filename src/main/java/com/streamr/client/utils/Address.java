@@ -2,6 +2,8 @@ package com.streamr.client.utils;
 
 import org.apache.commons.codec.binary.Hex;
 
+import java.util.Random;
+
 /**
  * For making sure that Ethereum addresses are always treated similarly everywhere (e.g. lower-cased)
  */
@@ -34,5 +36,11 @@ public class Address {
     @Override
     public String toString() {
         return address;
+    }
+
+    static Address createRandom() {
+        byte[] array = new byte[20];
+        new Random().nextBytes(array);
+        return new Address(array);
     }
 }
