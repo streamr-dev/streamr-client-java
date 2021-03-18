@@ -63,16 +63,16 @@ public class DataUnion {
         return waitForDeployment(0,0);
     }
 
-    public void refreshRevenue() throws Exception {
-        sidechain.refreshRevenue().send();
+   public EthereumTransactionReceipt refreshRevenue() throws Exception {
+        return new EthereumTransactionReceipt(sidechain.refreshRevenue().send());
     }
 
-    public void sendTokensToBridge() throws Exception {
-        mainnet.sendTokensToBridge().send();
+    public EthereumTransactionReceipt sendTokensToBridge() throws Exception {
+        return new EthereumTransactionReceipt(mainnet.sendTokensToBridge().send());
     }
 
-    public void setNewMemberEth(BigInteger amountWei) throws Exception {
-        sidechain.setNewMemberEth(new Uint256(amountWei)).send();
+    public EthereumTransactionReceipt setNewMemberEth(BigInteger amountWei) throws Exception {
+        return new EthereumTransactionReceipt(sidechain.setNewMemberEth(new Uint256(amountWei)).send());
     }
 
     public BigInteger waitForEarningsChange(final BigInteger initialBalance, long pollInterval, long timeout) throws Exception {
@@ -232,7 +232,6 @@ public class DataUnion {
         return sidechain.getWithdrawableEarnings(new Address(member)).send().getValue();
     }
 
-
     public BigInteger getAdminFeeFraction() throws Exception {
         return mainnet.adminFeeFraction().send().getValue();
     }
@@ -261,7 +260,7 @@ public class DataUnion {
 
     /**
      * creates the blob that must be signed in order to withdraw for another
-     * 
+     *
      * @param from
      * @param to
      * @param amount
