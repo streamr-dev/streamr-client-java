@@ -18,8 +18,6 @@ class OrderedMsgChainSpec extends StreamrSpecification {
     final StreamMessage msg4 = createMessage(4, 0, 3, 0)
     final StreamMessage msg5 = createMessage(5, 0, 4, 0)
 
-    final Address publisherId = new Address("0x12345")
-
     void "handles ordered messages in order"() {
         ArrayList<StreamMessage> received = []
         OrderedMsgChain util = new OrderedMsgChain(publisherId, "msgChainId", new Consumer<StreamMessage>() {

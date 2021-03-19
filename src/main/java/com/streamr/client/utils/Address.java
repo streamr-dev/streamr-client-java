@@ -35,4 +35,10 @@ public class Address {
     public String toString() {
         return address;
     }
+
+    public static Address createRandom() {
+        byte[] array = new byte[20];
+        new Random().nextBytes(array);
+        return new Address(array);
+    }
 }
