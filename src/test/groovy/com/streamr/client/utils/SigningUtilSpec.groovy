@@ -35,7 +35,7 @@ class SigningUtilSpec extends StreamrSpecification {
 
     void "should correctly sign a StreamMessage with null previous ref"() {
         StreamMessage msg = new StreamMessage(msgId, null, [foo: 'bar'])
-        String expectedPayload = "streamId04252353150" + publisherId + "msgChainId"+'{"foo":"bar"}'
+        String expectedPayload = "streamId04252353150" + publisherId.toLowerCaseString() + "msgChainId"+'{"foo":"bar"}'
         when:
         signingUtil.signStreamMessage(msg)
         then:
@@ -45,7 +45,7 @@ class SigningUtilSpec extends StreamrSpecification {
 
     void "should correctly sign a StreamMessage with non-null previous ref"() {
         StreamMessage msg = new StreamMessage(msgId, new MessageRef(100, 1), [foo: 'bar'])
-        String expectedPayload = "streamId04252353150" + publisherId + "msgChainId1001"+'{"foo":"bar"}'
+        String expectedPayload = "streamId04252353150" + publisherId.toLowerCaseString() + "msgChainId1001"+'{"foo":"bar"}'
         when:
         signingUtil.signStreamMessage(msg)
         then:
@@ -56,7 +56,7 @@ class SigningUtilSpec extends StreamrSpecification {
     void "should correctly sign a StreamMessage with new group key"() {
         StreamMessage msg = new StreamMessage(msgId, new MessageRef(100, 1), [foo: 'bar'])
         msg.setNewGroupKey(new EncryptedGroupKey("groupKeyId", "keyHex"))
-        String expectedPayload = "streamId04252353150" + publisherId + "msgChainId1001"+'{"foo":"bar"}'+'["groupKeyId","keyHex"]'
+        String expectedPayload = "streamId04252353150" + publisherId.toLowerCaseString() + "msgChainId1001"+'{"foo":"bar"}'+'["groupKeyId","keyHex"]'
         when:
         signingUtil.signStreamMessage(msg)
         then:

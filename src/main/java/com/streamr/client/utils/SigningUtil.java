@@ -54,7 +54,7 @@ public class SigningUtil {
             StringBuilder sb = new StringBuilder(msg.getStreamId());
             sb.append(msg.getStreamPartition());
             sb.append(msg.getTimestamp());
-            sb.append(msg.getPublisherId());
+            sb.append(msg.getPublisherId().toLowerCaseString());
             sb.append(msg.getSerializedContent());
             return sb.toString();
         } else if (signatureType == StreamMessage.SignatureType.ETH) {
@@ -62,7 +62,7 @@ public class SigningUtil {
             sb.append(msg.getStreamPartition());
             sb.append(msg.getTimestamp());
             sb.append(msg.getSequenceNumber());
-            sb.append(msg.getPublisherId());
+            sb.append(msg.getPublisherId().toLowerCaseString());
             sb.append(msg.getMsgChainId());
             if (msg.getPreviousMessageRef() != null) {
                 sb.append(msg.getPreviousMessageRef().getTimestamp());
@@ -85,7 +85,12 @@ public class SigningUtil {
     }
 
     private static boolean verify(String data, String signature, Address address) throws SignatureException, DecoderException {
-        return recoverAddress(calculateMessageHash(data), signature).equals(address);
+        System.out.println("data=" + data);
+        System.out.println("signature=" + signature);
+        System.out.println("address=" + address);
+        Address foobar = recoverAddress(calculateMessageHash(data), signature);
+        System.out.println(foobar + " vs " + address + " " + foobar.equals(address));
+        return foobar.equals(address);
     }
 
     private static Address recoverAddress(byte[] messageHash, String signatureHex) throws SignatureException, DecoderException {
