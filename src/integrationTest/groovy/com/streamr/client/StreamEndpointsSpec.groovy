@@ -9,6 +9,7 @@ import com.streamr.client.rest.StreamConfig
 import com.streamr.client.exceptions.AuthenticationException
 import com.streamr.client.rest.FieldConfig
 import com.streamr.client.rest.UserInfo
+import com.streamr.client.utils.Address
 
 class StreamEndpointsSpec extends StreamrIntegrationSpecification {
 
@@ -163,9 +164,9 @@ class StreamEndpointsSpec extends StreamrIntegrationSpecification {
         Stream proto = new Stream(generateResourceName(), "This stream was created from an integration test")
         Stream createdResult = client.createStream(proto)
         when:
-        List<String> publishers = client.getPublishers(createdResult.id)
+        List<Address> publishers = client.getPublishers(createdResult.id).collect { p -> new Address(p) }
         then:
-        publishers == [client.getPublisherId().toString()]
+        publishers == [client.getPublisherId()]
     }
 
     void "isPublisher()"() {
@@ -183,9 +184,9 @@ class StreamEndpointsSpec extends StreamrIntegrationSpecification {
         Stream proto = new Stream(generateResourceName(), "This stream was created from an integration test")
         Stream createdResult = client.createStream(proto)
         when:
-        List<String> subscribers = client.getSubscribers(createdResult.id)
+        List<String> subscribers = client.getSubscribers(createdResult.id).collect { s -> new Address(s) }
         then:
-        subscribers == [client.getPublisherId().toString()]
+        subscribers == [client.getPublisherId()]
     }
 
     void "isSubscriber()"() {
