@@ -43,7 +43,7 @@ class StreamrWebsocketSpec extends StreamrIntegrationSpecification {
 		}
 	}
 
-	/*void "client can connect and disconnect over websocket"() {
+	void "client can connect and disconnect over websocket"() {
 		when:
 		publisher.connect()
 
@@ -263,7 +263,7 @@ class StreamrWebsocketSpec extends StreamrIntegrationSpecification {
 			// no need to explicitly give the new group key to the subscriber
 			msg2 != null && msg2.getParsedContent() == [test: 'another clear text']
 		}
-	}*/
+	}
 
 	void "StreamrWebsocketSpec.subscriber can get the historical keys and decrypt old encrypted messages using an RSA key pair"() {
 		// publishing historical messages with different group keys before subscribing
@@ -317,7 +317,7 @@ class StreamrWebsocketSpec extends StreamrIntegrationSpecification {
 		msg3.getParsedContent() == [test: '3']
 	}
 
-	/*void "subscribe with resend last"() {
+	void "subscribe with resend last"() {
 		boolean received = false
 
 		when:
@@ -636,5 +636,5 @@ class StreamrWebsocketSpec extends StreamrIntegrationSpecification {
 			publishedByPublisher1 == receivedFromPublisher1 && publishedByPublisher2 == receivedFromPublisher2
 		}
 		unableToDecryptCount == 0
-	}*/
+	}
 }
