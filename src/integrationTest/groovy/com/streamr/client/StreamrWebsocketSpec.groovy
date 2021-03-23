@@ -21,7 +21,6 @@ class StreamrWebsocketSpec extends StreamrIntegrationSpecification {
 	private StreamrClient subscriber
 	private Stream stream
 	PollingConditions within10sec = new PollingConditions(timeout: 10)
-	PollingConditions within60sec = new PollingConditions(timeout: 60)
 
 	void setup() {
 		publisherPrivateKey = generatePrivateKey()
@@ -265,7 +264,7 @@ class StreamrWebsocketSpec extends StreamrIntegrationSpecification {
 		}
 	}
 
-	void "StreamrWebsocketSpec.subscriber can get the historical keys and decrypt old encrypted messages using an RSA key pair"() {
+	void "subscriber can get the historical keys and decrypt old encrypted messages using an RSA key pair"() {
 		// publishing historical messages with different group keys before subscribing
 		long startTime = System.currentTimeMillis()
 		List<GroupKey> keys = [GroupKey.generate(), GroupKey.generate()]
@@ -298,7 +297,7 @@ class StreamrWebsocketSpec extends StreamrIntegrationSpecification {
 
 		then:
 		System.out.println("DEBUG BEFORE-WAIT@" + (System.currentTimeMillis() - startTime))
-		within60sec.eventually {
+		within10sec.eventually {
 			msg1 != null && msg2 != null
 		}
 		System.out.println("DEBUG AFTER-WAIT@" + (System.currentTimeMillis() - startTime))
