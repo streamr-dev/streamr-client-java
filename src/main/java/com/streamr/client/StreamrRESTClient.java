@@ -18,7 +18,7 @@ import java.util.Map;
 import java.util.stream.Collectors;
 
 class StorageNodeInput {
-    String storageNodeAddress;
+    Address storageNodeAddress;
 }
 
 /**
@@ -233,7 +233,7 @@ public abstract class StreamrRESTClient extends AbstractStreamrClient {
         JsonAdapter<List<StorageNodeInput>> adapter = MOSHI.adapter(Types.newParameterizedType(List.class, StorageNodeInput.class));
         List<StorageNodeInput> items = get(url, adapter);
         return items.stream()
-            .map(item -> new StorageNode(new Address(item.storageNodeAddress)))
+            .map(item -> new StorageNode(item.storageNodeAddress))
             .collect(Collectors.toList());
     }
 
