@@ -13,6 +13,8 @@ import com.streamr.client.rest.StorageNode
 import com.streamr.client.rest.StreamPart
 import com.streamr.client.utils.Address
 
+import java.util.Arrays
+
 class StreamEndpointsSpec extends StreamrIntegrationSpecification {
 
 	private StreamrClient client
@@ -202,44 +204,41 @@ class StreamEndpointsSpec extends StreamrIntegrationSpecification {
         !isValid2
     }
 
-    void "addStreamToStorageNode"() {
+    void "StorageNode.addStream"() {
         Stream proto = new Stream(generateResourceName(), "This stream was created from an integration test")
         String streamId = client.createStream(proto).getId()
-        StorageNode storageNode = new StorageNode(Address.createRandom())
+        StorageNode devStorageNode = getDevStorageNode()
         when:
-        client.addStreamToStorageNode(streamId, storageNode)
+        client.addStreamToStorageNode(streamId, devStorageNode)
         List<StorageNode> storageNodes = client.getStorageNodes(streamId)
         then:
         storageNodes.size() == 1
-        storageNodes.get(0).getAddress() == storageNode.getAddress()
+        storageNodes.get(0).getAddress() == devStorageNode.getAddress()
     }
 
-    void "removeStreamFromStorageNode"() {
+    void "StorageNode.removeStream"() {
         Stream proto = new Stream(generateResourceName(), "This stream was created from an integration test")
         String streamId = client.createStream(proto).getId()
-        StorageNode storageNode = new StorageNode(Address.createRandom())
-        client.addStreamToStorageNode(streamId, storageNode)
+        StorageNode devStorageNode = getDevStorageNode()
+        client.addStreamToStorageNode(streamId, devStorageNode)
         when:
-        client.removeStreamToStorageNode(streamId, storageNode)
+        client.removeStreamToStorageNode(streamId, devStorageNode)
         List<StorageNode> storageNodes = client.getStorageNodes(streamId)
         then:
         storageNodes.size() == 0
     }
 
-    void "getStreamPartsByStorageNode"() {
+    void "StorageNode.getStreamParts"() {
         Stream proto = new Stream(generateResourceName(), "This stream was created from an integration test")
         proto.setPartitions(2)
         String streamId = client.createStream(proto).getId()
-        StorageNode storageNode = new StorageNode(Address.createRandom())
-        client.addStreamToStorageNode(streamId, storageNode)
+        StorageNode devStorageNode = getDevStorageNode()
+        client.addStreamToStorageNode(streamId, devStorageNode)
+        List<StreamPart> expectedStreamParts = Arrays.asList(new StreamPart(streamId, 0), new StreamPart(streamId, 1))
         when:
-        List<StreamPart> streamParts = client.getStreamPartsByStorageNode(storageNode)
+        List<StreamPart> actualStreamParts = client.getStreamPartsByStorageNode(devStorageNode)
         then:
-        streamParts.size() == 2
-        streamParts.get(0).getStreamId() == streamId
-        streamParts.get(0).getStreamPartition() == 0
-        streamParts.get(1).getStreamId() == streamId
-        streamParts.get(1).getStreamPartition() == 1
+        actualStreamParts.containsAll(expectedStreamParts)
     }
 
     void "not same token used after logout()"() {
