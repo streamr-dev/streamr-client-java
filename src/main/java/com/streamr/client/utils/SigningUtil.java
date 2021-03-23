@@ -85,12 +85,7 @@ public class SigningUtil {
     }
 
     private static boolean verify(String data, String signature, Address address) throws SignatureException, DecoderException {
-        System.out.println("data=" + data);
-        System.out.println("signature=" + signature);
-        System.out.println("address=" + address);
-        Address foobar = recoverAddress(calculateMessageHash(data), signature);
-        System.out.println(foobar + " vs " + address + " " + foobar.equals(address));
-        return foobar.equals(address);
+        return recoverAddress(calculateMessageHash(data), signature).equals(address);
     }
 
     private static Address recoverAddress(byte[] messageHash, String signatureHex) throws SignatureException, DecoderException {
