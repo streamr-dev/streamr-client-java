@@ -78,16 +78,16 @@ public final class DataUnion {
     return waitForDeployment(0, 0);
   }
 
-  public void refreshRevenue() throws Exception {
-    sidechain.refreshRevenue().send();
+  public EthereumTransactionReceipt refreshRevenue() throws Exception {
+    return new EthereumTransactionReceipt(sidechain.refreshRevenue().send());
   }
 
-  public void sendTokensToBridge() throws Exception {
-    mainnet.sendTokensToBridge().send();
+  public EthereumTransactionReceipt sendTokensToBridge() throws Exception {
+    return new EthereumTransactionReceipt(mainnet.sendTokensToBridge().send());
   }
 
-  public void setNewMemberEth(final BigInteger amountWei) throws Exception {
-    sidechain.setNewMemberEth(new Uint256(amountWei)).send();
+  public EthereumTransactionReceipt setNewMemberEth(final BigInteger amountWei) throws Exception {
+    return new EthereumTransactionReceipt(sidechain.setNewMemberEth(new Uint256(amountWei)).send());
   }
 
   public BigInteger waitForEarningsChange(
@@ -105,6 +105,24 @@ public final class DataUnion {
           }
         };
     return (BigInteger) waitForCondition(earningsChange, pollInterval, timeout);
+  }
+
+  public BigInteger getAdminFeeFraction() throws Exception {
+    return mainnet.adminFeeFraction().send().getValue();
+  }
+
+  /**
+   * @param fractionInWei a fraction expressed in wei (ie 10^18 means 1)
+   * @return
+   * @throws Exception
+   */
+  public EthereumTransactionReceipt setAdminFeeFraction(final BigInteger fractionInWei) throws Exception {
+    checkRange(fractionInWei, BigInteger.ZERO, BigInteger.TEN.pow(18));
+    return new EthereumTransactionReceipt(mainnet.setAdminFee(new Uint256(fractionInWei)).send());
+  }
+
+  public EthereumTransactionReceipt setAdminFeeFraction(final double fraction) throws Exception {
+    return setAdminFeeFraction(Web3jUtils.toWei(fraction));
   }
 
   public EthereumTransactionReceipt addJoinPartAgents(final String... agents) throws Exception {
@@ -295,8 +313,8 @@ public final class DataUnion {
     return createWithdrawRequest(from, to, BigInteger.ZERO);
   }
 
-  protected byte[] createWithdrawRequest(
-      final String from, final String to, final BigInteger amount) throws Exception {
+  /** Creates the blob that must be signed in order to withdraw for another. */
+  public byte[] createWithdrawRequest(String from, String to, BigInteger amount) throws Exception {
     Uint256 withdrawn = sidechain.getWithdrawn(new Address(from)).send();
     // TypeEncode doesnt expose a non-padding encode() :(
     String messageHex =
