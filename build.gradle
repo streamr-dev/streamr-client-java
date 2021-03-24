@@ -22,7 +22,7 @@ plugins {
 }
 
 group = 'com.streamr'
-version = '2.0.3-alpha.3'
+version = '3.0.0-alpha.1'
 description = 'A Java library to interact with Streamr Network'
 
 final boolean isLocalDevEnv = (System.getenv("CI") == null)
