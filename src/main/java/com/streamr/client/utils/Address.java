@@ -54,10 +54,4 @@ public class Address {
         new Random().nextBytes(array);
         return new Address(array);
     }
-
-    public static Address createRandom() {
-        byte[] array = new byte[20];
-        new Random().nextBytes(array);
-        return new Address(array);
-    }
 }
