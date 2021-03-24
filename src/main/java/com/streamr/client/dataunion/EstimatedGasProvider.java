@@ -30,10 +30,16 @@ public class EstimatedGasProvider implements ContractGasProvider {
   private static final Logger log = LoggerFactory.getLogger(EstimatedGasProvider.class);
 
   private final Web3j web3j;
-  private BigInteger gasLimit = BigInteger.valueOf(6_000_000);
+  private BigInteger gasLimit;
+  private BigInteger maxGasPrice;
 
-  public EstimatedGasProvider(Web3j web3j) {
+  public EstimatedGasProvider(Web3j web3j, long maxGas) {
     this.web3j = web3j;
+    this.gasLimit = BigInteger.valueOf(maxGas);
+  }
+
+  public void setMaxGasPrice(long max) {
+    maxGasPrice = BigInteger.valueOf(max);
   }
 
   @Override
@@ -45,7 +51,11 @@ public class EstimatedGasProvider implements ContractGasProvider {
   @Deprecated
   public BigInteger getGasPrice() {
     try {
-      return web3j.ethGasPrice().send().getGasPrice();
+      BigInteger currentGasPrice = web3j.ethGasPrice().send().getGasPrice();
+      if (maxGasPrice != null && maxGasPrice.compareTo(currentGasPrice) < 0) {
+        return maxGasPrice;
+      }
+      return currentGasPrice;
     } catch (IOException e) {
       log.error(e.getMessage());
       throw new RuntimeException(e);

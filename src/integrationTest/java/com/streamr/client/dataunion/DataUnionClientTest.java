@@ -16,7 +16,6 @@ import java.util.Arrays;
 import java.util.concurrent.TimeUnit;
 import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.BeforeAll;
-import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.MethodOrderer;
 import org.junit.jupiter.api.Order;
 import org.junit.jupiter.api.Test;
@@ -33,12 +32,11 @@ import org.web3j.protocol.http.HttpService;
 @Timeout(value = 11, unit = TimeUnit.MINUTES)
 @TestMethodOrder(MethodOrderer.OrderAnnotation.class)
 @TestInstance(TestInstance.Lifecycle.PER_CLASS)
-@Disabled
 class DataUnionClientTest {
   private static final String DEV_MAINCHAIN_RPC = "http://localhost:8545";
   private static final String DEV_SIDECHAIN_RPC = "http://localhost:8546";
-  private static final String DEV_SIDECHAIN_FACTORY = "0x4081B7e107E59af8E82756F96C751174590989FE";
-  private static final String DEV_MAINCHAIN_FACTORY = "0x5E959e5d5F3813bE5c6CeA996a286F734cc9593b";
+  private static final String DEV_MAINCHAIN_FACTORY = "0x4bbcBeFBEC587f6C4AF9AF9B48847caEa1Fe81dA";
+  private static final String DEV_SIDECHAIN_FACTORY = "0x4A4c4759eb3b7ABee079f832850cD3D0dC48D927";
   private static final String[] TEST_RPC_KEYS =
       new String[] {
         "0x5e98cce00cff5dea6b454889f359a4ec06b9fa6b88e9d69b86de8e1c81887da0",
@@ -96,7 +94,11 @@ class DataUnionClientTest {
     Web3j mainnet = Web3j.build(new HttpService(DEV_MAINCHAIN_RPC));
     mainnetToken =
         IERC20.load(
-            client.mainnetTokenAddress(), mainnet, adminWallet, new EstimatedGasProvider(mainnet));
+            client.mainnetTokenAddress(),
+            mainnet,
+            adminWallet,
+            new EstimatedGasProvider(mainnet, 730000));
+    assertNotNull(mainnetToken);
   }
 
   private final long pollInterval = 10000;
@@ -151,7 +153,7 @@ class DataUnionClientTest {
     final String recipient = member2Wallet.getAddress();
     final BigInteger recipientBal =
         mainnetToken.balanceOf(new Address(recipient)).send().getValue();
-    final EthereumTransactionReceipt tr = du.withdrawAllTokensForSelfOrAsAdmin(recipient);
+    final EthereumTransactionReceipt tr = du.withdrawAllTokensForSelfOrAsAdmin(recipient, true);
 
     client.portTxsToMainnet(tr, adminWallet.getEcKeyPair().getPrivateKey());
 
@@ -168,7 +170,7 @@ class DataUnionClientTest {
     final BigInteger recipientBal = mainnetToken.balanceOf(member1Address).send().getValue();
     final EthereumTransactionReceipt tr =
         du.withdrawAllTokensForMember(
-            member1Wallet.getEcKeyPair().getPrivateKey(), member1Wallet.getAddress());
+            member1Wallet.getEcKeyPair().getPrivateKey(), member1Wallet.getAddress(), true);
 
     client.portTxsToMainnet(tr, adminWallet.getEcKeyPair().getPrivateKey());
 

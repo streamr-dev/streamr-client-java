@@ -72,8 +72,24 @@ public final class DataUnionClient {
     this.sidechain = Web3j.build(new HttpService(sidechainUrl));
     this.sidechainFactory = sidechainFactory;
     this.sidechainCred = Credentials.create(sidechainAdminPrvKey);
-    mainnetGasProvider = new EstimatedGasProvider(mainnet);
-    sidechainGasProvider = new EstimatedGasProvider(sidechain);
+    mainnetGasProvider = new EstimatedGasProvider(mainnet, 730000);
+    sidechainGasProvider = new EstimatedGasProvider(sidechain, 3000000);
+  }
+
+  public void setMainnetMaxGasPrice(long maxPrice) {
+    mainnetGasProvider.setMaxGasPrice(maxPrice);
+  }
+
+  public void setSidechainMaxGasPrice(long maxPrice) {
+    sidechainGasProvider.setMaxGasPrice(maxPrice);
+  }
+
+  public void setMainnetMaxGas(BigInteger maxGas) {
+    mainnetGasProvider.setGasLimit(maxGas);
+  }
+
+  public void setSidechainMaxGas(BigInteger maxGas) {
+    sidechainGasProvider.setGasLimit(maxGas);
   }
 
   public long getBridgePollInterval() {
@@ -258,16 +274,22 @@ public final class DataUnionClient {
     return waitForTx(sidechain, txhash, sleeptime, timeout);
   }
 
-  public void setNewDUInitialEth(final BigInteger amountWei) throws Exception {
-    factorySidechain().setNewDUInitialEth(new Uint256(amountWei)).send();
+  public EthereumTransactionReceipt setNewDUInitialEth(final BigInteger amountWei)
+      throws Exception {
+    return new EthereumTransactionReceipt(
+        factorySidechain().setNewDUInitialEth(new Uint256(amountWei)).send());
   }
 
-  public void setNewDUOwnerInitialEth(final BigInteger amountWei) throws Exception {
-    factorySidechain().setNewDUOwnerInitialEth(new Uint256(amountWei)).send();
+  public EthereumTransactionReceipt setNewDUOwnerInitialEth(final BigInteger amountWei)
+      throws Exception {
+    return new EthereumTransactionReceipt(
+        factorySidechain().setNewDUOwnerInitialEth(new Uint256(amountWei)).send());
   }
 
-  public void setNewMemberInitialEth(final BigInteger amountWei) throws Exception {
-    factorySidechain().setNewMemberInitialEth(new Uint256(amountWei)).send();
+  public EthereumTransactionReceipt setNewMemberInitialEth(final BigInteger amountWei)
+      throws Exception {
+    return new EthereumTransactionReceipt(
+        factorySidechain().setNewMemberInitialEth(new Uint256(amountWei)).send());
   }
 
   /**
@@ -286,7 +308,7 @@ public final class DataUnionClient {
    *
    * @param msgHash AMB message hash
    */
-  protected void portTxToMainnet(
+  protected EthereumTransactionReceipt portTxToMainnet(
       final Bytes32 msgHash, final short collectedSignatures, final Credentials cred)
       throws Exception {
     if (collectedSignatures > 255) {
@@ -303,25 +325,26 @@ public final class DataUnionClient {
       System.arraycopy(sig.getR(), 0, signatures, 1 + collectedSignatures + (i * 32), 32);
       System.arraycopy(sig.getS(), 0, signatures, 1 + (collectedSignatures * 33) + (i * 32), 32);
     }
-    mainnetAMB(cred).executeSignatures(message, new DynamicBytes(signatures)).send();
+    return new EthereumTransactionReceipt(
+        mainnetAMB(cred).executeSignatures(message, new DynamicBytes(signatures)).send());
   }
 
-  public void portTxsToMainnet(
+  public List<EthereumTransactionReceipt> portTxsToMainnet(
       final EthereumTransactionReceipt withdrawalTransaction, final String mainnetSenderPrivateKey)
       throws Exception {
-    portTxsToMainnet(withdrawalTransaction.tr, Credentials.create(mainnetSenderPrivateKey));
+    return portTxsToMainnet(withdrawalTransaction.tr, Credentials.create(mainnetSenderPrivateKey));
   }
 
-  public void portTxsToMainnet(
+  public List<EthereumTransactionReceipt> portTxsToMainnet(
       final EthereumTransactionReceipt withdrawalTransaction,
       final BigInteger mainnetSenderPrivateKey)
       throws Exception {
-    portTxsToMainnet(
+    return portTxsToMainnet(
         withdrawalTransaction.tr, Credentials.create(ECKeyPair.create(mainnetSenderPrivateKey)));
   }
 
-  public void portTxsToMainnet(final String withdrawTxHash, final String mainnetSenderPrivateKey)
-      throws Exception {
+  public List<EthereumTransactionReceipt> portTxsToMainnet(
+      final String withdrawTxHash, final String mainnetSenderPrivateKey) throws Exception {
     Optional<TransactionReceipt> optional =
         sidechain.ethGetTransactionReceipt(withdrawTxHash).send().getTransactionReceipt();
     if (!optional.isPresent()) {
@@ -329,13 +352,19 @@ public final class DataUnionClient {
           "No sidechain transaction found for txhash " + withdrawTxHash);
     }
     TransactionReceipt withdraw = optional.get();
-    portTxsToMainnet(withdraw, Credentials.create(mainnetSenderPrivateKey));
+    return portTxsToMainnet(withdraw, Credentials.create(mainnetSenderPrivateKey));
   }
 
-  protected void portTxsToMainnet(
+  /**
+   * Port all bridge requests triggered by sidechain withdraw transaction.
+   *
+   * @return list of mainnet bridge port TXs executed
+   */
+  protected List<EthereumTransactionReceipt> portTxsToMainnet(
       final TransactionReceipt withdraw, final Credentials mainnetSenderCredentials)
       throws Exception {
     List<Bytes32[]> msgs = extractAmbMessagesIdAndHash(withdraw);
+    List<EthereumTransactionReceipt> txs = new ArrayList<>(msgs.size());
     for (Bytes32[] msg : msgs) {
       Bytes32 id = msg[0];
       Bytes32 hash = msg[1];
@@ -361,8 +390,9 @@ public final class DataUnionClient {
         continue;
       }
       log.info("Porting msgId " + id);
-      portTxToMainnet(hash, signatures.shortValueExact(), mainnetSenderCredentials);
+      txs.add(portTxToMainnet(hash, signatures.shortValueExact(), mainnetSenderCredentials));
     }
+    return txs;
   }
 
   // utility functions:
