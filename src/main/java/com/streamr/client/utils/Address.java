@@ -1,6 +1,10 @@
 package com.streamr.client.utils;
 
 import org.apache.commons.codec.binary.Hex;
+import org.web3j.crypto.Keys;
+import org.web3j.crypto.WalletUtils;
+
+import java.util.Random;
 
 import java.util.Random;
 
@@ -15,6 +19,9 @@ public class Address {
     }
 
     public Address(String address) {
+        if ((address == null) || !WalletUtils.isValidAddress(address)) {
+            throw new IllegalArgumentException("Invalid Ethereum address: " + address);
+        }
         this.address = address.toLowerCase();
     }
 
@@ -35,7 +42,11 @@ public class Address {
 
     @Override
     public String toString() {
-        return address;
+        return Keys.toChecksumAddress(this.address);
+    }
+
+    public String toLowerCaseString() {
+        return this.address;
     }
 
     public static Address createRandom() {
