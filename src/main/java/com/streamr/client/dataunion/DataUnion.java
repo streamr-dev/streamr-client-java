@@ -116,7 +116,8 @@ public final class DataUnion {
    * @return
    * @throws Exception
    */
-  public EthereumTransactionReceipt setAdminFeeFraction(final BigInteger fractionInWei) throws Exception {
+  public EthereumTransactionReceipt setAdminFeeFraction(final BigInteger fractionInWei)
+      throws Exception {
     checkRange(fractionInWei, BigInteger.ZERO, BigInteger.TEN.pow(18));
     return new EthereumTransactionReceipt(mainnet.setAdminFee(new Uint256(fractionInWei)).send());
   }
