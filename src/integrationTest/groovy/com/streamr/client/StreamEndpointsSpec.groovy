@@ -9,6 +9,9 @@ import com.streamr.client.rest.StreamConfig
 import com.streamr.client.exceptions.AuthenticationException
 import com.streamr.client.rest.FieldConfig
 import com.streamr.client.rest.UserInfo
+import com.streamr.client.rest.StorageNode
+import com.streamr.client.rest.StreamPart
+import com.streamr.client.utils.Address
 
 class StreamEndpointsSpec extends StreamrIntegrationSpecification {
 
@@ -197,6 +200,46 @@ class StreamEndpointsSpec extends StreamrIntegrationSpecification {
         then:
         isValid1
         !isValid2
+    }
+
+    void "addStreamToStorageNode"() {
+        Stream proto = new Stream(generateResourceName(), "This stream was created from an integration test")
+        String streamId = client.createStream(proto).getId()
+        StorageNode storageNode = new StorageNode(Address.createRandom())
+        when:
+        client.addStreamToStorageNode(streamId, storageNode)
+        List<StorageNode> storageNodes = client.getStorageNodes(streamId)
+        then:
+        storageNodes.size() == 1
+        storageNodes.get(0).getAddress() == storageNode.getAddress()
+    }
+
+    void "removeStreamFromStorageNode"() {
+        Stream proto = new Stream(generateResourceName(), "This stream was created from an integration test")
+        String streamId = client.createStream(proto).getId()
+        StorageNode storageNode = new StorageNode(Address.createRandom())
+        client.addStreamToStorageNode(streamId, storageNode)
+        when:
+        client.removeStreamToStorageNode(streamId, storageNode)
+        List<StorageNode> storageNodes = client.getStorageNodes(streamId)
+        then:
+        storageNodes.size() == 0
+    }
+
+    void "getStreamPartsByStorageNode"() {
+        Stream proto = new Stream(generateResourceName(), "This stream was created from an integration test")
+        proto.setPartitions(2)
+        String streamId = client.createStream(proto).getId()
+        StorageNode storageNode = new StorageNode(Address.createRandom())
+        client.addStreamToStorageNode(streamId, storageNode)
+        when:
+        List<StreamPart> streamParts = client.getStreamPartsByStorageNode(storageNode)
+        then:
+        streamParts.size() == 2
+        streamParts.get(0).getStreamId() == streamId
+        streamParts.get(0).getStreamPartition() == 0
+        streamParts.get(1).getStreamId() == streamId
+        streamParts.get(1).getStreamPartition() == 1
     }
 
     void "not same token used after logout()"() {
