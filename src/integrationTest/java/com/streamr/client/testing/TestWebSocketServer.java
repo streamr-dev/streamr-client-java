@@ -26,7 +26,7 @@ import org.slf4j.LoggerFactory;
 public class TestWebSocketServer extends WebSocketServer {
   private static final Logger log = LoggerFactory.getLogger(TestWebSocketServer.class);
   private final MessageCreationUtil msgCreationUtil =
-      new MessageCreationUtil(TestingAddresses.PUBLISHER_ID, null);
+      new MessageCreationUtil(null, TestingAddresses.PUBLISHER_ID);
   private final List<ReceivedControlMessage> receivedControlMessages =
       Collections.synchronizedList(new LinkedList<>());
   private final String wsUrl;

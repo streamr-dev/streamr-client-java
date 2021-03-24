@@ -2,9 +2,9 @@ package com.streamr.client.rest;
 
 import com.squareup.moshi.FromJson;
 import com.squareup.moshi.ToJson;
+import com.streamr.client.java.util.Objects;
 import java.time.Instant;
 import java.time.format.DateTimeFormatter;
-import java.util.Objects;
 
 final class InstantJsonAdapter {
   @FromJson

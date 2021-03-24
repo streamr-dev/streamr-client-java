@@ -11,7 +11,7 @@ class StreamrClientOptionsSpec extends Specification {
         String url = "some-url"
         String expectedUrl = url + "?controlLayerVersion=" + ControlMessage.LATEST_VERSION + "&messageLayerVersion=" + StreamMessage.LATEST_VERSION
         when:
-        StreamrClientOptions options = new StreamrClientOptions(null, SigningOptions.getDefault(), EncryptionOptions.getDefault(), url, "")
+        StreamrClientOptions options = new StreamrClientOptions(SigningOptions.getDefault(), EncryptionOptions.getDefault(), url)
         then:
         options.getWebsocketApiUrl() == expectedUrl
     }
@@ -19,7 +19,7 @@ class StreamrClientOptionsSpec extends Specification {
         String url = "some-url?messageLayerVersion=31"
         String expectedUrl = url + "&controlLayerVersion=" + ControlMessage.LATEST_VERSION
         when:
-        StreamrClientOptions options = new StreamrClientOptions(null, SigningOptions.getDefault(), EncryptionOptions.getDefault(), url, "")
+        StreamrClientOptions options = new StreamrClientOptions(SigningOptions.getDefault(), EncryptionOptions.getDefault(), url)
         then:
         options.getWebsocketApiUrl() == expectedUrl
     }
@@ -27,7 +27,7 @@ class StreamrClientOptionsSpec extends Specification {
         String url = "some-url?controlLayerVersion=1"
         String expectedUrl = url + "&messageLayerVersion=" + StreamMessage.LATEST_VERSION
         when:
-        StreamrClientOptions options = new StreamrClientOptions(null, SigningOptions.getDefault(), EncryptionOptions.getDefault(), url, "")
+        StreamrClientOptions options = new StreamrClientOptions(SigningOptions.getDefault(), EncryptionOptions.getDefault(), url)
         then:
         options.getWebsocketApiUrl() == expectedUrl
     }

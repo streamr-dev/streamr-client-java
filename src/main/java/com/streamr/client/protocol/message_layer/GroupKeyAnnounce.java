@@ -1,15 +1,15 @@
 package com.streamr.client.protocol.message_layer;
 
+import com.streamr.client.java.util.Objects;
 import com.streamr.client.utils.EncryptedGroupKey;
 import java.util.List;
-import java.util.Objects;
 
 public final class GroupKeyAnnounce extends AbstractGroupKeyMessage {
   private final List<EncryptedGroupKey> groupKeys;
 
   public GroupKeyAnnounce(String streamId, List<EncryptedGroupKey> groupKeys) {
     super(streamId);
-    ValidationUtil.checkNotNull(groupKeys, "groupKeys");
+    Objects.requireNonNull(groupKeys, "groupKeys");
     this.groupKeys = groupKeys;
   }
 

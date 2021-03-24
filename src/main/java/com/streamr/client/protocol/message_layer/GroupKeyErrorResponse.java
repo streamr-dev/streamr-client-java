@@ -1,7 +1,7 @@
 package com.streamr.client.protocol.message_layer;
 
+import com.streamr.client.java.util.Objects;
 import java.util.List;
-import java.util.Objects;
 
 public final class GroupKeyErrorResponse extends AbstractGroupKeyMessage {
   private final String requestId;
@@ -12,15 +12,13 @@ public final class GroupKeyErrorResponse extends AbstractGroupKeyMessage {
   public GroupKeyErrorResponse(
       String requestId, String streamId, String code, String message, List<String> groupKeyIds) {
     super(streamId);
-    ValidationUtil.checkNotNull(requestId, "requestId");
-    ValidationUtil.checkNotNull(code, "code");
-    ValidationUtil.checkNotNull(message, "message");
-    ValidationUtil.checkNotNull(groupKeyIds, "groupKeyIds");
-    ValidationUtil.checkNotEmpty(groupKeyIds, "groupKeyIds");
-
+    Objects.requireNonNull(requestId, "requestId");
     this.requestId = requestId;
+    Objects.requireNonNull(code, "code");
     this.code = code;
+    Objects.requireNonNull(message, "message");
     this.message = message;
+    ValidationUtil.checkNotEmpty(groupKeyIds, "groupKeyIds");
     this.groupKeyIds = groupKeyIds;
   }
 

@@ -1,5 +1,6 @@
 package com.streamr.client.protocol.message_layer;
 
+import com.streamr.client.java.util.Objects;
 import com.streamr.client.protocol.common.MessageRef;
 import com.streamr.client.protocol.common.UnsupportedMessageException;
 import com.streamr.client.utils.Address;
@@ -11,7 +12,6 @@ import java.util.Collections;
 import java.util.Date;
 import java.util.HashMap;
 import java.util.Map;
-import java.util.Objects;
 import okio.Buffer;
 
 public final class StreamMessage implements ITimestamped {

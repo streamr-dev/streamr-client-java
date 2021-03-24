@@ -2,9 +2,9 @@ package com.streamr.client.protocol.control_layer;
 
 import com.squareup.moshi.JsonReader;
 import com.squareup.moshi.JsonWriter;
+import com.streamr.client.java.util.Objects;
 import java.io.IOException;
 import java.nio.charset.StandardCharsets;
-import java.util.Objects;
 import okio.Buffer;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;

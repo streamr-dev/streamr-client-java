@@ -1,17 +1,18 @@
 package com.streamr.client.rest
 
 import com.streamr.client.StreamrClient
+import com.streamr.client.crypto.Keys
 import com.streamr.client.testing.TestingKeys
 import com.streamr.client.testing.TestingStreamrClient
 import com.streamr.client.testing.TestingStreams
 import spock.lang.Specification
 
 class StreamEndpointsSpec extends Specification {
-
+    private final BigInteger privateKey = TestingKeys.generatePrivateKey()
     private StreamrClient client
 
     void setup() {
-        client = TestingStreamrClient.createClientWithPrivateKey(TestingKeys.generatePrivateKey())
+        client = TestingStreamrClient.createClientWithPrivateKey(privateKey)
     }
 
     void cleanup() {
@@ -171,13 +172,12 @@ class StreamEndpointsSpec extends Specification {
     }
 
     void "getUserInfo()"() {
-        EthereumAuthenticationMethod method = (EthereumAuthenticationMethod) client.getOptions().getAuthenticationMethod()
         when:
         UserInfo info = client.getUserInfo()
 
         then:
         info.getName() == "Anonymous User"
-        info.getUsername() == method.address
+        info.getUsername() == Keys.privateKeyToAddressWithPrefix(privateKey)
     }
 
     void "getPublishers()"() {

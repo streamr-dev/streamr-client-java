@@ -1,8 +1,8 @@
 package com.streamr.client.ws;
 
+import com.streamr.client.java.util.Objects;
 import com.streamr.client.protocol.control_layer.ControlMessage;
 import com.streamr.client.protocol.message_layer.StreamMessage;
-import java.util.Objects;
 
 public final class WebsocketUrl {
   private static final String URL_PARAMTERS =

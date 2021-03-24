@@ -1,18 +1,11 @@
 package com.streamr.client.options;
 
-import com.streamr.client.exceptions.InvalidOptionsException;
-import com.streamr.client.rest.AuthenticationMethod;
-import com.streamr.client.rest.EthereumAuthenticationMethod;
 import com.streamr.client.ws.WebsocketUrl;
 
 public class StreamrClientOptions {
-
-  private AuthenticationMethod authenticationMethod = null;
   private SigningOptions signingOptions = SigningOptions.getDefault();
   private EncryptionOptions encryptionOptions = EncryptionOptions.getDefault();
-  private boolean publishSignedMsgs = false;
   private WebsocketUrl websocketApiUrl = new WebsocketUrl();
-  private String restApiUrl = "https://www.streamr.com/api/v1";
 
   private String mainnetRpcUrl = "https://mainnet.infura.io/v3/140f8dc53a2141e4b645a4db9fc4cebb";
   private String sidechainRpcUrl = "https://rpc.xdaichain.com/";
@@ -26,67 +19,28 @@ public class StreamrClientOptions {
 
   public StreamrClientOptions() {}
 
-  public StreamrClientOptions(AuthenticationMethod authenticationMethod) {
-    this.authenticationMethod = authenticationMethod;
-    this.publishSignedMsgs = authenticationMethod instanceof EthereumAuthenticationMethod;
-  }
-
   public StreamrClientOptions(
-      AuthenticationMethod authenticationMethod, SigningOptions signingOptions) {
-    this.authenticationMethod = authenticationMethod;
+      SigningOptions signingOptions, EncryptionOptions encryptionOptions, String websocketApiUrl) {
     this.signingOptions = signingOptions;
-    if (this.signingOptions.getPublishSigned()
-        == SigningOptions.SignatureComputationPolicy.ALWAYS) {
-      if (authenticationMethod instanceof EthereumAuthenticationMethod) {
-        this.publishSignedMsgs = true;
-      } else {
-        throw new InvalidOptionsException(
-            "SigningOptions.SignatureComputationPolicy.ALWAYS requires an EthereumAuthenticationMethod as"
-                + "AuthenticationMethod.(Need a private key to be able to sign).");
-      }
-    } else if (this.signingOptions.getPublishSigned()
-        == SigningOptions.SignatureComputationPolicy.AUTO) {
-      this.publishSignedMsgs = authenticationMethod instanceof EthereumAuthenticationMethod;
-    }
-  }
-
-  public StreamrClientOptions(
-      AuthenticationMethod authenticationMethod,
-      SigningOptions signingOptions,
-      EncryptionOptions encryptionOptions,
-      String websocketApiUrl,
-      String restApiUrl) {
-    this(authenticationMethod, signingOptions);
     this.encryptionOptions = encryptionOptions;
     this.websocketApiUrl = new WebsocketUrl(websocketApiUrl);
-    this.restApiUrl = restApiUrl;
   }
 
   public StreamrClientOptions(
-      AuthenticationMethod authenticationMethod,
       SigningOptions signingOptions,
       EncryptionOptions encryptionOptions,
       String websocketApiUrl,
-      String restApiUrl,
       int propagationTimeout,
       int resendTimeout,
       boolean skipGapsOnFullQueue) {
-    this(authenticationMethod, signingOptions, encryptionOptions, websocketApiUrl, restApiUrl);
+    this(signingOptions, encryptionOptions, websocketApiUrl);
     this.propagationTimeout = propagationTimeout;
     this.resendTimeout = resendTimeout;
     this.skipGapsOnFullQueue = skipGapsOnFullQueue;
   }
 
-  public AuthenticationMethod getAuthenticationMethod() {
-    return authenticationMethod;
-  }
-
   public String getWebsocketApiUrl() {
     return websocketApiUrl.toString();
-  }
-
-  public String getRestApiUrl() {
-    return restApiUrl;
   }
 
   public String getMainnetRpcUrl() {
@@ -105,10 +59,6 @@ public class StreamrClientOptions {
     this.sidechainRpcUrl = sidechainRpcUrl;
   }
 
-  public void setRestApiUrl(String restApiUrl) {
-    this.restApiUrl = restApiUrl;
-  }
-
   public long getConnectionTimeoutMillis() {
     return connectionTimeoutMillis;
   }
@@ -123,10 +73,6 @@ public class StreamrClientOptions {
 
   public void setReconnectRetryInterval(long reconnectRetryInterval) {
     this.reconnectRetryInterval = reconnectRetryInterval;
-  }
-
-  public boolean getPublishSignedMsgs() {
-    return publishSignedMsgs;
   }
 
   public SigningOptions getSigningOptions() {
@@ -147,10 +93,6 @@ public class StreamrClientOptions {
 
   public boolean getSkipGapsOnFullQueue() {
     return skipGapsOnFullQueue;
-  }
-
-  public void setSkipGapsOnFullQueue(boolean skipGapsOnFullQueue) {
-    this.skipGapsOnFullQueue = skipGapsOnFullQueue;
   }
 
   public String getDataUnionSidechainFactoryAddress() {

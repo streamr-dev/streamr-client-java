@@ -1,6 +1,7 @@
 package com.streamr.client.utils;
 
 import com.streamr.client.exceptions.KeyAlreadyExistsException;
+import com.streamr.client.java.util.Objects;
 import com.streamr.client.protocol.message_layer.AbstractGroupKeyMessage;
 import com.streamr.client.protocol.message_layer.GroupKeyAnnounce;
 import com.streamr.client.protocol.message_layer.GroupKeyRequest;
@@ -16,7 +17,6 @@ import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
-import java.util.Objects;
 import java.util.Set;
 import java.util.function.Consumer;
 import java.util.stream.Collectors;
@@ -47,24 +47,6 @@ public class KeyExchangeUtil {
 
   public static final String KEY_EXCHANGE_STREAM_PREFIX = "SYSTEM/keyexchange/";
 
-  public KeyExchangeUtil(
-      GroupKeyStore keyStore,
-      MessageCreationUtil messageCreationUtil,
-      EncryptionUtil encryptionUtil,
-      AddressValidityUtil addressValidityUtil,
-      Consumer<StreamMessage> publishFunction,
-      OnNewKeysFunction onNewKeysFunction) {
-    this(
-        keyStore,
-        messageCreationUtil,
-        encryptionUtil,
-        addressValidityUtil,
-        publishFunction,
-        onNewKeysFunction,
-        Clock.systemDefaultZone());
-  }
-
-  // constructor used for testing in KeyExchangeUtilSpec
   public KeyExchangeUtil(
       GroupKeyStore keyStore,
       MessageCreationUtil messageCreationUtil,
@@ -118,7 +100,7 @@ public class KeyExchangeUtil {
     StreamMessage response = messageCreationUtil.createGroupKeyResponse(sender, request, foundKeys);
 
     // For re-keys, remember the public key for this subscriber
-    publicKeys.put(sender, request.getPublicKey());
+    publicKeys.put(sender, request.getRsaPublicKey());
 
     publishFunction.accept(response);
   }
@@ -165,7 +147,7 @@ public class KeyExchangeUtil {
     }
   }
 
-  public void handleNewRSAEncryptedKeys(
+  private void handleNewRSAEncryptedKeys(
       Collection<EncryptedGroupKey> encryptedKeys, String streamId, Address publisherId) {
     List<GroupKey> keys =
         encryptedKeys.stream()

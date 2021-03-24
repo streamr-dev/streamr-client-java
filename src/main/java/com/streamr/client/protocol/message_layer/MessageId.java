@@ -1,8 +1,8 @@
 package com.streamr.client.protocol.message_layer;
 
+import com.streamr.client.java.util.Objects;
 import com.streamr.client.utils.Address;
 import java.util.Date;
-import java.util.Objects;
 
 public final class MessageId {
   private final String streamId;
@@ -19,20 +19,14 @@ public final class MessageId {
       final long sequenceNumber,
       final Address publisherId,
       final String msgChainId) {
-    if (streamId == null) {
-      throw new MalformedMessageException("'streamId' cannot be null.");
-    }
-    if (publisherId == null) {
-      throw new MalformedMessageException("'publisherId' cannot be null.");
-    }
-    if (msgChainId == null) {
-      throw new MalformedMessageException("'msgChainId' cannot be null.");
-    }
+    Objects.requireNonNull(streamId, "'streamId' cannot be null.");
     this.streamId = streamId;
     this.streamPartition = streamPartition;
     this.timestamp = timestamp;
     this.sequenceNumber = sequenceNumber;
+    Objects.requireNonNull(publisherId, "'publisherId' cannot be null.");
     this.publisherId = publisherId;
+    Objects.requireNonNull(msgChainId, "'msgChainId' cannot be null.");
     this.msgChainId = msgChainId;
   }
 

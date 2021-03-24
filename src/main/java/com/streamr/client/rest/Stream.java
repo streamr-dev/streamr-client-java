@@ -1,8 +1,8 @@
 package com.streamr.client.rest;
 
+import com.streamr.client.java.util.Objects;
 import java.time.Instant;
 import java.util.Date;
-import java.util.Objects;
 
 /**
  * {@code Stream} represents a Streamr Stream.

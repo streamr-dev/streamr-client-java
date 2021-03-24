@@ -186,10 +186,9 @@ task fatJar(type: Jar) {
 }
 ext {
 	slf4jApiVersion = '1.7.30'
-	okHttpVersion = '4.9.0'
+	okHttpVersion = '4.9.1'
 	moshiVersion = '1.11.0'
 	moshiAdaptersVersion = '1.11.0'
-	okIoVersion = '2.9.0'
 	commonsLangVersion = '3.11'
 	javaWebSocketVersion = '1.5.1'
 	cache2kVersion = '1.6.0.Final'
@@ -208,10 +207,12 @@ ext {
 // https://docs.gradle.org/current/userguide/java_library_plugin.html
 dependencies {
 	implementation("org.slf4j:slf4j-api:${slf4jApiVersion}")
-	implementation("com.squareup.okhttp3:okhttp:${okHttpVersion}")
+	api("com.squareup.okhttp3:okhttp:${okHttpVersion}")
+	implementation("com.squareup.okio:okio") {
+		because "OkHttpClient requires okio"
+	}
 	implementation("com.squareup.moshi:moshi:${moshiVersion}")
 	implementation("com.squareup.moshi:moshi-adapters:${moshiAdaptersVersion}")
-	implementation("com.squareup.okio:okio:${okIoVersion}")
 	implementation("org.apache.commons:commons-lang3:${commonsLangVersion}")
 	implementation("org.java-websocket:Java-WebSocket:${javaWebSocketVersion}") {
 		exclude group: 'org.slf4j', module: 'slf4j-api'

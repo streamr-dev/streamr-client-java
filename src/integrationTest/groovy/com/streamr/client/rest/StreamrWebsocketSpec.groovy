@@ -17,9 +17,8 @@ import spock.lang.Specification
 import spock.util.concurrent.PollingConditions
 
 class StreamrWebsocketSpec extends Specification {
-
-    private String publisherPrivateKey
-    private String subscriberPrivateKey
+    private BigInteger publisherPrivateKey
+    private BigInteger subscriberPrivateKey
     private StreamrClient publisher
     private StreamrClient subscriber
     private Stream stream
@@ -29,7 +28,7 @@ class StreamrWebsocketSpec extends Specification {
         publisherPrivateKey = TestingKeys.generatePrivateKey()
         subscriberPrivateKey = TestingKeys.generatePrivateKey()
         publisher = TestingStreamrClient.createClientWithPrivateKey(publisherPrivateKey)
-        subscriber = TestingStreamrClient.createClientWithPrivateKey(subscriberPrivateKey)
+        subscriber = TestingStreamrClient.createClientWithPrivateKey(publisherPrivateKey)
 
         Stream proto = new Stream.Builder()
                 .withName(TestingStreams.generateName())

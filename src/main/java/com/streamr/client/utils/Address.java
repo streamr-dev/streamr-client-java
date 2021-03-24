@@ -1,6 +1,6 @@
 package com.streamr.client.utils;
 
-import java.util.Objects;
+import com.streamr.client.java.util.Objects;
 import org.web3j.utils.Numeric;
 
 /**

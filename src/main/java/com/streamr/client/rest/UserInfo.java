@@ -1,13 +1,15 @@
 package com.streamr.client.rest;
 
-import java.util.Objects;
+import com.streamr.client.java.util.Objects;
 
 public final class UserInfo {
   private final String name;
   private final String username;
 
   public UserInfo(final String name, final String username) {
+    Objects.requireNonNull(name);
     this.name = name;
+    Objects.requireNonNull(username);
     this.username = username;
   }
 

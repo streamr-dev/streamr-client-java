@@ -1,7 +1,7 @@
 package com.streamr.client.rest;
 
 import com.squareup.moshi.Json;
-import java.util.Objects;
+import com.streamr.client.java.util.Objects;
 
 /**
  * {@code FieldConfig} holds Stream's field configuration.
@@ -33,8 +33,30 @@ public final class FieldConfig {
   private final Type type;
 
   public FieldConfig(final String name, final Type type) {
+    Objects.requireNonNull(name);
     this.name = name;
+    Objects.requireNonNull(type);
     this.type = type;
+  }
+
+  public static FieldConfig createNumber(final String name) {
+    return new FieldConfig(name, Type.NUMBER);
+  }
+
+  public static FieldConfig createString(final String name) {
+    return new FieldConfig(name, Type.STRING);
+  }
+
+  public static FieldConfig createBoolean(final String name) {
+    return new FieldConfig(name, Type.BOOLEAN);
+  }
+
+  public static FieldConfig createList(final String name) {
+    return new FieldConfig(name, Type.LIST);
+  }
+
+  public static FieldConfig createMap(final String name) {
+    return new FieldConfig(name, Type.MAP);
   }
 
   public String getName() {
