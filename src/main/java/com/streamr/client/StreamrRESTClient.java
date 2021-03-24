@@ -14,6 +14,12 @@ import okhttp3.*;
 
 import java.io.IOException;
 import java.util.List;
+import java.util.Map;
+import java.util.stream.Collectors;
+
+class StorageNodeInput {
+    Address storageNodeAddress;
+}
 
 /**
  * This class exposes the RESTful API endpoints.
@@ -25,6 +31,7 @@ public abstract class StreamrRESTClient extends AbstractStreamrClient {
     public static final JsonAdapter<UserInfo> userInfoJsonAdapter = MOSHI.adapter(UserInfo.class);
     public static final JsonAdapter<Publishers> publishersJsonAdapter = MOSHI.adapter(Publishers.class);
     public static final JsonAdapter<Subscribers> subscribersJsonAdapter = MOSHI.adapter(Subscribers.class);
+    public static final JsonAdapter<StorageNode> storageNodeJsonAdapter = MOSHI.adapter(StorageNode.class);
     public static final JsonAdapter<List<Stream>> streamListJsonAdapter = MOSHI.adapter(Types.newParameterizedType(List.class, Stream.class));
 
     // private final Publisher publisher;
@@ -101,6 +108,11 @@ public abstract class StreamrRESTClient extends AbstractStreamrClient {
                 .url(url)
                 .post(RequestBody.create(HttpUtils.jsonType, requestBody));
         return executeWithRetry(builder, adapter, retryIfSessionExpired);
+    }
+
+    private <T> T delete(HttpUrl url) throws IOException {
+        Request.Builder builder = new Request.Builder().url(url).delete();
+        return executeWithRetry(builder, null, true);
     }
 
     /*
@@ -204,6 +216,34 @@ public abstract class StreamrRESTClient extends AbstractStreamrClient {
         } catch (ResourceNotFoundException e) {
             return false;
         }
+    }
+
+    public void addStreamToStorageNode(String streamId, StorageNode storageNode) throws IOException {
+        HttpUrl url = getEndpointUrl("streams", streamId, "storageNodes");
+        post(url, storageNodeJsonAdapter.toJson(storageNode), streamJsonAdapter);
+    }
+
+    public void removeStreamToStorageNode(String streamId, StorageNode storageNode) throws IOException {
+        HttpUrl url = getEndpointUrl("streams", streamId, "storageNodes", storageNode.getAddress().toString());
+        delete(url);
+    }
+
+    public List<StorageNode> getStorageNodes(String streamId) throws IOException {
+        HttpUrl url = getEndpointUrl("streams", streamId, "storageNodes");
+        JsonAdapter<List<StorageNodeInput>> adapter = MOSHI.adapter(Types.newParameterizedType(List.class, StorageNodeInput.class));
+        List<StorageNodeInput> items = get(url, adapter);
+        return items.stream()
+            .map(item -> new StorageNode(item.storageNodeAddress))
+            .collect(Collectors.toList());
+    }
+
+    public List<StreamPart> getStreamPartsByStorageNode(StorageNode storageNode) throws IOException {
+        HttpUrl url = getEndpointUrl("storageNodes", storageNode.getAddress().toString(), "streams");
+        List<Stream> streams = get(url, streamListJsonAdapter);
+        return streams.stream()
+            .map(stream -> stream.toStreamParts())
+            .flatMap(x -> x.stream())
+            .collect(Collectors.toList());
     }
 
     public void logout() throws IOException {

@@ -6,6 +6,8 @@ import org.web3j.crypto.WalletUtils;
 
 import java.util.Random;
 
+import java.util.Random;
+
 /**
  * For making sure that Ethereum addresses are always treated similarly everywhere (e.g. lower-cased)
  */
@@ -45,6 +47,12 @@ public class Address {
 
     public String toLowerCaseString() {
         return this.address;
+    }
+
+    public static Address createRandom() {
+        byte[] array = new byte[20];
+        new Random().nextBytes(array);
+        return new Address(array);
     }
 
     public static Address createRandom() {
