@@ -222,7 +222,7 @@ class StreamEndpointsSpec extends StreamrIntegrationSpecification {
         StorageNode devStorageNode = getDevStorageNode()
         client.addStreamToStorageNode(streamId, devStorageNode)
         when:
-        client.removeStreamToStorageNode(streamId, devStorageNode)
+        client.removeStreamFromStorageNode(streamId, devStorageNode)
         List<StorageNode> storageNodes = client.getStorageNodes(streamId)
         then:
         storageNodes.size() == 0

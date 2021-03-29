@@ -256,7 +256,7 @@ public abstract class StreamrRESTClient extends AbstractStreamrClient {
         }
     }
 
-    public void removeStreamToStorageNode(String streamId, StorageNode storageNode) throws IOException {
+    public void removeStreamFromStorageNode(String streamId, StorageNode storageNode) throws IOException {
         HttpUrl url = getEndpointUrl("streams", streamId, "storageNodes", storageNode.getAddress().toString());
         delete(url);
     }
