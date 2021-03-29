@@ -265,6 +265,7 @@ class StreamrWebsocketSpec extends StreamrIntegrationSpecification {
 	}
 
 	void "subscriber can get the historical keys and decrypt old encrypted messages using an RSA key pair"() {
+		publisher.addStreamToStorageNode(stream.id, getDevStorageNode())
 		// publishing historical messages with different group keys before subscribing
 		List<GroupKey> keys = [GroupKey.generate(), GroupKey.generate()]
 		publisher.publish(stream, [test: 'clear text'], new Date(), null, keys[0])
@@ -313,6 +314,7 @@ class StreamrWebsocketSpec extends StreamrIntegrationSpecification {
 	}
 
 	void "subscribe with resend last"() {
+		publisher.addStreamToStorageNode(stream.id, getDevStorageNode())
 		boolean received = false
 
 		when:
@@ -333,6 +335,7 @@ class StreamrWebsocketSpec extends StreamrIntegrationSpecification {
 	}
 
 	void "subscribe with resend from"() {
+		publisher.addStreamToStorageNode(stream.id, getDevStorageNode())
         boolean received = false
         boolean done = false
 
@@ -358,6 +361,7 @@ class StreamrWebsocketSpec extends StreamrIntegrationSpecification {
 	}
 
 	void "resend last"() {
+		publisher.addStreamToStorageNode(stream.id, getDevStorageNode())
 		List receivedMsg = []
 		boolean done = false
 
@@ -393,6 +397,7 @@ class StreamrWebsocketSpec extends StreamrIntegrationSpecification {
 	}
 
 	void "resend from"() {
+		publisher.addStreamToStorageNode(stream.id, getDevStorageNode())
 		List receivedMsg = []
 		boolean done = false
 		Date resendFromDate
@@ -431,6 +436,7 @@ class StreamrWebsocketSpec extends StreamrIntegrationSpecification {
 	}
 
 	void "resend range"() {
+		publisher.addStreamToStorageNode(stream.id, getDevStorageNode())
 		List receivedMsg = []
 		boolean done = false
 		Date resendFromDate
@@ -475,6 +481,7 @@ class StreamrWebsocketSpec extends StreamrIntegrationSpecification {
 	}
 
     void "resend range again"() {
+		publisher.addStreamToStorageNode(stream.id, getDevStorageNode())
         List receivedMsg = []
         boolean done = false
         int j = 0
@@ -526,6 +533,7 @@ class StreamrWebsocketSpec extends StreamrIntegrationSpecification {
     }
 
 	void "subscribe with resend last, with key exchange"() {
+		publisher.addStreamToStorageNode(stream.id, getDevStorageNode())
 		boolean stop = false
 		int publishedMessages = 0
 		int receivedMessages = 0
@@ -563,6 +571,7 @@ class StreamrWebsocketSpec extends StreamrIntegrationSpecification {
 	}
 
 	void "two instances of same publisher publishing to the same stream"() {
+		publisher.addStreamToStorageNode(stream.id, getDevStorageNode())
 		boolean stop = false
 		StreamrClient publisher2 = createClientWithPrivateKey(publisherPrivateKey) // same private key
 		publisher.grant(stream, Permission.Operation.stream_get, publisher2.getPublisherId().toString())
