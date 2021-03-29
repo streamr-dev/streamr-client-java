@@ -19,7 +19,7 @@ class SigningUtilSpec extends StreamrSpecification {
         String withoutPrefix = "23bead9b499af21c4c16e4511b3b6b08c3e22e76e0591f5ab5ba8d4c3a5b1820"
         account = ECKey.fromPrivate(new BigInteger(withoutPrefix, 16))
         address = new Address("0x" + Hex.encodeHexString(account.getAddress()))
-        assert address.toString() == "0xa5374e3C19f15E1847881979Dd0C6C9ffe846BD5".toLowerCase()
+        assert address.toString().toLowerCase() == "0xa5374e3C19f15E1847881979Dd0C6C9ffe846BD5".toLowerCase()
 
         signingUtil = new SigningUtil(account)
         msgId = new MessageID("streamId", 0, 425235315L, 0L, publisherId, "msgChainId")
@@ -35,7 +35,7 @@ class SigningUtilSpec extends StreamrSpecification {
 
     void "should correctly sign a StreamMessage with null previous ref"() {
         StreamMessage msg = new StreamMessage(msgId, null, [foo: 'bar'])
-        String expectedPayload = "streamId04252353150publisheridmsgChainId"+'{"foo":"bar"}'
+        String expectedPayload = "streamId04252353150" + publisherId.toLowerCaseString() + "msgChainId"+'{"foo":"bar"}'
         when:
         signingUtil.signStreamMessage(msg)
         then:
@@ -45,7 +45,7 @@ class SigningUtilSpec extends StreamrSpecification {
 
     void "should correctly sign a StreamMessage with non-null previous ref"() {
         StreamMessage msg = new StreamMessage(msgId, new MessageRef(100, 1), [foo: 'bar'])
-        String expectedPayload = "streamId04252353150publisheridmsgChainId1001"+'{"foo":"bar"}'
+        String expectedPayload = "streamId04252353150" + publisherId.toLowerCaseString() + "msgChainId1001"+'{"foo":"bar"}'
         when:
         signingUtil.signStreamMessage(msg)
         then:
@@ -56,7 +56,7 @@ class SigningUtilSpec extends StreamrSpecification {
     void "should correctly sign a StreamMessage with new group key"() {
         StreamMessage msg = new StreamMessage(msgId, new MessageRef(100, 1), [foo: 'bar'])
         msg.setNewGroupKey(new EncryptedGroupKey("groupKeyId", "keyHex"))
-        String expectedPayload = "streamId04252353150publisheridmsgChainId1001"+'{"foo":"bar"}'+'["groupKeyId","keyHex"]'
+        String expectedPayload = "streamId04252353150" + publisherId.toLowerCaseString() + "msgChainId1001"+'{"foo":"bar"}'+'["groupKeyId","keyHex"]'
         when:
         signingUtil.signStreamMessage(msg)
         then:

@@ -233,16 +233,16 @@ public class DataUnionClient {
         return waitForTx(sidechain, txhash, sleeptime, timeout);
     }
 
-    public void setNewDUInitialEth(BigInteger amountWei) throws Exception {
-        factorySidechain().setNewDUInitialEth(new Uint256(amountWei)).send();
+    public EthereumTransactionReceipt setNewDUInitialEth(BigInteger amountWei) throws Exception {
+        return new EthereumTransactionReceipt(factorySidechain().setNewDUInitialEth(new Uint256(amountWei)).send());
     }
 
-    public void setNewDUOwnerInitialEth(BigInteger amountWei) throws Exception {
-        factorySidechain().setNewDUOwnerInitialEth(new Uint256(amountWei)).send();
+    public EthereumTransactionReceipt setNewDUOwnerInitialEth(BigInteger amountWei) throws Exception {
+        return new EthereumTransactionReceipt(factorySidechain().setNewDUOwnerInitialEth(new Uint256(amountWei)).send());
     }
 
-    public void setNewMemberInitialEth(BigInteger amountWei) throws Exception {
-        factorySidechain().setNewMemberInitialEth(new Uint256(amountWei)).send();
+    public EthereumTransactionReceipt setNewMemberInitialEth(BigInteger amountWei) throws Exception {
+        return new EthereumTransactionReceipt(factorySidechain().setNewMemberInitialEth(new Uint256(amountWei)).send());
     }
 
     /**
@@ -262,7 +262,7 @@ public class DataUnionClient {
     java byte is signed, so we use short to support 0-255
 
      */
-    protected void portTxToMainnet(Bytes32 msgHash, short collectedSignatures, Credentials cred) throws Exception {
+    protected EthereumTransactionReceipt portTxToMainnet(Bytes32 msgHash, short collectedSignatures, Credentials cred) throws Exception {
         if(collectedSignatures > 255) {
             throw new UnsupportedOperationException("collectedSignatures cannot be greater than 255");
         }
@@ -276,29 +276,38 @@ public class DataUnionClient {
             System.arraycopy(sig.getR(), 0, signatures, 1+collectedSignatures+(i*32), 32);
             System.arraycopy(sig.getS(), 0, signatures, 1+(collectedSignatures*33)+(i*32), 32);
         }
-        mainnetAMB(cred).executeSignatures(message, new DynamicBytes(signatures)).send();
+        return new EthereumTransactionReceipt(mainnetAMB(cred).executeSignatures(message, new DynamicBytes(signatures)).send());
     }
 
-    public void portTxsToMainnet(EthereumTransactionReceipt withdrawalTransaction, String mainnetSenderPrivateKey) throws Exception {
-        portTxsToMainnet(withdrawalTransaction.tr, Credentials.create(mainnetSenderPrivateKey));
+    public List<EthereumTransactionReceipt> portTxsToMainnet(EthereumTransactionReceipt withdrawalTransaction, String mainnetSenderPrivateKey) throws Exception {
+        return portTxsToMainnet(withdrawalTransaction.tr, Credentials.create(mainnetSenderPrivateKey));
     }
 
-    public void portTxsToMainnet(EthereumTransactionReceipt withdrawalTransaction, BigInteger mainnetSenderPrivateKey) throws Exception {
-        portTxsToMainnet(withdrawalTransaction.tr, Credentials.create(ECKeyPair.create(mainnetSenderPrivateKey)));
+    public List<EthereumTransactionReceipt> portTxsToMainnet(EthereumTransactionReceipt withdrawalTransaction, BigInteger mainnetSenderPrivateKey) throws Exception {
+        return portTxsToMainnet(withdrawalTransaction.tr, Credentials.create(ECKeyPair.create(mainnetSenderPrivateKey)));
     }
 
 
-    public void portTxsToMainnet(String withdrawTxHash, String mainnetSenderPrivateKey) throws Exception {
+    public List<EthereumTransactionReceipt> portTxsToMainnet(String withdrawTxHash, String mainnetSenderPrivateKey) throws Exception {
         Optional<TransactionReceipt> optional = sidechain.ethGetTransactionReceipt(withdrawTxHash).send().getTransactionReceipt();
         if(!optional.isPresent()) {
             throw new NoSuchElementException("No sidechain transaction found for txhash " + withdrawTxHash);
         }
         TransactionReceipt withdraw = optional.get();
-        portTxsToMainnet(withdraw, Credentials.create(mainnetSenderPrivateKey));
+        return portTxsToMainnet(withdraw, Credentials.create(mainnetSenderPrivateKey));
     }
 
-    protected void portTxsToMainnet(TransactionReceipt withdraw, Credentials mainnetSenderCredentials) throws Exception {
+    /**
+     * port all bridge requests triggered by sidechain withdraw transaction
+     * @param withdraw
+     * @param mainnetSenderCredentials
+     * @return list of mainnet bridge port TXs executed
+     * @throws Exception
+     */
+
+    protected List<EthereumTransactionReceipt> portTxsToMainnet(TransactionReceipt withdraw, Credentials mainnetSenderCredentials) throws Exception {
         List<Bytes32[]> msgs = extractAmbMessagesIdAndHash(withdraw);
+        List<EthereumTransactionReceipt> txs = new ArrayList<EthereumTransactionReceipt>(msgs.size());
         for(Bytes32[] msg : msgs){
             Bytes32 id = msg[0];
             Bytes32 hash = msg[1];
@@ -315,8 +324,9 @@ public class DataUnionClient {
                 continue;
             }
             log.info("Porting msgId " + id);
-            portTxToMainnet(hash, signatures.shortValueExact(), mainnetSenderCredentials);
+            txs.add(portTxToMainnet(hash, signatures.shortValueExact(), mainnetSenderCredentials));
         }
+        return txs;
     }
 
     //utility functions:
