@@ -33,6 +33,8 @@ public abstract class StreamrRESTClient extends AbstractStreamrClient {
     public static final JsonAdapter<Subscribers> subscribersJsonAdapter = MOSHI.adapter(Subscribers.class);
     public static final JsonAdapter<StorageNode> storageNodeJsonAdapter = MOSHI.adapter(StorageNode.class);
     public static final JsonAdapter<List<Stream>> streamListJsonAdapter = MOSHI.adapter(Types.newParameterizedType(List.class, Stream.class));
+    public static final JsonAdapter<Secret> secretJsonAdapter = MOSHI.adapter(Secret.class);
+
 
     // private final Publisher publisher;
 
@@ -258,4 +260,18 @@ public abstract class StreamrRESTClient extends AbstractStreamrClient {
         }
         return builder.build();
     }
+
+    public Secret setDataUnionSecret(String DUMainnetAddress, String secretName) throws IOException {
+        HttpUrl url = getEndpointUrl("dataunions", DUMainnetAddress, "secrets");
+        String json = String.format("{ %s : \"%s\" }", "name", secretName);
+        return post(url, json, secretJsonAdapter);
+    }
+
+    public void requestDataUnionJoin(String DUMainnetAddress, String memberAddress, String secret) throws IOException {
+        HttpUrl url = getEndpointUrl("dataunions", DUMainnetAddress, "joinRequests");
+        String json = String.format("{ %s : \"%s\", %s : \"%s\" }", "memberAddress", memberAddress, "secret", secret);
+        post(url, json, null);
+    }
+
+
 }
