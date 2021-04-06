@@ -30,11 +30,14 @@ class StreamrIntegrationSpecification extends Specification {
         opts.setMainnetRpcUrl(DEV_MAINCHAIN_RPC)
         opts.setDataUnionMainnetFactoryAddress(DEV_MAINCHAIN_FACTORY)
         opts.setDataUnionSidechainFactoryAddress(DEV_SIDECHAIN_FACTORY)
+        opts.setConnectionTimeoutMillis(60000)
         return new StreamrClient(opts).dataUnionClient(mainnetAdminPrvKey, sidechainAdminPrvKey)
     }
 
     protected static StreamrClient createUnauthenticatedClient() {
-        return new StreamrClient(new StreamrClientOptions(null, SigningOptions.getDefault(), EncryptionOptions.getDefault(), DEFAULT_WEBSOCKET_URL, DEFAULT_REST_URL))
+        StreamrClientOptions opts =  new StreamrClientOptions(null, SigningOptions.getDefault(), EncryptionOptions.getDefault(), DEFAULT_WEBSOCKET_URL, DEFAULT_REST_URL);
+        opts.setConnectionTimeoutMillis(60000)
+        return new StreamrClient(opts)
     }
 
     protected static StreamrClient createClientWithPrivateKey(String privateKey = null) {
@@ -42,7 +45,9 @@ class StreamrIntegrationSpecification extends Specification {
     }
 
     protected static StreamrClientOptions createOptionsWithPrivateKey(String privateKey = null) {
-        return new StreamrClientOptions(new EthereumAuthenticationMethod(privateKey), SigningOptions.getDefault(), EncryptionOptions.getDefault(), DEFAULT_WEBSOCKET_URL, DEFAULT_REST_URL)
+        StreamrClientOptions opts =  new StreamrClientOptions(new EthereumAuthenticationMethod(privateKey), SigningOptions.getDefault(), EncryptionOptions.getDefault(), DEFAULT_WEBSOCKET_URL, DEFAULT_REST_URL)
+        opts.setConnectionTimeoutMillis(60000)
+        return opts
     }
 
     protected String generateResourceName() {
