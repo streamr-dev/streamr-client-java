@@ -769,12 +769,14 @@ public class StreamrClient implements Streamr {
   }
 
   @Override
-  public void addStreamToStorageNode(final String streamId, final StorageNode storageNode) throws IOException {
+  public void addStreamToStorageNode(final String streamId, final StorageNode storageNode)
+      throws IOException {
     restClient.addStreamToStorageNode(streamId, storageNode);
   }
 
   @Override
-  public void removeStreamToStorageNode(final String streamId, final StorageNode storageNode) throws IOException {
+  public void removeStreamToStorageNode(final String streamId, final StorageNode storageNode)
+      throws IOException {
     restClient.removeStreamToStorageNode(streamId, storageNode);
   }
 
@@ -784,7 +786,8 @@ public class StreamrClient implements Streamr {
   }
 
   @Override
-  public List<StreamPart> getStreamPartsByStorageNode(final StorageNode storageNode) throws IOException {
+  public List<StreamPart> getStreamPartsByStorageNode(final StorageNode storageNode)
+      throws IOException {
     return restClient.getStreamPartsByStorageNode(storageNode);
   }
 

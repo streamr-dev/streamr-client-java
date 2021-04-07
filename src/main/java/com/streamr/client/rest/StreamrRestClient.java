@@ -176,10 +176,12 @@ public class StreamrRestClient {
     return executeWithRetry(builder, adapter, retryIfSessionExpired);
   }
 
-  public void addStreamToStorageNode(final String streamId, final StorageNode storageNode) throws IOException {
+  public void addStreamToStorageNode(final String streamId, final StorageNode storageNode)
+      throws IOException {
     final JsonAdapter<StorageNode> storageNodeJsonAdapter =
         Json.newMoshiBuilder().build().adapter(StorageNode.class);
-    final JsonAdapter<Stream> streamJsonAdapter = Json.newMoshiBuilder().build().adapter(Stream.class);
+    final JsonAdapter<Stream> streamJsonAdapter =
+        Json.newMoshiBuilder().build().adapter(Stream.class);
     final HttpUrl url = getEndpointUrl("streams", streamId, "storageNodes");
     postWithRetry(url, storageNodeJsonAdapter.toJson(storageNode), streamJsonAdapter);
   }
@@ -203,8 +205,10 @@ public class StreamrRestClient {
         .collect(Collectors.toList());
   }
 
-  public List<StreamPart> getStreamPartsByStorageNode(final StorageNode storageNode) throws IOException {
-    final HttpUrl url = getEndpointUrl("storageNodes", storageNode.getAddress().toString(), "streams");
+  public List<StreamPart> getStreamPartsByStorageNode(final StorageNode storageNode)
+      throws IOException {
+    final HttpUrl url =
+        getEndpointUrl("storageNodes", storageNode.getAddress().toString(), "streams");
     final JsonAdapter<List<Stream>> streamListJsonAdapter =
         Json.newMoshiBuilder()
             .build()
