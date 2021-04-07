@@ -2,7 +2,9 @@ package com.streamr.client.rest;
 
 import com.streamr.client.java.util.Objects;
 import java.time.Instant;
+import java.util.ArrayList;
 import java.util.Date;
+import java.util.List;
 
 /**
  * {@code Stream} represents a Streamr Stream.
@@ -128,6 +130,14 @@ public final class Stream {
 
   public Date getLastUpdated() {
     return lastUpdated;
+  }
+
+  public List<StreamPart> toStreamParts() {
+    List<StreamPart> result = new ArrayList<>();
+    for (int i = 0; i < this.partitions; i++) {
+      result.add(new StreamPart(this.id, i));
+    }
+    return result;
   }
 
   @Override

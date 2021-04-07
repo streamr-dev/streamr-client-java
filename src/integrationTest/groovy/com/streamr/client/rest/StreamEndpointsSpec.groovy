@@ -2,6 +2,7 @@ package com.streamr.client.rest
 
 import com.streamr.client.StreamrClient
 import com.streamr.client.crypto.Keys
+import com.streamr.client.testing.TestingAddresses
 import com.streamr.client.testing.TestingKeys
 import com.streamr.client.testing.TestingStreamrClient
 import com.streamr.client.testing.TestingStreams
@@ -230,6 +231,55 @@ class StreamEndpointsSpec extends Specification {
         then:
         isValid1
         !isValid2
+    }
+
+    void "addStreamToStorageNode"() {
+        Stream proto = new Stream.Builder()
+                .withName(TestingStreams.generateName())
+                .withDescription("This stream was created from an integration test")
+                .createStream()
+        String streamId = client.createStream(proto).getId()
+        StorageNode storageNode = new StorageNode(TestingAddresses.createRandom())
+        when:
+        client.addStreamToStorageNode(streamId, storageNode)
+        List<StorageNode> storageNodes = client.getStorageNodes(streamId)
+        then:
+        storageNodes.size() == 1
+        storageNodes.get(0).getAddress() == storageNode.getAddress()
+    }
+
+    void "removeStreamFromStorageNode"() {
+        Stream proto = new Stream.Builder()
+                .withName(TestingStreams.generateName())
+                .withDescription("This stream was created from an integration test")
+                .createStream()
+        String streamId = client.createStream(proto).getId()
+        StorageNode storageNode = new StorageNode(TestingAddresses.createRandom())
+        client.addStreamToStorageNode(streamId, storageNode)
+        when:
+        client.removeStreamToStorageNode(streamId, storageNode)
+        List<StorageNode> storageNodes = client.getStorageNodes(streamId)
+        then:
+        storageNodes.size() == 0
+    }
+
+    void "getStreamPartsByStorageNode"() {
+        Stream proto = new Stream.Builder()
+                .withName(TestingStreams.generateName())
+                .withDescription("This stream was created from an integration test")
+                .withPartitions(2)
+                .createStream()
+        String streamId = client.createStream(proto).getId()
+        StorageNode storageNode = new StorageNode(TestingAddresses.createRandom())
+        client.addStreamToStorageNode(streamId, storageNode)
+        when:
+        List<StreamPart> streamParts = client.getStreamPartsByStorageNode(storageNode)
+        then:
+        streamParts.size() == 2
+        streamParts.get(0).getStreamId() == streamId
+        streamParts.get(0).getStreamPartition() == 0
+        streamParts.get(1).getStreamId() == streamId
+        streamParts.get(1).getStreamPartition() == 1
     }
 
     void "not same token used after logout()"() {

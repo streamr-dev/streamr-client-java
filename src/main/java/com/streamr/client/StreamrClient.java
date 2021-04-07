@@ -29,7 +29,9 @@ import com.streamr.client.protocol.message_layer.StreamMessage;
 import com.streamr.client.protocol.message_layer.StreamMessageValidator;
 import com.streamr.client.rest.AmbiguousResultsException;
 import com.streamr.client.rest.Permission;
+import com.streamr.client.rest.StorageNode;
 import com.streamr.client.rest.Stream;
+import com.streamr.client.rest.StreamPart;
 import com.streamr.client.rest.StreamrRestClient;
 import com.streamr.client.rest.UserInfo;
 import com.streamr.client.subs.BasicSubscription;
@@ -764,6 +766,26 @@ public class StreamrClient implements Streamr {
     sub.setState(Subscription.State.UNSUBSCRIBING);
     sub.setResending(false);
     send(unsubscribeRequest);
+  }
+
+  @Override
+  public void addStreamToStorageNode(final String streamId, final StorageNode storageNode) throws IOException {
+    restClient.addStreamToStorageNode(streamId, storageNode);
+  }
+
+  @Override
+  public void removeStreamToStorageNode(final String streamId, final StorageNode storageNode) throws IOException {
+    restClient.removeStreamToStorageNode(streamId, storageNode);
+  }
+
+  @Override
+  public List<StorageNode> getStorageNodes(final String streamId) throws IOException {
+    return restClient.getStorageNodes(streamId);
+  }
+
+  @Override
+  public List<StreamPart> getStreamPartsByStorageNode(final StorageNode storageNode) throws IOException {
+    return restClient.getStreamPartsByStorageNode(storageNode);
   }
 
   private void handleSubscribeResponse(SubscribeResponse res) throws SubscriptionNotFoundException {

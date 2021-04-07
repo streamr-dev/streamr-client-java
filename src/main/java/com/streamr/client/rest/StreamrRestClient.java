@@ -11,6 +11,7 @@ import java.lang.reflect.ParameterizedType;
 import java.math.BigInteger;
 import java.net.HttpURLConnection;
 import java.util.List;
+import java.util.stream.Collectors;
 import okhttp3.Call;
 import okhttp3.HttpUrl;
 import okhttp3.MediaType;
@@ -147,6 +148,11 @@ public class StreamrRestClient {
     }
   }
 
+  private <T> T deleteWithRetry(final HttpUrl url) throws IOException {
+    final Request.Builder builder = new Request.Builder().url(url).delete();
+    return executeWithRetry(builder, null, true);
+  }
+
   private <T> T getWithRetry(final HttpUrl url, final JsonAdapter<T> adapter) throws IOException {
     final Request.Builder builder = new Request.Builder().url(url);
     return executeWithRetry(builder, adapter, true);
@@ -168,6 +174,46 @@ public class StreamrRestClient {
     final RequestBody content = RequestBody.create(requestBody, contentTypeJson);
     final Request.Builder builder = new Request.Builder().url(url).post(content);
     return executeWithRetry(builder, adapter, retryIfSessionExpired);
+  }
+
+  public void addStreamToStorageNode(final String streamId, final StorageNode storageNode) throws IOException {
+    final JsonAdapter<StorageNode> storageNodeJsonAdapter =
+        Json.newMoshiBuilder().build().adapter(StorageNode.class);
+    final JsonAdapter<Stream> streamJsonAdapter = Json.newMoshiBuilder().build().adapter(Stream.class);
+    final HttpUrl url = getEndpointUrl("streams", streamId, "storageNodes");
+    postWithRetry(url, storageNodeJsonAdapter.toJson(storageNode), streamJsonAdapter);
+  }
+
+  public void removeStreamToStorageNode(final String streamId, final StorageNode storageNode)
+      throws IOException {
+    final HttpUrl url =
+        getEndpointUrl("streams", streamId, "storageNodes", storageNode.getAddress().toString());
+    deleteWithRetry(url);
+  }
+
+  public List<StorageNode> getStorageNodes(final String streamId) throws IOException {
+    final HttpUrl url = getEndpointUrl("streams", streamId, "storageNodes");
+    final JsonAdapter<List<StorageNodeInput>> adapter =
+        Json.newMoshiBuilder()
+            .build()
+            .adapter(Types.newParameterizedType(List.class, StorageNodeInput.class));
+    final List<StorageNodeInput> items = getWithRetry(url, adapter);
+    return items.stream()
+        .map(item -> new StorageNode(item.getStorageNodeAddress()))
+        .collect(Collectors.toList());
+  }
+
+  public List<StreamPart> getStreamPartsByStorageNode(final StorageNode storageNode) throws IOException {
+    final HttpUrl url = getEndpointUrl("storageNodes", storageNode.getAddress().toString(), "streams");
+    final JsonAdapter<List<Stream>> streamListJsonAdapter =
+        Json.newMoshiBuilder()
+            .build()
+            .adapter(Types.newParameterizedType(List.class, Stream.class));
+    final List<Stream> streams = getWithRetry(url, streamListJsonAdapter);
+    return streams.stream()
+        .map(stream -> stream.toStreamParts())
+        .flatMap(x -> x.stream())
+        .collect(Collectors.toList());
   }
 
   /*
