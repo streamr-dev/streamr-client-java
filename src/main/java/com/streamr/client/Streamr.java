@@ -4,7 +4,9 @@ import com.streamr.client.dataunion.DataUnionClient;
 import com.streamr.client.options.ResendOption;
 import com.streamr.client.rest.AmbiguousResultsException;
 import com.streamr.client.rest.Permission;
+import com.streamr.client.rest.StorageNode;
 import com.streamr.client.rest.Stream;
+import com.streamr.client.rest.StreamPart;
 import com.streamr.client.rest.StreamrRestClient;
 import com.streamr.client.rest.UserInfo;
 import com.streamr.client.subs.Subscription;
@@ -113,4 +115,14 @@ interface Streamr {
       final ResendOption resendOption);
 
   void unsubscribe(final Subscription sub);
+
+  void addStreamToStorageNode(final String streamId, final StorageNode storageNode)
+      throws IOException;
+
+  void removeStreamToStorageNode(final String streamId, final StorageNode storageNode)
+      throws IOException;
+
+  List<StorageNode> getStorageNodes(final String streamId) throws IOException;
+
+  List<StreamPart> getStreamPartsByStorageNode(final StorageNode storageNode) throws IOException;
 }
