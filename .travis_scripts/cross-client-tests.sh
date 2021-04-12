@@ -38,8 +38,7 @@ npm install
 echo "Run cross-client test scenarios"
 java -jar build/libs/client_testing-1.0-SNAPSHOT.jar -s stream-cleartext-unsigned -c config/default-ci.conf && \
 java -jar build/libs/client_testing-1.0-SNAPSHOT.jar -s stream-cleartext-signed -c config/default-ci.conf && \
-# TODO: change the following to default-ci.conf once JS client works too
-java -jar build/libs/client_testing-1.0-SNAPSHOT.jar -s stream-encrypted-shared-signed -c config/java-only-ci.conf && \
-java -jar build/libs/client_testing-1.0-SNAPSHOT.jar -s stream-encrypted-shared-rotating-signed -c config/java-only-ci.conf && \
-java -jar build/libs/client_testing-1.0-SNAPSHOT.jar -s stream-encrypted-exchanged-rotating-signed -c config/java-only-ci.conf && \
-java -jar build/libs/client_testing-1.0-SNAPSHOT.jar -s stream-encrypted-exchanged-rotating-revoking-signed -c config/java-only-ci.conf
+java -jar build/libs/client_testing-1.0-SNAPSHOT.jar -s stream-encrypted-shared-signed -c config/default-ci.conf && \
+java -jar build/libs/client_testing-1.0-SNAPSHOT.jar -s stream-encrypted-shared-rotating-signed -c config/default-ci.conf && \
+java -jar build/libs/client_testing-1.0-SNAPSHOT.jar -s stream-encrypted-exchanged-rotating-signed -c config/default-ci.conf && \
+java -jar build/libs/client_testing-1.0-SNAPSHOT.jar -s stream-encrypted-exchanged-rotating-revoking-signed -c config/default-ci.conf
