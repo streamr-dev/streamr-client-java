@@ -1,6 +1,5 @@
 package com.streamr.client;
 
-import com.streamr.client.authentication.ApiKeyAuthenticationMethod;
 import com.streamr.client.authentication.AuthenticationMethod;
 import com.streamr.client.authentication.EthereumAuthenticationMethod;
 import com.streamr.client.dataunion.DataUnionClient;
@@ -16,10 +15,8 @@ import com.streamr.client.protocol.message_layer.GroupKeyRequest;
 import com.streamr.client.protocol.message_layer.MessageRef;
 import com.streamr.client.protocol.message_layer.StreamMessage;
 import com.streamr.client.rest.Stream;
-import com.streamr.client.rest.UserInfo;
 import com.streamr.client.subs.*;
 import com.streamr.client.utils.*;
-import org.apache.commons.codec.digest.DigestUtils;
 import org.java_websocket.client.WebSocketClient;
 import org.java_websocket.enums.ReadyState;
 import org.java_websocket.exceptions.WebsocketNotConnectedException;
@@ -106,14 +103,7 @@ public class StreamrClient extends StreamrRESTClient {
             }
         }, addressValidityUtil, options.getSigningOptions().getVerifySignatures());
 
-        if (options.getAuthenticationMethod() instanceof ApiKeyAuthenticationMethod) {
-            try {
-                UserInfo info = getUserInfo();
-                publisherId = new Address(DigestUtils.sha256Hex(info.getUsername() == null ? info.getId() : info.getUsername()));
-            } catch (IOException e) {
-                throw new RuntimeException(e);
-            }
-        } else if (options.getAuthenticationMethod() instanceof EthereumAuthenticationMethod) {
+        if (options.getAuthenticationMethod() instanceof EthereumAuthenticationMethod) {
             publisherId = new Address(((EthereumAuthenticationMethod) options.getAuthenticationMethod()).getAddress());
 
             // The key exchange stream is a system stream.

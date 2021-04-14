@@ -1,4 +1,4 @@
-def VERSION = '2.0.2'
+def VERSION = '2.1.0'
 
 group 'com.streamr'
 version VERSION
@@ -51,13 +51,12 @@ dependencies {
 	compile 'com.squareup.moshi:moshi:1.11.0'
 	compile 'com.squareup.moshi:moshi-adapters:1.11.0'
 	compile 'com.squareup.okio:okio:2.9.0'
-	compile 'commons-codec:commons-codec:1.6'
-	compile 'commons-lang:commons-lang:2.6'
+	compile 'commons-codec:commons-codec:1.15'
 	compile 'org.apache.commons:commons-lang3:3.1'
 	compile 'org.ethereum:ethereumj-core:1.11.0-RELEASE'
 	compile "org.java-websocket:Java-WebSocket:1.4.1"
-	compile "org.cache2k:cache2k-api:1.2.1.Final"
-	compile "org.cache2k:cache2k-core:1.2.1.Final"
+	compile "org.cache2k:cache2k-api:1.6.0.Final"
+	compile "org.cache2k:cache2k-core:1.6.0.Final"
 	compile "org.web3j:core:5.0.0"
 	compile "org.web3j:codegen:5.0.0"
 

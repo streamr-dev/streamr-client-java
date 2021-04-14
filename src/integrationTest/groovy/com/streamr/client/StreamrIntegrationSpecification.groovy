@@ -1,6 +1,5 @@
 package com.streamr.client
 
-import com.streamr.client.authentication.ApiKeyAuthenticationMethod
 import com.streamr.client.authentication.EthereumAuthenticationMethod
 import com.streamr.client.dataunion.DataUnionClient
 import com.streamr.client.options.EncryptionOptions
@@ -16,8 +15,8 @@ class StreamrIntegrationSpecification extends Specification {
 
     protected final static DEV_MAINCHAIN_RPC = "http://localhost:8545"
     protected final static DEV_SIDECHAIN_RPC = "http://localhost:8546"
-    protected final static DEV_SIDECHAIN_FACTORY = "0x4081B7e107E59af8E82756F96C751174590989FE"
-    protected final static DEV_MAINCHAIN_FACTORY = "0x5E959e5d5F3813bE5c6CeA996a286F734cc9593b"
+    protected final static DEV_SIDECHAIN_FACTORY = "0x4A4c4759eb3b7ABee079f832850cD3D0dC48D927"
+    protected final static DEV_MAINCHAIN_FACTORY = "0x4bbcBeFBEC587f6C4AF9AF9B48847caEa1Fe81dA"
 
     protected static String generatePrivateKey() {
         byte[] array = new byte[32]
@@ -31,27 +30,24 @@ class StreamrIntegrationSpecification extends Specification {
         opts.setMainnetRpcUrl(DEV_MAINCHAIN_RPC)
         opts.setDataUnionMainnetFactoryAddress(DEV_MAINCHAIN_FACTORY)
         opts.setDataUnionSidechainFactoryAddress(DEV_SIDECHAIN_FACTORY)
+        opts.setConnectionTimeoutMillis(60000)
         return new StreamrClient(opts).dataUnionClient(mainnetAdminPrvKey, sidechainAdminPrvKey)
     }
 
     protected static StreamrClient createUnauthenticatedClient() {
-        return new StreamrClient(new StreamrClientOptions(null, SigningOptions.getDefault(), EncryptionOptions.getDefault(), DEFAULT_WEBSOCKET_URL, DEFAULT_REST_URL))
+        StreamrClientOptions opts =  new StreamrClientOptions(null, SigningOptions.getDefault(), EncryptionOptions.getDefault(), DEFAULT_WEBSOCKET_URL, DEFAULT_REST_URL);
+        opts.setConnectionTimeoutMillis(60000)
+        return new StreamrClient(opts)
     }
 
     protected static StreamrClient createClientWithPrivateKey(String privateKey = null) {
         return new StreamrClient(createOptionsWithPrivateKey(privateKey))
     }
 
-    protected static StreamrClient createClientWithApiKey(String apiKey = null) {
-        return new StreamrClient(createOptionsWithApiKey(apiKey))
-    }
-
-    protected static StreamrClientOptions createOptionsWithApiKey(String apiKey = null) {
-        return new StreamrClientOptions(new ApiKeyAuthenticationMethod(apiKey), SigningOptions.getDefault(), EncryptionOptions.getDefault(), DEFAULT_WEBSOCKET_URL, DEFAULT_REST_URL)
-    }
-
     protected static StreamrClientOptions createOptionsWithPrivateKey(String privateKey = null) {
-        return new StreamrClientOptions(new EthereumAuthenticationMethod(privateKey), SigningOptions.getDefault(), EncryptionOptions.getDefault(), DEFAULT_WEBSOCKET_URL, DEFAULT_REST_URL)
+        StreamrClientOptions opts =  new StreamrClientOptions(new EthereumAuthenticationMethod(privateKey), SigningOptions.getDefault(), EncryptionOptions.getDefault(), DEFAULT_WEBSOCKET_URL, DEFAULT_REST_URL)
+        opts.setConnectionTimeoutMillis(60000)
+        return opts
     }
 
     protected String generateResourceName() {

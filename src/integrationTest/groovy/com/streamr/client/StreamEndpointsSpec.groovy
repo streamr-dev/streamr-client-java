@@ -9,6 +9,9 @@ import com.streamr.client.rest.StreamConfig
 import com.streamr.client.exceptions.AuthenticationException
 import com.streamr.client.rest.FieldConfig
 import com.streamr.client.rest.UserInfo
+import com.streamr.client.rest.StorageNode
+import com.streamr.client.rest.StreamPart
+import com.streamr.client.utils.Address
 
 class StreamEndpointsSpec extends StreamrIntegrationSpecification {
 
@@ -159,23 +162,13 @@ class StreamEndpointsSpec extends StreamrIntegrationSpecification {
         info.getUsername() == method.address
     }
 
-    void "getUserInfo() with api key"() {
-        StreamrClient apiKeyClient = createClientWithApiKey("tester1-api-key")
-        when:
-        UserInfo info = apiKeyClient.getUserInfo()
-
-        then:
-        info.getName() == "Tester One"
-        info.getUsername() == "tester1@streamr.com"
-    }
-
     void "getPublishers()"() {
         Stream proto = new Stream(generateResourceName(), "This stream was created from an integration test")
         Stream createdResult = client.createStream(proto)
         when:
-        List<String> publishers = client.getPublishers(createdResult.id)
+        List<Address> publishers = client.getPublishers(createdResult.id).collect { p -> new Address(p) }
         then:
-        publishers == [client.getPublisherId().toString()]
+        publishers == [client.getPublisherId()]
     }
 
     void "isPublisher()"() {
@@ -193,9 +186,9 @@ class StreamEndpointsSpec extends StreamrIntegrationSpecification {
         Stream proto = new Stream(generateResourceName(), "This stream was created from an integration test")
         Stream createdResult = client.createStream(proto)
         when:
-        List<String> subscribers = client.getSubscribers(createdResult.id)
+        List<String> subscribers = client.getSubscribers(createdResult.id).collect { s -> new Address(s) }
         then:
-        subscribers == [client.getPublisherId().toString()]
+        subscribers == [client.getPublisherId()]
     }
 
     void "isSubscriber()"() {
@@ -209,23 +202,61 @@ class StreamEndpointsSpec extends StreamrIntegrationSpecification {
         !isValid2
     }
 
-    void "not same token used after logout()"() {
-        StreamrClient apiKeyClient = createClientWithApiKey("tester1-api-key")
+    void "addStreamToStorageNode"() {
+        Stream proto = new Stream(generateResourceName(), "This stream was created from an integration test")
+        String streamId = client.createStream(proto).getId()
+        StorageNode storageNode = new StorageNode(Address.createRandom())
         when:
-        apiKeyClient.getUserInfo() // fetches sessionToken1 and requests endpoint
-        String sessionToken1 = apiKeyClient.getSessionToken()
-        apiKeyClient.logout()
-        apiKeyClient.getUserInfo() // requests with sessionToken1, receives 401, fetches sessionToken2 and requests endpoint
-        String sessionToken2 = apiKeyClient.getSessionToken()
+        client.addStreamToStorageNode(streamId, storageNode)
+        List<StorageNode> storageNodes = client.getStorageNodes(streamId)
+        then:
+        storageNodes.size() == 1
+        storageNodes.get(0).getAddress() == storageNode.getAddress()
+    }
+
+    void "removeStreamFromStorageNode"() {
+        Stream proto = new Stream(generateResourceName(), "This stream was created from an integration test")
+        String streamId = client.createStream(proto).getId()
+        StorageNode storageNode = new StorageNode(Address.createRandom())
+        client.addStreamToStorageNode(streamId, storageNode)
+        when:
+        client.removeStreamToStorageNode(streamId, storageNode)
+        List<StorageNode> storageNodes = client.getStorageNodes(streamId)
+        then:
+        storageNodes.size() == 0
+    }
+
+    void "getStreamPartsByStorageNode"() {
+        Stream proto = new Stream(generateResourceName(), "This stream was created from an integration test")
+        proto.setPartitions(2)
+        String streamId = client.createStream(proto).getId()
+        StorageNode storageNode = new StorageNode(Address.createRandom())
+        client.addStreamToStorageNode(streamId, storageNode)
+        when:
+        List<StreamPart> streamParts = client.getStreamPartsByStorageNode(storageNode)
+        then:
+        streamParts.size() == 2
+        streamParts.get(0).getStreamId() == streamId
+        streamParts.get(0).getStreamPartition() == 0
+        streamParts.get(1).getStreamId() == streamId
+        streamParts.get(1).getStreamPartition() == 1
+    }
+
+    void "not same token used after logout()"() {
+        when:
+        client.getUserInfo() // fetches sessionToken1 and requests endpoint
+        String sessionToken1 = client.getSessionToken()
+        client.logout()
+        client.getUserInfo() // requests with sessionToken1, receives 401, fetches sessionToken2 and requests endpoint
+        String sessionToken2 = client.getSessionToken()
         then:
         sessionToken1 != sessionToken2
     }
 
     void "throws if logout() when already logged out"() {
-        StreamrClient apiKeyClient = createClientWithApiKey("tester1-api-key")
         when:
-        apiKeyClient.logout()
-        apiKeyClient.logout() // does not retry with a new session token after receiving 401
+        client.logout()
+        client.logout() // does not retry with a new session token after receiving 401
         then:
         thrown(AuthenticationException)
     }

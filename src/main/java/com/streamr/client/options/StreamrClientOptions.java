@@ -17,10 +17,10 @@ public class StreamrClientOptions {
             "&messageLayerVersion=" + StreamMessage.LATEST_VERSION;
     private String restApiUrl = "https://www.streamr.com/api/v1";
 
-    private String mainnetRpcUrl = "http://localhost:8545";
-    private String sidechainRpcUrl = "http://localhost:8546";
-    private String dataUnionSidechainFactoryAddress = "0x4081B7e107E59af8E82756F96C751174590989FE";
-    private String dataUnionMainnetFactoryAddress = "0x5E959e5d5F3813bE5c6CeA996a286F734cc9593b";
+    private String mainnetRpcUrl = "https://mainnet.infura.io/v3/140f8dc53a2141e4b645a4db9fc4cebb";
+    private String sidechainRpcUrl = "https://rpc.xdaichain.com/";
+    private String dataUnionSidechainFactoryAddress = "0x1b55587Beea0b5Bc96Bb2ADa56bD692870522e9f";
+    private String dataUnionMainnetFactoryAddress = "0x7d55f9981d4E10A193314E001b96f72FCc901e40";
 
 
     private long connectionTimeoutMillis = 10 * 1000;
