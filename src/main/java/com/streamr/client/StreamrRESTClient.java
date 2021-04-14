@@ -15,6 +15,7 @@ import okhttp3.*;
 import java.io.IOException;
 import java.util.List;
 import java.util.Map;
+import java.util.concurrent.TimeUnit;
 import java.util.stream.Collectors;
 
 class StorageNodeInput {
@@ -33,6 +34,9 @@ public abstract class StreamrRESTClient extends AbstractStreamrClient {
     public static final JsonAdapter<Subscribers> subscribersJsonAdapter = MOSHI.adapter(Subscribers.class);
     public static final JsonAdapter<StorageNode> storageNodeJsonAdapter = MOSHI.adapter(StorageNode.class);
     public static final JsonAdapter<List<Stream>> streamListJsonAdapter = MOSHI.adapter(Types.newParameterizedType(List.class, Stream.class));
+    public static final JsonAdapter<Secret> secretJsonAdapter = MOSHI.adapter(Secret.class);
+    public static final JsonAdapter<Product> productJsonAdapter = MOSHI.adapter(Product.class);
+
 
     // private final Publisher publisher;
 
@@ -65,9 +69,18 @@ public abstract class StreamrRESTClient extends AbstractStreamrClient {
         }
     }
 
-    private <T> T execute(Request request, JsonAdapter<T> adapter) throws IOException {
-        OkHttpClient client = new OkHttpClient();
+    protected OkHttpClient.Builder httpClientBuilder(){
+        OkHttpClient.Builder builder = new OkHttpClient.Builder();
+        if(options != null) {
+            builder.connectTimeout(options.getConnectionTimeoutMillis(), TimeUnit.MILLISECONDS);
+            builder.readTimeout(options.getConnectionTimeoutMillis(), TimeUnit.MILLISECONDS);
+            builder.writeTimeout(options.getConnectionTimeoutMillis(), TimeUnit.MILLISECONDS);
+        }
+        return builder;
+    }
 
+    private <T> T execute(Request request, JsonAdapter<T> adapter) throws IOException {
+        OkHttpClient client = new OkHttpClient(httpClientBuilder());
         // Execute the request and retrieve the response.
         Response response = client.newCall(request).execute();
         try {
@@ -258,4 +271,29 @@ public abstract class StreamrRESTClient extends AbstractStreamrClient {
         }
         return builder.build();
     }
+
+    public Secret setDataUnionSecret(String DUMainnetAddress, String secretName) throws IOException {
+        HttpUrl url = getEndpointUrl("dataunions", DUMainnetAddress, "secrets");
+        String json = String.format("{ %s : \"%s\" }", "name", secretName);
+        return post(url, json, secretJsonAdapter);
+    }
+
+    public void requestDataUnionJoin(String DUMainnetAddress, String memberAddress, String secret) throws IOException {
+        HttpUrl url = getEndpointUrl("dataunions", DUMainnetAddress, "joinRequests");
+        String json = String.format("{ %s : \"%s\", %s : \"%s\" }", "memberAddress", memberAddress, "secret", secret);
+        post(url, json, null);
+    }
+
+    /**
+     * for testing, not publicly usable
+     * @param p
+     * @throws IOException
+     */
+
+    void createProduct(Product p) throws IOException {
+        HttpUrl url = getEndpointUrl("products");
+        post(url, productJsonAdapter.toJson(p), null);
+    }
+
+
 }
