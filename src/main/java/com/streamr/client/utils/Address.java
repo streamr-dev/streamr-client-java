@@ -8,6 +8,8 @@ import java.util.Random;
 
 import java.util.Random;
 
+import java.util.Random;
+
 /**
  * For making sure that Ethereum addresses are always treated similarly everywhere (e.g. lower-cased)
  */

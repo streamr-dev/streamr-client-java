@@ -10,13 +10,16 @@ import com.streamr.client.options.StreamrClientOptions;
 import com.streamr.client.rest.*;
 import com.streamr.client.utils.HttpUtils;
 import com.streamr.client.utils.Address;
+import static com.streamr.client.utils.Web3jUtils.waitForCondition;
 import okhttp3.*;
 
 import java.io.IOException;
 import java.util.List;
-import java.util.Map;
+import java.util.Arrays;
 import java.util.concurrent.TimeUnit;
 import java.util.stream.Collectors;
+import java.net.HttpURLConnection;
+
 
 class StorageNodeInput {
     Address storageNodeAddress;
@@ -231,12 +234,42 @@ public abstract class StreamrRESTClient extends AbstractStreamrClient {
         }
     }
 
-    public void addStreamToStorageNode(String streamId, StorageNode storageNode) throws IOException {
+    public void addStreamToStorageNode(String streamId, StorageNode storageNode) throws Exception {
+        // currently we support only one storage node
+        // -> we can validate that the given address is that address
+        // -> remove this comparison when we start to support multiple storage nodes
+        if (!storageNode.getAddress().equals(this.options.getStorageNodeAddress())) {
+            throw new IllegalArgumentException("Unknown storage node: " + storageNode.getAddress());
+        }
         HttpUrl url = getEndpointUrl("streams", streamId, "storageNodes");
         post(url, storageNodeJsonAdapter.toJson(storageNode), streamJsonAdapter);
+        // wait for propagation: the storage node sees the database change in E&E and
+        // is ready to store the any stream data which we publish
+        final int POLL_INTERVAL = 500;
+        final int TIMEOUT = 30 * 1000;
+        waitForCondition(() -> {
+            return this.isStreamStoredInStorageNode(streamId) ? true : null;
+        }, POLL_INTERVAL, TIMEOUT, new IOException("Propagation timeout when adding stream to a storage node: " + streamId));
     }
 
-    public void removeStreamToStorageNode(String streamId, StorageNode storageNode) throws IOException {
+    private boolean isStreamStoredInStorageNode(String streamId) throws IOException {
+        final int PARTITION = 0;
+        HttpUrl.Builder urlBuilder = HttpUrl.parse(this.options.getStorageNodeUrl() + "/api/v1").newBuilder();
+        Arrays.asList("streams", streamId, "storage", "partitions", String.valueOf(PARTITION))
+            .forEach(segment -> urlBuilder.addPathSegment(segment));
+        Request request = new Request.Builder().url(urlBuilder.build()).build();
+        Response response = new OkHttpClient().newCall(request).execute();
+        int statusCode = response.code();
+        if (statusCode == HttpURLConnection.HTTP_OK) {
+            return true;
+        } else if (statusCode == HttpURLConnection.HTTP_NOT_FOUND) {
+            return false;
+        } else {
+            throw new IOException("Unexpected response code " + statusCode + " when fetching stream storage status");
+        }
+    }
+
+    public void removeStreamFromStorageNode(String streamId, StorageNode storageNode) throws IOException {
         HttpUrl url = getEndpointUrl("streams", streamId, "storageNodes", storageNode.getAddress().toString());
         delete(url);
     }

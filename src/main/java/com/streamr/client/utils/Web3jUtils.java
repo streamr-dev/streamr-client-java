@@ -74,6 +74,10 @@ public class Web3jUtils {
     }
 
     public static Object waitForCondition(Condition condition, final long sleeptime, final long timeout) throws Exception {
+        return waitForCondition(condition, sleeptime, timeout, null);
+    }
+
+    public static Object waitForCondition(Condition condition, final long sleeptime, final long timeout, Exception timeoutException) throws Exception {
         if(sleeptime <= 0 || timeout <= 0) {
             return condition.check();
         }
@@ -88,7 +92,11 @@ public class Web3jUtils {
             slept += sleeptime;
         }
         log.info("Timed out after " + timeout+ "ms");
-        return null;
+        if (timeoutException != null) {
+            throw timeoutException;
+        } else {
+            return null;
+        }
     }
 
     public static DynamicArray<org.web3j.abi.datatypes.Address> asDynamicAddressArray(String[] addresses){
