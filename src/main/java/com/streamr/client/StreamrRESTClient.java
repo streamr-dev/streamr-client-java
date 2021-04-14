@@ -290,7 +290,7 @@ public abstract class StreamrRESTClient extends AbstractStreamrClient {
      * @throws IOException
      */
 
-    protected void createProduct(Product p) throws IOException {
+    void createProduct(Product p) throws IOException {
         HttpUrl url = getEndpointUrl("products");
         post(url, productJsonAdapter.toJson(p), null);
     }
