@@ -5,6 +5,8 @@ import com.streamr.client.dataunion.DataUnionClient
 import com.streamr.client.dataunion.EstimatedGasProvider
 import com.streamr.client.dataunion.EthereumTransactionReceipt
 import com.streamr.client.dataunion.contracts.IERC20
+import com.streamr.client.rest.Product
+import com.streamr.client.rest.Secret
 import org.web3j.abi.datatypes.*
 import org.web3j.abi.datatypes.generated.Uint256
 import org.web3j.crypto.Credentials
@@ -13,7 +15,7 @@ import org.web3j.protocol.core.methods.response.TransactionReceipt
 import org.web3j.protocol.http.HttpService
 
 class DataUnionClientSpec extends StreamrIntegrationSpecification{
-    private DataUnionClient client
+    private DataUnionClient client;
     //truffle keys mnemonic "testrpc"
     private String[] testrpc_keys = [
         "0x5e98cce00cff5dea6b454889f359a4ec06b9fa6b88e9d69b86de8e1c81887da0",
@@ -27,17 +29,21 @@ class DataUnionClientSpec extends StreamrIntegrationSpecification{
         "0x2cd9855d17e01ce041953829398af7e48b24ece04ff9d0e183414de54dc52285",
         "0x2c326a4c139eced39709b235fffa1fde7c252f3f7b505103f7b251586c35d543"
     ]
+
+    // the default key used by Engine & Editor
+    private String eePrivateKey = "0x0123456789ABCDEF0123456789ABCDEF0123456789ABCDEF0123456789ABCDEF"
+    private Credentials eeWallet;
     private BigInteger testSendAmount = BigInteger.valueOf(1000000000000000000l)
     private Credentials[] wallets;
     private DataUnion du;
     private IERC20 mainnetToken;
     private static final String duname = "test"+System.currentTimeMillis();
-
     void setup() {
         wallets = new Credentials[testrpc_keys.length];
         for(int i=0; i < testrpc_keys.length; i++){
             wallets[i] = Credentials.create(testrpc_keys[i]);
         }
+        eeWallet = Credentials.create(eePrivateKey)
         client = devChainDataUnionClient(testrpc_keys[0], testrpc_keys[0])
         du = client.dataUnionFromName(duname);
         //    public static IERC20 load(String contractAddress, Web3j web3j, Credentials credentials, ContractGasProvider contractGasProvider)
@@ -52,13 +58,14 @@ class DataUnionClientSpec extends StreamrIntegrationSpecification{
                 duname,
                 wallets[0].getAddress(),
                 BigInteger.ZERO,
-                Arrays.<String>asList(wallets[0].getAddress()),
+                Arrays.<String>asList(wallets[0].getAddress(), eeWallet.getAddress()),
         )
 
         then:
         du.waitForDeployment(10000, 600000)
         du.isDeployed()
     }
+
 
     void "add members"() {
         EthereumTransactionReceipt tr;
@@ -107,4 +114,22 @@ class DataUnionClientSpec extends StreamrIntegrationSpecification{
         client.waitForSidechainTx(tr.getTransactionHash(), 10000, 600000)
         client.waitForMainnetBalanceChange(recipientBal,recipient, 10000, 600000 ) == recipientBal.add(testSendAmount)
     }
+
+    void "join with shared secret"() {
+        StreamrClient apiClient0 = createClientWithPrivateKey(testrpc_keys[0]);
+        StreamrClient apiClient3 = createClientWithPrivateKey(testrpc_keys[3]);
+        String member = wallets[3].getAddress()
+        Product p = new Product();
+        p.setBeneficiaryAddress(du.getMainnetContractAddress())
+        p.setType("DATAUNION")
+        p.setDataUnionVersion(2)
+        when:
+        apiClient0.createProduct(p)
+        Secret sec = apiClient0.setDataUnionSecret(du.getMainnetContractAddress(), "someName")
+        apiClient3.requestDataUnionJoin(du.getMainnetContractAddress(), member, sec.getSecret())
+
+        then:
+        du.isMemberActive(member)
+    }
+
 }

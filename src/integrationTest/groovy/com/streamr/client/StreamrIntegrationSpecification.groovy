@@ -37,6 +37,7 @@ class StreamrIntegrationSpecification extends Specification {
         opts.setMainnetRpcUrl(DEV_MAINCHAIN_RPC)
         opts.setDataUnionMainnetFactoryAddress(DEV_MAINCHAIN_FACTORY)
         opts.setDataUnionSidechainFactoryAddress(DEV_SIDECHAIN_FACTORY)
+        opts.setConnectionTimeoutMillis(60000)
         return new StreamrClient(opts).dataUnionClient(mainnetAdminPrvKey, sidechainAdminPrvKey)
     }
 
@@ -50,6 +51,7 @@ class StreamrIntegrationSpecification extends Specification {
 
     private static StreamrClientOptions createDevOptions(AuthenticationMethod authenticationMethod) {
         StreamrClientOptions opts = new StreamrClientOptions(authenticationMethod, SigningOptions.getDefault(), EncryptionOptions.getDefault(), DEFAULT_WEBSOCKET_URL, DEFAULT_REST_URL)
+        opts.setConnectionTimeoutMillis(60000)
         opts.setStorageNodeAddress(DEV_STORAGE_NODE_ADDRESS)
         opts.setStorageNodeUrl(DEV_STORAGE_NODE_URL)
         return opts
