@@ -60,7 +60,7 @@ dependencies {
 	compile "org.web3j:core:5.0.0"
 	compile "org.web3j:codegen:5.0.0"
 
-	testCompile 'org.apache.logging.log4j:log4j-api:2.14.0'
+	testCompile 'org.apache.logging.log4j:log4j-api:2.14.1'
 	testCompile 'org.apache.logging.log4j:log4j-core:2.14.0'
 	testCompile 'org.apache.logging.log4j:log4j-slf4j-impl:2.14.0'
 	testCompile 'org.spockframework:spock-core:1.1-groovy-2.4'
