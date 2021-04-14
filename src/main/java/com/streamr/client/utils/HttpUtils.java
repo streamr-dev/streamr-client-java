@@ -21,6 +21,7 @@ public class HttpUtils {
 
     static public Function<Moshi.Builder, Moshi.Builder> addDefaultAdapters = (builder) -> builder
             .add(Date.class, new StringOrMillisDateJsonAdapter().nullSafe())
+            .add(Address.class, new AddressJsonAdapter().nullSafe())
             .add(BigDecimal.class, new BigDecimalAdapter().nullSafe());
 
     // Thread safe
