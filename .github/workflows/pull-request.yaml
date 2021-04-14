@@ -2,9 +2,11 @@ name: Pull Request
 
 on:
   pull_request:
+    branches:
+      - master
 
 env:
-  JAVA_VERSION: '1.8.0.275'
+  JAVA_VERSION: '1.8.275'
   make: make -f Makefile.ci
 
 jobs:
@@ -15,11 +17,10 @@ jobs:
       - run: |
           echo "datetime=$(date +'%Y-%m-%d-%H.%M.%S')" >> $GITHUB_ENV
       - uses: actions/checkout@v2.3.4
-        with:
-          fetch-depth: 0
-      - uses: actions/setup-java@v1.4.3
+      - uses: actions/setup-java@v2.0.0
         with:
           java-version: ${{ env.JAVA_VERSION }}
+          distribution: 'zulu'
       - uses: actions/cache@v2.1.4
         with:
           path: ~/.gradle/caches
@@ -34,9 +35,10 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v2.3.4
-      - uses: actions/setup-java@v1.4.3
+      - uses: actions/setup-java@v2.0.0
         with:
           java-version: ${{ env.JAVA_VERSION }}
+          distribution: 'zulu'
       - uses: actions/cache@v2.1.4
         with:
           path: ~/.gradle/caches
