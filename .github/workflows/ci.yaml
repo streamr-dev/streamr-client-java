@@ -4,6 +4,9 @@ on:
   pull_request:
     branches:
       - master
+  push:
+    branches:
+      - master
 
 env:
   JAVA_VERSION: '8.0.282+8'
