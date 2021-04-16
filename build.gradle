@@ -188,7 +188,7 @@ ext {
 	slf4jApiVersion = '1.7.30'
 	okHttpVersion = '4.9.1'
 	moshiVersion = '1.11.0'
-	moshiAdaptersVersion = '1.11.0'
+	moshiAdaptersVersion = '1.12.0'
 	commonsLangVersion = '3.11'
 	javaWebSocketVersion = '1.5.1'
 	cache2kVersion = '1.6.0.Final'
