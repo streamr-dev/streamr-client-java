@@ -11,7 +11,7 @@ updates:
       time: "08:00"
       timezone: "Europe/Helsinki"
     commit-message:
-      prefix: "chore(github-actions)"
+      prefix: "chore(ga)"
       include: "scope"
     reviewers:
       - "kare"
