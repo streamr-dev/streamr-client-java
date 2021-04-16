@@ -4,7 +4,7 @@ on:
   pull_request:
 
 env:
-  JAVA_VERSION: '1.8.275'
+  JAVA_VERSION: '8.0.282+8'
   make: make -f Makefile.ci
 
 jobs:
