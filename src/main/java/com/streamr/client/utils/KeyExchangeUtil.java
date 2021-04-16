@@ -184,7 +184,7 @@ public class KeyExchangeUtil {
     }
 
     public static String getKeyExchangeStreamId(Address recipientAddress) {
-        return KEY_EXCHANGE_STREAM_PREFIX + recipientAddress;
+        return KEY_EXCHANGE_STREAM_PREFIX + recipientAddress.toLowerCaseString();
     }
 
     public static boolean isKeyExchangeStreamId(String streamId) {

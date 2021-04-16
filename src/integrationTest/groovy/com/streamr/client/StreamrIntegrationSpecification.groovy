@@ -5,6 +5,9 @@ import com.streamr.client.dataunion.DataUnionClient
 import com.streamr.client.options.EncryptionOptions
 import com.streamr.client.options.SigningOptions
 import com.streamr.client.options.StreamrClientOptions
+import com.streamr.client.authentication.AuthenticationMethod
+import com.streamr.client.rest.StorageNode
+import com.streamr.client.utils.Address
 import org.apache.commons.codec.binary.Hex
 import spock.lang.Specification
 
@@ -15,8 +18,12 @@ class StreamrIntegrationSpecification extends Specification {
 
     protected final static DEV_MAINCHAIN_RPC = "http://localhost:8545"
     protected final static DEV_SIDECHAIN_RPC = "http://localhost:8546"
-    protected final static DEV_SIDECHAIN_FACTORY = "0x4081B7e107E59af8E82756F96C751174590989FE"
-    protected final static DEV_MAINCHAIN_FACTORY = "0x5E959e5d5F3813bE5c6CeA996a286F734cc9593b"
+    protected final static DEV_SIDECHAIN_FACTORY = "0x4A4c4759eb3b7ABee079f832850cD3D0dC48D927"
+    protected final static DEV_MAINCHAIN_FACTORY = "0x4bbcBeFBEC587f6C4AF9AF9B48847caEa1Fe81dA"
+
+    // "broker-node-storage-1" om Docker environment
+    protected final static DEV_STORAGE_NODE_ADDRESS = new Address("0xde1112f631486CfC759A50196853011528bC5FA0")
+    protected final static DEV_STORAGE_NODE_URL = "http://10.200.10.1:8891"
 
     protected static String generatePrivateKey() {
         byte[] array = new byte[32]
@@ -30,22 +37,31 @@ class StreamrIntegrationSpecification extends Specification {
         opts.setMainnetRpcUrl(DEV_MAINCHAIN_RPC)
         opts.setDataUnionMainnetFactoryAddress(DEV_MAINCHAIN_FACTORY)
         opts.setDataUnionSidechainFactoryAddress(DEV_SIDECHAIN_FACTORY)
+        opts.setConnectionTimeoutMillis(60000)
         return new StreamrClient(opts).dataUnionClient(mainnetAdminPrvKey, sidechainAdminPrvKey)
     }
 
     protected static StreamrClient createUnauthenticatedClient() {
-        return new StreamrClient(new StreamrClientOptions(null, SigningOptions.getDefault(), EncryptionOptions.getDefault(), DEFAULT_WEBSOCKET_URL, DEFAULT_REST_URL))
+        return new StreamrClient(createDevOptions(null))
     }
 
     protected static StreamrClient createClientWithPrivateKey(String privateKey = null) {
-        return new StreamrClient(createOptionsWithPrivateKey(privateKey))
+        return new StreamrClient(createDevOptions(new EthereumAuthenticationMethod(privateKey)))
     }
 
-    protected static StreamrClientOptions createOptionsWithPrivateKey(String privateKey = null) {
-        return new StreamrClientOptions(new EthereumAuthenticationMethod(privateKey), SigningOptions.getDefault(), EncryptionOptions.getDefault(), DEFAULT_WEBSOCKET_URL, DEFAULT_REST_URL)
+    private static StreamrClientOptions createDevOptions(AuthenticationMethod authenticationMethod) {
+        StreamrClientOptions opts = new StreamrClientOptions(authenticationMethod, SigningOptions.getDefault(), EncryptionOptions.getDefault(), DEFAULT_WEBSOCKET_URL, DEFAULT_REST_URL)
+        opts.setConnectionTimeoutMillis(60000)
+        opts.setStorageNodeAddress(DEV_STORAGE_NODE_ADDRESS)
+        opts.setStorageNodeUrl(DEV_STORAGE_NODE_URL)
+        return opts
     }
 
     protected String generateResourceName() {
         return "${this.getClass().getSimpleName()}-${System.currentTimeMillis()}"
+    }
+
+    protected StorageNode getDevStorageNode() {
+        return new StorageNode(DEV_STORAGE_NODE_ADDRESS);
     }
 }

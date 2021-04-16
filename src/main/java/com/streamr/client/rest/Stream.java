@@ -1,6 +1,8 @@
 package com.streamr.client.rest;
 
 import java.util.Date;
+import java.util.List;
+import java.util.ArrayList;
 
 /*
 {
@@ -130,5 +132,13 @@ public class Stream {
 
     public Date getLastUpdated() {
         return lastUpdated;
+    }
+
+    public List<StreamPart> toStreamParts() {
+        List<StreamPart> result = new ArrayList();
+        for (int i = 0; i < this.partitions; i++) {
+            result.add(new StreamPart(this.id, i));
+        }
+        return result;
     }
 }

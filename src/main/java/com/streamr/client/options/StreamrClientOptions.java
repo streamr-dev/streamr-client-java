@@ -5,6 +5,7 @@ import com.streamr.client.authentication.EthereumAuthenticationMethod;
 import com.streamr.client.exceptions.InvalidOptionsException;
 import com.streamr.client.protocol.control_layer.ControlMessage;
 import com.streamr.client.protocol.message_layer.StreamMessage;
+import com.streamr.client.utils.Address;
 
 public class StreamrClientOptions {
 
@@ -17,11 +18,12 @@ public class StreamrClientOptions {
             "&messageLayerVersion=" + StreamMessage.LATEST_VERSION;
     private String restApiUrl = "https://www.streamr.com/api/v1";
 
-    private String mainnetRpcUrl = "http://localhost:8545";
-    private String sidechainRpcUrl = "http://localhost:8546";
-    private String dataUnionSidechainFactoryAddress = "0x4081B7e107E59af8E82756F96C751174590989FE";
-    private String dataUnionMainnetFactoryAddress = "0x5E959e5d5F3813bE5c6CeA996a286F734cc9593b";
-
+    private String mainnetRpcUrl = "https://mainnet.infura.io/v3/140f8dc53a2141e4b645a4db9fc4cebb";
+    private String sidechainRpcUrl = "https://rpc.xdaichain.com/";
+    private String dataUnionSidechainFactoryAddress = "0x1b55587Beea0b5Bc96Bb2ADa56bD692870522e9f";
+    private String dataUnionMainnetFactoryAddress = "0x7d55f9981d4E10A193314E001b96f72FCc901e40";
+    private Address storageNodeAddress = new Address("0x31546eEA76F2B2b3C5cC06B1c93601dc35c9D916");
+    private String storageNodeUrl = "https://corea1.streamr.network:8001";
 
     private long connectionTimeoutMillis = 10 * 1000;
     private long reconnectRetryInterval = 10 * 1000;
@@ -189,5 +191,21 @@ public class StreamrClientOptions {
 
     public void setDataUnionMainnetFactoryAddress(String dataUnionMainnetFactoryAddress) {
         this.dataUnionMainnetFactoryAddress = dataUnionMainnetFactoryAddress;
+    }
+
+    public void setStorageNodeAddress(Address storageNodeAddress) {
+        this.storageNodeAddress = storageNodeAddress;
+    }
+
+    public Address getStorageNodeAddress() {
+        return this.storageNodeAddress;
+    }
+
+    public void setStorageNodeUrl(String storageNodeUrl) {
+        this.storageNodeUrl = storageNodeUrl;
+    }
+
+    public String getStorageNodeUrl() {
+        return this.storageNodeUrl;
     }
 }

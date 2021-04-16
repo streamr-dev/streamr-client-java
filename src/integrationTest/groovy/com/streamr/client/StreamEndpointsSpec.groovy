@@ -9,6 +9,11 @@ import com.streamr.client.rest.StreamConfig
 import com.streamr.client.exceptions.AuthenticationException
 import com.streamr.client.rest.FieldConfig
 import com.streamr.client.rest.UserInfo
+import com.streamr.client.rest.StorageNode
+import com.streamr.client.rest.StreamPart
+import com.streamr.client.utils.Address
+
+import java.util.Arrays
 
 class StreamEndpointsSpec extends StreamrIntegrationSpecification {
 
@@ -163,9 +168,9 @@ class StreamEndpointsSpec extends StreamrIntegrationSpecification {
         Stream proto = new Stream(generateResourceName(), "This stream was created from an integration test")
         Stream createdResult = client.createStream(proto)
         when:
-        List<String> publishers = client.getPublishers(createdResult.id)
+        List<Address> publishers = client.getPublishers(createdResult.id).collect { p -> new Address(p) }
         then:
-        publishers == [client.getPublisherId().toString()]
+        publishers == [client.getPublisherId()]
     }
 
     void "isPublisher()"() {
@@ -183,9 +188,9 @@ class StreamEndpointsSpec extends StreamrIntegrationSpecification {
         Stream proto = new Stream(generateResourceName(), "This stream was created from an integration test")
         Stream createdResult = client.createStream(proto)
         when:
-        List<String> subscribers = client.getSubscribers(createdResult.id)
+        List<String> subscribers = client.getSubscribers(createdResult.id).collect { s -> new Address(s) }
         then:
-        subscribers == [client.getPublisherId().toString()]
+        subscribers == [client.getPublisherId()]
     }
 
     void "isSubscriber()"() {
@@ -197,6 +202,43 @@ class StreamEndpointsSpec extends StreamrIntegrationSpecification {
         then:
         isValid1
         !isValid2
+    }
+
+    void "StorageNode.addStream"() {
+        Stream proto = new Stream(generateResourceName(), "This stream was created from an integration test")
+        String streamId = client.createStream(proto).getId()
+        StorageNode devStorageNode = getDevStorageNode()
+        when:
+        client.addStreamToStorageNode(streamId, devStorageNode)
+        List<StorageNode> storageNodes = client.getStorageNodes(streamId)
+        then:
+        storageNodes.size() == 1
+        storageNodes.get(0).getAddress() == devStorageNode.getAddress()
+    }
+
+    void "StorageNode.removeStream"() {
+        Stream proto = new Stream(generateResourceName(), "This stream was created from an integration test")
+        String streamId = client.createStream(proto).getId()
+        StorageNode devStorageNode = getDevStorageNode()
+        client.addStreamToStorageNode(streamId, devStorageNode)
+        when:
+        client.removeStreamFromStorageNode(streamId, devStorageNode)
+        List<StorageNode> storageNodes = client.getStorageNodes(streamId)
+        then:
+        storageNodes.size() == 0
+    }
+
+    void "StorageNode.getStreamParts"() {
+        Stream proto = new Stream(generateResourceName(), "This stream was created from an integration test")
+        proto.setPartitions(2)
+        String streamId = client.createStream(proto).getId()
+        StorageNode devStorageNode = getDevStorageNode()
+        client.addStreamToStorageNode(streamId, devStorageNode)
+        List<StreamPart> expectedStreamParts = Arrays.asList(new StreamPart(streamId, 0), new StreamPart(streamId, 1))
+        when:
+        List<StreamPart> actualStreamParts = client.getStreamPartsByStorageNode(devStorageNode)
+        then:
+        actualStreamParts.containsAll(expectedStreamParts)
     }
 
     void "not same token used after logout()"() {

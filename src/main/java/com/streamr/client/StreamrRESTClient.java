@@ -10,10 +10,20 @@ import com.streamr.client.options.StreamrClientOptions;
 import com.streamr.client.rest.*;
 import com.streamr.client.utils.HttpUtils;
 import com.streamr.client.utils.Address;
+import static com.streamr.client.utils.Web3jUtils.waitForCondition;
 import okhttp3.*;
 
 import java.io.IOException;
 import java.util.List;
+import java.util.Arrays;
+import java.util.concurrent.TimeUnit;
+import java.util.stream.Collectors;
+import java.net.HttpURLConnection;
+
+
+class StorageNodeInput {
+    Address storageNodeAddress;
+}
 
 /**
  * This class exposes the RESTful API endpoints.
@@ -25,7 +35,11 @@ public abstract class StreamrRESTClient extends AbstractStreamrClient {
     public static final JsonAdapter<UserInfo> userInfoJsonAdapter = MOSHI.adapter(UserInfo.class);
     public static final JsonAdapter<Publishers> publishersJsonAdapter = MOSHI.adapter(Publishers.class);
     public static final JsonAdapter<Subscribers> subscribersJsonAdapter = MOSHI.adapter(Subscribers.class);
+    public static final JsonAdapter<StorageNode> storageNodeJsonAdapter = MOSHI.adapter(StorageNode.class);
     public static final JsonAdapter<List<Stream>> streamListJsonAdapter = MOSHI.adapter(Types.newParameterizedType(List.class, Stream.class));
+    public static final JsonAdapter<Secret> secretJsonAdapter = MOSHI.adapter(Secret.class);
+    public static final JsonAdapter<Product> productJsonAdapter = MOSHI.adapter(Product.class);
+
 
     // private final Publisher publisher;
 
@@ -58,9 +72,18 @@ public abstract class StreamrRESTClient extends AbstractStreamrClient {
         }
     }
 
-    private <T> T execute(Request request, JsonAdapter<T> adapter) throws IOException {
-        OkHttpClient client = new OkHttpClient();
+    protected OkHttpClient.Builder httpClientBuilder(){
+        OkHttpClient.Builder builder = new OkHttpClient.Builder();
+        if(options != null) {
+            builder.connectTimeout(options.getConnectionTimeoutMillis(), TimeUnit.MILLISECONDS);
+            builder.readTimeout(options.getConnectionTimeoutMillis(), TimeUnit.MILLISECONDS);
+            builder.writeTimeout(options.getConnectionTimeoutMillis(), TimeUnit.MILLISECONDS);
+        }
+        return builder;
+    }
 
+    private <T> T execute(Request request, JsonAdapter<T> adapter) throws IOException {
+        OkHttpClient client = new OkHttpClient(httpClientBuilder());
         // Execute the request and retrieve the response.
         Response response = client.newCall(request).execute();
         try {
@@ -101,6 +124,11 @@ public abstract class StreamrRESTClient extends AbstractStreamrClient {
                 .url(url)
                 .post(RequestBody.create(HttpUtils.jsonType, requestBody));
         return executeWithRetry(builder, adapter, retryIfSessionExpired);
+    }
+
+    private <T> T delete(HttpUrl url) throws IOException {
+        Request.Builder builder = new Request.Builder().url(url).delete();
+        return executeWithRetry(builder, null, true);
     }
 
     /*
@@ -206,6 +234,64 @@ public abstract class StreamrRESTClient extends AbstractStreamrClient {
         }
     }
 
+    public void addStreamToStorageNode(String streamId, StorageNode storageNode) throws Exception {
+        // currently we support only one storage node
+        // -> we can validate that the given address is that address
+        // -> remove this comparison when we start to support multiple storage nodes
+        if (!storageNode.getAddress().equals(this.options.getStorageNodeAddress())) {
+            throw new IllegalArgumentException("Unknown storage node: " + storageNode.getAddress());
+        }
+        HttpUrl url = getEndpointUrl("streams", streamId, "storageNodes");
+        post(url, storageNodeJsonAdapter.toJson(storageNode), streamJsonAdapter);
+        // wait for propagation: the storage node sees the database change in E&E and
+        // is ready to store the any stream data which we publish
+        final int POLL_INTERVAL = 500;
+        final int TIMEOUT = 30 * 1000;
+        waitForCondition(() -> {
+            return this.isStreamStoredInStorageNode(streamId) ? true : null;
+        }, POLL_INTERVAL, TIMEOUT, new IOException("Propagation timeout when adding stream to a storage node: " + streamId));
+    }
+
+    private boolean isStreamStoredInStorageNode(String streamId) throws IOException {
+        final int PARTITION = 0;
+        HttpUrl.Builder urlBuilder = HttpUrl.parse(this.options.getStorageNodeUrl() + "/api/v1").newBuilder();
+        Arrays.asList("streams", streamId, "storage", "partitions", String.valueOf(PARTITION))
+            .forEach(segment -> urlBuilder.addPathSegment(segment));
+        Request request = new Request.Builder().url(urlBuilder.build()).build();
+        Response response = new OkHttpClient().newCall(request).execute();
+        int statusCode = response.code();
+        if (statusCode == HttpURLConnection.HTTP_OK) {
+            return true;
+        } else if (statusCode == HttpURLConnection.HTTP_NOT_FOUND) {
+            return false;
+        } else {
+            throw new IOException("Unexpected response code " + statusCode + " when fetching stream storage status");
+        }
+    }
+
+    public void removeStreamFromStorageNode(String streamId, StorageNode storageNode) throws IOException {
+        HttpUrl url = getEndpointUrl("streams", streamId, "storageNodes", storageNode.getAddress().toString());
+        delete(url);
+    }
+
+    public List<StorageNode> getStorageNodes(String streamId) throws IOException {
+        HttpUrl url = getEndpointUrl("streams", streamId, "storageNodes");
+        JsonAdapter<List<StorageNodeInput>> adapter = MOSHI.adapter(Types.newParameterizedType(List.class, StorageNodeInput.class));
+        List<StorageNodeInput> items = get(url, adapter);
+        return items.stream()
+            .map(item -> new StorageNode(item.storageNodeAddress))
+            .collect(Collectors.toList());
+    }
+
+    public List<StreamPart> getStreamPartsByStorageNode(StorageNode storageNode) throws IOException {
+        HttpUrl url = getEndpointUrl("storageNodes", storageNode.getAddress().toString(), "streams");
+        List<Stream> streams = get(url, streamListJsonAdapter);
+        return streams.stream()
+            .map(stream -> stream.toStreamParts())
+            .flatMap(x -> x.stream())
+            .collect(Collectors.toList());
+    }
+
     public void logout() throws IOException {
         HttpUrl url = getEndpointUrl("logout");
         post(url, "", null, false);
@@ -218,4 +304,29 @@ public abstract class StreamrRESTClient extends AbstractStreamrClient {
         }
         return builder.build();
     }
+
+    public Secret setDataUnionSecret(String DUMainnetAddress, String secretName) throws IOException {
+        HttpUrl url = getEndpointUrl("dataunions", DUMainnetAddress, "secrets");
+        String json = String.format("{ %s : \"%s\" }", "name", secretName);
+        return post(url, json, secretJsonAdapter);
+    }
+
+    public void requestDataUnionJoin(String DUMainnetAddress, String memberAddress, String secret) throws IOException {
+        HttpUrl url = getEndpointUrl("dataunions", DUMainnetAddress, "joinRequests");
+        String json = String.format("{ %s : \"%s\", %s : \"%s\" }", "memberAddress", memberAddress, "secret", secret);
+        post(url, json, null);
+    }
+
+    /**
+     * for testing, not publicly usable
+     * @param p
+     * @throws IOException
+     */
+
+    void createProduct(Product p) throws IOException {
+        HttpUrl url = getEndpointUrl("products");
+        post(url, productJsonAdapter.toJson(p), null);
+    }
+
+
 }
