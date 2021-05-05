@@ -9,6 +9,7 @@ import java.util.Date;
 import okhttp3.Response;
 import org.web3j.crypto.ECKeyPair;
 import org.web3j.crypto.Keys;
+import org.web3j.utils.Numeric;
 
 public class EthereumAuthenticationMethod extends AuthenticationMethod {
 
@@ -19,9 +20,9 @@ public class EthereumAuthenticationMethod extends AuthenticationMethod {
 
     public EthereumAuthenticationMethod(String ethereumPrivateKey) {
         super();
-        String withoutPrefix = ethereumPrivateKey.startsWith("0x") ? ethereumPrivateKey.substring(2) : ethereumPrivateKey;
+        String withoutPrefix = Numeric.cleanHexPrefix(ethereumPrivateKey);
         this.account = ECKeyPair.create(new BigInteger(withoutPrefix, 16));
-        this.address = Keys.getAddress(this.account.getPublicKey());
+        this.address = Numeric.prependHexPrefix(Keys.getAddress(this.account.getPublicKey()));
     }
 
     @Override
