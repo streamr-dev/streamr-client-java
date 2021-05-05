@@ -1,11 +1,12 @@
 package com.streamr.client.utils;
 
+import com.streamr.client.exceptions.SignatureFailedException;
 import com.streamr.client.exceptions.UnsupportedSignatureTypeException;
 import com.streamr.client.protocol.message_layer.StreamMessage;
 import java.math.BigInteger;
 import java.nio.charset.StandardCharsets;
+import java.security.SignatureException;
 import java.util.Arrays;
-import org.web3j.crypto.ECDSASignature;
 import org.web3j.crypto.ECKeyPair;
 import org.web3j.crypto.Hash;
 import org.web3j.crypto.Keys;
@@ -29,10 +30,13 @@ public final class SigningUtil {
 
   public static String sign(final BigInteger privateKey, final String data) {
     final ECKeyPair account = ECKeyPair.create(privateKey);
-    byte[] msg = data.getBytes(StandardCharsets.UTF_8);
+    byte[] msg = data.getBytes();
     Sign.SignatureData sign = Sign.signPrefixedMessage(msg, account);
-    SignatureData signature = new SignatureData(sign);
-    return signature.toHex();
+    byte[] result = new byte[65];
+    System.arraycopy(sign.getR(), 0, result, 0, 32);
+    System.arraycopy(sign.getS(), 0, result, 32, 32);
+    System.arraycopy(sign.getV(), 0, result, 64, 1);
+    return Numeric.toHexString(result);
   }
 
   public static boolean hasValidSignature(StreamMessage msg) {
@@ -40,7 +44,11 @@ public final class SigningUtil {
       return false;
     }
     String payload = getPayloadToSignOrVerify(msg, msg.getSignatureType());
-    return verify(payload, msg.getSignature(), msg.getPublisherId());
+    try {
+      return verify(payload, msg.getSignature(), msg.getPublisherId());
+    } catch (SignatureException e) {
+      throw new SignatureFailedException(e.getMessage());
+    }
   }
 
   private static String getPayloadToSignOrVerify(
@@ -79,41 +87,36 @@ public final class SigningUtil {
     return Hash.sha3(bytes);
   }
 
-  private static boolean verify(String data, String signature, Address address) {
+  private static boolean verify(String data, String signature, Address address)
+      throws SignatureException {
     byte[] messageHash = calculateMessageHash(data);
-    Address result = recoverAddress(messageHash, signature, address);
-    return address.equals(result);
+    String b = recoverAddress(messageHash, signature);
+    String recoveredAddress = Keys.toChecksumAddress(b);
+    return recoveredAddress.equals(address.toString());
   }
 
-  private static Address recoverAddress(byte[] messageHash, String signatureHex, Address original) {
-    final ECDSASignature signature;
-
+  private static String recoverAddress(byte[] messageHash, String signatureHex)
+      throws SignatureException {
     byte[] source = Numeric.hexStringToByteArray(signatureHex);
-    BigInteger r = toBigInteger(source, 0, 32);
-    BigInteger s = toBigInteger(source, 32, 64);
-    signature = new ECDSASignature(r, s);
+    byte v = source[64];
+    if (v < 27) {
+      v += 27;
+    }
+    byte[] r = Arrays.copyOfRange(source, 0, 32);
+    byte[] s = Arrays.copyOfRange(source, 32, 64);
+    Sign.SignatureData signature = new Sign.SignatureData(v, r, s);
     for (byte i = 0; i < 4; i++) {
       BigInteger publicKey;
       try {
-        publicKey = Sign.recoverFromSignature(i, signature, messageHash);
-      } catch (RuntimeException e) {
+        publicKey = Sign.signedMessageHashToKey(messageHash, signature);
+      } catch (SignatureException e) {
         continue;
       }
       if (publicKey != null) {
         String hex = Keys.getAddress(publicKey);
-        String hexWithPrefix = Numeric.prependHexPrefix(hex);
-        Address address = new Address(hexWithPrefix);
-        if (address.equals(original)) {
-          return address;
-        }
+        return Numeric.prependHexPrefix(hex);
       }
     }
-    return null;
-  }
-
-  private static BigInteger toBigInteger(final byte[] source, final int from, final int to) {
-    byte[] bytes = Arrays.copyOfRange(source, from, to);
-    BigInteger i = new BigInteger(1, bytes);
-    return i;
+    throw new SignatureException("Address recovery from signature failed.");
   }
 }
