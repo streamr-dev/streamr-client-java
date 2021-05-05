@@ -2,8 +2,6 @@ rootProject.name = 'streamr-client-java'
 
 dependencyResolutionManagement {
 	repositories {
-		jcenter()
-		maven { url "https://dl.bintray.com/ethereum/maven/" }
-		gradlePluginPortal()
+		mavenCentral()
 	}
 }

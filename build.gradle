@@ -1,11 +1,6 @@
 import org.gradle.api.tasks.testing.logging.TestLogEvent
 import org.gradle.api.tasks.testing.logging.TestExceptionFormat
 
-buildscript {
-	repositories {
-		jcenter()
-	}
-}
 plugins {
 	id 'java-library'
 	id 'groovy-gradle-plugin'
