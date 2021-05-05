@@ -2,20 +2,17 @@ package com.streamr.client.authentication;
 
 import com.squareup.moshi.JsonAdapter;
 import com.streamr.client.utils.HttpUtils;
-
+import com.streamr.client.utils.SigningUtil;
 import java.io.IOException;
 import java.math.BigInteger;
 import java.util.Date;
-
-import com.streamr.client.utils.SigningUtil;
 import okhttp3.Response;
-import org.apache.commons.codec.DecoderException;
-import org.ethereum.crypto.ECKey;
-import org.apache.commons.codec.binary.Hex;
+import org.web3j.crypto.ECKeyPair;
+import org.web3j.crypto.Keys;
 
 public class EthereumAuthenticationMethod extends AuthenticationMethod {
 
-    private final ECKey account;
+    private final ECKeyPair account;
     private final String address;
     private JsonAdapter<Challenge> challengeAdapter = HttpUtils.MOSHI.adapter(Challenge.class);
     private JsonAdapter<ChallengeResponse> challengeResponseAdapter = HttpUtils.MOSHI.adapter(ChallengeResponse.class);
@@ -23,8 +20,8 @@ public class EthereumAuthenticationMethod extends AuthenticationMethod {
     public EthereumAuthenticationMethod(String ethereumPrivateKey) {
         super();
         String withoutPrefix = ethereumPrivateKey.startsWith("0x") ? ethereumPrivateKey.substring(2) : ethereumPrivateKey;
-        this.account = ECKey.fromPrivate(new BigInteger(withoutPrefix, 16));
-        this.address = "0x" + Hex.encodeHexString(this.account.getAddress());
+        this.account = ECKeyPair.create(new BigInteger(withoutPrefix, 16));
+        this.address = Keys.getAddress(this.account.getPublicKey());
     }
 
     @Override
@@ -60,7 +57,7 @@ public class EthereumAuthenticationMethod extends AuthenticationMethod {
         return address;
     }
 
-    public ECKey getAccount() {
+    public ECKeyPair getAccount() {
         return account;
     }
 
