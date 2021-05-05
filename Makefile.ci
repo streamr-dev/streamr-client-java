@@ -1,10 +1,10 @@
-LANG := en_US.UTF-8
-SHELL := bash
+LANG = en_US.UTF-8
+SHELL = /bin/bash
 PATH := .:$(PATH)
-.SHELLFLAGS := -eu -o pipefail -c # run '/bin/bash ... -c /bin/cmd'
-.DEFAULT_GOAL := build
+.SHELLFLAGS = -eu -o pipefail -c # run '/bin/bash ... -c /bin/cmd'
+.DEFAULT_GOAL = build
 
-gradle := gradlew
+gradle = gradlew
 
 .PHONY: build
 build:
