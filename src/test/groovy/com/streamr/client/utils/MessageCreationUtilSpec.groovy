@@ -3,11 +3,15 @@ package com.streamr.client.utils
 import com.streamr.client.exceptions.InvalidGroupKeyRequestException
 import com.streamr.client.exceptions.SigningRequiredException
 import com.streamr.client.protocol.StreamrSpecification
-import com.streamr.client.protocol.message_layer.*
+import com.streamr.client.protocol.message_layer.AbstractGroupKeyMessage
+import com.streamr.client.protocol.message_layer.GroupKeyAnnounce
+import com.streamr.client.protocol.message_layer.GroupKeyErrorResponse
+import com.streamr.client.protocol.message_layer.GroupKeyRequest
+import com.streamr.client.protocol.message_layer.GroupKeyResponse
+import com.streamr.client.protocol.message_layer.StreamMessage
 import com.streamr.client.rest.Stream
-import org.ethereum.crypto.ECKey
-
 import java.security.SecureRandom
+import org.web3j.crypto.ECKeyPair
 
 class MessageCreationUtilSpec extends StreamrSpecification {
     MessageCreationUtil msgCreationUtil
@@ -26,7 +30,7 @@ class MessageCreationUtilSpec extends StreamrSpecification {
         message = [foo: "bar"]
 
         String withoutPrefix = "23bead9b499af21c4c16e4511b3b6b08c3e22e76e0591f5ab5ba8d4c3a5b1820"
-        ECKey account = ECKey.fromPrivate(new BigInteger(withoutPrefix, 16))
+        ECKeyPair account = ECKeyPair.create(new BigInteger(withoutPrefix, 16))
         signingUtil = new SigningUtil(account)
 
         encryptionUtil = new EncryptionUtil()

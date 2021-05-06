@@ -1,14 +1,10 @@
 package com.streamr.client.utils;
 
-import org.apache.commons.codec.binary.Hex;
+import java.util.Objects;
+import java.util.Random;
 import org.web3j.crypto.Keys;
 import org.web3j.crypto.WalletUtils;
-
-import java.util.Random;
-
-import java.util.Random;
-
-import java.util.Random;
+import org.web3j.utils.Numeric;
 
 /**
  * For making sure that Ethereum addresses are always treated similarly everywhere (e.g. lower-cased)
@@ -17,7 +13,7 @@ public class Address {
     private final String address;
 
     public Address(byte[] bytes) {
-        this("0x" + Hex.encodeHexString(bytes));
+        this(Numeric.toHexString(bytes));
     }
 
     public Address(String address) {
@@ -28,18 +24,16 @@ public class Address {
     }
 
     @Override
-    public boolean equals(Object o) {
-        if (this == o) return true;
-        if (o == null || getClass() != o.getClass()) return false;
-
-        Address address1 = (Address) o;
-
-        return address.equals(address1.address);
+    public boolean equals(Object obj) {
+        if (this == obj) return true;
+        if (!(obj instanceof Address)) return false;
+        final Address address1 = (Address) obj;
+        return Objects.equals(address, address1.address);
     }
 
     @Override
     public int hashCode() {
-        return address.hashCode();
+        return Objects.hash(address);
     }
 
     @Override
