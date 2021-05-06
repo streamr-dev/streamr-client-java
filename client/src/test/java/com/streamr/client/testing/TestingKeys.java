@@ -3,6 +3,9 @@ package com.streamr.client.testing;
 import java.math.BigInteger;
 
 public final class TestingKeys {
+  public static final String CORE_API_PRIVATE_KEY =
+      "0x0123456789ABCDEF0123456789ABCDEF0123456789ABCDEF0123456789ABCDEF";
+
   private TestingKeys() {}
 
   public static BigInteger generatePrivateKey() {

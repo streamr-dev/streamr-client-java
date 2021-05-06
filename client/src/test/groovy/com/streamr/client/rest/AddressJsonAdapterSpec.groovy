@@ -27,7 +27,6 @@ class AddressJsonAdapterSpec extends Specification {
 
 	def "Address.fromJson"(String json, Address address) {
 		expect:
-		println(json)
 		adapter.fromJson(toReader(json)).address == address
 		where:
 		json | address

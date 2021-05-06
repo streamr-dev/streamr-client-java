@@ -28,6 +28,7 @@ import com.streamr.client.protocol.message_layer.MalformedMessageException;
 import com.streamr.client.protocol.message_layer.StreamMessage;
 import com.streamr.client.protocol.message_layer.StreamMessageValidator;
 import com.streamr.client.rest.AmbiguousResultsException;
+import com.streamr.client.rest.DataUnionSecretResponse;
 import com.streamr.client.rest.Permission;
 import com.streamr.client.rest.StorageNode;
 import com.streamr.client.rest.Stream;
@@ -789,6 +790,21 @@ public class StreamrClient implements Streamr {
   public List<StreamPart> getStreamPartsByStorageNode(final StorageNode storageNode)
       throws IOException {
     return restClient.getStreamPartsByStorageNode(storageNode);
+  }
+
+  @Override
+  public DataUnionSecretResponse setDataUnionSecret(final String dataUnionAddress, final String dataUnionSecretName) throws IOException {
+    return restClient.setDataUnionSecret(dataUnionAddress, dataUnionSecretName);
+  }
+
+  @Override
+  public void requestDataUnionJoin(final String dataUnionAddress, final String memberAddress, final String dataUnionSecret) throws IOException {
+    restClient.requestDataUnionJoin(dataUnionAddress, memberAddress, dataUnionSecret);
+  }
+
+  @Override
+  public void createDataUnionProduct(final String name, final String beneficiaryAddress) throws IOException {
+    restClient.createDataUnionProduct(name, beneficiaryAddress);
   }
 
   private void handleSubscribeResponse(SubscribeResponse res) throws SubscriptionNotFoundException {

@@ -2,6 +2,7 @@ package com.streamr.client.testing;
 
 import com.streamr.client.MessageHandler;
 import com.streamr.client.StreamrClient;
+import com.streamr.client.java.util.Objects;
 import com.streamr.client.options.EncryptionOptions;
 import com.streamr.client.options.ResendOption;
 import com.streamr.client.options.SigningOptions;
@@ -17,18 +18,38 @@ import java.io.IOException;
 import java.math.BigInteger;
 import java.util.ArrayList;
 import java.util.List;
+import org.web3j.crypto.Credentials;
 
 public class TestingStreamrClient extends StreamrClient {
+  private static StreamrRestClient createStreamrRestClient(final BigInteger privateKey) {
+    return new StreamrRestClient.Builder()
+        .withRestApiUrl(TestingMeta.REST_URL)
+        .withConnectTimeout(60000L)
+        .withReadTimeout(60000L)
+        .withWriteTimeout(60000L)
+        .withPrivateKey(privateKey)
+        .createStreamrRestClient();
+  }
   public static StreamrClient createUnauthenticatedClient() {
     return new StreamrClient(
         new StreamrClientOptions(
             SigningOptions.getDefault(), EncryptionOptions.getDefault(), TestingMeta.WEBSOCKET_URL),
-        new StreamrRestClient(TestingMeta.REST_URL, null));
+        createStreamrRestClient(null));
+  }
+
+  public static StreamrClient createClientWithPrivateKey(final Credentials credentials) {
+    Objects.requireNonNull(credentials);
+    return createClientWithPrivateKey(credentials.getEcKeyPair().getPrivateKey());
+  }
+
+  public static StreamrClient createClientWithPrivateKey(final String privateKey) {
+    Objects.requireNonNull(privateKey);
+    return createClientWithPrivateKey(new BigInteger(privateKey, 16));
   }
 
   public static StreamrClient createClientWithPrivateKey(final BigInteger privateKey) {
-    return new StreamrClient(
-        createOptions(), new StreamrRestClient(TestingMeta.REST_URL, privateKey));
+    Objects.requireNonNull(privateKey);
+    return new StreamrClient(createOptions(), createStreamrRestClient(privateKey));
   }
 
   private static StreamrClientOptions createOptions() {
@@ -37,33 +58,6 @@ public class TestingStreamrClient extends StreamrClient {
   }
 
   List<StreamMessage> receivedStreamMessages = new ArrayList<>();
-
-  public TestingStreamrClient(final StreamrClientOptions options, final BigInteger privateKey) {
-    super(
-        options,
-        new StreamrRestClient(TestingMeta.REST_URL, privateKey) {
-          @Override
-          public UserInfo getUserInfo() {
-            return new UserInfo("name", "username");
-          }
-
-          @Override
-          public String getSessionToken() {
-            return "sessionToken";
-          }
-
-          @Override
-          public Stream getStream(String streamId) throws IOException, ResourceNotFoundException {
-            return new Stream.Builder()
-                .withName("default mock stream from TestingStreamrClient")
-                .withDescription("")
-                .withId(streamId)
-                .withRequireSignedData(false)
-                .withRequireEncryptedData(false)
-                .createStream();
-          }
-        });
-  }
 
   public TestingStreamrClient(
       final StreamrClientOptions options, final StreamrRestClient restClient) {

@@ -12,7 +12,11 @@ class StreamrRestClientTest {
   @Test
   void newSessionTokenFetchesNewSessionTokenBySigningChallenge() throws IOException {
     final BigInteger privateKey = TestingKeys.generatePrivateKey();
-    final StreamrRestClient auth = new StreamrRestClient(TestingMeta.REST_URL, privateKey);
+    final StreamrRestClient auth =
+        new StreamrRestClient.Builder()
+            .withRestApiUrl(TestingMeta.REST_URL)
+            .withPrivateKey(privateKey)
+            .createStreamrRestClient();
     final LoginResponse loginResponse = auth.login(privateKey);
     assertNotNull(loginResponse.getToken());
   }

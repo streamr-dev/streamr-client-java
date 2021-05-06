@@ -11,6 +11,7 @@ import java.lang.reflect.ParameterizedType;
 import java.math.BigInteger;
 import java.net.HttpURLConnection;
 import java.util.List;
+import java.util.concurrent.TimeUnit;
 import java.util.stream.Collectors;
 import okhttp3.Call;
 import okhttp3.HttpUrl;
@@ -54,8 +55,49 @@ public class StreamrRestClient {
     this.session = new Session(privateKey, this);
   }
 
-  public StreamrRestClient(final String restApiUrl, final BigInteger privateKey) {
-    this(restApiUrl, new OkHttpClient(), privateKey);
+  public static class Builder {
+    private String restApiUrl = REST_API_URL;
+    private long writeTimeout = 5000l;
+    private long readTimeout = 5000l;
+    private long connectTimeout = 5000l;
+    private BigInteger privateKey;
+
+    public Builder() {}
+
+    public Builder withRestApiUrl(final String restApiUrl) {
+      this.restApiUrl = restApiUrl;
+      return this;
+    }
+
+    public Builder withWriteTimeout(final long writeTimeout) {
+      this.writeTimeout = writeTimeout;
+      return this;
+    }
+
+    public Builder withReadTimeout(final long readTimeout) {
+      this.readTimeout = readTimeout;
+      return this;
+    }
+
+    public Builder withConnectTimeout(final long connectTimeout) {
+      this.connectTimeout = connectTimeout;
+      return this;
+    }
+
+    public Builder withPrivateKey(final BigInteger privateKey) {
+      this.privateKey = privateKey;
+      return this;
+    }
+
+    public StreamrRestClient createStreamrRestClient() {
+      OkHttpClient okHttpClient =
+          new OkHttpClient.Builder()
+              .writeTimeout(writeTimeout, TimeUnit.MILLISECONDS)
+              .readTimeout(readTimeout, TimeUnit.MILLISECONDS)
+              .connectTimeout(connectTimeout, TimeUnit.MILLISECONDS)
+              .build();
+      return new StreamrRestClient(restApiUrl, okHttpClient, privateKey);
+    }
   }
 
   /*
@@ -388,5 +430,50 @@ public class StreamrRestClient {
         Json.newMoshiBuilder().build().adapter(Challenge.class);
     final Challenge result = execute(request, challengeAdapter);
     return result;
+  }
+
+  // Data Union
+
+  public DataUnionSecretResponse setDataUnionSecret(
+      final String dataUnionAddress, final String dataUnionSecretName) throws IOException {
+    final JsonAdapter<DataUnionSecretRequest> secretRequestJsonAdapter =
+        Json.newMoshiBuilder().build().adapter(DataUnionSecretRequest.class);
+    final JsonAdapter<DataUnionSecretResponse> secretResponseJsonAdapter =
+        Json.newMoshiBuilder().build().adapter(DataUnionSecretResponse.class);
+    final HttpUrl url = getEndpointUrl("dataunions", dataUnionAddress, "secrets");
+    final DataUnionSecretRequest secret =
+        new DataUnionSecretRequest.Builder()
+            .withName(dataUnionSecretName)
+            .withContractAddress(dataUnionAddress)
+            .createDataUnionSecret();
+    return postWithRetry(url, secretRequestJsonAdapter.toJson(secret), secretResponseJsonAdapter);
+  }
+
+  public void requestDataUnionJoin(
+      final String dataUnionAddress, final String memberAddress, final String dataUnionSecret)
+      throws IOException {
+    final JsonAdapter<DataUnionJoinRequest> joinRequestJsonAdapter =
+        Json.newMoshiBuilder().build().adapter(DataUnionJoinRequest.class);
+    final HttpUrl url = getEndpointUrl("dataunions", dataUnionAddress, "joinRequests");
+    final DataUnionJoinRequest joinRequest =
+        new DataUnionJoinRequest.Builder()
+            .withContractAddress(dataUnionAddress)
+            .withMemberAddress(memberAddress)
+            .withSecret(dataUnionSecret)
+            .createDataUnionJoinRequest();
+    postWithRetry(url, joinRequestJsonAdapter.toJson(joinRequest), joinRequestJsonAdapter);
+  }
+
+  public void createDataUnionProduct(final String name, final String beneficiaryAddress)
+      throws IOException {
+    final JsonAdapter<ProductDataUnion> productJsonAdapter =
+        Json.newMoshiBuilder().build().adapter(ProductDataUnion.class);
+    final HttpUrl url = getEndpointUrl("products");
+    final ProductDataUnion p =
+        new ProductDataUnion.Builder()
+            .withName(name)
+            .withBeneficiaryAddress(beneficiaryAddress)
+            .createProduct();
+    postWithRetry(url, productJsonAdapter.toJson(p), null);
   }
 }
