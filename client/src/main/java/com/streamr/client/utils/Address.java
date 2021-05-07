@@ -17,7 +17,8 @@ public class Address {
   }
 
   public Address(final String value) {
-    this.value = value.toLowerCase();
+    final String withPrefix = Numeric.prependHexPrefix(value);
+    this.value = withPrefix.toLowerCase();
   }
 
   @Override
