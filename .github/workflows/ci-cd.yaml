@@ -37,8 +37,8 @@ jobs:
         run: $make build
       - name: Unit Test
         run: $make test-unit
-      - name: PMD static analysis
-        run: $make pmd
+#      - name: PMD static analysis
+#        run: $make pmd
       - name: Codenarc for Groovy tests
         run: $make codenarc
       - uses: actions/upload-artifact@v2.2.3
