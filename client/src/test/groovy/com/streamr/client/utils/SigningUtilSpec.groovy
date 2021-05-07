@@ -19,7 +19,7 @@ class SigningUtilSpec extends Specification {
         final ECKeyPair account = ECKeyPair.create(privateKey)
         final String addr = Keys.getAddress(account.getPublicKey());
         final String hex = Numeric.prependHexPrefix(addr)
-        assert new Address(hex).toString() == "0xa5374e3C19f15E1847881979Dd0C6C9ffe846BD5".toLowerCase()
+        assert new Address(hex).toLowerCaseString() == "0xa5374e3C19f15E1847881979Dd0C6C9ffe846BD5".toLowerCase()
 
         msgId = new MessageId.Builder()
                 .withStreamId("streamId")
