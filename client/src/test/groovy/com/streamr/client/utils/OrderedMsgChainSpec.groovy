@@ -207,7 +207,7 @@ class OrderedMsgChainSpec extends Specification {
         when:
         util.add(msg1)
         util.add(msg3)
-        Thread.sleep(1200L)
+        Thread.sleep(2000L)
 
         then:
         expected != null
