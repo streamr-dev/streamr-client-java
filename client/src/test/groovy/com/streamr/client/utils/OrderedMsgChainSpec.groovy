@@ -41,7 +41,7 @@ class OrderedMsgChainSpec extends Specification {
             .withContent(content)
             .createStreamMessage()
 
-    final Address publisherId = new Address("0x12345")
+    final Address publisherId = TestingAddresses.PUBLISHER_ID
 
     void "handles ordered messages in order"() {
         ArrayList<StreamMessage> received = []
