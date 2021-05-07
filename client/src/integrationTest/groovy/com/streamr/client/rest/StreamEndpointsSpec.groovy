@@ -239,7 +239,7 @@ class StreamEndpointsSpec extends Specification {
                 .withDescription("This stream was created from an integration test")
                 .createStream()
         String streamId = client.createStream(proto).getId()
-        StorageNode storageNode = new StorageNode(TestingAddresses.createRandom())
+        StorageNode storageNode = new StorageNode(TestingAddresses.JAMES)
         when:
         client.addStreamToStorageNode(streamId, storageNode)
         List<StorageNode> storageNodes = client.getStorageNodes(streamId)
@@ -254,7 +254,7 @@ class StreamEndpointsSpec extends Specification {
                 .withDescription("This stream was created from an integration test")
                 .createStream()
         String streamId = client.createStream(proto).getId()
-        StorageNode storageNode = new StorageNode(TestingAddresses.createRandom())
+        StorageNode storageNode = new StorageNode(TestingAddresses.JAMES)
         client.addStreamToStorageNode(streamId, storageNode)
         when:
         client.removeStreamToStorageNode(streamId, storageNode)
@@ -270,7 +270,7 @@ class StreamEndpointsSpec extends Specification {
                 .withPartitions(2)
                 .createStream()
         String streamId = client.createStream(proto).getId()
-        StorageNode storageNode = new StorageNode(TestingAddresses.createRandom())
+        StorageNode storageNode = new StorageNode(TestingAddresses.JAMES)
         client.addStreamToStorageNode(streamId, storageNode)
         when:
         List<StreamPart> streamParts = client.getStreamPartsByStorageNode(storageNode)

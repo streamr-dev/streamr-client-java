@@ -39,10 +39,10 @@ public class Address {
 
   @Override
   public final String toString() {
-    return Keys.toChecksumAddress(this.value);
+    return this.value;
   }
 
-  public final String toLowerCaseString() {
-    return this.value;
+  public final String toChecksumAddress() {
+    return Keys.toChecksumAddress(this.value);
   }
 }

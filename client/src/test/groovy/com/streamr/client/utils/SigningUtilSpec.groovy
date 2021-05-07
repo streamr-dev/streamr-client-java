@@ -19,7 +19,7 @@ class SigningUtilSpec extends Specification {
         final ECKeyPair account = ECKeyPair.create(privateKey)
         final String addr = Keys.getAddress(account.getPublicKey());
         final String hex = Numeric.prependHexPrefix(addr)
-        assert new Address(hex).toLowerCaseString() == "0xa5374e3C19f15E1847881979Dd0C6C9ffe846BD5".toLowerCase()
+        assert new Address(hex).toString() == "0xa5374e3C19f15E1847881979Dd0C6C9ffe846BD5".toLowerCase()
 
         msgId = new MessageId.Builder()
                 .withStreamId("streamId")
@@ -45,7 +45,7 @@ class SigningUtilSpec extends Specification {
                 .withPreviousMessageRef(null)
                 .withContent(TestingContent.fromJsonMap([foo: 'bar']))
                 .createStreamMessage()
-        String expectedPayload = "streamId042523531500xbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbmsgChainId"+'{"foo":"bar"}'
+        String expectedPayload = "streamId04252353150" + TestingAddresses.PUBLISHER_ID.toLowerCaseString() + "msgChainId"+'{"foo":"bar"}'
         when:
         msg = SigningUtil.signStreamMessage(privateKey, msg)
         then:
@@ -59,7 +59,7 @@ class SigningUtilSpec extends Specification {
                 .withPreviousMessageRef(new MessageRef(100, 1))
                 .withContent(TestingContent.fromJsonMap([foo: 'bar']))
                 .createStreamMessage()
-        String expectedPayload = "streamId042523531500xbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbmsgChainId1001"+'{"foo":"bar"}'
+        String expectedPayload = "streamId04252353150" + TestingAddresses.PUBLISHER_ID.toLowerCaseString() + "msgChainId1001"+'{"foo":"bar"}'
         when:
         msg = SigningUtil.signStreamMessage(privateKey, msg)
         then:
@@ -74,7 +74,7 @@ class SigningUtilSpec extends Specification {
                 .withContent(TestingContent.fromJsonMap([foo: 'bar']))
                 .withNewGroupKey(new EncryptedGroupKey("groupKeyId", "keyHex"))
                 .createStreamMessage()
-        String expectedPayload = "streamId042523531500xbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbmsgChainId1001"+'{"foo":"bar"}'+'["groupKeyId","keyHex"]'
+        String expectedPayload = "streamId04252353150" + TestingAddresses.PUBLISHER_ID.toLowerCaseString() + "msgChainId1001"+'{"foo":"bar"}'+'["groupKeyId","keyHex"]'
         when:
         msg = SigningUtil.signStreamMessage(privateKey, msg)
         then:

@@ -4,7 +4,6 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.junit.jupiter.api.Assertions.fail;
 
-import com.streamr.client.testing.TestingAddresses;
 import nl.jqno.equalsverifier.EqualsVerifier;
 import org.junit.jupiter.api.Test;
 import org.web3j.utils.Numeric;
@@ -29,7 +28,8 @@ class AddressTest {
     String input = "0xBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBB1";
     final String expected = "0xbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb1";
     Address address = new Address(input);
-    assertEquals(expected, address.toLowerCaseString());
+    assertEquals(expected, address.toString());
+    assertEquals(new Address(expected), address);
   }
 
   @Test
@@ -52,9 +52,8 @@ class AddressTest {
   }
 
   @Test
-  void createRandom() {
-    Address a = TestingAddresses.createRandom();
-    assertTrue(a.toString().startsWith("0x"));
-    assertEquals(42, a.toString().length());
+  void toChecksumAddress() {
+    Address a = new Address("000000004E7928DB8674762A13441A160E365EAE");
+    assertEquals("0x000000004E7928DB8674762a13441A160e365eAE", a.toChecksumAddress());
   }
 }
