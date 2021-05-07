@@ -32,7 +32,7 @@ class StreamMessageV32AdapterSpec extends Specification {
 	}
 
 	void "serialize minimal message"() {
-		String expectedJson = '[32,["streamId",0,123,0,"publisherid","msgChainId"],null,27,0,0,null,"{}",null,0,null]'
+		String expectedJson = '[32,["streamId",0,123,0,"0xbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb","msgChainId"],null,27,0,0,null,"{}",null,0,null]'
 
 		expect:
 		adapter.serialize(msg, VERSION) == expectedJson
@@ -40,7 +40,7 @@ class StreamMessageV32AdapterSpec extends Specification {
 	}
 
 	void "serialize maximal message"() {
-		String expectedJson = '[32,["streamId",0,123,0,"publisherid","msgChainId"],[122,0],27,0,2,"groupKeyId","encrypted-content","[\\\"newGroupKeyId\\\",\\\"encryptedGroupKeyHex-cached\\\"]",2,"signature"]'
+		String expectedJson = '[32,["streamId",0,123,0,"0xbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb","msgChainId"],[122,0],27,0,2,"groupKeyId","encrypted-content","[\\\"newGroupKeyId\\\",\\\"encryptedGroupKeyHex-cached\\\"]",2,"signature"]'
 		msg = new StreamMessage.Builder(msg)
 				.withSignature("signature")
 				.withSignatureType(StreamMessage.SignatureType.ETH)
@@ -57,7 +57,7 @@ class StreamMessageV32AdapterSpec extends Specification {
 	}
 
 	void "deserialize minimal message"() {
-		String json = '[32,["streamId",0,123,0,"publisherid","msgChainId"],null,27,0,0,null,"{}",null,0,null]'
+		String json = '[32,["streamId",0,123,0,"0xbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb","msgChainId"],null,27,0,0,null,"{}",null,0,null]'
 
 		when:
 		msg = StreamMessageAdapter.deserialize(json)
@@ -82,7 +82,7 @@ class StreamMessageV32AdapterSpec extends Specification {
 	}
 
 	void "deserialize maximal message"() {
-		String json = '[32,["streamId",0,123,0,"publisherid","msgChainId"],[122,0],27,0,2,"groupKeyId","encrypted-content","[\\\"newGroupKeyId\\\",\\\"encryptedGroupKeyHex\\\"]",2,"signature"]'
+		String json = '[32,["streamId",0,123,0,"0xbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb","msgChainId"],[122,0],27,0,2,"groupKeyId","encrypted-content","[\\\"newGroupKeyId\\\",\\\"encryptedGroupKeyHex\\\"]",2,"signature"]'
 
 		when:
 		msg = StreamMessageAdapter.deserialize(json)

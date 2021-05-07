@@ -1,6 +1,8 @@
 package com.streamr.client.utils;
 
 import com.streamr.client.java.util.Objects;
+import org.web3j.crypto.Keys;
+import org.web3j.crypto.WalletUtils;
 import org.web3j.utils.Numeric;
 
 /**
@@ -11,12 +13,13 @@ public class Address {
   private final String value;
 
   public Address(final byte[] value) {
-    final String withoutPrefix = Numeric.toHexString(value);
-    final String withPrefix = Numeric.prependHexPrefix(withoutPrefix);
-    this.value = withPrefix.toLowerCase();
+    this(Numeric.toHexString(value));
   }
 
   public Address(final String value) {
+    if ((value == null) || !WalletUtils.isValidAddress(value)) {
+      throw new IllegalArgumentException("Invalid Ethereum address: " + value);
+    }
     final String withPrefix = Numeric.prependHexPrefix(value);
     this.value = withPrefix.toLowerCase();
   }
@@ -36,6 +39,10 @@ public class Address {
 
   @Override
   public final String toString() {
-    return value;
+    return Keys.toChecksumAddress(this.value);
+  }
+
+  public final String toLowerCaseString() {
+    return this.value;
   }
 }
