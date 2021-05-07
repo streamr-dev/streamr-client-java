@@ -45,7 +45,7 @@ class SigningUtilSpec extends Specification {
                 .withPreviousMessageRef(null)
                 .withContent(TestingContent.fromJsonMap([foo: 'bar']))
                 .createStreamMessage()
-        String expectedPayload = "streamId04252353150" + TestingAddresses.PUBLISHER_ID.toString() + "msgChainId"+'{"foo":"bar"}'
+        String expectedPayload = "streamId04252353150" + TestingAddresses.PUBLISHER_ID + "msgChainId"+'{"foo":"bar"}'
         when:
         msg = SigningUtil.signStreamMessage(privateKey, msg)
         then:
@@ -59,7 +59,7 @@ class SigningUtilSpec extends Specification {
                 .withPreviousMessageRef(new MessageRef(100, 1))
                 .withContent(TestingContent.fromJsonMap([foo: 'bar']))
                 .createStreamMessage()
-        String expectedPayload = "streamId04252353150" + TestingAddresses.PUBLISHER_ID.toString() + "msgChainId1001"+'{"foo":"bar"}'
+        String expectedPayload = "streamId04252353150" + TestingAddresses.PUBLISHER_ID + "msgChainId1001"+'{"foo":"bar"}'
         when:
         msg = SigningUtil.signStreamMessage(privateKey, msg)
         then:
@@ -74,7 +74,7 @@ class SigningUtilSpec extends Specification {
                 .withContent(TestingContent.fromJsonMap([foo: 'bar']))
                 .withNewGroupKey(new EncryptedGroupKey("groupKeyId", "keyHex"))
                 .createStreamMessage()
-        String expectedPayload = "streamId04252353150" + TestingAddresses.PUBLISHER_ID.toString() + "msgChainId1001"+'{"foo":"bar"}'+'["groupKeyId","keyHex"]'
+        String expectedPayload = "streamId04252353150" + TestingAddresses.PUBLISHER_ID + "msgChainId1001"+'{"foo":"bar"}'+'["groupKeyId","keyHex"]'
         when:
         msg = SigningUtil.signStreamMessage(privateKey, msg)
         then:
