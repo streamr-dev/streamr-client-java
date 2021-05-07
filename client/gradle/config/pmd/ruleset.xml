@@ -20,17 +20,10 @@
         <exclude name="DefaultLabelNotLastInSwitchStmt"/> <!-- TODO: include rule -->
         <exclude name="LooseCoupling"/> <!-- TODO: include rule -->
         <exclude name="UnusedPrivateMethod"/> <!-- TODO: include rule -->
-        <exclude name="JUnitTestContainsTooManyAsserts"/> <!-- TODO: include rule -->
         <exclude name="AbstractClassWithoutAbstractMethod"/>
         <exclude name="AccessorMethodGeneration"/>
         <exclude name="ArrayIsStoredDirectly"/>
         <exclude name="GuardLogStatement"/>
-        <exclude name="JUnitAssertionsShouldIncludeMessage"/>
-        <exclude name="JUnit4SuitesShouldUseSuiteAnnotation"/>
-        <exclude name="JUnitTestsShouldIncludeAssert"/>
-        <exclude name="JUnit4TestShouldUseBeforeAnnotation"/>
-        <exclude name="JUnit4TestShouldUseAfterAnnotation"/>
-        <exclude name="JUnit4TestShouldUseTestAnnotation"/>
     </rule>
 
     <!-- Code style https://pmd.github.io/latest/pmd_rules_java_codestyle.html -->
