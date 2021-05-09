@@ -29,7 +29,6 @@ import com.streamr.client.testing.TestingStreamrClient
 import com.streamr.client.utils.Address
 import com.streamr.client.utils.EncryptionUtil
 import com.streamr.client.utils.GroupKey
-import com.streamr.client.utils.InMemoryGroupKeyStore
 import com.streamr.client.utils.KeyExchangeUtil
 import spock.lang.Shared
 import spock.lang.Specification
@@ -83,7 +82,7 @@ class StreamrClientSpec extends Specification {
         server.clear()
         final BigInteger privateKey = new BigInteger("d462a6f2ccd995a346a841d110e8c6954930a1c22851c0032d3116d8ccd2296a", 16)
         // Turn off autoRevoke, otherwise it will try and to REST API calls
-        EncryptionOptions encryptionOptions = new EncryptionOptions(new InMemoryGroupKeyStore(), null, null, false)
+        EncryptionOptions encryptionOptions = new EncryptionOptions(null, null, false)
         StreamrClientOptions options = new StreamrClientOptions(
                 SigningOptions.getDefault(),
                 encryptionOptions,
