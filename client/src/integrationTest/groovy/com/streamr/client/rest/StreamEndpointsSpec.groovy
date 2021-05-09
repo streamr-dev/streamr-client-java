@@ -41,7 +41,6 @@ class StreamEndpointsSpec extends Specification {
         createResult.description == proto.description
         createResult.config == proto.config
         createResult.partitions == 1
-        !createResult.uiChannel
 
         when:
         Stream getResult = client.getStream(createResult.getId())
@@ -52,7 +51,6 @@ class StreamEndpointsSpec extends Specification {
         getResult.description == createResult.description
         getResult.config == createResult.config
         getResult.partitions == createResult.partitions
-        getResult.uiChannel == createResult.uiChannel
         !getResult.requiresSignedData()
     }
 

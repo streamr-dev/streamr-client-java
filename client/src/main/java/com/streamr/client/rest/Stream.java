@@ -51,7 +51,6 @@ import java.util.List;
  *       ]
  *    },
  *    "description":"Helsinki tram data by HSL",
- *    "uiChannel":false,
  *    "dateCreated":"2016-05-27T15:46:30Z",
  *    "lastUpdated":"2017-04-10T16:04:38Z"
  * }
@@ -63,7 +62,6 @@ public final class Stream {
   private final String description;
   private final int partitions;
   private final StreamConfig config;
-  private final Boolean uiChannel;
   private final boolean requireSignedData;
   private final boolean requireEncryptedData;
   private final Date dateCreated;
@@ -75,7 +73,6 @@ public final class Stream {
       final String description,
       final int partitions,
       final StreamConfig config,
-      final Boolean uiChannel,
       final boolean requireSignedData,
       final boolean requireEncryptedData,
       final Date dateCreated,
@@ -85,7 +82,6 @@ public final class Stream {
     this.description = description;
     this.partitions = partitions;
     this.config = config;
-    this.uiChannel = uiChannel;
     this.requireSignedData = requireSignedData;
     this.requireEncryptedData = requireEncryptedData;
     this.dateCreated = dateCreated;
@@ -110,10 +106,6 @@ public final class Stream {
 
   public StreamConfig getConfig() {
     return config;
-  }
-
-  public Boolean isUiChannel() {
-    return uiChannel;
   }
 
   public boolean requiresSignedData() {
@@ -152,7 +144,6 @@ public final class Stream {
         && Objects.equals(name, stream.name)
         && Objects.equals(description, stream.description)
         && Objects.equals(config, stream.config)
-        && Objects.equals(uiChannel, stream.uiChannel)
         && Objects.equals(dateCreated, stream.dateCreated)
         && Objects.equals(lastUpdated, stream.lastUpdated);
   }
@@ -165,7 +156,6 @@ public final class Stream {
         description,
         partitions,
         config,
-        uiChannel,
         requireSignedData,
         requireEncryptedData,
         dateCreated,
@@ -178,7 +168,6 @@ public final class Stream {
     private String description;
     private int partitions = 1;
     private StreamConfig config;
-    private Boolean uiChannel;
     private boolean requireSignedData;
     private boolean requireEncryptedData;
     private Date dateCreated;
@@ -192,7 +181,6 @@ public final class Stream {
       this.description = stream.description;
       this.partitions = stream.partitions;
       this.config = stream.config;
-      this.uiChannel = stream.uiChannel;
       this.requireSignedData = stream.requireSignedData;
       this.requireEncryptedData = stream.requireEncryptedData;
       this.dateCreated = stream.dateCreated;
@@ -221,11 +209,6 @@ public final class Stream {
 
     public Builder withConfig(final StreamConfig config) {
       this.config = config;
-      return this;
-    }
-
-    public Builder withUiChannel(final Boolean uiChannel) {
-      this.uiChannel = uiChannel;
       return this;
     }
 
@@ -264,7 +247,6 @@ public final class Stream {
           description,
           partitions,
           config,
-          uiChannel,
           requireSignedData,
           requireEncryptedData,
           dateCreated,

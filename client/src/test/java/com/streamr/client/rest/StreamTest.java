@@ -27,7 +27,7 @@ class StreamTest {
   @Test
   void streamObjectsParseCorrectly() throws IOException {
     String json =
-        "{\"id\":\"7wa7APtlTq6EC5iTCBy6dw\",\"partitions\":1,\"name\":\"Public transport demo\",\"feed\":{\"id\":7,\"name\":\"API\",\"module\":147},\"config\":{\"topic\":\"7wa7APtlTq6EC5iTCBy6dw\",\"fields\":[{\"name\":\"veh\",\"type\":\"string\"},{\"name\":\"spd\",\"type\":\"number\"},{\"name\":\"hdg\",\"type\":\"number\"},{\"name\":\"lat\",\"type\":\"number\"},{\"name\":\"long\",\"type\":\"number\"},{\"name\":\"line\",\"type\":\"string\"}]},\"description\":\"Helsinki tram data by HSL\",\"uiChannel\":false,\"dateCreated\":\"2016-05-27T15:46:30Z\",\"lastUpdated\":\"2017-04-10T16:04:38Z\"}";
+        "{\"id\":\"7wa7APtlTq6EC5iTCBy6dw\",\"partitions\":1,\"name\":\"Public transport demo\",\"feed\":{\"id\":7,\"name\":\"API\",\"module\":147},\"config\":{\"topic\":\"7wa7APtlTq6EC5iTCBy6dw\",\"fields\":[{\"name\":\"veh\",\"type\":\"string\"},{\"name\":\"spd\",\"type\":\"number\"},{\"name\":\"hdg\",\"type\":\"number\"},{\"name\":\"lat\",\"type\":\"number\"},{\"name\":\"long\",\"type\":\"number\"},{\"name\":\"line\",\"type\":\"string\"}]},\"description\":\"Helsinki tram data by HSL\",\"dateCreated\":\"2016-05-27T15:46:30Z\",\"lastUpdated\":\"2017-04-10T16:04:38Z\"}";
 
     Stream s =
         new Moshi.Builder()
