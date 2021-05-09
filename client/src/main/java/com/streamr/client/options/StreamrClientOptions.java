@@ -3,7 +3,7 @@ package com.streamr.client.options;
 import com.streamr.client.ws.WebsocketUrl;
 
 public class StreamrClientOptions {
-  private SigningOptions signingOptions = SigningOptions.getDefault();
+  private SigningOptions signingOptions = new SigningOptions(SigningOptions.SignatureVerificationPolicy.AUTO);
   private WebsocketUrl websocketApiUrl = new WebsocketUrl();
 
   private String mainnetRpcUrl = "https://mainnet.infura.io/v3/140f8dc53a2141e4b645a4db9fc4cebb";

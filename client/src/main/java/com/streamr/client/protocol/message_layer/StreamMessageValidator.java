@@ -61,7 +61,8 @@ public class StreamMessageValidator {
         validateGroupKeyResponse(msg);
         break;
       default:
-        throw new ValidationException(msg, ValidationException.Reason.INVALID_MESSAGE);
+        throw ValidationException.Factory.create(
+            ValidationException.Reason.INVALID_MESSAGE, msg);
     }
   }
 
@@ -70,27 +71,27 @@ public class StreamMessageValidator {
 
     // Checks against stream metadata
     if (stream.requiresSignedData() && msg.getSignature() == null) {
-      throw new ValidationException(
-          msg,
-          ValidationException.Reason.POLICY_VIOLATION,
-          "Stream " + stream.getId() + " requires messages to be signed.");
+      throw ValidationException.Factory.create(
+          "Stream " + stream.getId() + " requires messages to be signed.",
+          ValidationException.Reason.POLICY_VIOLATION, msg
+      );
     }
     if (stream.requiresEncryptedData()
         && msg.getEncryptionType() == StreamMessage.EncryptionType.NONE) {
-      throw new ValidationException(
-          msg,
-          ValidationException.Reason.POLICY_VIOLATION,
-          "Stream " + stream.getId() + " requires messages to be encrypted.");
+      throw ValidationException.Factory.create(
+          "Stream " + stream.getId() + " requires messages to be encrypted.",
+          ValidationException.Reason.POLICY_VIOLATION, msg
+      );
     }
     if (msg.getStreamPartition() < 0 || msg.getStreamPartition() >= stream.getPartitions()) {
-      throw new ValidationException(
-          msg,
-          ValidationException.Reason.INVALID_MESSAGE,
+      throw ValidationException.Factory.create(
           "Partition "
               + msg.getStreamPartition()
               + " is out of range (0.."
               + (stream.getPartitions() - 1)
-              + ")");
+              + ")",
+          ValidationException.Reason.INVALID_MESSAGE, msg
+      );
     }
 
     assertValidSignatureAccordingToPolicy(msg);
@@ -101,10 +102,10 @@ public class StreamMessageValidator {
 
       // Check that the sender of the message is a valid publisher of the stream
       if (!addressValidityUtil.isValidPublisher(msg.getStreamId(), sender)) {
-        throw new ValidationException(
-            msg,
-            ValidationException.Reason.PERMISSION_VIOLATION,
-            sender + " is not a publisher on stream " + msg.getStreamId());
+        throw ValidationException.Factory.create(
+            sender + " is not a publisher on stream " + msg.getStreamId(),
+            ValidationException.Reason.PERMISSION_VIOLATION, msg
+        );
       }
     }
   }
@@ -113,24 +114,21 @@ public class StreamMessageValidator {
     boolean valid;
     try {
       valid = SigningUtil.hasValidSignature(msg);
-      if (!valid) {
-        throw new ValidationException(msg, ValidationException.Reason.INVALID_SIGNATURE);
-      }
-    } catch (Exception e) {
-      throw new ValidationException(
-          msg, ValidationException.Reason.INVALID_SIGNATURE, e.getMessage());
+    } catch (RuntimeException e) {
+      throw ValidationException.Factory.create(
+          e.getMessage(), ValidationException.Reason.INVALID_SIGNATURE, msg);
+    }
+    if (!valid) {
+      throw ValidationException.Factory.create(
+          ValidationException.Reason.INVALID_SIGNATURE, msg);
     }
   }
 
   private void assertValidSignatureAccordingToPolicy(StreamMessage msg) throws ValidationException {
-    if (signatureVerificationPolicy == SignatureVerificationPolicy.NEVER) {
-      // Always pass
-      return;
-    }
-
     if (signatureVerificationPolicy == SignatureVerificationPolicy.ALWAYS
         && msg.getSignature() == null) {
-      throw new ValidationException(msg, ValidationException.Reason.POLICY_VIOLATION);
+      throw ValidationException.Factory.create(
+          ValidationException.Reason.POLICY_VIOLATION, msg);
     }
 
     if (msg.getSignature() != null) {
@@ -140,7 +138,8 @@ public class StreamMessageValidator {
 
   private void validateGroupKeyRequest(StreamMessage streamMessage) {
     if (streamMessage.getSignature() == null) {
-      throw new ValidationException(streamMessage, ValidationException.Reason.UNSIGNED_NOT_ALLOWED);
+      throw ValidationException.Factory.create(
+          ValidationException.Reason.UNSIGNED_NOT_ALLOWED, streamMessage);
     }
 
     assertKeyExchangeStream(streamMessage);
@@ -157,27 +156,27 @@ public class StreamMessageValidator {
 
     // Check that the recipient of the request is a valid publisher of the stream
     if (!addressValidityUtil.isValidPublisher(request.getStreamId(), recipient)) {
-      throw new ValidationException(
-          streamMessage,
-          ValidationException.Reason.PERMISSION_VIOLATION,
-          recipient + " is not a publisher on stream " + request.getStreamId());
+      throw ValidationException.Factory.create(
+          recipient + " is not a publisher on stream " + request.getStreamId(),
+          ValidationException.Reason.PERMISSION_VIOLATION, streamMessage
+      );
     }
 
     // Check that the sender of the request is a valid subscriber of the stream
     if (!addressValidityUtil.isValidSubscriber(request.getStreamId(), sender)) {
-      throw new ValidationException(
-          streamMessage,
-          ValidationException.Reason.PERMISSION_VIOLATION,
-          sender + " is not a subscriber on stream " + request.getStreamId());
+      throw ValidationException.Factory.create(
+          sender + " is not a subscriber on stream " + request.getStreamId(),
+          ValidationException.Reason.PERMISSION_VIOLATION, streamMessage
+      );
     }
   }
 
   private void validateGroupKeyResponse(StreamMessage streamMessage) {
     if (streamMessage.getSignature() == null) {
-      throw new ValidationException(
-          streamMessage,
-          ValidationException.Reason.UNSIGNED_NOT_ALLOWED,
-          "Received unsigned group key response (it must be signed to avoid MitM attacks)");
+      throw ValidationException.Factory.create(
+          "Received unsigned group key response (it must be signed to avoid MitM attacks)",
+          ValidationException.Reason.UNSIGNED_NOT_ALLOWED, streamMessage
+      );
     }
 
     assertKeyExchangeStream(streamMessage);
@@ -194,18 +193,18 @@ public class StreamMessageValidator {
 
     // Check that the sender of the request is a valid publisher of the stream
     if (!addressValidityUtil.isValidPublisher(response.getStreamId(), sender)) {
-      throw new ValidationException(
-          streamMessage,
-          ValidationException.Reason.PERMISSION_VIOLATION,
-          sender + " is not a publisher on stream " + response.getStreamId());
+      throw ValidationException.Factory.create(
+          sender + " is not a publisher on stream " + response.getStreamId(),
+          ValidationException.Reason.PERMISSION_VIOLATION, streamMessage
+      );
     }
 
     // Check that the recipient of the request is a valid subscriber of the stream
     if (!addressValidityUtil.isValidSubscriber(response.getStreamId(), recipient)) {
-      throw new ValidationException(
-          streamMessage,
-          ValidationException.Reason.PERMISSION_VIOLATION,
-          recipient + " is not a subscriber on stream " + response.getStreamId());
+      throw ValidationException.Factory.create(
+          recipient + " is not a subscriber on stream " + response.getStreamId(),
+          ValidationException.Reason.PERMISSION_VIOLATION, streamMessage
+      );
     }
   }
 
@@ -218,10 +217,10 @@ public class StreamMessageValidator {
     } else {
       // Validate like a StreamMessage (except always reject unsigned)
       if (streamMessage.getSignature() == null) {
-        throw new ValidationException(
-            streamMessage,
-            ValidationException.Reason.UNSIGNED_NOT_ALLOWED,
-            "Received unsigned group key response (it must be signed to avoid MitM attacks)");
+        throw ValidationException.Factory.create(
+            "Received unsigned group key response (it must be signed to avoid MitM attacks)",
+            ValidationException.Reason.UNSIGNED_NOT_ALLOWED, streamMessage
+        );
       }
       validateStreamMessage(streamMessage);
     }
@@ -229,12 +228,12 @@ public class StreamMessageValidator {
 
   private static void assertKeyExchangeStream(StreamMessage streamMessage) {
     if (!KeyExchangeUtil.isKeyExchangeStreamId(streamMessage.getStreamId())) {
-      throw new ValidationException(
-          streamMessage,
-          ValidationException.Reason.INVALID_MESSAGE,
+      throw ValidationException.Factory.create(
           "Group key requests can only occur on stream ids of form "
               + KeyExchangeUtil.KEY_EXCHANGE_STREAM_PREFIX
-              + "{address}");
+              + "{address}",
+          ValidationException.Reason.INVALID_MESSAGE, streamMessage
+      );
     }
   }
 

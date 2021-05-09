@@ -78,7 +78,7 @@ class DataUnionClientStreamrTest {
 
     StreamrClientOptions opts =
         new StreamrClientOptions(
-            SigningOptions.getDefault(), TestingMeta.WEBSOCKET_URL);
+            new SigningOptions(SigningOptions.SignatureVerificationPolicy.AUTO), TestingMeta.WEBSOCKET_URL);
     opts.setSidechainRpcUrl(DEV_SIDECHAIN_RPC);
     opts.setMainnetRpcUrl(DEV_MAINCHAIN_RPC);
     opts.setDataUnionMainnetFactoryAddress(DEV_MAINCHAIN_FACTORY);

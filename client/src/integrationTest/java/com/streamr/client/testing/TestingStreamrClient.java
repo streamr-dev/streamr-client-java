@@ -32,7 +32,9 @@ public class TestingStreamrClient extends StreamrClient {
 
   public static StreamrClient createUnauthenticatedClient() {
     return new StreamrClient(
-        new StreamrClientOptions(SigningOptions.getDefault(), TestingMeta.WEBSOCKET_URL),
+        new StreamrClientOptions(
+            new SigningOptions(SigningOptions.SignatureVerificationPolicy.AUTO),
+            TestingMeta.WEBSOCKET_URL),
         createStreamrRestClient(null));
   }
 
@@ -53,7 +55,8 @@ public class TestingStreamrClient extends StreamrClient {
 
   private static StreamrClientOptions createOptions() {
     return new StreamrClientOptions(
-        SigningOptions.getDefault(), TestingMeta.WEBSOCKET_URL);
+        new SigningOptions(SigningOptions.SignatureVerificationPolicy.AUTO),
+        TestingMeta.WEBSOCKET_URL);
   }
 
   List<StreamMessage> receivedStreamMessages = new ArrayList<>();

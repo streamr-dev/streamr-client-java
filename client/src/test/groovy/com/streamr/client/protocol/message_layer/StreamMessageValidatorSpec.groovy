@@ -134,17 +134,6 @@ class StreamMessageValidatorSpec extends Specification {
         notThrown(Exception)
     }
 
-    void "should return true without verifying if policy is 'never' for both signed and unsigned messages"() {
-        validator = getValidator(SignatureVerificationPolicy.NEVER)
-
-        when:
-        validator.validate(msgWrongFormat) // Signingvalidator.hasValidSignature() would throw if called
-        validator.validate(msgUnsigned)
-        validator.validate(msgSigned)
-        then:
-        notThrown(Exception)
-    }
-
     void "should throw if policy is 'always' and message not signed"() {
         when:
         validator.validate(msgUnsigned)
