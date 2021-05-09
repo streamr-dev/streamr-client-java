@@ -1,7 +1,6 @@
 package com.streamr.client.utils
 
 import com.streamr.client.exceptions.InvalidGroupKeyException
-import com.streamr.client.exceptions.InvalidRSAKeyException
 import com.streamr.client.protocol.common.MessageRef
 import com.streamr.client.protocol.message_layer.MessageId
 import com.streamr.client.protocol.message_layer.StreamMessage
@@ -175,34 +174,6 @@ class EncryptionUtilSpec extends Specification {
         secureRandom.nextBytes(keyBytes)
         when:
         EncryptionUtil.validateGroupKey(Numeric.toHexStringNoPrefix(keyBytes))
-        then:
-        noExceptionThrown()
-    }
-    void "validatePublicKey() throws on invalid key"() {
-        when:
-        EncryptionUtil.validatePublicKey("wrong public key")
-        then:
-        InvalidRSAKeyException e = thrown InvalidRSAKeyException
-        e.message == "Must be a valid RSA public key in the PEM format."
-    }
-    void "validatePublicKey() does not throw on valid key"() {
-        KeyPair keyPair = EncryptionUtil.generateKeyPair()
-        when:
-        EncryptionUtil.validatePublicKey(EncryptionUtil.exportKeyAsPemString(keyPair.public, true))
-        then:
-        noExceptionThrown()
-    }
-    void "validatePrivateKey() throws on invalid private key"() {
-        when:
-        EncryptionUtil.validatePrivateKey("wrong private key")
-        then:
-        InvalidRSAKeyException e = thrown InvalidRSAKeyException
-        e.message == "Must be a valid RSA private key in the PEM format."
-    }
-    void "validatePrivateKey() does not throw on valid private key"() {
-        KeyPair keyPair = EncryptionUtil.generateKeyPair()
-        when:
-        EncryptionUtil.validatePrivateKey(EncryptionUtil.exportKeyAsPemString(keyPair.private, false))
         then:
         noExceptionThrown()
     }

@@ -1,5 +1,6 @@
 package com.streamr.client.options;
 
+import com.streamr.client.crypto.Keys;
 import com.streamr.client.utils.EncryptionUtil;
 import java.security.interfaces.RSAPrivateKey;
 import java.security.interfaces.RSAPublicKey;
@@ -12,11 +13,11 @@ public class EncryptionOptions {
   public EncryptionOptions(
       String rsaPublicKey, String rsaPrivateKey, boolean autoRevoke) {
     if (rsaPublicKey != null) {
-      EncryptionUtil.validatePublicKey(rsaPublicKey);
+      Keys.validatePublicKey(rsaPublicKey);
       this.rsaPublicKey = EncryptionUtil.getPublicKeyFromString(rsaPublicKey);
     }
     if (rsaPrivateKey != null) {
-      EncryptionUtil.validatePrivateKey(rsaPrivateKey);
+      Keys.validatePrivateKey(rsaPrivateKey);
       this.rsaPrivateKey = EncryptionUtil.getPrivateKeyFromString(rsaPrivateKey);
     }
     this.autoRevoke = autoRevoke;

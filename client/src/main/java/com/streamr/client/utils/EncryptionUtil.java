@@ -1,7 +1,7 @@
 package com.streamr.client.utils;
 
+import com.streamr.client.crypto.Keys;
 import com.streamr.client.exceptions.InvalidGroupKeyException;
-import com.streamr.client.exceptions.InvalidRSAKeyException;
 import com.streamr.client.exceptions.UnableToDecryptException;
 import com.streamr.client.protocol.message_layer.StreamMessage;
 import java.io.IOException;
@@ -85,7 +85,7 @@ public final class EncryptionUtil {
   }
 
   public String getPublicKeyAsPemString() {
-    return exportKeyAsPemString(this.publicKey, true);
+    return exportPublicKeyAsPemString(this.publicKey);
   }
 
   private static StreamMessage encryptWithPublicKey(
@@ -101,7 +101,7 @@ public final class EncryptionUtil {
   }
 
   static String encryptWithPublicKey(byte[] plaintext, String publicKey) {
-    validatePublicKey(publicKey);
+    Keys.validatePublicKey(publicKey);
     return encryptWithPublicKey(plaintext, getPublicKeyFromString(publicKey));
   }
 
@@ -229,28 +229,19 @@ public final class EncryptionUtil {
     }
   }
 
-  public static void validatePublicKey(String publicKey) {
-    if (publicKey == null
-        || !publicKey.startsWith("-----BEGIN PUBLIC KEY-----")
-        || !publicKey.endsWith("-----END PUBLIC KEY-----\n")) {
-      throw new InvalidRSAKeyException(true);
-    }
+  public static String exportPublicKeyAsPemString(Key key) {
+    return exportKeyAsPemString(key, "PUBLIC");
   }
 
-  public static void validatePrivateKey(String privateKey) {
-    if (privateKey == null
-        || !privateKey.startsWith("-----BEGIN PRIVATE KEY-----")
-        || !privateKey.endsWith("-----END PRIVATE KEY-----\n")) {
-      throw new InvalidRSAKeyException(false);
-    }
+  public static String exportPrivateKeyAsPemString(Key key) {
+    return exportKeyAsPemString(key, "PRIVATE");
   }
 
-  static String exportKeyAsPemString(Key key, boolean isPublic) {
+  private static String exportKeyAsPemString(Key key, String visibility) {
     StringWriter writer = new StringWriter();
     PemWriter pemWriter = new PemWriter(writer);
     try {
-      pemWriter.writeObject(
-          new PemObject((isPublic ? "PUBLIC" : "PRIVATE") + " KEY", key.getEncoded()));
+      pemWriter.writeObject(new PemObject(visibility + " KEY", key.getEncoded()));
       pemWriter.flush();
     } catch (IOException e) {
       log.error("Failed to write key as PEM", e);
