@@ -1,7 +1,7 @@
 package com.streamr.client;
 
 import com.streamr.client.crypto.Keys;
-import com.streamr.client.dataunion.DataUnionClient;
+import com.streamr.client.dataunion.DataUnionClientStreamr;
 import com.streamr.client.exceptions.ConnectionTimeoutException;
 import com.streamr.client.exceptions.PartitionNotSpecifiedException;
 import com.streamr.client.exceptions.SubscriptionNotFoundException;
@@ -456,8 +456,8 @@ public class StreamrClient implements Streamr {
     return restClient.isSubscriber(streamId, ethAddress);
   }
 
-  public DataUnionClient dataUnionClient(String mainnetAdminPrvKey, String sidechainAdminPrvKey) {
-    return new DataUnionClient(
+  public DataUnionClientStreamr dataUnionClient(String mainnetAdminPrvKey, String sidechainAdminPrvKey) {
+    return new DataUnionClientStreamr(
         options.getMainnetRpcUrl(),
         options.getDataUnionMainnetFactoryAddress(),
         mainnetAdminPrvKey,

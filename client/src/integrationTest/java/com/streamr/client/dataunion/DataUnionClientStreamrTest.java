@@ -37,7 +37,7 @@ import org.web3j.utils.Numeric;
 @Timeout(value = 11, unit = TimeUnit.MINUTES)
 @TestMethodOrder(MethodOrderer.OrderAnnotation.class)
 @TestInstance(TestInstance.Lifecycle.PER_CLASS)
-class DataUnionClientTest {
+class DataUnionClientStreamrTest {
   private static final String DEV_MAINCHAIN_RPC = "http://localhost:8545";
   private static final String DEV_SIDECHAIN_RPC = "http://localhost:8546";
   private static final String DEV_MAINCHAIN_FACTORY = "0x4bbcBeFBEC587f6C4AF9AF9B48847caEa1Fe81dA";
@@ -60,7 +60,7 @@ class DataUnionClientTest {
   private static final String DATA_UNION_NAME = "test" + System.currentTimeMillis();
 
   private StreamrClient streamrClient;
-  private DataUnionClient client;
+  private DataUnionClientStreamr client;
   private Credentials adminWallet;
   private Credentials member1Wallet;
   private Credentials member2Wallet;

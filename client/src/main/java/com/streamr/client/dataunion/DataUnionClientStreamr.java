@@ -45,8 +45,8 @@ import org.web3j.utils.Numeric;
  *
  * <p>use DataUnion to perform functions on a particular DU.
  */
-public final class DataUnionClient {
-  private static final Logger log = LoggerFactory.getLogger(DataUnionClient.class);
+public final class DataUnionClientStreamr {
+  private static final Logger log = LoggerFactory.getLogger(DataUnionClientStreamr.class);
 
   private final Web3j mainnet;
   private final Web3j sidechain;
@@ -59,7 +59,7 @@ public final class DataUnionClient {
   private final EstimatedGasProvider mainnetGasProvider;
   private final EstimatedGasProvider sidechainGasProvider;
 
-  public DataUnionClient(
+  public DataUnionClientStreamr(
       final String mainnetUrl,
       final String mainnetFactory,
       final String mainnetAdminPrvKey,

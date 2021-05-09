@@ -1,6 +1,6 @@
 package com.streamr.client;
 
-import com.streamr.client.dataunion.DataUnionClient;
+import com.streamr.client.dataunion.DataUnionClientStreamr;
 import com.streamr.client.options.ResendOption;
 import com.streamr.client.rest.AmbiguousResultsException;
 import com.streamr.client.rest.DataUnionSecretRequest;
@@ -66,7 +66,7 @@ interface Streamr {
 
   boolean isSubscriber(final String streamId, final String ethAddress) throws IOException;
 
-  DataUnionClient dataUnionClient(
+  DataUnionClientStreamr dataUnionClient(
       final String mainnetAdminPrvKey, final String sidechainAdminPrvKey);
 
   void logout() throws IOException;
