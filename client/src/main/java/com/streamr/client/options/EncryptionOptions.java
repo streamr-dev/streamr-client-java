@@ -30,17 +30,8 @@ public class EncryptionOptions {
     this(keyStore, rsaPublicKey, rsaPrivateKey, true);
   }
 
-  // TODO: non-null RSA defaults?
-  private EncryptionOptions(GroupKeyStore keyStore) {
-    this(keyStore, null, null, true);
-  }
-
   private EncryptionOptions() {
     this(new InMemoryGroupKeyStore(), null, null);
-  }
-
-  private EncryptionOptions(boolean autoRevoke) {
-    this(new InMemoryGroupKeyStore(), null, null, autoRevoke);
   }
 
   public GroupKeyStore getKeyStore() {
