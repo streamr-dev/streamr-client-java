@@ -6,6 +6,7 @@ import com.streamr.client.protocol.common.UnsupportedMessageException;
 import com.streamr.client.utils.Address;
 import com.streamr.client.utils.EncryptedGroupKey;
 import java.io.IOException;
+import java.io.Serializable;
 import java.nio.charset.StandardCharsets;
 import java.util.Arrays;
 import java.util.Collections;
@@ -14,7 +15,7 @@ import java.util.HashMap;
 import java.util.Map;
 import okio.Buffer;
 
-public final class StreamMessage implements ITimestamped {
+public final class StreamMessage implements Serializable, ITimestamped {
   public static final int LATEST_VERSION = 32;
 
   public enum MessageType {
