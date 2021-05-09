@@ -7,10 +7,7 @@ import com.streamr.client.protocol.message_layer.StreamMessage
 import com.streamr.client.testing.TestingAddresses
 import com.streamr.client.testing.TestingContent
 import java.nio.charset.StandardCharsets
-import java.security.KeyPair
 import java.security.SecureRandom
-import java.security.interfaces.RSAPrivateKey
-import java.security.interfaces.RSAPublicKey
 import javax.xml.bind.DatatypeConverter
 import org.web3j.utils.Numeric
 import spock.lang.Specification
@@ -141,15 +138,6 @@ class EncryptionUtilSpec extends Specification {
         GroupKey original = EncryptionUtil.decryptGroupKey(encryptedKey, keyToEncryptWith)
         then:
         original == keyToEncrypt
-    }
-
-    void "does not throw when valid keys passed to constructor"() {
-        KeyPair keyPair = EncryptionUtil.generateKeyPair()
-
-        when:
-        new EncryptionUtil((RSAPublicKey) keyPair.public, (RSAPrivateKey) keyPair.private)
-        then:
-        noExceptionThrown()
     }
     void "does not throw when both params are null (auto key generation)"() {
         when:

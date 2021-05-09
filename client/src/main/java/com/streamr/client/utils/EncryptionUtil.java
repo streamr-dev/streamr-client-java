@@ -43,19 +43,10 @@ public final class EncryptionUtil {
   private final RSAPublicKey publicKey;
   private final RSAPrivateKey privateKey;
 
-  public EncryptionUtil(RSAPublicKey rsaPublicKey, RSAPrivateKey rsaPrivateKey) {
-    if (rsaPublicKey == null && rsaPrivateKey == null) {
-      KeyPair pair = generateKeyPair();
-      this.publicKey = (RSAPublicKey) pair.getPublic();
-      this.privateKey = (RSAPrivateKey) pair.getPrivate();
-    } else {
-      this.publicKey = rsaPublicKey;
-      this.privateKey = rsaPrivateKey;
-    }
-  }
-
   public EncryptionUtil() {
-    this(null, null);
+    KeyPair pair = generateKeyPair();
+    this.publicKey = (RSAPublicKey) pair.getPublic();
+    this.privateKey = (RSAPrivateKey) pair.getPrivate();
   }
 
   public byte[] decryptWithPrivateKey(String ciphertextHex) throws UnableToDecryptException {

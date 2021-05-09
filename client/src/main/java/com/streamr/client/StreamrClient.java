@@ -186,10 +186,7 @@ public class StreamrClient implements Streamr {
     keyStore = new InMemoryGroupKeyStore();
 
     msgCreationUtil = new MessageCreationUtil(privateKey, publisherId);
-    encryptionUtil =
-        new EncryptionUtil(
-            options.getEncryptionOptions().getRsaPublicKey(),
-            options.getEncryptionOptions().getRsaPrivateKey());
+    encryptionUtil = new EncryptionUtil();
     keyExchangeUtil =
         new KeyExchangeUtil(
             keyStore,
@@ -457,7 +454,8 @@ public class StreamrClient implements Streamr {
     return restClient.isSubscriber(streamId, ethAddress);
   }
 
-  public DataUnionClientStreamr dataUnionClient(String mainnetAdminPrvKey, String sidechainAdminPrvKey) {
+  public DataUnionClientStreamr dataUnionClient(
+      String mainnetAdminPrvKey, String sidechainAdminPrvKey) {
     return new DataUnionClientStreamr(
         options.getMainnetRpcUrl(),
         options.getDataUnionMainnetFactoryAddress(),
@@ -606,8 +604,7 @@ public class StreamrClient implements Streamr {
     }
 
     // Check if an automatic rekey is needed
-    if (options.getEncryptionOptions().autoRevoke()
-        && keyExchangeUtil.keyRevocationNeeded(stream.getId())) {
+    if (keyExchangeUtil.keyRevocationNeeded(stream.getId())) {
       keyExchangeUtil.rekey(stream.getId(), true);
     }
 

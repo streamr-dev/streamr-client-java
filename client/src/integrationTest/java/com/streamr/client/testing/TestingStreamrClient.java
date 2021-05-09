@@ -3,7 +3,6 @@ package com.streamr.client.testing;
 import com.streamr.client.MessageHandler;
 import com.streamr.client.StreamrClient;
 import com.streamr.client.java.util.Objects;
-import com.streamr.client.options.EncryptionOptions;
 import com.streamr.client.options.ResendOption;
 import com.streamr.client.options.SigningOptions;
 import com.streamr.client.options.StreamrClientOptions;
@@ -30,10 +29,10 @@ public class TestingStreamrClient extends StreamrClient {
         .withPrivateKey(privateKey)
         .createStreamrRestClient();
   }
+
   public static StreamrClient createUnauthenticatedClient() {
     return new StreamrClient(
-        new StreamrClientOptions(
-            SigningOptions.getDefault(), EncryptionOptions.getDefault(), TestingMeta.WEBSOCKET_URL),
+        new StreamrClientOptions(SigningOptions.getDefault(), TestingMeta.WEBSOCKET_URL),
         createStreamrRestClient(null));
   }
 
@@ -54,7 +53,7 @@ public class TestingStreamrClient extends StreamrClient {
 
   private static StreamrClientOptions createOptions() {
     return new StreamrClientOptions(
-        SigningOptions.getDefault(), EncryptionOptions.getDefault(), TestingMeta.WEBSOCKET_URL);
+        SigningOptions.getDefault(), TestingMeta.WEBSOCKET_URL);
   }
 
   List<StreamMessage> receivedStreamMessages = new ArrayList<>();

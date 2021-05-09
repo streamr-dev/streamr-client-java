@@ -6,7 +6,6 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import com.streamr.client.StreamrClient;
 import com.streamr.client.dataunion.contracts.IERC20;
-import com.streamr.client.options.EncryptionOptions;
 import com.streamr.client.options.SigningOptions;
 import com.streamr.client.options.StreamrClientOptions;
 import com.streamr.client.rest.DataUnionSecretRequest;
@@ -79,7 +78,7 @@ class DataUnionClientStreamrTest {
 
     StreamrClientOptions opts =
         new StreamrClientOptions(
-            SigningOptions.getDefault(), EncryptionOptions.getDefault(), TestingMeta.WEBSOCKET_URL);
+            SigningOptions.getDefault(), TestingMeta.WEBSOCKET_URL);
     opts.setSidechainRpcUrl(DEV_SIDECHAIN_RPC);
     opts.setMainnetRpcUrl(DEV_MAINCHAIN_RPC);
     opts.setDataUnionMainnetFactoryAddress(DEV_MAINCHAIN_FACTORY);
