@@ -26,18 +26,6 @@ public class EncryptionOptions {
     this.autoRevoke = autoRevoke;
   }
 
-  private EncryptionOptions(GroupKeyStore keyStore, String rsaPublicKey, String rsaPrivateKey) {
-    this(keyStore, rsaPublicKey, rsaPrivateKey, true);
-  }
-
-  private EncryptionOptions() {
-    this(new InMemoryGroupKeyStore(), null, null);
-  }
-
-  public GroupKeyStore getKeyStore() {
-    return keyStore;
-  }
-
   public RSAPublicKey getRsaPublicKey() {
     return rsaPublicKey;
   }
@@ -51,6 +39,6 @@ public class EncryptionOptions {
   }
 
   public static EncryptionOptions getDefault() {
-    return new EncryptionOptions();
+    return new EncryptionOptions(new InMemoryGroupKeyStore(), null, null, true);
   }
 }

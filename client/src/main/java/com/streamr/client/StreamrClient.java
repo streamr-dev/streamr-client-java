@@ -46,6 +46,7 @@ import com.streamr.client.utils.EncryptionUtil;
 import com.streamr.client.utils.GroupKey;
 import com.streamr.client.utils.GroupKeyStore;
 import com.streamr.client.utils.IdGenerator;
+import com.streamr.client.utils.InMemoryGroupKeyStore;
 import com.streamr.client.utils.KeyExchangeUtil;
 import com.streamr.client.utils.MessageCreationUtil;
 import com.streamr.client.utils.OneTimeResend;
@@ -182,7 +183,7 @@ public class StreamrClient implements Streamr {
     }
 
     // Create key storage
-    keyStore = options.getEncryptionOptions().getKeyStore();
+    keyStore = new InMemoryGroupKeyStore();
 
     msgCreationUtil = new MessageCreationUtil(privateKey, publisherId);
     encryptionUtil =
