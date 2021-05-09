@@ -213,13 +213,6 @@ public final class EncryptionUtil {
     }
   }
 
-  static void validateGroupKey(final String groupKeyHex) throws InvalidGroupKeyException {
-    final String withoutPrefix = Numeric.cleanHexPrefix(groupKeyHex);
-    if (withoutPrefix.length() != 64) { // the key must be 256 bits long
-      throw new InvalidGroupKeyException(withoutPrefix.length() * 4);
-    }
-  }
-
   public static String exportPublicKeyAsPemString(Key key) {
     return exportKeyAsPemString(key, "PUBLIC");
   }
@@ -294,7 +287,7 @@ public final class EncryptionUtil {
 
   public static SecretKey getSecretKeyFromHexString(String groupKeyHex)
       throws InvalidGroupKeyException {
-    EncryptionUtil.validateGroupKey(groupKeyHex);
+    GroupKey.validate(groupKeyHex);
     try {
       // need to modify "isRestricted" field to be able to use keys longer than 128 bits.
       Field field = Class.forName("javax.crypto.JceSecurity").getDeclaredField("isRestricted");

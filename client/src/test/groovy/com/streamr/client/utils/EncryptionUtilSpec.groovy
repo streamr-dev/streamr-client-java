@@ -1,13 +1,11 @@
 package com.streamr.client.utils
 
-import com.streamr.client.exceptions.InvalidGroupKeyException
 import com.streamr.client.protocol.common.MessageRef
 import com.streamr.client.protocol.message_layer.MessageId
 import com.streamr.client.protocol.message_layer.StreamMessage
 import com.streamr.client.testing.TestingAddresses
 import com.streamr.client.testing.TestingContent
 import java.nio.charset.StandardCharsets
-import java.security.SecureRandom
 import javax.xml.bind.DatatypeConverter
 import org.web3j.utils.Numeric
 import spock.lang.Specification
@@ -138,31 +136,5 @@ class EncryptionUtilSpec extends Specification {
         GroupKey original = EncryptionUtil.decryptGroupKey(encryptedKey, keyToEncryptWith)
         then:
         original == keyToEncrypt
-    }
-    void "does not throw when both params are null (auto key generation)"() {
-        when:
-        new EncryptionUtil()
-        then:
-        noExceptionThrown()
-    }
-    void "validateGroupKey() throws on invalid key length"() {
-        byte[] keyBytes = new byte[30]
-        SecureRandom secureRandom = new SecureRandom()
-        secureRandom.nextBytes(keyBytes)
-
-        when:
-        EncryptionUtil.validateGroupKey(Numeric.toHexStringNoPrefix(keyBytes))
-        then:
-        InvalidGroupKeyException e = thrown InvalidGroupKeyException
-        e.message == "Group key must be 256 bits long, but got a key length of " + (30 * 8) + " bits."
-    }
-    void "validateGroupKey() does not throw on correct key length"() {
-        byte[] keyBytes = new byte[32]
-        SecureRandom secureRandom = new SecureRandom()
-        secureRandom.nextBytes(keyBytes)
-        when:
-        EncryptionUtil.validateGroupKey(Numeric.toHexStringNoPrefix(keyBytes))
-        then:
-        noExceptionThrown()
     }
 }

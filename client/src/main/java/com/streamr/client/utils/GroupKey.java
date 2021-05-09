@@ -18,6 +18,13 @@ public final class GroupKey {
     this.cachedSecretKey = EncryptionUtil.getSecretKeyFromHexString(groupKeyHex);
   }
 
+  static void validate(final String groupKeyHex) throws InvalidGroupKeyException {
+    final String withoutPrefix = Numeric.cleanHexPrefix(groupKeyHex);
+    if (withoutPrefix.length() != 64) { // the key must be 256 bits long
+      throw new InvalidGroupKeyException(withoutPrefix.length() * 4);
+    }
+  }
+
   public String getGroupKeyId() {
     return groupKeyId;
   }
