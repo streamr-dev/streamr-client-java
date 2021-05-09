@@ -10,12 +10,11 @@ import java.io.Serializable;
 import java.nio.charset.StandardCharsets;
 import java.util.Arrays;
 import java.util.Collections;
-import java.util.Date;
 import java.util.HashMap;
 import java.util.Map;
 import okio.Buffer;
 
-public final class StreamMessage implements Serializable, ITimestamped {
+public final class StreamMessage implements Serializable {
   public static final int LATEST_VERSION = 32;
 
   public enum MessageType {
@@ -294,11 +293,6 @@ public final class StreamMessage implements Serializable, ITimestamped {
 
   public String getSignature() {
     return signature;
-  }
-
-  @Override
-  public Date getTimestampAsDate() {
-    return new Date(getTimestamp());
   }
 
   public MessageRef getMessageRef() {

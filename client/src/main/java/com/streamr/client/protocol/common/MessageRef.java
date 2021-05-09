@@ -17,10 +17,6 @@ public final class MessageRef implements Comparable<MessageRef> {
     return timestamp;
   }
 
-  public Date getTimestampAsDate() {
-    return new Date(timestamp);
-  }
-
   public long getSequenceNumber() {
     return sequenceNumber;
   }

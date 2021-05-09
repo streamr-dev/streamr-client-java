@@ -66,7 +66,6 @@ class StreamMessageV32AdapterSpec extends Specification {
 		msg.getStreamId() == "streamId"
 		msg.getStreamPartition() == 0
 		msg.getTimestamp() == 123L
-		msg.getTimestampAsDate() == new Date(123L)
 		msg.getSequenceNumber() == 0
 		msg.getPublisherId() == TestingAddresses.PUBLISHER_ID
 		msg.getMsgChainId() == "msgChainId"
@@ -91,7 +90,6 @@ class StreamMessageV32AdapterSpec extends Specification {
 		msg.getStreamId() == "streamId"
 		msg.getStreamPartition() == 0
 		msg.getTimestamp() == 123L
-		msg.getTimestampAsDate() == new Date(123L)
 		msg.getSequenceNumber() == 0
 		msg.getPublisherId() == TestingAddresses.PUBLISHER_ID
 		msg.getMsgChainId() == "msgChainId"

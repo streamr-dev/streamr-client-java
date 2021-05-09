@@ -2,6 +2,7 @@ package com.streamr.client.protocol.message_layer
 
 import com.streamr.client.protocol.common.MessageRef
 import com.streamr.client.testing.TestingAddresses
+import java.time.Instant
 import spock.lang.Specification
 
 class StreamMessageV30AdapterSpec extends Specification {
@@ -43,12 +44,10 @@ class StreamMessageV30AdapterSpec extends Specification {
 		msg.getStreamId() == "7wa7APtlTq6EC5iTCBy6dw"
 		msg.getStreamPartition() == 0
 		msg.getTimestamp() == 1528228173462L
-		msg.getTimestampAsDate() == new Date(1528228173462L)
 		msg.getSequenceNumber() == 0
 		msg.getPublisherId() == TestingAddresses.PUBLISHER_ID
 		msg.getMsgChainId() == "1"
 		msg.getPreviousMessageRef().getTimestamp() == 1528228170000L
-		msg.getPreviousMessageRef().getTimestampAsDate() == new Date(1528228170000L)
 		msg.getPreviousMessageRef().getSequenceNumber() == 0
 		msg.getMessageType() == StreamMessage.MessageType.STREAM_MESSAGE
 		msg.getContentType() == StreamMessage.Content.Type.JSON
@@ -69,7 +68,6 @@ class StreamMessageV30AdapterSpec extends Specification {
 		msg.getStreamId() == "7wa7APtlTq6EC5iTCBy6dw"
 		msg.getStreamPartition() == 0
 		msg.getTimestamp() == 1528228173462L
-		msg.getTimestampAsDate() == new Date(1528228173462L)
 		msg.getSequenceNumber() == 0
 		msg.getPublisherId() == TestingAddresses.PUBLISHER_ID
 		msg.getMsgChainId() == "1"
@@ -93,7 +91,6 @@ class StreamMessageV30AdapterSpec extends Specification {
 		msg.getStreamId() == "7wa7APtlTq6EC5iTCBy6dw"
 		msg.getStreamPartition() == 0
 		msg.getTimestamp() == 1528228173462L
-		msg.getTimestampAsDate() == new Date(1528228173462L)
 		msg.getSequenceNumber() == 0
 		msg.getPublisherId() == TestingAddresses.PUBLISHER_ID
 		msg.getMsgChainId() == "1"
