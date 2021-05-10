@@ -37,8 +37,11 @@ import org.apache.commons.lang3.tuple.Pair;
 /**
  * A stateful helper class to create StreamMessages, with the following responsibilities:
  *
- * <p>- Maintains message chains by creating appropriate MessageIds and MessageRefs - Encrypts
- * created messages - Signs created messages
+ * <ul>
+ *   <li>Maintains message chains by creating appropriate MessageIds and MessageRefs
+ *   <li>Encrypts created messages
+ *   <li>Signs created messages
+ * </ul>
  */
 public class MessageCreationUtil {
   private final BigInteger privateKey;

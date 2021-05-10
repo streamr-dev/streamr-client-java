@@ -27,9 +27,11 @@ import org.slf4j.LoggerFactory;
 /**
  * This is a helper class for key exchange.
  *
- * <p>- Publishes messages to key exchange streams (on rotate and rekey) - Handles messages
- * published to key exchange streams (requests, responses, announces) - Manages the keys in the
- * GroupKeyStore
+ * <ul>
+ *   <li>Publishes messages to key exchange streams (on rotate and rekey)
+ *   <li>Handles messages published to key exchange streams (requests, responses, announces)
+ *   <li>Manages the keys in the GroupKeyStore
+ * </ul>
  */
 public class KeyExchangeUtil {
   private static final Logger log = LoggerFactory.getLogger(KeyExchangeUtil.class);
@@ -155,7 +157,8 @@ public class KeyExchangeUtil {
             .map(
                 encryptedKey -> {
                   try {
-                    return EncryptionUtil.decryptWithPrivateKey(this.rsaKeyPair.getRsaPrivateKey(), encryptedKey);
+                    return EncryptionUtil.decryptWithPrivateKey(
+                        this.rsaKeyPair.getRsaPrivateKey(), encryptedKey);
                   } catch (Exception e) {
                     log.error(
                         "Unable to decrypt group key {} for stream {}",
