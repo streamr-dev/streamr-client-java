@@ -1,6 +1,6 @@
 package com.streamr.client.utils;
 
-import com.streamr.client.crypto.Keys;
+import com.streamr.client.crypto.KeysRsa;
 import com.streamr.client.exceptions.InvalidGroupKeyException;
 import com.streamr.client.exceptions.UnableToDecryptException;
 import com.streamr.client.protocol.message_layer.StreamMessage;
@@ -92,7 +92,7 @@ public final class EncryptionUtil {
   }
 
   static String encryptWithPublicKey(byte[] plaintext, String publicKey) {
-    Keys.validatePublicKey(publicKey);
+    KeysRsa.validatePublicKey(publicKey);
     return encryptWithPublicKey(plaintext, getPublicKeyFromString(publicKey));
   }
 
