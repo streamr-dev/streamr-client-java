@@ -13,13 +13,11 @@ import org.web3j.utils.Numeric
 import spock.lang.Specification
 
 class EncryptionUtilSpec extends Specification {
-
     final Map<String, Object> plaintextContent = [foo: 'bar']
     final String serializedPlaintextContent = "{\"foo\":\"bar\"}"
     final byte[] plaintextBytes = "some random text".getBytes(StandardCharsets.UTF_8)
 
     StreamMessage streamMessage
-    EncryptionUtil util
     GroupKey key
     RsaKeyPair rsaKeyPair
     def setup() {
@@ -36,7 +34,6 @@ class EncryptionUtilSpec extends Specification {
                 .withPreviousMessageRef(new MessageRef(0L, 0L))
                 .withContent(TestingContent.fromJsonMap(plaintextContent))
                 .createStreamMessage()
-        util = new EncryptionUtil()
         rsaKeyPair = RsaKeyPair.generateKeyPair()
         key = GroupKey.generate()
     }
@@ -45,14 +42,14 @@ class EncryptionUtilSpec extends Specification {
         when:
         String ciphertext = EncryptionUtil.encryptWithPublicKey(plaintextBytes, KeysRsa.exportPublicKeyAsPemString(rsaKeyPair.getRsaPublicKey()))
         then:
-        util.decryptWithPrivateKey(rsaKeyPair.getRsaPrivateKey(), ciphertext) == plaintextBytes
+        EncryptionUtil.decryptWithPrivateKey(rsaKeyPair.getRsaPrivateKey(), ciphertext) == plaintextBytes
     }
 
     void "rsa decryption after encryption equals the initial plaintext (hex string)"() {
         when:
         String ciphertext = EncryptionUtil.encryptWithPublicKey(Numeric.toHexStringNoPrefix(plaintextBytes), KeysRsa.exportPublicKeyAsPemString(rsaKeyPair.getRsaPublicKey()))
         then:
-        util.decryptWithPrivateKey(rsaKeyPair.getRsaPrivateKey(), ciphertext) == plaintextBytes
+        EncryptionUtil.decryptWithPrivateKey(rsaKeyPair.getRsaPrivateKey(), ciphertext) == plaintextBytes
     }
 
     void "rsa decryption after encryption equals the initial plaintext (StreamMessage)"() {
@@ -63,7 +60,7 @@ class EncryptionUtilSpec extends Specification {
         streamMessage.getEncryptionType() == StreamMessage.EncryptionType.RSA
 
         when:
-        streamMessage = util.decryptWithPrivateKey(rsaKeyPair.getRsaPrivateKey(), streamMessage)
+        streamMessage = EncryptionUtil.decryptWithPrivateKey(rsaKeyPair.getRsaPrivateKey(), streamMessage)
         then:
         streamMessage.getSerializedContent() == serializedPlaintextContent
         streamMessage.getParsedContent() == plaintextContent
@@ -78,7 +75,7 @@ class EncryptionUtilSpec extends Specification {
         encryptedKey.getEncryptedGroupKeyHex() != key.getGroupKeyHex()
 
         when:
-        GroupKey original = util.decryptWithPrivateKey(this.rsaKeyPair.getRsaPrivateKey(), encryptedKey)
+        GroupKey original = EncryptionUtil.decryptWithPrivateKey(this.rsaKeyPair.getRsaPrivateKey(), encryptedKey)
         then:
         original == key
     }

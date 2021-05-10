@@ -44,7 +44,6 @@ class KeyExchangeUtilSpec extends Specification {
             .withSignatureType(StreamMessage.SignatureType.ETH)
             .withSignature("signature")
             .createStreamMessage()
-    EncryptionUtil encryptionUtil = new EncryptionUtil()
     RsaKeyPair rsaKeyPair = RsaKeyPair.generateKeyPair()
     AddressValidityUtil addressValidityUtil = new AddressValidityUtil({ String id -> new ArrayList<>()}, { String s1, String s2 -> s1 == "streamId" && s2 == "subscriberId"},
             { String id -> new ArrayList<>()}, { String s, String p -> true})
