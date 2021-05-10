@@ -82,7 +82,7 @@ class StreamrClientSpec extends Specification {
         final BigInteger privateKey = new BigInteger("d462a6f2ccd995a346a841d110e8c6954930a1c22851c0032d3116d8ccd2296a", 16)
         // Turn off autoRevoke, otherwise it will try and to REST API calls
         StreamrClientOptions options = new StreamrClientOptions(
-                new SigningOptions(SignatureVerificationPolicy.AUTO),
+                new SigningOptions(SigningOptions.SignatureVerificationPolicy.AUTO),
                 server.getWsUrl(),
                 gapFillTimeout,
                 retryResendAfter,
