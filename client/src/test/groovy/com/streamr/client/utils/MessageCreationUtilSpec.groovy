@@ -2,8 +2,6 @@ package com.streamr.client.utils
 
 import com.streamr.client.crypto.KeysRsa
 import com.streamr.client.crypto.RsaKeyPair
-import com.streamr.client.exceptions.InvalidGroupKeyRequestException
-import com.streamr.client.exceptions.SigningRequiredException
 import com.streamr.client.protocol.message_layer.AbstractGroupKeyMessage
 import com.streamr.client.protocol.message_layer.GroupKeyAnnounce
 import com.streamr.client.protocol.message_layer.GroupKeyErrorResponse

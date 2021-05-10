@@ -1,7 +1,5 @@
 package com.streamr.client.utils;
 
-import com.streamr.client.exceptions.AlreadySubscribedException;
-import com.streamr.client.exceptions.SubscriptionNotFoundException;
 import com.streamr.client.subs.Subscription;
 
 import java.util.Collection;

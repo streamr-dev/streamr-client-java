@@ -1,4 +1,4 @@
-package com.streamr.client.exceptions;
+package com.streamr.client.utils;
 
 import com.streamr.client.utils.GroupKey;
 

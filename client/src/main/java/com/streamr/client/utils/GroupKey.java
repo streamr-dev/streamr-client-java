@@ -1,6 +1,5 @@
 package com.streamr.client.utils;
 
-import com.streamr.client.exceptions.InvalidGroupKeyException;
 import com.streamr.client.java.util.Objects;
 import java.security.SecureRandom;
 import javax.crypto.SecretKey;

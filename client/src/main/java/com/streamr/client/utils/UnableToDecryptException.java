@@ -1,4 +1,4 @@
-package com.streamr.client.exceptions;
+package com.streamr.client.utils;
 
 public class UnableToDecryptException extends Exception {
   private UnableToDecryptException(final String message) {

@@ -2,7 +2,6 @@ package com.streamr.client.utils;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 
-import com.streamr.client.exceptions.InvalidGroupKeyException;
 import java.security.SecureRandom;
 import nl.jqno.equalsverifier.EqualsVerifier;
 import org.junit.jupiter.api.Test;

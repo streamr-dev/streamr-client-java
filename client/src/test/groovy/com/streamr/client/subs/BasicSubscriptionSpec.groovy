@@ -1,8 +1,7 @@
 package com.streamr.client.subs
 
 import com.streamr.client.MessageHandler
-import com.streamr.client.exceptions.GapDetectedException
-import com.streamr.client.exceptions.UnableToDecryptException
+import com.streamr.client.utils.UnableToDecryptException
 import com.streamr.client.protocol.common.MessageRef
 import com.streamr.client.protocol.message_layer.MessageId
 import com.streamr.client.protocol.message_layer.StreamMessage

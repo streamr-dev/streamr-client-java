@@ -2,7 +2,6 @@ package com.streamr.client.rest
 
 import com.streamr.client.MessageHandler
 import com.streamr.client.StreamrClient
-import com.streamr.client.exceptions.UnableToDecryptException
 import com.streamr.client.options.ResendFromOption
 import com.streamr.client.options.ResendLastOption
 import com.streamr.client.options.ResendRangeOption
@@ -12,6 +11,7 @@ import com.streamr.client.testing.TestingKeys
 import com.streamr.client.testing.TestingStreamrClient
 import com.streamr.client.testing.TestingStreams
 import com.streamr.client.utils.GroupKey
+import com.streamr.client.utils.UnableToDecryptException
 import org.java_websocket.enums.ReadyState
 import spock.lang.Specification
 import spock.util.concurrent.PollingConditions

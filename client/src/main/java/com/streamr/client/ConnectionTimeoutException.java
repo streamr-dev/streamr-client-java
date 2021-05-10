@@ -1,4 +1,4 @@
-package com.streamr.client.exceptions;
+package com.streamr.client;
 
 public class ConnectionTimeoutException extends RuntimeException {
     public ConnectionTimeoutException(String url) {

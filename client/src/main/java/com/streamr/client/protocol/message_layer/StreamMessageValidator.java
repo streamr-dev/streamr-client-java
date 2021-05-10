@@ -1,6 +1,5 @@
 package com.streamr.client.protocol.message_layer;
 
-import com.streamr.client.exceptions.ValidationException;
 import com.streamr.client.options.SigningOptions.SignatureVerificationPolicy;
 import com.streamr.client.rest.Stream;
 import com.streamr.client.utils.Address;

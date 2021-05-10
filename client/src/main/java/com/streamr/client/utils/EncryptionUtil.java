@@ -1,8 +1,6 @@
 package com.streamr.client.utils;
 
 import com.streamr.client.crypto.KeysRsa;
-import com.streamr.client.exceptions.InvalidGroupKeyException;
-import com.streamr.client.exceptions.UnableToDecryptException;
 import com.streamr.client.protocol.message_layer.StreamMessage;
 import java.lang.reflect.Field;
 import java.lang.reflect.Modifier;

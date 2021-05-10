@@ -1,4 +1,4 @@
-package com.streamr.client.exceptions;
+package com.streamr.client;
 
 public class PartitionNotSpecifiedException extends RuntimeException {
     public PartitionNotSpecifiedException(String streamId, int partitionCount) {

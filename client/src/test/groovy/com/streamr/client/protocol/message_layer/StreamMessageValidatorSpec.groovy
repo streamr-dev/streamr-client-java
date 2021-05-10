@@ -2,7 +2,6 @@ package com.streamr.client.protocol.message_layer
 
 import com.streamr.client.crypto.KeysRsa
 import com.streamr.client.crypto.RsaKeyPair
-import com.streamr.client.exceptions.ValidationException
 import com.streamr.client.options.SigningOptions.SignatureVerificationPolicy
 import com.streamr.client.rest.FieldConfig
 import com.streamr.client.rest.Stream

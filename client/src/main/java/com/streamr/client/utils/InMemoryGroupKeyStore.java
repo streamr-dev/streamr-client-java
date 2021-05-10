@@ -1,7 +1,5 @@
 package com.streamr.client.utils;
 
-import com.streamr.client.exceptions.KeyAlreadyExistsException;
-
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Map;

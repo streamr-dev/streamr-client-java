@@ -1,6 +1,5 @@
 package com.streamr.client.utils
 
-import com.streamr.client.exceptions.SubscriptionNotFoundException
 import com.streamr.client.subs.RealTimeSubscription
 import com.streamr.client.subs.Subscription
 import spock.lang.Specification

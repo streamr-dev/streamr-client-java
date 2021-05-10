@@ -1,6 +1,4 @@
-package com.streamr.client.exceptions;
-
-import com.streamr.client.protocol.message_layer.StreamMessage;
+package com.streamr.client.protocol.message_layer;
 
 public class ValidationException extends RuntimeException {
   private final Reason reason;

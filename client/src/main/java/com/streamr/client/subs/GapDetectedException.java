@@ -1,4 +1,4 @@
-package com.streamr.client.exceptions;
+package com.streamr.client.subs;
 
 import com.streamr.client.protocol.common.MessageRef;
 import com.streamr.client.utils.Address;

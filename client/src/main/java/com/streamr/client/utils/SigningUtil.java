@@ -1,7 +1,5 @@
 package com.streamr.client.utils;
 
-import com.streamr.client.exceptions.SignatureFailedException;
-import com.streamr.client.exceptions.UnsupportedSignatureTypeException;
 import com.streamr.client.protocol.message_layer.StreamMessage;
 import java.math.BigInteger;
 import java.nio.charset.StandardCharsets;

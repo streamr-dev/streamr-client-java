@@ -1,7 +1,6 @@
 package com.streamr.client.utils;
 
 import com.streamr.client.crypto.RsaKeyPair;
-import com.streamr.client.exceptions.KeyAlreadyExistsException;
 import com.streamr.client.java.util.Objects;
 import com.streamr.client.protocol.message_layer.AbstractGroupKeyMessage;
 import com.streamr.client.protocol.message_layer.GroupKeyAnnounce;
