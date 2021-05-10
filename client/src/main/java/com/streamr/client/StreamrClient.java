@@ -1,7 +1,7 @@
 package com.streamr.client;
 
 import com.streamr.client.crypto.Keys;
-import com.streamr.client.dataunion.DataUnionClientStreamr;
+import com.streamr.client.dataunion.DataUnionClient;
 import com.streamr.client.exceptions.ConnectionTimeoutException;
 import com.streamr.client.exceptions.PartitionNotSpecifiedException;
 import com.streamr.client.exceptions.SubscriptionNotFoundException;
@@ -454,15 +454,11 @@ public class StreamrClient implements Streamr {
     return restClient.isSubscriber(streamId, ethAddress);
   }
 
-  public DataUnionClientStreamr dataUnionClient(
+  public DataUnionClient.Builder dataUnionClientBuilder(
       String mainnetAdminPrvKey, String sidechainAdminPrvKey) {
-    return new DataUnionClientStreamr(
-        options.getMainnetRpcUrl(),
-        options.getDataUnionMainnetFactoryAddress(),
-        mainnetAdminPrvKey,
-        options.getSidechainRpcUrl(),
-        options.getDataUnionSidechainFactoryAddress(),
-        sidechainAdminPrvKey);
+    return new DataUnionClient.Builder()
+        .withMainnetAdminPrivateKey(mainnetAdminPrvKey)
+        .withSidechainAdminPrivateKey(sidechainAdminPrvKey);
   }
 
   @Override
@@ -791,17 +787,21 @@ public class StreamrClient implements Streamr {
   }
 
   @Override
-  public DataUnionSecretResponse setDataUnionSecret(final String dataUnionAddress, final String dataUnionSecretName) throws IOException {
+  public DataUnionSecretResponse setDataUnionSecret(
+      final String dataUnionAddress, final String dataUnionSecretName) throws IOException {
     return restClient.setDataUnionSecret(dataUnionAddress, dataUnionSecretName);
   }
 
   @Override
-  public void requestDataUnionJoin(final String dataUnionAddress, final String memberAddress, final String dataUnionSecret) throws IOException {
+  public void requestDataUnionJoin(
+      final String dataUnionAddress, final String memberAddress, final String dataUnionSecret)
+      throws IOException {
     restClient.requestDataUnionJoin(dataUnionAddress, memberAddress, dataUnionSecret);
   }
 
   @Override
-  public void createDataUnionProduct(final String name, final String beneficiaryAddress) throws IOException {
+  public void createDataUnionProduct(final String name, final String beneficiaryAddress)
+      throws IOException {
     restClient.createDataUnionProduct(name, beneficiaryAddress);
   }
 
