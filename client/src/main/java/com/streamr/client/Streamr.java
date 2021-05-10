@@ -3,6 +3,8 @@ package com.streamr.client;
 import com.streamr.client.dataunion.DataUnionClient;
 import com.streamr.client.options.ResendOption;
 import com.streamr.client.rest.AmbiguousResultsException;
+import com.streamr.client.rest.DataUnionSecretRequest;
+import com.streamr.client.rest.DataUnionSecretResponse;
 import com.streamr.client.rest.Permission;
 import com.streamr.client.rest.StorageNode;
 import com.streamr.client.rest.Stream;
@@ -125,4 +127,13 @@ interface Streamr {
   List<StorageNode> getStorageNodes(final String streamId) throws IOException;
 
   List<StreamPart> getStreamPartsByStorageNode(final StorageNode storageNode) throws IOException;
+
+  DataUnionSecretResponse setDataUnionSecret(
+      final String dataUnionAddress, final String dataUnionSecretName) throws IOException;
+
+  void requestDataUnionJoin(
+      final String dataUnionAddress, final String memberAddress, final String dataUnionSecret)
+      throws IOException;
+
+  void createDataUnionProduct(final String name, final String beneficiaryAddress) throws IOException;
 }

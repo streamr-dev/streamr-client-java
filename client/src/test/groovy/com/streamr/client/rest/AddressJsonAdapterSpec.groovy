@@ -21,13 +21,12 @@ class AddressJsonAdapterSpec extends Specification {
 		return JsonReader.of(new Buffer().writeString(json, StandardCharsets.UTF_8))
 	}
 	private JsonAdapter<TestWrapper> adapter = new Moshi.Builder()
-			.add(Address.class, new AddressJsonAdapter().nullSafe())
+			.add(Address, new AddressJsonAdapter().nullSafe())
 			.build()
-			.adapter(TestWrapper.class)
+			.adapter(TestWrapper)
 
 	def "Address.fromJson"(String json, Address address) {
 		expect:
-		println(json)
 		adapter.fromJson(toReader(json)).address == address
 		where:
 		json | address

@@ -90,12 +90,11 @@ public final class SigningUtil {
   private static boolean verify(String data, String signature, Address address)
       throws SignatureException {
     byte[] messageHash = calculateMessageHash(data);
-    String b = recoverAddress(messageHash, signature);
-    String recoveredAddress = Keys.toChecksumAddress(b);
-    return recoveredAddress.equals(address.toString());
+    Address recovered = recoverAddress(messageHash, signature);
+    return recovered.equals(address);
   }
 
-  private static String recoverAddress(byte[] messageHash, String signatureHex)
+  private static Address recoverAddress(byte[] messageHash, String signatureHex)
       throws SignatureException {
     byte[] source = Numeric.hexStringToByteArray(signatureHex);
     byte v = source[64];
@@ -114,7 +113,7 @@ public final class SigningUtil {
       }
       if (publicKey != null) {
         String hex = Keys.getAddress(publicKey);
-        return Numeric.prependHexPrefix(hex);
+        return new Address(hex);
       }
     }
     throw new SignatureException("Address recovery from signature failed.");

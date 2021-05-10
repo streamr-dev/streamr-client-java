@@ -94,8 +94,11 @@ class StreamrClientSpec extends Specification {
         options.reconnectRetryInterval = 1000
         options.connectionTimeoutMillis = 1000
 
-        //client = new TestingStreamrClient(options, privateKey)
-        client = new TestingStreamrClient(options, new StreamrRestClient(TestingMeta.REST_URL, privateKey) {
+        StreamrRestClient restClient = new StreamrRestClient.Builder()
+				.withRestApiUrl(TestingMeta.REST_URL)
+				.withPrivateKey(privateKey)
+				.createStreamrRestClient();
+        client = new TestingStreamrClient(options, restClient) {
             @Override
             public Stream getStream(String streamId) throws IOException, ResourceNotFoundException {
                 return new Stream.Builder()
@@ -106,7 +109,7 @@ class StreamrClientSpec extends Specification {
                         .withRequireEncryptedData(false)
                         .createStream();
             }
-        })
+        }
         client.connect()
         // TODO: client.login(privateKey)
         client.getSessionToken()

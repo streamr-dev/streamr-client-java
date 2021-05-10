@@ -41,7 +41,7 @@ class OrderedMsgChainSpec extends Specification {
             .withContent(content)
             .createStreamMessage()
 
-    final Address publisherId = new Address("0x12345")
+    final Address publisherId = TestingAddresses.PUBLISHER_ID
 
     void "handles ordered messages in order"() {
         ArrayList<StreamMessage> received = []
@@ -207,7 +207,7 @@ class OrderedMsgChainSpec extends Specification {
         when:
         util.add(msg1)
         util.add(msg3)
-        Thread.sleep(1200L)
+        Thread.sleep(2000L)
 
         then:
         expected != null

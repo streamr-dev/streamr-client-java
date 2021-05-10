@@ -19,7 +19,7 @@ This library covers the following functionality:
 - [Subscribing and unsubscribing to Streams](#subscribing-unsubscribing)
 - [Data Unions](#data-unions)
 
-[![Build Status](https://travis-ci.com/streamr-dev/streamr-client-java.svg?branch=master)](https://travis-ci.com/streamr-dev/streamr-client-java)
+[![CI](https://github.com/streamr-dev/streamr-client-java/actions/workflows/ci-cd.yaml/badge.svg?branch=release%2Fv3.0.0)](https://github.com/streamr-dev/streamr-client-java/actions/workflows/ci-cd.yaml)
 
 ## Installation
 
@@ -27,16 +27,7 @@ This library is published to the Maven Central repository.
 
 #### Using Maven
 
-In your `pom.xml`, add the repository:
-```
-<repositories>
-  <repository>
-    <url>https://dl.bintray.com/ethereum/maven</url>
-  </repository>
-  ...
-</repositories>
-```
-And the artifact itself (replace x.y.z with the [latest version](https://mvnrepository.com/artifact/com.streamr/client)):
+In your `pom.xml`, add the artifact (replace x.y.z with the [latest version](https://mvnrepository.com/artifact/com.streamr/client)):
 ```
 <dependencies>
   <dependency>
@@ -50,15 +41,7 @@ And the artifact itself (replace x.y.z with the [latest version](https://mvnrepo
 
 #### Using Gradle
 
-In your `build.gradle`, add the repository:
-```
-repositories {
-    maven {
-        url "https://dl.bintray.com/ethereum/maven/"
-    }
-}
-```
-And the artifact itself (replace x.y.z with the [latest version](https://mvnrepository.com/artifact/com.streamr/client)):
+In your `build.gradle`, add the artifact (replace x.y.z with the [latest version](https://mvnrepository.com/artifact/com.streamr/client)):
 ```
 dependencies {
     implementation 'com.streamr:client:x.y.z'

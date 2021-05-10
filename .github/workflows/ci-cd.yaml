@@ -37,14 +37,15 @@ jobs:
         run: $make build
       - name: Unit Test
         run: $make test-unit
-      - name: PMD static analysis
-        run: $make pmd
+#      - name: PMD static analysis
+#        run: $make pmd
       - name: Codenarc for Groovy tests
         run: $make codenarc
       - uses: actions/upload-artifact@v2.2.3
         with:
           name: streamr-client-java-report-${{ env.datetime }}-${{ github.job }}
-          path: build/reports
+          if: failure()
+          path: client/build/reports
           retention-days: 90
   integration-test:
     name: Integration test

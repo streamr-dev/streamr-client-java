@@ -9,8 +9,12 @@ import com.streamr.client.dataunion.contracts.IERC20;
 import com.streamr.client.options.EncryptionOptions;
 import com.streamr.client.options.SigningOptions;
 import com.streamr.client.options.StreamrClientOptions;
+import com.streamr.client.rest.DataUnionSecretRequest;
+import com.streamr.client.rest.DataUnionSecretResponse;
 import com.streamr.client.rest.StreamrRestClient;
+import com.streamr.client.testing.TestingKeys;
 import com.streamr.client.testing.TestingMeta;
+import com.streamr.client.testing.TestingStreamrClient;
 import java.math.BigInteger;
 import java.util.Arrays;
 import java.util.concurrent.TimeUnit;
@@ -28,6 +32,7 @@ import org.web3j.crypto.Credentials;
 import org.web3j.protocol.Web3j;
 import org.web3j.protocol.core.methods.response.TransactionReceipt;
 import org.web3j.protocol.http.HttpService;
+import org.web3j.utils.Numeric;
 
 @Timeout(value = 11, unit = TimeUnit.MINUTES)
 @TestMethodOrder(MethodOrderer.OrderAnnotation.class)
@@ -42,8 +47,8 @@ class DataUnionClientTest {
         "0x5e98cce00cff5dea6b454889f359a4ec06b9fa6b88e9d69b86de8e1c81887da0",
         "0xe5af7834455b7239881b85be89d905d6881dcb4751063897f12be1b0dd546bdb",
         "0x4059de411f15511a85ce332e7a428f36492ab4e87c7830099dadbf130f1896ae",
-        /*
         "0x633a182fb8975f22aaad41e9008cb49a432e9fdfef37f151e9e7c54e96258ef9",
+        /*
         "0x957a8212980a9a39bf7c03dcbeea3c722d66f2b359c669feceb0e3ba8209a297",
         "0xfe1d528b7e204a5bdfb7668a1ed3adfee45b4b96960a175c9ef0ad16dd58d728",
         "0xd7609ae3a29375768fac8bc0f8c2f6ac81c5f2ffca2b981e6cf15460f01efe14",
@@ -59,6 +64,8 @@ class DataUnionClientTest {
   private Credentials adminWallet;
   private Credentials member1Wallet;
   private Credentials member2Wallet;
+  private Credentials member3Wallet;
+  private Credentials coreApiWallet;
   private DataUnion du;
   private IERC20 mainnetToken;
 
@@ -67,6 +74,8 @@ class DataUnionClientTest {
     adminWallet = Credentials.create(TEST_RPC_KEYS[0]);
     member1Wallet = Credentials.create(TEST_RPC_KEYS[1]);
     member2Wallet = Credentials.create(TEST_RPC_KEYS[2]);
+    member3Wallet = Credentials.create(TEST_RPC_KEYS[3]);
+    coreApiWallet = Credentials.create(TestingKeys.CORE_API_PRIVATE_KEY);
 
     StreamrClientOptions opts =
         new StreamrClientOptions(
@@ -75,7 +84,11 @@ class DataUnionClientTest {
     opts.setMainnetRpcUrl(DEV_MAINCHAIN_RPC);
     opts.setDataUnionMainnetFactoryAddress(DEV_MAINCHAIN_FACTORY);
     opts.setDataUnionSidechainFactoryAddress(DEV_SIDECHAIN_FACTORY);
-    streamrClient = new StreamrClient(opts, new StreamrRestClient(TestingMeta.REST_URL, null));
+    StreamrRestClient restClient =
+        new StreamrRestClient.Builder()
+            .withRestApiUrl(TestingMeta.REST_URL)
+            .createStreamrRestClient();
+    streamrClient = new StreamrClient(opts, restClient);
   }
 
   @AfterAll
@@ -112,7 +125,7 @@ class DataUnionClientTest {
             DATA_UNION_NAME,
             adminWallet.getAddress(),
             BigInteger.ZERO,
-            Arrays.asList(adminWallet.getAddress()));
+            Arrays.asList(adminWallet.getAddress(), coreApiWallet.getAddress()));
 
     assertTrue(du.waitForDeployment(pollInterval, timeout));
     assertTrue(du.isDeployed());
@@ -179,5 +192,21 @@ class DataUnionClientTest {
         client.waitForMainnetBalanceChange(
             recipientBal, member1Wallet.getAddress(), pollInterval, timeout),
         recipientBal.add(testSendAmount));
+  }
+
+  @Test
+  @Order(60)
+  void joinWithSharedSecret() throws Exception {
+    StreamrClient adminApiClient0 = TestingStreamrClient.createClientWithPrivateKey(adminWallet);
+    StreamrClient apiClient3 = TestingStreamrClient.createClientWithPrivateKey(member3Wallet);
+    String member3Adddress = member3Wallet.getAddress();
+
+    adminApiClient0.createDataUnionProduct("product name", du.getMainnetContractAddress());
+    DataUnionSecretResponse secret =
+        adminApiClient0.setDataUnionSecret(du.getMainnetContractAddress(), "someName");
+    apiClient3.requestDataUnionJoin(
+        du.getMainnetContractAddress(), member3Adddress, secret.getSecret());
+
+    assertTrue(du.isMemberActive(member3Adddress));
   }
 }
