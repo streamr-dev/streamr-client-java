@@ -4,30 +4,18 @@ import com.streamr.client.crypto.KeysRsa;
 import com.streamr.client.exceptions.InvalidGroupKeyException;
 import com.streamr.client.exceptions.UnableToDecryptException;
 import com.streamr.client.protocol.message_layer.StreamMessage;
-import java.io.IOException;
-import java.io.StringWriter;
 import java.lang.reflect.Field;
 import java.lang.reflect.Modifier;
 import java.nio.charset.StandardCharsets;
-import java.security.Key;
-import java.security.KeyFactory;
-import java.security.KeyPair;
-import java.security.KeyPairGenerator;
-import java.security.NoSuchAlgorithmException;
 import java.security.SecureRandom;
 import java.security.interfaces.RSAPrivateKey;
 import java.security.interfaces.RSAPublicKey;
-import java.security.spec.PKCS8EncodedKeySpec;
-import java.security.spec.X509EncodedKeySpec;
 import java.util.Arrays;
-import java.util.Base64;
 import javax.crypto.Cipher;
 import javax.crypto.SecretKey;
 import javax.crypto.spec.IvParameterSpec;
 import javax.crypto.spec.SecretKeySpec;
 import javax.xml.bind.DatatypeConverter;
-import org.bouncycastle.util.io.pem.PemObject;
-import org.bouncycastle.util.io.pem.PemWriter;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.web3j.utils.Numeric;
@@ -40,43 +28,29 @@ public final class EncryptionUtil {
   private static final ThreadLocal<Cipher> rsaCipher =
       ThreadLocal.withInitial(() -> getRSACipher());
 
-  private final RSAPublicKey publicKey;
-  private final RSAPrivateKey privateKey;
+  private EncryptionUtil() {}
 
-  public EncryptionUtil() {
-    KeyPair pair = generateKeyPair();
-    this.publicKey = (RSAPublicKey) pair.getPublic();
-    this.privateKey = (RSAPrivateKey) pair.getPrivate();
-  }
-
-  public byte[] decryptWithPrivateKey(String ciphertextHex) throws UnableToDecryptException {
+  public static byte[] decryptWithPrivateKey(final RSAPrivateKey privateKey, String ciphertextHex)
+      throws UnableToDecryptException {
     byte[] encryptedBytes = DatatypeConverter.parseHexBinary(ciphertextHex);
     try {
-      rsaCipher.get().init(Cipher.DECRYPT_MODE, this.privateKey);
+      rsaCipher.get().init(Cipher.DECRYPT_MODE, privateKey);
       return rsaCipher.get().doFinal(encryptedBytes);
     } catch (Exception e) {
       throw UnableToDecryptException.create(ciphertextHex);
     }
   }
 
-  StreamMessage decryptWithPrivateKey(final StreamMessage msg) throws UnableToDecryptException {
+  static StreamMessage decryptWithPrivateKey(final RSAPrivateKey rsaPrivateKey, final StreamMessage msg) throws UnableToDecryptException {
     if (msg.getEncryptionType() != StreamMessage.EncryptionType.RSA) {
       throw new IllegalArgumentException("Given StreamMessage is not encrypted with RSA!");
     }
-    final byte[] payload = decryptWithPrivateKey(msg.getSerializedContent());
+    final byte[] payload = decryptWithPrivateKey(rsaPrivateKey, msg.getSerializedContent());
     final StreamMessage.Content content = StreamMessage.Content.Factory.withJsonAsPayload(payload);
     return new StreamMessage.Builder(msg)
         .withEncryptionType(StreamMessage.EncryptionType.NONE)
         .withContent(content)
         .createStreamMessage();
-  }
-
-  RSAPublicKey getPublicKey() {
-    return this.publicKey;
-  }
-
-  public String getPublicKeyAsPemString() {
-    return exportPublicKeyAsPemString(this.publicKey);
   }
 
   private static StreamMessage encryptWithPublicKey(
@@ -93,7 +67,7 @@ public final class EncryptionUtil {
 
   static String encryptWithPublicKey(byte[] plaintext, String publicKey) {
     KeysRsa.validatePublicKey(publicKey);
-    return encryptWithPublicKey(plaintext, getPublicKeyFromString(publicKey));
+    return encryptWithPublicKey(plaintext, KeysRsa.getPublicKeyFromString(publicKey));
   }
 
   static String encryptWithPublicKey(byte[] plaintext, RSAPublicKey rsaPublicKey) {
@@ -159,11 +133,12 @@ public final class EncryptionUtil {
         encryptWithPublicKey(keyToEncrypt.getGroupKeyHex(), keyToEncryptWith));
   }
 
-  GroupKey decryptWithPrivateKey(EncryptedGroupKey keyToDecrypt)
+  static GroupKey decryptWithPrivateKey(final RSAPrivateKey rsaPrivateKey, EncryptedGroupKey keyToDecrypt)
       throws UnableToDecryptException, InvalidGroupKeyException {
     return new GroupKey(
         keyToDecrypt.getGroupKeyId(),
-        Numeric.toHexStringNoPrefix(decryptWithPrivateKey(keyToDecrypt.getEncryptedGroupKeyHex())));
+        Numeric.toHexStringNoPrefix(
+            decryptWithPrivateKey(rsaPrivateKey, keyToDecrypt.getEncryptedGroupKeyHex())));
   }
 
   /**
@@ -213,33 +188,6 @@ public final class EncryptionUtil {
     }
   }
 
-  public static String exportPublicKeyAsPemString(Key key) {
-    return exportKeyAsPemString(key, "PUBLIC");
-  }
-
-  public static String exportPrivateKeyAsPemString(Key key) {
-    return exportKeyAsPemString(key, "PRIVATE");
-  }
-
-  private static String exportKeyAsPemString(Key key, String visibility) {
-    StringWriter writer = new StringWriter();
-    PemWriter pemWriter = new PemWriter(writer);
-    try {
-      pemWriter.writeObject(new PemObject(visibility + " KEY", key.getEncoded()));
-      pemWriter.flush();
-    } catch (IOException e) {
-      log.error("Failed to write key as PEM", e);
-      throw new RuntimeException(e);
-    } finally {
-      try {
-        pemWriter.close();
-      } catch (IOException e) {
-        log.error("Failed to close PemWriter", e);
-      }
-    }
-    return writer.toString();
-  }
-
   private static Cipher getAESCipher() {
     try {
       return Cipher.getInstance("AES/CTR/NoPadding");
@@ -254,33 +202,6 @@ public final class EncryptionUtil {
       return Cipher.getInstance("RSA/ECB/OAEPWithSHA1AndMGF1Padding");
     } catch (Exception e) {
       log.error("Failed to get RSA cipher", e);
-      throw new RuntimeException(e);
-    }
-  }
-
-  public static RSAPublicKey getPublicKeyFromString(String publicKey) {
-    publicKey = publicKey.replace("-----BEGIN PUBLIC KEY-----\n", "");
-    publicKey = publicKey.replace("-----END PUBLIC KEY-----", "");
-    byte[] encoded = Base64.getMimeDecoder().decode(publicKey);
-    try {
-      KeyFactory kf = KeyFactory.getInstance("RSA");
-      return (RSAPublicKey) kf.generatePublic(new X509EncodedKeySpec(encoded));
-    } catch (Exception e) {
-      log.error("Failed to parse public key from string: " + publicKey, e);
-      throw new RuntimeException(e);
-    }
-  }
-
-  public static RSAPrivateKey getPrivateKeyFromString(String privateKey) {
-    privateKey = privateKey.replace("-----BEGIN PRIVATE KEY-----\n", "");
-    privateKey = privateKey.replace("-----END PRIVATE KEY-----", "");
-    byte[] encoded = Base64.getMimeDecoder().decode(privateKey);
-    try {
-      KeyFactory kf = KeyFactory.getInstance("RSA");
-      PKCS8EncodedKeySpec keySpec = new PKCS8EncodedKeySpec(encoded);
-      return (RSAPrivateKey) kf.generatePrivate(keySpec);
-    } catch (Exception e) {
-      log.error("Failed to parse private key", e);
       throw new RuntimeException(e);
     }
   }
@@ -309,15 +230,5 @@ public final class EncryptionUtil {
       throw new RuntimeException(ex);
     }
     return new SecretKeySpec(DatatypeConverter.parseHexBinary(groupKeyHex), "AES");
-  }
-
-  public static KeyPair generateKeyPair() {
-    try {
-      KeyPairGenerator generator = KeyPairGenerator.getInstance("RSA");
-      generator.initialize(4096, SRAND);
-      return generator.generateKeyPair();
-    } catch (NoSuchAlgorithmException e) {
-      throw new RuntimeException(e);
-    }
   }
 }

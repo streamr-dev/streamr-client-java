@@ -1,6 +1,8 @@
 package com.streamr.client;
 
 import com.streamr.client.crypto.Keys;
+import com.streamr.client.crypto.KeysRsa;
+import com.streamr.client.crypto.RsaKeyPair;
 import com.streamr.client.dataunion.DataUnionClient;
 import com.streamr.client.exceptions.ConnectionTimeoutException;
 import com.streamr.client.exceptions.PartitionNotSpecifiedException;
@@ -42,7 +44,6 @@ import com.streamr.client.subs.RealTimeSubscription;
 import com.streamr.client.subs.Subscription;
 import com.streamr.client.utils.Address;
 import com.streamr.client.utils.AddressValidityUtil;
-import com.streamr.client.utils.EncryptionUtil;
 import com.streamr.client.utils.GroupKey;
 import com.streamr.client.utils.GroupKeyStore;
 import com.streamr.client.utils.IdGenerator;
@@ -92,7 +93,7 @@ public class StreamrClient implements Streamr {
   protected final Subscriptions subs = new Subscriptions();
 
   private Address publisherId = null;
-  private final EncryptionUtil encryptionUtil;
+  private final RsaKeyPair rsaKeyPair;
   private final MessageCreationUtil msgCreationUtil;
   private final StreamMessageValidator streamMessageValidator;
   private final GroupKeyStore keyStore;
@@ -186,12 +187,12 @@ public class StreamrClient implements Streamr {
     keyStore = new InMemoryGroupKeyStore();
 
     msgCreationUtil = new MessageCreationUtil(privateKey, publisherId);
-    encryptionUtil = new EncryptionUtil();
+    rsaKeyPair = RsaKeyPair.generateKeyPair();
     keyExchangeUtil =
         new KeyExchangeUtil(
             keyStore,
             msgCreationUtil,
-            encryptionUtil,
+            rsaKeyPair,
             addressValidityUtil,
             this::publish,
             // On new keys, let the Subscriptions know
@@ -856,7 +857,7 @@ public class StreamrClient implements Streamr {
     }
     StreamMessage request =
         msgCreationUtil.createGroupKeyRequest(
-            publisherId, streamId, encryptionUtil.getPublicKeyAsPemString(), groupKeyIds);
+            publisherId, streamId, KeysRsa.exportPublicKeyAsPemString(rsaKeyPair.getRsaPublicKey()), groupKeyIds);
     publish(request);
   }
 

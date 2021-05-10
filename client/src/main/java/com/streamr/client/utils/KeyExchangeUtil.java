@@ -1,5 +1,6 @@
 package com.streamr.client.utils;
 
+import com.streamr.client.crypto.RsaKeyPair;
 import com.streamr.client.exceptions.KeyAlreadyExistsException;
 import com.streamr.client.java.util.Objects;
 import com.streamr.client.protocol.message_layer.AbstractGroupKeyMessage;
@@ -38,7 +39,7 @@ public class KeyExchangeUtil {
 
   private final GroupKeyStore keyStore;
   private final MessageCreationUtil messageCreationUtil;
-  private final EncryptionUtil encryptionUtil;
+  private final RsaKeyPair rsaKeyPair;
   private final AddressValidityUtil addressValidityUtil;
   private final Consumer<StreamMessage> publishFunction;
   private final OnNewKeysFunction onNewKeysFunction;
@@ -50,14 +51,14 @@ public class KeyExchangeUtil {
   public KeyExchangeUtil(
       GroupKeyStore keyStore,
       MessageCreationUtil messageCreationUtil,
-      EncryptionUtil encryptionUtil,
+      final RsaKeyPair rsaKeyPair,
       AddressValidityUtil addressValidityUtil,
       Consumer<StreamMessage> publishFunction,
       OnNewKeysFunction onNewKeysFunction,
       Clock clock) {
     this.keyStore = keyStore;
     this.messageCreationUtil = messageCreationUtil;
-    this.encryptionUtil = encryptionUtil;
+    this.rsaKeyPair = rsaKeyPair;
     this.addressValidityUtil = addressValidityUtil;
     this.publishFunction = publishFunction;
     this.onNewKeysFunction = onNewKeysFunction;
@@ -154,7 +155,7 @@ public class KeyExchangeUtil {
             .map(
                 encryptedKey -> {
                   try {
-                    return encryptionUtil.decryptWithPrivateKey(encryptedKey);
+                    return EncryptionUtil.decryptWithPrivateKey(this.rsaKeyPair.getRsaPrivateKey(), encryptedKey);
                   } catch (Exception e) {
                     log.error(
                         "Unable to decrypt group key {} for stream {}",

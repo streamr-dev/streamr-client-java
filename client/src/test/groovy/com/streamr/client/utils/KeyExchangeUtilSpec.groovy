@@ -1,5 +1,7 @@
 package com.streamr.client.utils
 
+import com.streamr.client.crypto.KeysRsa
+import com.streamr.client.crypto.RsaKeyPair
 import com.streamr.client.protocol.message_layer.GroupKeyAnnounce
 import com.streamr.client.protocol.message_layer.GroupKeyRequest
 import com.streamr.client.protocol.message_layer.GroupKeyResponse
@@ -43,6 +45,7 @@ class KeyExchangeUtilSpec extends Specification {
             .withSignature("signature")
             .createStreamMessage()
     EncryptionUtil encryptionUtil = new EncryptionUtil()
+    RsaKeyPair rsaKeyPair = RsaKeyPair.generateKeyPair()
     AddressValidityUtil addressValidityUtil = new AddressValidityUtil({ String id -> new ArrayList<>()}, { String s1, String s2 -> s1 == "streamId" && s2 == "subscriberId"},
             { String id -> new ArrayList<>()}, { String s, String p -> true})
     List<GroupKey> keysReportedToOnNewKeys
@@ -64,7 +67,7 @@ class KeyExchangeUtilSpec extends Specification {
                 keysReportedToOnNewKeys.addAll(keys)
             }
         }
-        util = new KeyExchangeUtil(keyStore, messageCreationUtil, encryptionUtil, addressValidityUtil, publish, onNewKeysFunction, Clock.systemDefaultZone())
+        util = new KeyExchangeUtil(keyStore, messageCreationUtil, rsaKeyPair, addressValidityUtil, publish, onNewKeysFunction, Clock.systemDefaultZone())
     }
 
     void "handleGroupKeyRequest() should send group key response for the requested keys"() {
@@ -80,7 +83,7 @@ class KeyExchangeUtilSpec extends Specification {
         GroupKey key2 = GroupKey.generate()
 
         // Need to use Double because Moshi parser converts all JSON numbers to double
-        GroupKeyRequest request = new GroupKeyRequest("requestId", "streamId", encryptionUtil.publicKeyAsPemString, [key1.groupKeyId, key2.groupKeyId])
+        GroupKeyRequest request = new GroupKeyRequest("requestId", "streamId", KeysRsa.exportPublicKeyAsPemString(rsaKeyPair.getRsaPublicKey()), [key1.groupKeyId, key2.groupKeyId])
         StreamMessage streamMessage = request.toStreamMessageBuilder(id, null).createStreamMessage()
 
         when:
@@ -100,7 +103,7 @@ class KeyExchangeUtilSpec extends Specification {
 
         then:
         // Remember the public key of the subscriber
-        util.getKnownPublicKeysByPublisher().get(TestingAddresses.SUBSCRIBER_ID) == encryptionUtil.publicKeyAsPemString
+        util.getKnownPublicKeysByPublisher().get(TestingAddresses.SUBSCRIBER_ID) == KeysRsa.exportPublicKeyAsPemString(rsaKeyPair.getRsaPublicKey())
     }
 
     void "handleGroupKeyResponse() should decrypt keys, add keys to keyStore, and call onNewKeys function"() {
@@ -113,7 +116,7 @@ class KeyExchangeUtilSpec extends Specification {
                 .withMsgChainId("msgChainId")
                 .createMessageId()
         GroupKey key = GroupKey.generate()
-        EncryptedGroupKey encryptedKey = EncryptionUtil.encryptWithPublicKey(key, encryptionUtil.publicKey)
+        EncryptedGroupKey encryptedKey = EncryptionUtil.encryptWithPublicKey(key, rsaKeyPair.getRsaPublicKey())
 
         GroupKeyResponse response = new GroupKeyResponse("requestId", "streamId", [encryptedKey])
         StreamMessage streamMessage = response.toStreamMessageBuilder(id, null)
@@ -138,7 +141,7 @@ class KeyExchangeUtilSpec extends Specification {
                 .withMsgChainId("msgChainId")
                 .createMessageId()
         GroupKey key = GroupKey.generate()
-        EncryptedGroupKey encryptedKey = EncryptionUtil.encryptWithPublicKey(key, encryptionUtil.publicKey)
+        EncryptedGroupKey encryptedKey = EncryptionUtil.encryptWithPublicKey(key, rsaKeyPair.getRsaPublicKey())
 
         GroupKeyAnnounce announce = new GroupKeyAnnounce("streamId", [encryptedKey])
         StreamMessage streamMessage = announce.toStreamMessageBuilder(id, null)
@@ -192,7 +195,7 @@ class KeyExchangeUtilSpec extends Specification {
                 return new ArrayList<>()
             }
         }, null,null, null)
-        util = new KeyExchangeUtil(keyStore, messageCreationUtil, encryptionUtil, addressValidityUtil2, publish, onNewKeysFunction, Clock.systemDefaultZone())
+        util = new KeyExchangeUtil(keyStore, messageCreationUtil, rsaKeyPair, addressValidityUtil2, publish, onNewKeysFunction, Clock.systemDefaultZone())
 
         when:
         boolean res = util.keyRevocationNeeded("streamId")
@@ -211,7 +214,7 @@ class KeyExchangeUtilSpec extends Specification {
         Clock clock = Mock(Clock)
         Instant now = Instant.now()
         clock.instant() >> now
-        util = new KeyExchangeUtil(keyStore, messageCreationUtil, encryptionUtil, addressValidityUtil2, publish, onNewKeysFunction, clock)
+        util = new KeyExchangeUtil(keyStore, messageCreationUtil, rsaKeyPair, addressValidityUtil2, publish, onNewKeysFunction, clock)
 
         when:
         boolean res = util.keyRevocationNeeded("streamId")
@@ -228,7 +231,7 @@ class KeyExchangeUtilSpec extends Specification {
 
     void "should revoke if threshold reached"() {
         AddressValidityUtil addressValidityUtil2 = Mock(AddressValidityUtil)
-        util = new KeyExchangeUtil(keyStore, messageCreationUtil, encryptionUtil, addressValidityUtil2, publish, onNewKeysFunction, Clock.systemDefaultZone())
+        util = new KeyExchangeUtil(keyStore, messageCreationUtil, rsaKeyPair, addressValidityUtil2, publish, onNewKeysFunction, Clock.systemDefaultZone())
         when:
         boolean res = util.keyRevocationNeeded("streamId")
         then:
@@ -238,12 +241,12 @@ class KeyExchangeUtilSpec extends Specification {
 
     void "should rekey by sending group key announce messages to key exchange streams"() {
         AddressValidityUtil addressValidityUtil2 = Mock(AddressValidityUtil)
-        util = new KeyExchangeUtil(keyStore, messageCreationUtil, encryptionUtil, addressValidityUtil2, publish, onNewKeysFunction, Clock.systemDefaultZone())
+        util = new KeyExchangeUtil(keyStore, messageCreationUtil, rsaKeyPair, addressValidityUtil2, publish, onNewKeysFunction, Clock.systemDefaultZone())
 
         // Set some public keys for subscribers
-        util.getKnownPublicKeysByPublisher().put(TestingAddresses.createSubscriberId(1), new EncryptionUtil().publicKeyAsPemString)
-        util.getKnownPublicKeysByPublisher().put(TestingAddresses.createSubscriberId(2), new EncryptionUtil().publicKeyAsPemString)
-        util.getKnownPublicKeysByPublisher().put(TestingAddresses.createSubscriberId(3), new EncryptionUtil().publicKeyAsPemString)
+        util.getKnownPublicKeysByPublisher().put(TestingAddresses.createSubscriberId(1), KeysRsa.exportPublicKeyAsPemString(RsaKeyPair.generateKeyPair().getRsaPublicKey()))
+        util.getKnownPublicKeysByPublisher().put(TestingAddresses.createSubscriberId(2), KeysRsa.exportPublicKeyAsPemString(RsaKeyPair.generateKeyPair().getRsaPublicKey()))
+        util.getKnownPublicKeysByPublisher().put(TestingAddresses.createSubscriberId(3), KeysRsa.exportPublicKeyAsPemString(RsaKeyPair.generateKeyPair().getRsaPublicKey()))
 
         MessageId msgId = new MessageId.Builder()
                 .withStreamId("keyexchange-sub1")

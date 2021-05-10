@@ -1,5 +1,7 @@
 package com.streamr.client.protocol.message_layer
 
+import com.streamr.client.crypto.KeysRsa
+import com.streamr.client.crypto.RsaKeyPair
 import com.streamr.client.exceptions.ValidationException
 import com.streamr.client.options.SigningOptions.SignatureVerificationPolicy
 import com.streamr.client.rest.FieldConfig
@@ -9,7 +11,6 @@ import com.streamr.client.testing.TestingAddresses
 import com.streamr.client.testing.TestingContent
 import com.streamr.client.utils.Address
 import com.streamr.client.utils.AddressValidityUtil
-import com.streamr.client.utils.EncryptionUtil
 import com.streamr.client.utils.GroupKey
 import com.streamr.client.utils.MessageCreationUtil
 import spock.lang.Specification
@@ -22,7 +23,7 @@ class StreamMessageValidatorSpec extends Specification {
 	StreamMessageValidator validator
 
     final GroupKey groupKey = GroupKey.generate()
-    final EncryptionUtil encryptionUtil = new EncryptionUtil()
+    final RsaKeyPair rsaKeyPair = RsaKeyPair.generateKeyPair()
 
     final MessageCreationUtil publisherMsgCreationUtil = new MessageCreationUtil(new BigInteger(publisherPrivateKey, 16), publisher)
     final MessageCreationUtil subscriberMsgCreationUtil = new MessageCreationUtil(new BigInteger(subscriberPrivateKey, 16), subscriber)
@@ -104,9 +105,9 @@ class StreamMessageValidatorSpec extends Specification {
                 .createStream()
         msgSigned = StreamMessage.deserialize('[31,["tagHE6nTQ9SJV2wPoCxBFw",0,1587141844396,0,"0x6807295093ac5da6fb2a10f7dedc5edd620804fb","k000EDTMtqOTLM8sirFj"],[1587141844312,0],27,0,"{\\"eventType\\":\\"trade\\",\\"eventTime\\":1587141844398,\\"symbol\\":\\"ETHBTC\\",\\"tradeId\\":172530352,\\"price\\":0.02415,\\"quantity\\":0.296,\\"buyerOrderId\\":687544144,\\"sellerOrderId\\":687544104,\\"time\\":1587141844396,\\"maker\\":false,\\"ignored\\":true}",2,"0x6ad42041804c34902aaf7f07780b3e468ec2faec84eda2ff504d5fc26377d5556481d133d7f3f112c63cd48ee9081172013fb0ae1a61b45ee9ca89e057b099591b"]')
 
-        groupKeyRequest = subscriberMsgCreationUtil.createGroupKeyRequest(publisher, stream.getId(), encryptionUtil.publicKeyAsPemString, [groupKey.getGroupKeyId()])
+        groupKeyRequest = subscriberMsgCreationUtil.createGroupKeyRequest(publisher, stream.getId(), KeysRsa.exportPublicKeyAsPemString(rsaKeyPair.getRsaPublicKey()), [groupKey.getGroupKeyId()])
         groupKeyResponse = publisherMsgCreationUtil.createGroupKeyResponse(subscriber, (GroupKeyRequest) AbstractGroupKeyMessage.fromStreamMessage(groupKeyRequest), [groupKey])
-        groupKeyAnnounceRekey = publisherMsgCreationUtil.createGroupKeyAnnounce(subscriber, stream.getId(), encryptionUtil.publicKeyAsPemString, [groupKey])
+        groupKeyAnnounceRekey = publisherMsgCreationUtil.createGroupKeyAnnounce(subscriber, stream.getId(), KeysRsa.exportPublicKeyAsPemString(rsaKeyPair.getRsaPublicKey()), [groupKey])
         groupKeyErrorResponse = publisherMsgCreationUtil.createGroupKeyErrorResponse(subscriber, (GroupKeyRequest) AbstractGroupKeyMessage.fromStreamMessage(groupKeyRequest), new Exception("Test exception"))
 
         validator = getValidator(SignatureVerificationPolicy.ALWAYS)

@@ -3,6 +3,7 @@ package com.streamr.client.utils;
 import com.squareup.moshi.JsonAdapter;
 import com.squareup.moshi.Moshi;
 import com.squareup.moshi.Types;
+import com.streamr.client.crypto.KeysRsa;
 import com.streamr.client.exceptions.InvalidGroupKeyException;
 import com.streamr.client.exceptions.InvalidGroupKeyRequestException;
 import com.streamr.client.exceptions.InvalidGroupKeyResponseException;
@@ -144,7 +145,7 @@ public class MessageCreationUtil {
             .map(
                 key -> {
                   RSAPublicKey publicKey =
-                      EncryptionUtil.getPublicKeyFromString(request.getRsaPublicKey());
+                      KeysRsa.getPublicKeyFromString(request.getRsaPublicKey());
                   return EncryptionUtil.encryptWithPublicKey(key, publicKey);
                 })
             .collect(Collectors.toList());
@@ -178,7 +179,7 @@ public class MessageCreationUtil {
         groupKeys.stream()
             .map(
                 key -> {
-                  RSAPublicKey rsaPublicKey = EncryptionUtil.getPublicKeyFromString(publicKey);
+                  RSAPublicKey rsaPublicKey = KeysRsa.getPublicKeyFromString(publicKey);
                   return EncryptionUtil.encryptWithPublicKey(key, rsaPublicKey);
                 })
             .collect(Collectors.toList());

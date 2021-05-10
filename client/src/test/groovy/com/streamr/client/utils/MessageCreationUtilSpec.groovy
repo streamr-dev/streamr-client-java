@@ -1,5 +1,7 @@
 package com.streamr.client.utils
 
+import com.streamr.client.crypto.KeysRsa
+import com.streamr.client.crypto.RsaKeyPair
 import com.streamr.client.exceptions.InvalidGroupKeyRequestException
 import com.streamr.client.exceptions.SigningRequiredException
 import com.streamr.client.protocol.message_layer.AbstractGroupKeyMessage
@@ -24,7 +26,7 @@ class MessageCreationUtilSpec extends Specification {
             .createStream()
     final Map message = [foo: "bar"]
     final MessageCreationUtil msgCreationUtil = new MessageCreationUtil(privateKey, TestingAddresses.PUBLISHER_ID)
-    final EncryptionUtil encryptionUtil = new EncryptionUtil()
+    final RsaKeyPair rsaKeyPair = RsaKeyPair.generateKeyPair()
 
     void "createStreamMessage() creates a StreamMessage with correct values"() {
         Date timestamp = new Date()
@@ -204,7 +206,7 @@ class MessageCreationUtilSpec extends Specification {
 
     void "createGroupKeyResponse() creates correct group key response"() {
         GroupKey groupKey = GroupKey.generate()
-        GroupKeyRequest request = new GroupKeyRequest("requestId", "streamId", encryptionUtil.publicKeyAsPemString, [groupKey.getGroupKeyId()])
+        GroupKeyRequest request = new GroupKeyRequest("requestId", "streamId", KeysRsa.exportPublicKeyAsPemString(rsaKeyPair.getRsaPublicKey()), [groupKey.getGroupKeyId()])
 
         when:
         StreamMessage msg = msgCreationUtil.createGroupKeyResponse(TestingAddresses.SUBSCRIBER_ID, request, [groupKey])
@@ -220,7 +222,7 @@ class MessageCreationUtilSpec extends Specification {
 
         then:
         response.getStreamId() == "streamId"
-        encryptionUtil.decryptWithPrivateKey(response.getKeys()[0]) == groupKey
+        EncryptionUtil.decryptWithPrivateKey(this.rsaKeyPair.getRsaPrivateKey(), response.getKeys()[0]) == groupKey
     }
 
     void "createGroupKeyAnnounce() should throw if private key is not set"() {
@@ -237,7 +239,7 @@ class MessageCreationUtilSpec extends Specification {
         GroupKey groupKey = GroupKey.generate()
 
         when:
-        StreamMessage msg = msgCreationUtil.createGroupKeyAnnounce(TestingAddresses.SUBSCRIBER_ID, "streamId", encryptionUtil.publicKeyAsPemString, [groupKey])
+        StreamMessage msg = msgCreationUtil.createGroupKeyAnnounce(TestingAddresses.SUBSCRIBER_ID, "streamId", KeysRsa.exportPublicKeyAsPemString(rsaKeyPair.getRsaPublicKey()), [groupKey])
 
         then:
         msg.getStreamId() == KeyExchangeUtil.getKeyExchangeStreamId(TestingAddresses.SUBSCRIBER_ID)
@@ -250,7 +252,7 @@ class MessageCreationUtilSpec extends Specification {
 
         then:
         announce.getStreamId() == "streamId"
-        encryptionUtil.decryptWithPrivateKey(announce.getKeys()[0]) == groupKey
+        EncryptionUtil.decryptWithPrivateKey(this.rsaKeyPair.getRsaPrivateKey(), announce.getKeys()[0]) == groupKey
     }
 
     void "createGroupKeyErrorResponse() should throw if private key is not set"() {

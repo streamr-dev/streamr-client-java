@@ -2,15 +2,13 @@ package com.streamr.client.crypto;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 
-import com.streamr.client.utils.EncryptionUtil;
-import java.security.KeyPair;
 import org.junit.jupiter.api.Test;
 
 class KeysRsaTest {
   @Test
   void validatePublicKeyValidFormat() {
-    KeyPair keyPair = EncryptionUtil.generateKeyPair();
-    String publicKey = EncryptionUtil.exportPublicKeyAsPemString(keyPair.getPublic());
+    RsaKeyPair keyPair = RsaKeyPair.generateKeyPair();
+    String publicKey = KeysRsa.exportPublicKeyAsPemString(keyPair.getRsaPublicKey());
     KeysRsa.validatePublicKey(publicKey);
   }
 
@@ -25,8 +23,8 @@ class KeysRsaTest {
 
   @Test
   void validatePrivateKeyValidFormat() {
-    KeyPair keyPair = EncryptionUtil.generateKeyPair();
-    String privateKey = EncryptionUtil.exportPrivateKeyAsPemString(keyPair.getPrivate());
+    RsaKeyPair keyPair = RsaKeyPair.generateKeyPair();
+    String privateKey = KeysRsa.exportPrivateKeyAsPemString(keyPair.getRsaPrivateKey());
     KeysRsa.validatePrivateKey(privateKey);
   }
 
