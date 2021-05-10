@@ -60,8 +60,6 @@ public abstract class BasicSubscription extends Subscription {
 
     orderingUtil =
         new OrderingUtil(
-            streamId,
-            partition,
             this::handleInOrder,
             (MessageRef from, MessageRef to, Address publisherId, String msgChainId) -> {
               throw new GapDetectedException(
@@ -100,8 +98,6 @@ public abstract class BasicSubscription extends Subscription {
   public void setGapHandler(OrderedMsgChain.GapHandlerFunction gapHandler) {
     orderingUtil =
         new OrderingUtil(
-            streamId,
-            partition,
             this::handleInOrder,
             gapHandler,
             propagationTimeout,

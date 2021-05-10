@@ -33,12 +33,12 @@ class OrderingUtilSpec extends Specification {
 
     void "calls the message handler when a message is received"() {
         StreamMessage received
-        OrderingUtil util = new OrderingUtil("streamId", 0, new Consumer<StreamMessage>() {
-            @Override
-            void accept(StreamMessage streamMessage) {
-                received = streamMessage
-            }
-        }, null, 5000L, 5000L, false)
+        OrderingUtil util = new OrderingUtil(new Consumer<StreamMessage>() {
+			@Override
+			void accept(StreamMessage streamMessage) {
+				received = streamMessage
+			}
+		}, null, 5000L, 5000L, false)
         when:
         util.add(msg1)
         then:
@@ -50,20 +50,20 @@ class OrderingUtilSpec extends Specification {
         Address publisherIdReceived
         String msgChainIdReceived
 
-        OrderingUtil util = new OrderingUtil("streamId", 0, new Consumer<StreamMessage>() {
-            @Override
-            void accept(StreamMessage streamMessage) {
+        OrderingUtil util = new OrderingUtil(new Consumer<StreamMessage>() {
+			@Override
+			void accept(StreamMessage streamMessage) {
 
-            }
-        }, new OrderedMsgChain.GapHandlerFunction() {
-            @Override
-            void apply(MessageRef from, MessageRef to, Address publisherId, String msgChainId) {
-                fromReceived = from
-                toReceived = to
-                publisherIdReceived = publisherId
-                msgChainIdReceived = msgChainId
-            }
-        }, 100L, 100L, false)
+			}
+		}, new OrderedMsgChain.GapHandlerFunction() {
+			@Override
+			void apply(MessageRef from, MessageRef to, Address publisherId, String msgChainId) {
+				fromReceived = from
+				toReceived = to
+				publisherIdReceived = publisherId
+				msgChainIdReceived = msgChainId
+			}
+		}, 100L, 100L, false)
         when:
         util.add(msg1)
         util.add(msg4)
@@ -81,17 +81,17 @@ class OrderingUtilSpec extends Specification {
     void "does not call gap handler when gap detected but resolved before request should be sent"() {
         boolean called = false
 
-        OrderingUtil util = new OrderingUtil("streamId", 0, new Consumer<StreamMessage>() {
-            @Override
-            void accept(StreamMessage streamMessage) {
+        OrderingUtil util = new OrderingUtil(new Consumer<StreamMessage>() {
+			@Override
+			void accept(StreamMessage streamMessage) {
 
-            }
-        }, new OrderedMsgChain.GapHandlerFunction() {
-            @Override
-            void apply(MessageRef from, MessageRef to, Address publisherId, String msgChainId) {
-                called = true
-            }
-        }, 1000L, 1000L, false)
+			}
+		}, new OrderedMsgChain.GapHandlerFunction() {
+			@Override
+			void apply(MessageRef from, MessageRef to, Address publisherId, String msgChainId) {
+				called = true
+			}
+		}, 1000L, 1000L, false)
         when:
         util.add(msg1)
         util.add(msg4)

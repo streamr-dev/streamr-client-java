@@ -9,8 +9,6 @@ import java.util.function.Consumer;
 import java.util.function.Function;
 
 public class OrderingUtil {
-  private String streamId;
-  private int streamPartition;
   private Consumer<StreamMessage> inOrderHandler;
   private OrderedMsgChain.GapHandlerFunction gapHandler;
   private Function<GapFillFailedException, Void> gapFillFailedHandler;
@@ -20,16 +18,12 @@ public class OrderingUtil {
   private Map<String, OrderedMsgChain> chains = new HashMap<>();
 
   public OrderingUtil(
-      String streamId,
-      int streamPartition,
       Consumer<StreamMessage> inOrderHandler,
       OrderedMsgChain.GapHandlerFunction gapHandler,
       Function<GapFillFailedException, Void> gapFillFailedHandler,
       long propagationTimeout,
       long resendTimeout,
       boolean skipGapsOnFullQueue) {
-    this.streamId = streamId;
-    this.streamPartition = streamPartition;
     this.inOrderHandler = inOrderHandler;
     this.gapHandler = gapHandler;
     this.gapFillFailedHandler = gapFillFailedHandler;
@@ -39,16 +33,12 @@ public class OrderingUtil {
   }
 
   public OrderingUtil(
-      String streamId,
-      int streamPartition,
       Consumer<StreamMessage> inOrderHandler,
       OrderedMsgChain.GapHandlerFunction gapHandler,
       long propagationTimeout,
       long resendTimeout,
       boolean skipGapsOnFullQueue) {
     this(
-        streamId,
-        streamPartition,
         inOrderHandler,
         gapHandler,
         (GapFillFailedException e) -> {
