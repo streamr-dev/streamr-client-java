@@ -57,9 +57,9 @@ public class StreamrRestClient {
 
   public static class Builder {
     private String restApiUrl = REST_API_URL;
-    private long writeTimeout = 5000l;
-    private long readTimeout = 5000l;
-    private long connectTimeout = 5000l;
+    private long writeTimeout = 10000L;
+    private long readTimeout = 10000L;
+    private long connectTimeout = 10000L;
     private BigInteger privateKey;
 
     public Builder() {}
