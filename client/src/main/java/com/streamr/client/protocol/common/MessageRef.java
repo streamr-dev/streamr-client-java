@@ -1,7 +1,6 @@
 package com.streamr.client.protocol.common;
 
 import com.streamr.client.java.util.Objects;
-import java.util.Date;
 import org.jetbrains.annotations.NotNull;
 
 public final class MessageRef implements Comparable<MessageRef> {
