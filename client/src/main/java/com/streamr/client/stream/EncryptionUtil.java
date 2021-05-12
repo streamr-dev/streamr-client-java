@@ -11,7 +11,6 @@ import java.util.Arrays;
 import javax.crypto.Cipher;
 import javax.crypto.NoSuchPaddingException;
 import javax.crypto.spec.IvParameterSpec;
-import javax.xml.bind.DatatypeConverter;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.web3j.utils.Numeric;
@@ -48,7 +47,7 @@ public final class EncryptionUtil {
 
   static byte[] decryptWithPrivateKey(final RSAPrivateKey privateKey, String ciphertextHex)
       throws UnableToDecryptException {
-    byte[] encryptedBytes = DatatypeConverter.parseHexBinary(ciphertextHex);
+    byte[] encryptedBytes = Numeric.hexStringToByteArray(ciphertextHex);
     try {
       rsaCipher.get().init(Cipher.DECRYPT_MODE, privateKey);
       return rsaCipher.get().doFinal(encryptedBytes);
@@ -73,17 +72,17 @@ public final class EncryptionUtil {
 
   static byte[] decrypt(String ciphertext, GroupKey groupKey) throws Exception {
     if (groupKey == null) throw new InvalidGroupKeyException(0);
-    byte[] iv = DatatypeConverter.parseHexBinary(ciphertext.substring(0, 32));
+    byte[] iv = Numeric.hexStringToByteArray(ciphertext.substring(0, 32));
     IvParameterSpec ivParameterSpec = new IvParameterSpec(iv);
     aesCipher.get().init(Cipher.DECRYPT_MODE, groupKey.toSecretKey(), ivParameterSpec);
-    return aesCipher.get().doFinal(DatatypeConverter.parseHexBinary(ciphertext.substring(32)));
+    return aesCipher.get().doFinal(Numeric.hexStringToByteArray(ciphertext.substring(32)));
   }
 
   public static EncryptedGroupKey encryptGroupKey(
       GroupKey keyToEncrypt, GroupKey keyToEncryptWith) {
     return new EncryptedGroupKey(
         keyToEncrypt.getGroupKeyId(),
-        encrypt(DatatypeConverter.parseHexBinary(keyToEncrypt.getGroupKeyHex()), keyToEncryptWith));
+        encrypt(Numeric.hexStringToByteArray(keyToEncrypt.getGroupKeyHex()), keyToEncryptWith));
   }
 
   public static GroupKey decryptGroupKey(EncryptedGroupKey keyToDecrypt, GroupKey keyToDecryptWith)
@@ -102,7 +101,7 @@ public final class EncryptionUtil {
   }
 
   static String encryptWithPublicKey(String plaintextHex, RSAPublicKey publicKey) {
-    byte[] plaintext = DatatypeConverter.parseHexBinary(plaintextHex);
+    byte[] plaintext = Numeric.hexStringToByteArray(plaintextHex);
     return encryptWithPublicKey(plaintext, publicKey);
   }
 

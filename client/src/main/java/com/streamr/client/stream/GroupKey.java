@@ -7,7 +7,6 @@ import java.lang.reflect.Modifier;
 import java.security.SecureRandom;
 import javax.crypto.SecretKey;
 import javax.crypto.spec.SecretKeySpec;
-import javax.xml.bind.DatatypeConverter;
 import org.web3j.utils.Numeric;
 
 public final class GroupKey {
@@ -52,7 +51,7 @@ public final class GroupKey {
         | IllegalAccessException ex) {
       throw new RuntimeException(ex);
     }
-    return new SecretKeySpec(DatatypeConverter.parseHexBinary(groupKeyHex), "AES");
+    return new SecretKeySpec(Numeric.hexStringToByteArray(groupKeyHex), "AES");
   }
 
   public String getGroupKeyId() {

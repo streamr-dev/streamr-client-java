@@ -8,7 +8,6 @@ import com.streamr.client.protocol.message_layer.StreamMessage
 import com.streamr.client.testing.TestingAddresses
 import com.streamr.client.testing.TestingContent
 import java.nio.charset.StandardCharsets
-import javax.xml.bind.DatatypeConverter
 import org.web3j.utils.Numeric
 import spock.lang.Specification
 
@@ -67,7 +66,7 @@ class EncryptionUtilSpec extends Specification {
 
     void "aes encryption preserves size (plus iv)"() {
         when:
-        byte[] ciphertext = DatatypeConverter.parseHexBinary(EncryptionUtil.encrypt(plaintextBytes, key))
+        byte[] ciphertext = Numeric.hexStringToByteArray(EncryptionUtil.encrypt(plaintextBytes, key))
 
         then:
         ciphertext.length == plaintextBytes.length + 16
