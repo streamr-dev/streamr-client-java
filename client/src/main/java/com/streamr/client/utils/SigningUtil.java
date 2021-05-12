@@ -3,18 +3,14 @@ package com.streamr.client.utils;
 import com.streamr.client.protocol.message_layer.StreamMessage;
 import com.streamr.ethereum.common.Address;
 import java.math.BigInteger;
-import java.nio.charset.StandardCharsets;
 import java.security.SignatureException;
 import java.util.Arrays;
 import org.web3j.crypto.ECKeyPair;
-import org.web3j.crypto.Hash;
 import org.web3j.crypto.Keys;
 import org.web3j.crypto.Sign;
 import org.web3j.utils.Numeric;
 
 public final class SigningUtil {
-  private static final String SIGN_MAGIC = "\u0019Ethereum Signed Message:\n";
-
   private SigningUtil() {}
 
   public static StreamMessage signStreamMessage(
@@ -79,16 +75,9 @@ public final class SigningUtil {
     throw new UnsupportedSignatureTypeException(signatureType);
   }
 
-  private static byte[] calculateMessageHash(String message) {
-    int msgLen = message.getBytes(StandardCharsets.UTF_8).length;
-    String s = String.format("%s%d%s", SIGN_MAGIC, msgLen, message);
-    byte[] bytes = s.getBytes(StandardCharsets.UTF_8);
-    return Hash.sha3(bytes);
-  }
-
   private static boolean verify(String data, String signature, Address address)
       throws SignatureException {
-    byte[] messageHash = calculateMessageHash(data);
+    byte[] messageHash = Sign.getEthereumMessageHash(data.getBytes());
     Address recovered = recoverAddress(messageHash, signature);
     return recovered.equals(address);
   }
