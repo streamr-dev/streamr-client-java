@@ -4,6 +4,7 @@ import com.squareup.moshi.JsonAdapter;
 import com.squareup.moshi.Moshi;
 import com.squareup.moshi.Types;
 import com.streamr.client.crypto.KeysRsa;
+import com.streamr.client.crypto.MD5;
 import com.streamr.client.protocol.common.MessageRef;
 import com.streamr.client.protocol.message_layer.GroupKeyAnnounce;
 import com.streamr.client.protocol.message_layer.GroupKeyErrorResponse;
@@ -23,9 +24,8 @@ import com.streamr.client.stream.InvalidGroupKeyResponseException;
 import com.streamr.client.stream.KeyExchangeUtil;
 import java.math.BigInteger;
 import java.nio.ByteBuffer;
+import java.nio.ByteOrder;
 import java.nio.charset.StandardCharsets;
-import java.security.MessageDigest;
-import java.security.NoSuchAlgorithmException;
 import java.security.interfaces.RSAPublicKey;
 import java.util.Date;
 import java.util.HashMap;
@@ -51,7 +51,6 @@ public class MessageCreationUtil {
   private final Address publisherId;
   private final String msgChainId;
   private final Map<String, MessageRef> refsPerStreamAndPartition = new HashMap<>();
-  private final Map<String, Integer> cachedHashes = new HashMap<>();
   private final JsonAdapter<Map<String, Object>> mapOfStringAndObjectAdapter =
       new Moshi.Builder()
           .add(Date.class, new StringOrMillisDateJsonAdapter().nullSafe())
@@ -244,24 +243,13 @@ public class MessageCreationUtil {
   }
 
   private int hash(String partitionKey) {
-    Integer hash = cachedHashes.get(partitionKey);
-    if (hash == null) {
-      byte[] bytes;
-      try {
-        MessageDigest md = MessageDigest.getInstance("MD5");
-        bytes = md.digest(partitionKey.getBytes(StandardCharsets.UTF_8));
-      } catch (NoSuchAlgorithmException e) {
-        throw new RuntimeException(e);
-      }
-      hash = ByteBuffer.wrap(bytes).order(java.nio.ByteOrder.LITTLE_ENDIAN).getInt();
-      cachedHashes.put(partitionKey, hash);
-    }
-    return hash;
+    byte[] bytes = MD5.digest(partitionKey.getBytes(StandardCharsets.UTF_8));
+    return ByteBuffer.wrap(bytes).order(ByteOrder.LITTLE_ENDIAN).getInt();
   }
 
   private int getStreamPartition(int nbPartitions, String partitionKey) {
     if (nbPartitions == 0) {
-      throw new Error("partitionCount is zero!");
+      throw new IllegalArgumentException("partitionCount is zero!");
     } else if (nbPartitions == 1) {
       return 0;
     } else if (partitionKey != null) {
