@@ -4,7 +4,9 @@ import java.nio.ByteBuffer;
 import java.util.Base64;
 import java.util.UUID;
 
-public class IdGenerator {
+public final class IdGenerator {
+  private IdGenerator() {}
+
   /** Returns an URL-safe base64 encoding of a randomly generated UUID */
   public static String get() {
     UUID uuid = UUID.randomUUID();

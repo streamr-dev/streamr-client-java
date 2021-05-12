@@ -855,7 +855,10 @@ public class StreamrClient implements Streamr {
     }
     StreamMessage request =
         msgCreationUtil.createGroupKeyRequest(
-            publisherId, streamId, KeysRsa.exportPublicKeyAsPemString(rsaKeyPair.getRsaPublicKey()), groupKeyIds);
+            publisherId,
+            streamId,
+            KeysRsa.exportPublicKeyAsPemString(rsaKeyPair.getRsaPublicKey()),
+            groupKeyIds);
     publish(request);
   }
 
