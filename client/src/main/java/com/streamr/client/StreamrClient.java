@@ -347,7 +347,7 @@ public class StreamrClient implements Streamr {
         Thread.sleep(100);
         timeWaited += 100;
       } catch (InterruptedException e) {
-        // ignore
+        Thread.currentThread().interrupt();
       }
     }
   }
