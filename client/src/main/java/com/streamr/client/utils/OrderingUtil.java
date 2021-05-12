@@ -15,7 +15,7 @@ public class OrderingUtil {
   private Function<GapFillFailedException, Void> gapFillFailedHandler;
   private long propagationTimeout;
   private long resendTimeout;
-  private boolean skipGapsOnFullQueue = false;
+  private boolean skipGapsOnFullQueue; // defaults to true
   private Map<String, OrderedMsgChain> chains = new HashMap<>();
 
   public OrderingUtil(

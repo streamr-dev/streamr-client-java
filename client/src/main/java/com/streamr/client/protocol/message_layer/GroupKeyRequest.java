@@ -15,7 +15,7 @@ public final class GroupKeyRequest extends AbstractGroupKeyMessage {
     this.requestId = requestId;
     Objects.requireNonNull(rsaPublicKey, "rsaPublicKey");
     this.rsaPublicKey = rsaPublicKey;
-    ValidationUtil.checkNotEmpty(groupKeyIds, "groupKeyIds");
+    Validations.checkNotEmpty(groupKeyIds, "groupKeyIds");
     this.groupKeyIds = groupKeyIds;
   }
 

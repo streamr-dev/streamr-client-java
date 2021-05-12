@@ -18,7 +18,7 @@ public final class GroupKeyErrorResponse extends AbstractGroupKeyMessage {
     this.code = code;
     Objects.requireNonNull(message, "message");
     this.message = message;
-    ValidationUtil.checkNotEmpty(groupKeyIds, "groupKeyIds");
+    Validations.checkNotEmpty(groupKeyIds, "groupKeyIds");
     this.groupKeyIds = groupKeyIds;
   }
 
