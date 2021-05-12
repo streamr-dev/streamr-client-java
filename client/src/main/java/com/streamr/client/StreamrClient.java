@@ -160,8 +160,7 @@ public class StreamrClient implements Streamr {
                 throw new RuntimeException(e);
               }
             },
-            addressValidityUtil,
-            options.getSigningOptions().getVerifySignatures());
+            addressValidityUtil);
 
     BigInteger privateKey = restClient.getPrivateKey();
     if (privateKey != null) {

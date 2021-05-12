@@ -2,7 +2,6 @@ package com.streamr.client
 
 import com.streamr.client.crypto.KeysRsa
 import com.streamr.client.crypto.RsaKeyPair
-import com.streamr.client.options.SigningOptions.SignatureVerificationPolicy
 import com.streamr.client.protocol.message_layer.AbstractGroupKeyMessage
 import com.streamr.client.protocol.message_layer.GroupKeyRequest
 import com.streamr.client.protocol.message_layer.MessageId
@@ -93,8 +92,8 @@ class StreamMessageValidatorSpec extends Specification {
             { String id -> publishers },
             {  String streamId, Address address -> publishers.contains(address) },
     )
-    StreamMessageValidator getValidator(SignatureVerificationPolicy verifySignatures) {
-        return new StreamMessageValidator({ String id -> stream }, addressValidityUtil, verifySignatures)
+    StreamMessageValidator getValidator() {
+        return new StreamMessageValidator({ String id -> stream }, addressValidityUtil)
     }
 
     void setup() {
@@ -114,7 +113,7 @@ class StreamMessageValidatorSpec extends Specification {
         groupKeyAnnounceRekey = publisherMsgCreationUtil.createGroupKeyAnnounce(subscriber, stream.getId(), KeysRsa.exportPublicKeyAsPemString(rsaKeyPair.getRsaPublicKey()), [groupKey])
         groupKeyErrorResponse = publisherMsgCreationUtil.createGroupKeyErrorResponse(subscriber, (GroupKeyRequest) AbstractGroupKeyMessage.fromStreamMessage(groupKeyRequest), new Exception("Test exception"))
 
-        validator = getValidator(SignatureVerificationPolicy.ALWAYS)
+        validator = getValidator()
         publishers = [TestingAddresses.PUBLISHER_ID, publisher]
         subscribers = [subscriber]
     }
@@ -139,14 +138,6 @@ class StreamMessageValidatorSpec extends Specification {
         notThrown(Exception)
     }
 
-    void "should throw if policy is 'always' and message not signed"() {
-        when:
-        validator.validate(msgUnsigned)
-        then:
-        ValidationException e = thrown(ValidationException)
-        e.getReason() == ValidationException.Reason.POLICY_VIOLATION
-    }
-
     void "should throw if the signature is invalid"() {
         when:
         validator.validate(msgInvalid)
@@ -155,8 +146,8 @@ class StreamMessageValidatorSpec extends Specification {
         e.getReason() == ValidationException.Reason.INVALID_SIGNATURE
     }
 
-    void "should verify if policy is 'auto' and signature is present, even if stream does not require signed data"() {
-        validator = getValidator(SignatureVerificationPolicy.AUTO)
+    void "should verify if signature is present, even if stream does not require signed data"() {
+        validator = getValidator()
         when:
         validator.validate(msgInvalid)
         then:
@@ -164,11 +155,11 @@ class StreamMessageValidatorSpec extends Specification {
         e.getReason() == ValidationException.Reason.INVALID_SIGNATURE
     }
 
-    void "should throw if policy is 'auto', signature is not present, and stream requires signed data"() {
+    void "should throw if signature is not present, and stream requires signed data"() {
         stream = new Stream.Builder(stream)
                 .withRequireSignedData(true)
                 .createStream()
-        validator = getValidator(SignatureVerificationPolicy.AUTO)
+        validator = getValidator()
         when:
         validator.validate(msgUnsigned)
         then:
@@ -176,12 +167,12 @@ class StreamMessageValidatorSpec extends Specification {
         e.getReason() == ValidationException.Reason.POLICY_VIOLATION
     }
 
-    void "should not throw if policy is 'auto', signature is not present, and stream does not require signed data"() {
-        validator = getValidator(SignatureVerificationPolicy.AUTO)
+    void "should not throw if signature is not present, and stream does not require signed data"() {
+        validator = getValidator()
         when:
         validator.validate(msgUnsigned)
         then:
-        notThrown(Exception)
+        notThrown(ValidationException)
     }
 
     void "accepts valid encrypted messages"() {

@@ -3,8 +3,6 @@ package com.streamr.client.options;
 import com.streamr.client.ws.WebsocketUrl;
 
 public class StreamrClientOptions {
-  private SigningOptions signingOptions =
-      new SigningOptions(SigningOptions.SignatureVerificationPolicy.AUTO);
   private WebsocketUrl websocketApiUrl = new WebsocketUrl();
   private long connectionTimeoutMillis = 10 * 1000L;
   private long reconnectRetryInterval = 10 * 1000L;
@@ -14,18 +12,16 @@ public class StreamrClientOptions {
 
   public StreamrClientOptions() {}
 
-  public StreamrClientOptions(SigningOptions signingOptions, String websocketApiUrl) {
-    this.signingOptions = signingOptions;
+  public StreamrClientOptions(String websocketApiUrl) {
     this.websocketApiUrl = new WebsocketUrl(websocketApiUrl);
   }
 
   public StreamrClientOptions(
-      SigningOptions signingOptions,
       String websocketApiUrl,
       int propagationTimeout,
       int resendTimeout,
       boolean skipGapsOnFullQueue) {
-    this(signingOptions, websocketApiUrl);
+    this(websocketApiUrl);
     this.propagationTimeout = propagationTimeout;
     this.resendTimeout = resendTimeout;
     this.skipGapsOnFullQueue = skipGapsOnFullQueue;
@@ -49,10 +45,6 @@ public class StreamrClientOptions {
 
   public void setReconnectRetryInterval(long reconnectRetryInterval) {
     this.reconnectRetryInterval = reconnectRetryInterval;
-  }
-
-  public SigningOptions getSigningOptions() {
-    return signingOptions;
   }
 
   public int getPropagationTimeout() {
