@@ -1,18 +1,18 @@
 package com.streamr.client.subs;
 
 import com.streamr.client.MessageHandler;
-import com.streamr.client.stream.EncryptionUtil;
-import com.streamr.client.utils.UnableToDecryptException;
 import com.streamr.client.protocol.common.MessageRef;
 import com.streamr.client.protocol.common.UnsupportedMessageException;
 import com.streamr.client.protocol.message_layer.StreamMessage;
-import com.streamr.ethereum.common.Address;
+import com.streamr.client.stream.EncryptionUtil;
 import com.streamr.client.stream.GroupKey;
 import com.streamr.client.stream.GroupKeyStore;
 import com.streamr.client.stream.KeyExchangeUtil;
+import com.streamr.client.utils.GapFillFailedException;
 import com.streamr.client.utils.OrderedMsgChain;
 import com.streamr.client.utils.OrderingUtil;
-import java.util.ArrayList;
+import com.streamr.client.utils.UnableToDecryptException;
+import com.streamr.ethereum.common.Address;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.HashSet;
@@ -63,6 +63,9 @@ public abstract class BasicSubscription extends Subscription {
               throw new GapDetectedException(
                   streamId, partition, from, to, publisherId, msgChainId);
             },
+            (GapFillFailedException e) -> {
+              throw e;
+            },
             this.propagationTimeout,
             this.resendTimeout,
             this.skipGapsOnFullQueue);
@@ -98,6 +101,9 @@ public abstract class BasicSubscription extends Subscription {
         new OrderingUtil(
             this::handleInOrder,
             gapHandler,
+            (GapFillFailedException e) -> {
+              throw e;
+            },
             propagationTimeout,
             resendTimeout,
             skipGapsOnFullQueue);
@@ -164,7 +170,7 @@ public abstract class BasicSubscription extends Subscription {
     }
   }
 
-  public ArrayList<OrderedMsgChain> getChains() {
+  public List<OrderedMsgChain> getChains() {
     return orderingUtil.getChains();
   }
 

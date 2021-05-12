@@ -47,62 +47,6 @@ public class HistoricalSubscription extends BasicSubscription {
     this.onRealTimeMsg = onRealTimeMsg;
   }
 
-  public HistoricalSubscription(
-      String streamId,
-      int partition,
-      MessageHandler handler,
-      GroupKeyStore keyStore,
-      KeyExchangeUtil keyExchangeUtil,
-      ResendOption resendOption,
-      GroupKeyRequestFunction groupKeyRequestFunction,
-      long propagationTimeout,
-      long resendTimeout,
-      boolean skipGapsOnFullQueue) {
-    this(
-        streamId,
-        partition,
-        handler,
-        keyStore,
-        keyExchangeUtil,
-        resendOption,
-        groupKeyRequestFunction,
-        propagationTimeout,
-        resendTimeout,
-        skipGapsOnFullQueue,
-        null);
-  }
-
-  public HistoricalSubscription(
-      String streamId,
-      int partition,
-      MessageHandler handler,
-      GroupKeyStore keyStore,
-      KeyExchangeUtil keyExchangeUtil,
-      ResendOption resendOption,
-      GroupKeyRequestFunction groupKeyRequestFunction) {
-    this(
-        streamId,
-        partition,
-        handler,
-        keyStore,
-        keyExchangeUtil,
-        resendOption,
-        groupKeyRequestFunction,
-        Subscription.DEFAULT_PROPAGATION_TIMEOUT,
-        Subscription.DEFAULT_RESEND_TIMEOUT,
-        Subscription.DEFAULT_SKIP_GAPS_ON_FULL_QUEUE);
-  }
-
-  public HistoricalSubscription(
-      String streamId,
-      int partition,
-      MessageHandler handler,
-      GroupKeyStore keyStore,
-      KeyExchangeUtil keyExchangeUtil,
-      ResendOption resendOption) {
-    this(streamId, partition, handler, keyStore, keyExchangeUtil, resendOption, null);
-  }
-
   @Override
   public void onNewKeysAdded(Address publisherId, Collection<GroupKey> groupKeys) {
     super.onNewKeysAdded(publisherId, groupKeys);

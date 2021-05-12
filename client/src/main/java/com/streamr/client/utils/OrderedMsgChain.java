@@ -61,27 +61,6 @@ public class OrderedMsgChain {
             });
   }
 
-  public OrderedMsgChain(
-      Address publisherId,
-      String msgChainId,
-      Consumer<StreamMessage> inOrderHandler,
-      GapHandlerFunction gapHandler,
-      long propagationTimeout,
-      long resendTimeout,
-      boolean skipGapsOnFullQueue) {
-    this(
-        publisherId,
-        msgChainId,
-        inOrderHandler,
-        gapHandler,
-        (GapFillFailedException e) -> {
-          throw e;
-        },
-        propagationTimeout,
-        resendTimeout,
-        skipGapsOnFullQueue);
-  }
-
   public synchronized void add(StreamMessage unorderedMsg) {
     MessageRef ref = unorderedMsg.getMessageRef();
     if (lastReceived != null && ref.compareTo(lastReceived) <= 0) {

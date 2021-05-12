@@ -6,8 +6,8 @@ import com.streamr.client.protocol.common.UnsupportedMessageException;
 import com.streamr.client.protocol.message_layer.StreamMessage;
 import com.streamr.client.stream.GroupKeyStore;
 import com.streamr.client.stream.KeyExchangeUtil;
-import com.streamr.client.utils.*;
-import java.util.ArrayList;
+import com.streamr.client.utils.OrderedMsgChain;
+import java.util.List;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -37,25 +37,6 @@ public class RealTimeSubscription extends BasicSubscription {
         propagationTimeout,
         resendTimeout,
         skipGapsOnFullQueue);
-  }
-
-  public RealTimeSubscription(
-      String streamId,
-      int partition,
-      MessageHandler handler,
-      GroupKeyStore keyStore,
-      KeyExchangeUtil keyExchangeUtil,
-      GroupKeyRequestFunction groupKeyRequestFunction) {
-    this(
-        streamId,
-        partition,
-        handler,
-        keyStore,
-        keyExchangeUtil,
-        groupKeyRequestFunction,
-        Subscription.DEFAULT_PROPAGATION_TIMEOUT,
-        Subscription.DEFAULT_RESEND_TIMEOUT,
-        Subscription.DEFAULT_SKIP_GAPS_ON_FULL_QUEUE);
   }
 
   @Override
@@ -95,7 +76,7 @@ public class RealTimeSubscription extends BasicSubscription {
     orderingUtil.add(msg);
   }
 
-  public void setLastMessageRefs(ArrayList<OrderedMsgChain> chains) {
+  public void setLastMessageRefs(List<OrderedMsgChain> chains) {
     orderingUtil.addChains(chains);
   }
 

@@ -677,7 +677,8 @@ public class StreamrClient implements Streamr {
               requestFunction,
               options.getPropagationTimeout(),
               options.getResendTimeout(),
-              options.getSkipGapsOnFullQueue());
+              options.getSkipGapsOnFullQueue(),
+              null);
     } else {
       sub =
           new CombinedSubscription(

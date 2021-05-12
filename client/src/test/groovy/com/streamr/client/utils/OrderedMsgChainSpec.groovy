@@ -77,7 +77,7 @@ class OrderedMsgChainSpec extends Specification {
             void accept(StreamMessage streamMessage) {
                 received.add(streamMessage)
             }
-        }, null, 5000L, 5000L, false)
+        }, null, new GapFillFailedHandler(), 5000L, 5000L, false)
         when:
         util.add(msg1)
         util.add(msg2)
@@ -85,6 +85,7 @@ class OrderedMsgChainSpec extends Specification {
         then:
         received == [msg1, msg2, msg3]
     }
+
     void "drops duplicates"() {
         ArrayList<StreamMessage> received = []
         OrderedMsgChain util = new OrderedMsgChain(publisherId, "msgChainId",
@@ -93,7 +94,7 @@ class OrderedMsgChainSpec extends Specification {
                     void accept(StreamMessage streamMessage) {
                         received.add(streamMessage)
                     }
-                }, null, 5000L, 5000L, false)
+                }, null, new GapFillFailedHandler(), 5000L, 5000L, false)
         when:
         util.add(msg1)
         util.add(msg1)
@@ -115,7 +116,7 @@ class OrderedMsgChainSpec extends Specification {
             void apply(MessageRef from, MessageRef to, Address publisherId, String msgChainId) {
 
             }
-        }, 5000L, 5000L, false)
+        }, new GapFillFailedHandler(), 5000L, 5000L, false)
         when:
         util.add(msg1)
         util.add(msg2)
@@ -169,7 +170,7 @@ class OrderedMsgChainSpec extends Specification {
                     void accept(StreamMessage streamMessage) {
                         received.add(streamMessage)
                     }
-                }, null, 5000L, 5000L, false)
+                }, null, new GapFillFailedHandler(), 5000L, 5000L, false)
         when:
         util.add(msg1)
         util.add(m2)
@@ -192,7 +193,7 @@ class OrderedMsgChainSpec extends Specification {
             void apply(MessageRef from, MessageRef to, Address publisherId, String msgChainId) {
                 unexpected = new RuntimeException("Unexpected gap fill request")
             }
-        }, 300L, 300L, false)
+        }, new GapFillFailedHandler(), 300L, 300L, false)
         when:
         util.add(msg1)
         util.add(msg5)
@@ -278,7 +279,7 @@ class OrderedMsgChainSpec extends Specification {
             void apply(MessageRef from, MessageRef to, Address publisherId, String msgChainId) {
 
             }
-        }, 5000L, 5000L, false)
+        }, new GapFillFailedHandler(), 5000L, 5000L, false)
         when:
         util.add(msg1)
         for (StreamMessage msg: shuffled) {
@@ -313,7 +314,7 @@ class OrderedMsgChainSpec extends Specification {
             void accept(StreamMessage streamMessage) {
                 received++;
             }
-        }, null, 5000L, 5000L, false)
+        }, null, new GapFillFailedHandler(), 5000L, 5000L, false)
 
         final MessageId messageId1 = new MessageId.Builder()
                 .withStreamId("streamId")
@@ -355,7 +356,7 @@ class OrderedMsgChainSpec extends Specification {
             void accept(StreamMessage streamMessage) {
                 received++
             }
-        }, null, 5000L, 5000L, true)
+        }, null, new GapFillFailedHandler(), 5000L, 5000L, true)
 
         final MessageId messageId1 = new MessageId.Builder()
                 .withStreamId("streamId")
@@ -416,7 +417,7 @@ class OrderedMsgChainSpec extends Specification {
             void accept(StreamMessage streamMessage) {
                 received++
             }
-        }, gapHandler, 5000L, 5000L, false)
+        }, gapHandler, new GapFillFailedHandler(), 5000L, 5000L, false)
         when:
         Closure produce = {
             for (int i=0; i<1000; i++) {

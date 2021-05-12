@@ -4,6 +4,7 @@ import com.streamr.client.protocol.message_layer.StreamMessage;
 import com.streamr.ethereum.common.Address;
 import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 import java.util.function.Consumer;
 import java.util.function.Function;
@@ -32,23 +33,6 @@ public class OrderingUtil {
     this.skipGapsOnFullQueue = skipGapsOnFullQueue;
   }
 
-  public OrderingUtil(
-      Consumer<StreamMessage> inOrderHandler,
-      OrderedMsgChain.GapHandlerFunction gapHandler,
-      long propagationTimeout,
-      long resendTimeout,
-      boolean skipGapsOnFullQueue) {
-    this(
-        inOrderHandler,
-        gapHandler,
-        (GapFillFailedException e) -> {
-          throw e;
-        },
-        propagationTimeout,
-        resendTimeout,
-        skipGapsOnFullQueue);
-  }
-
   public void add(StreamMessage unorderedMsg) {
     OrderedMsgChain chain = getChain(unorderedMsg.getPublisherId(), unorderedMsg.getMsgChainId());
     chain.add(unorderedMsg);
@@ -62,23 +46,22 @@ public class OrderingUtil {
 
   private synchronized OrderedMsgChain getChain(Address publisherId, String msgChainId) {
     String key = publisherId + msgChainId;
-    if (!chains.containsKey(key)) {
-      chains.put(
-          key,
-          new OrderedMsgChain(
-              publisherId,
-              msgChainId,
-              inOrderHandler,
-              gapHandler,
-              gapFillFailedHandler,
-              propagationTimeout,
-              resendTimeout,
-              skipGapsOnFullQueue));
-    }
+    chains.computeIfAbsent(
+        key,
+        v ->
+            new OrderedMsgChain(
+                publisherId,
+                msgChainId,
+                inOrderHandler,
+                gapHandler,
+                gapFillFailedHandler,
+                propagationTimeout,
+                resendTimeout,
+                skipGapsOnFullQueue));
     return chains.get(key);
   }
 
-  public ArrayList<OrderedMsgChain> getChains() {
+  public List<OrderedMsgChain> getChains() {
     return new ArrayList<>(chains.values());
   }
 
@@ -86,7 +69,7 @@ public class OrderingUtil {
     return gapHandler;
   }
 
-  public synchronized void addChains(ArrayList<OrderedMsgChain> previousChains) {
+  public synchronized void addChains(List<OrderedMsgChain> previousChains) {
     for (OrderedMsgChain chain : previousChains) {
       String key = chain.getPublisherId() + chain.getMsgChainId();
       OrderedMsgChain newChain =

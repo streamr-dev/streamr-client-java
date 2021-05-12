@@ -67,7 +67,7 @@ class HistoricalSubscriptionSpec extends Specification {
     }
 
     private HistoricalSubscription createSub(MessageHandler handler = defaultHandler, ResendOption resendOption = new ResendLastOption(10), String streamId = msg.getStreamId(), BasicSubscription.GroupKeyRequestFunction groupKeyRequestFunction = defaultGroupKeyRequestFunction) {
-        return new HistoricalSubscription(streamId, 0, handler, keyStore, keyExchangeUtil, resendOption, groupKeyRequestFunction)
+        return new HistoricalSubscription(streamId, 0, handler, keyStore, keyExchangeUtil, resendOption, groupKeyRequestFunction, Subscription.DEFAULT_PROPAGATION_TIMEOUT, Subscription.DEFAULT_RESEND_TIMEOUT, Subscription.DEFAULT_SKIP_GAPS_ON_FULL_QUEUE, null)
     }
 
     void "does not handle real-time messages (queued)"() {

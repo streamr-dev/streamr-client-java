@@ -39,7 +39,7 @@ class OrderingUtilSpec extends Specification {
 			void accept(StreamMessage streamMessage) {
 				received = streamMessage
 			}
-		}, null, 5000L, 5000L, false)
+		}, null, new GapFillFailedHandler(), 5000L, 5000L, false)
         when:
         util.add(msg1)
         then:
@@ -64,7 +64,7 @@ class OrderingUtilSpec extends Specification {
 				publisherIdReceived = publisherId
 				msgChainIdReceived = msgChainId
 			}
-		}, 100L, 100L, false)
+		}, new GapFillFailedHandler(), 100L, 100L, false)
         when:
         util.add(msg1)
         util.add(msg4)
@@ -92,7 +92,7 @@ class OrderingUtilSpec extends Specification {
 			void apply(MessageRef from, MessageRef to, Address publisherId, String msgChainId) {
 				called = true
 			}
-		}, 1000L, 1000L, false)
+		}, new GapFillFailedHandler(), 1000L, 1000L, false)
         when:
         util.add(msg1)
         util.add(msg4)

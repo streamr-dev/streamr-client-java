@@ -14,7 +14,7 @@ class SubscriptionsSpec extends Specification {
 	private KeyExchangeUtil keyExchangeUtil
 
 	private RealTimeSubscription createSub(String streamId="stream", int partition=0) {
-		return new RealTimeSubscription(streamId, partition, null, keyStore, keyExchangeUtil,null)
+		return new RealTimeSubscription(streamId, partition, null, keyStore, keyExchangeUtil, null, Subscription.DEFAULT_PROPAGATION_TIMEOUT, Subscription.DEFAULT_RESEND_TIMEOUT, Subscription.DEFAULT_SKIP_GAPS_ON_FULL_QUEUE)
 	}
 
 	void setup() {
