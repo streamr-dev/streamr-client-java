@@ -1,29 +1,29 @@
 package com.streamr.client.protocol.control_layer;
 
 public class SubscribeResponse extends ControlMessage {
-    public static final int TYPE = 2;
+  public static final int TYPE = 2;
 
-    private final String streamId;
-    private final int streamPartition;
+  private final String streamId;
+  private final int streamPartition;
 
-    public SubscribeResponse(String requestId, String streamId, int streamPartition) {
-        super(TYPE, requestId);
-        this.streamId = streamId;
-        this.streamPartition = streamPartition;
-    }
+  public SubscribeResponse(String requestId, String streamId, int streamPartition) {
+    super(TYPE, requestId);
+    this.streamId = streamId;
+    this.streamPartition = streamPartition;
+  }
 
-    public String getStreamId() {
-        return streamId;
-    }
+  public String getStreamId() {
+    return streamId;
+  }
 
-    public int getStreamPartition() {
-        return streamPartition;
-    }
+  public int getStreamPartition() {
+    return streamPartition;
+  }
 
-    @Override
-    public String toString() {
-        return String.format("SubscribeResponse{requestId=%s, streamId=%s, streamPartition=%s",
-                getRequestId(), streamId, streamPartition);
-    }
-
+  @Override
+  public String toString() {
+    return String.format(
+        "SubscribeResponse{requestId=%s, streamId=%s, streamPartition=%s",
+        getRequestId(), streamId, streamPartition);
+  }
 }

@@ -4,28 +4,29 @@ import com.streamr.client.protocol.message_layer.StreamMessage;
 
 public class PublishRequest extends ControlMessage {
 
-    public static final int TYPE = 8;
+  public static final int TYPE = 8;
 
-    private final StreamMessage streamMessage;
-    private final String sessionToken;
+  private final StreamMessage streamMessage;
+  private final String sessionToken;
 
-    public PublishRequest(String requestId, StreamMessage streamMessage, String sessionToken) {
-        super(TYPE, requestId);
-        this.streamMessage = streamMessage;
-        this.sessionToken = sessionToken;
-    }
+  public PublishRequest(String requestId, StreamMessage streamMessage, String sessionToken) {
+    super(TYPE, requestId);
+    this.streamMessage = streamMessage;
+    this.sessionToken = sessionToken;
+  }
 
-    public StreamMessage getStreamMessage() {
-        return streamMessage;
-    }
+  public StreamMessage getStreamMessage() {
+    return streamMessage;
+  }
 
-    public String getSessionToken() {
-        return sessionToken;
-    }
+  public String getSessionToken() {
+    return sessionToken;
+  }
 
-    @Override
-    public String toString() {
-        return String.format("PublishRequest{requestId=%s, streamMessage=%s, sessionToken=%s",
-                getRequestId(), streamMessage, sessionToken);
-    }
+  @Override
+  public String toString() {
+    return String.format(
+        "PublishRequest{requestId=%s, streamMessage=%s, sessionToken=%s",
+        getRequestId(), streamMessage, sessionToken);
+  }
 }

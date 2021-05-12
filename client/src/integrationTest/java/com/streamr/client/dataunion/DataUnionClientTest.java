@@ -75,9 +75,7 @@ class DataUnionClientTest {
     member3Wallet = Credentials.create(TEST_RPC_KEYS[3]);
     coreApiWallet = Credentials.create(TestingKeys.CORE_API_PRIVATE_KEY);
 
-    StreamrClientOptions opts =
-        new StreamrClientOptions(
-            TestingMeta.WEBSOCKET_URL);
+    StreamrClientOptions opts = new StreamrClientOptions(TestingMeta.WEBSOCKET_URL);
     StreamrRestClient restClient =
         new StreamrRestClient.Builder()
             .withRestApiUrl(TestingMeta.REST_URL)
@@ -96,12 +94,14 @@ class DataUnionClientTest {
   @Order(1)
   void createDataUnionClient() throws Exception {
     final String adminPk = TEST_RPC_KEYS[0];
-    client = streamrClient.dataUnionClientBuilder(adminPk, adminPk)
-        .withSidechainRpcUrl(DEV_SIDECHAIN_RPC)
-        .withMainnetRpcUrl(DEV_SIDECHAIN_RPC)
-        .withMainnetFactoryAddress(DEV_MAINCHAIN_FACTORY)
-        .withSidechainFactoryAddress(DEV_SIDECHAIN_FACTORY)
-        .createDataUnionClient();
+    client =
+        streamrClient
+            .dataUnionClientBuilder(adminPk, adminPk)
+            .withSidechainRpcUrl(DEV_SIDECHAIN_RPC)
+            .withMainnetRpcUrl(DEV_SIDECHAIN_RPC)
+            .withMainnetFactoryAddress(DEV_MAINCHAIN_FACTORY)
+            .withSidechainFactoryAddress(DEV_SIDECHAIN_FACTORY)
+            .createDataUnionClient();
     du = client.dataUnionFromName(DATA_UNION_NAME);
     Web3j mainnet = Web3j.build(new HttpService(DEV_MAINCHAIN_RPC));
     mainnetToken =

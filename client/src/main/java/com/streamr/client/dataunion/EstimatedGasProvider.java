@@ -47,9 +47,7 @@ public class EstimatedGasProvider implements ContractGasProvider {
     return getGasPrice();
   }
 
-  /**
-   * @deprecated
-   */
+  /** @deprecated */
   @Override
   @Deprecated
   public BigInteger getGasPrice() {
@@ -74,9 +72,7 @@ public class EstimatedGasProvider implements ContractGasProvider {
     return gasLimit;
   }
 
-  /**
-   * @deprecated
-   */
+  /** @deprecated */
   @Override
   @Deprecated
   public BigInteger getGasLimit() {

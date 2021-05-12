@@ -3,3 +3,31 @@ buildscript {
 		mavenCentral()
 	}
 }
+
+plugins {
+	id 'com.diffplug.spotless' version '5.9.0'
+}
+
+// https://github.com/diffplug/spotless/tree/main/plugin-gradle
+// https://github.com/google/google-java-format
+// https://google.github.io/styleguide/javaguide.html
+// Enable below once ratchetFrom is removed
+// compileJava.dependsOn 'spotlessApply'
+spotless {
+	ratchetFrom 'origin/master'
+	format 'misc', {
+		target '**/*.gradle', '.gitignore'
+
+		indentWithTabs()
+		trimTrailingWhitespace()
+		endWithNewline()
+	}
+	java {
+		target rootProject.fileTree('.') {
+			include '*/src/*/java/**/*.java'
+			include '*/src/*/groovy/**/*.java'
+			exclude 'client/src/main/java/com/streamr/client/dataunion/contracts/**'
+		}
+		googleJavaFormat('1.7')
+	}
+}

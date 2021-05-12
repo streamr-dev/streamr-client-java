@@ -28,9 +28,7 @@ public class TestingStreamrClient extends StreamrClient {
 
   public static StreamrClient createUnauthenticatedClient() {
     return new StreamrClient(
-        new StreamrClientOptions(
-            TestingMeta.WEBSOCKET_URL),
-        createStreamrRestClient(null));
+        new StreamrClientOptions(TestingMeta.WEBSOCKET_URL), createStreamrRestClient(null));
   }
 
   public static StreamrClient createClientWithPrivateKey(final Credentials credentials) {
@@ -49,8 +47,7 @@ public class TestingStreamrClient extends StreamrClient {
   }
 
   private static StreamrClientOptions createOptions() {
-    return new StreamrClientOptions(
-        TestingMeta.WEBSOCKET_URL);
+    return new StreamrClientOptions(TestingMeta.WEBSOCKET_URL);
   }
 
   List<StreamMessage> receivedStreamMessages = new ArrayList<>();
