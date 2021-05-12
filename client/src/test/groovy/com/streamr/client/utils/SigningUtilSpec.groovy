@@ -7,6 +7,7 @@ import com.streamr.client.stream.EncryptedGroupKey
 import com.streamr.client.testing.TestingAddresses
 import com.streamr.client.testing.TestingContent
 import com.streamr.ethereum.common.Address
+import com.streamr.ethereum.crypto.Sign
 import org.web3j.crypto.ECKeyPair
 import org.web3j.crypto.Keys
 import org.web3j.utils.Numeric
@@ -36,7 +37,7 @@ class SigningUtilSpec extends Specification {
     void "should correctly sign arbitrary data"() {
         String payload = "data-to-sign"
         when:
-        String signature = SigningUtil.sign(privateKey, payload)
+        String signature = Sign.sign(privateKey, payload)
         then:
         signature == "0x787cd72924153c88350e808de68b68c88030cbc34d053a5c696a5893d5e6fec1687c1b6205ec99aeb3375a81bf5cb8857ae39c1b55a41b32ed6399ae8da456a61b"
     }
@@ -52,7 +53,7 @@ class SigningUtilSpec extends Specification {
         msg = SigningUtil.signStreamMessage(privateKey, msg)
         then:
         msg.signatureType == StreamMessage.SignatureType.ETH
-        msg.signature == SigningUtil.sign(privateKey, expectedPayload)
+        msg.signature == Sign.sign(privateKey, expectedPayload)
     }
 
     void "should correctly sign a StreamMessage with non-null previous ref"() {
@@ -66,7 +67,7 @@ class SigningUtilSpec extends Specification {
         msg = SigningUtil.signStreamMessage(privateKey, msg)
         then:
         msg.signatureType == StreamMessage.SignatureType.ETH
-        msg.signature == SigningUtil.sign(privateKey, expectedPayload)
+        msg.signature == Sign.sign(privateKey, expectedPayload)
     }
 
     void "should correctly sign a StreamMessage with new group key"() {
@@ -81,7 +82,7 @@ class SigningUtilSpec extends Specification {
         msg = SigningUtil.signStreamMessage(privateKey, msg)
         then:
         msg.signatureType == StreamMessage.SignatureType.ETH
-        msg.signature == SigningUtil.sign(privateKey, expectedPayload)
+        msg.signature == Sign.sign(privateKey, expectedPayload)
     }
 
     void "returns false if no signature"() {

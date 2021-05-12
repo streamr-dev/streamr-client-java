@@ -5,7 +5,7 @@ import com.squareup.moshi.Types;
 import com.streamr.client.crypto.Keys;
 import com.streamr.client.java.util.Objects;
 import com.streamr.ethereum.common.Address;
-import com.streamr.client.utils.SigningUtil;
+import com.streamr.ethereum.crypto.Sign;
 import java.io.IOException;
 import java.lang.reflect.ParameterizedType;
 import java.math.BigInteger;
@@ -403,7 +403,7 @@ public class StreamrRestClient {
 
   public LoginResponse login(final BigInteger privateKey) throws IOException {
     final Challenge challenge = getChallenge(privateKey);
-    final String signature = SigningUtil.sign(privateKey, challenge.getChallenge());
+    final String signature = Sign.sign(privateKey, challenge.getChallenge());
     final String address = Keys.privateKeyToAddressWithPrefix(privateKey);
     final ChallengeResponse response = new ChallengeResponse(challenge, signature, address);
 
