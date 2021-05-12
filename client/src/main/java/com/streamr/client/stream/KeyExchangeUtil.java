@@ -3,6 +3,7 @@ package com.streamr.client.stream;
 import com.streamr.client.crypto.RsaKeyPair;
 import com.streamr.client.java.util.Objects;
 import com.streamr.client.protocol.message_layer.AbstractGroupKeyMessage;
+import com.streamr.client.protocol.message_layer.EncryptedGroupKey;
 import com.streamr.client.protocol.message_layer.GroupKeyAnnounce;
 import com.streamr.client.protocol.message_layer.GroupKeyRequest;
 import com.streamr.client.protocol.message_layer.GroupKeyResponse;

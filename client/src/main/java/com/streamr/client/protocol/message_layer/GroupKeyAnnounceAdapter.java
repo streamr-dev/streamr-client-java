@@ -2,7 +2,6 @@ package com.streamr.client.protocol.message_layer;
 
 import com.squareup.moshi.JsonReader;
 import com.squareup.moshi.JsonWriter;
-import com.streamr.client.stream.EncryptedGroupKey;
 import java.io.IOException;
 import java.util.List;
 import javax.annotation.Nullable;

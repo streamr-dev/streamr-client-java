@@ -1,6 +1,6 @@
 package com.streamr.client.protocol.message_layer
 
-import com.streamr.client.stream.EncryptedGroupKey
+
 import spock.lang.Specification
 
 class GroupKeyResponseAdapterSpec extends Specification {

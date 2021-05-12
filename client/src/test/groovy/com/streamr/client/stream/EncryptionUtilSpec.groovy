@@ -3,6 +3,7 @@ package com.streamr.client.stream
 import com.streamr.client.crypto.KeysRsa
 import com.streamr.client.crypto.RsaKeyPair
 import com.streamr.client.protocol.common.MessageRef
+import com.streamr.client.protocol.message_layer.EncryptedGroupKey
 import com.streamr.client.protocol.message_layer.MessageId
 import com.streamr.client.protocol.message_layer.StreamMessage
 import com.streamr.client.testing.TestingAddresses

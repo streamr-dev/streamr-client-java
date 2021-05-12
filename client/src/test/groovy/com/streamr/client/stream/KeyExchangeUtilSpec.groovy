@@ -2,6 +2,7 @@ package com.streamr.client.stream
 
 import com.streamr.client.crypto.KeysRsa
 import com.streamr.client.crypto.RsaKeyPair
+import com.streamr.client.protocol.message_layer.EncryptedGroupKey
 import com.streamr.client.protocol.message_layer.GroupKeyAnnounce
 import com.streamr.client.protocol.message_layer.GroupKeyRequest
 import com.streamr.client.protocol.message_layer.GroupKeyResponse
@@ -117,7 +118,7 @@ class KeyExchangeUtilSpec extends Specification {
                 .withMsgChainId("msgChainId")
                 .createMessageId()
         GroupKey key = GroupKey.generate()
-        EncryptedGroupKey encryptedKey = EncryptionUtil.encryptWithPublicKey(key, rsaKeyPair.getRsaPublicKey())
+		EncryptedGroupKey encryptedKey = EncryptionUtil.encryptWithPublicKey(key, rsaKeyPair.getRsaPublicKey())
 
         GroupKeyResponse response = new GroupKeyResponse("requestId", "streamId", [encryptedKey])
         StreamMessage streamMessage = response.toStreamMessageBuilder(id, null)

@@ -4,7 +4,6 @@ import com.streamr.client.java.util.Objects;
 import com.streamr.client.protocol.common.MessageRef;
 import com.streamr.client.protocol.common.UnsupportedMessageException;
 import com.streamr.ethereum.common.Address;
-import com.streamr.client.stream.EncryptedGroupKey;
 import java.io.IOException;
 import java.io.Serializable;
 import java.nio.charset.StandardCharsets;

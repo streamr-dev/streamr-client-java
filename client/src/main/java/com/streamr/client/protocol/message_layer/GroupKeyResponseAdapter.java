@@ -5,7 +5,6 @@ import com.squareup.moshi.JsonReader;
 import com.squareup.moshi.JsonWriter;
 import com.squareup.moshi.Moshi;
 import com.squareup.moshi.Types;
-import com.streamr.client.stream.EncryptedGroupKey;
 import java.io.IOException;
 import java.util.Date;
 import java.util.List;

@@ -7,7 +7,6 @@ import com.streamr.client.protocol.common.MessageRef;
 import com.streamr.client.protocol.common.MessageRefAdapter;
 import com.streamr.client.protocol.message_layer.StreamMessage.EncryptionType;
 import com.streamr.client.protocol.message_layer.StreamMessage.SignatureType;
-import com.streamr.client.stream.EncryptedGroupKey;
 import java.io.IOException;
 import java.util.concurrent.Callable;
 import org.slf4j.Logger;

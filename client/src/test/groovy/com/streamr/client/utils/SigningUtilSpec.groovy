@@ -3,7 +3,7 @@ package com.streamr.client.utils
 import com.streamr.client.protocol.common.MessageRef
 import com.streamr.client.protocol.message_layer.MessageId
 import com.streamr.client.protocol.message_layer.StreamMessage
-import com.streamr.client.stream.EncryptedGroupKey
+import com.streamr.client.protocol.message_layer.EncryptedGroupKey
 import com.streamr.client.testing.TestingAddresses
 import com.streamr.client.testing.TestingContent
 import com.streamr.ethereum.common.Address

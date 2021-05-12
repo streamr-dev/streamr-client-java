@@ -1,6 +1,7 @@
 package com.streamr.client.stream;
 
 import com.streamr.client.crypto.KeysRsa;
+import com.streamr.client.protocol.message_layer.EncryptedGroupKey;
 import com.streamr.client.protocol.message_layer.StreamMessage;
 import com.streamr.client.utils.UnableToDecryptException;
 import java.security.NoSuchAlgorithmException;
