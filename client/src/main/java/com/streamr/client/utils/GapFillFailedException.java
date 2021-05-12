@@ -1,7 +1,6 @@
 package com.streamr.client.utils;
 
 import com.streamr.client.protocol.common.MessageRef;
-import com.streamr.client.utils.Address;
 
 public class GapFillFailedException extends RuntimeException {
   public GapFillFailedException(

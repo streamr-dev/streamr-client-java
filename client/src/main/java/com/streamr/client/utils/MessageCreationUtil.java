@@ -57,20 +57,10 @@ public class MessageCreationUtil {
           .build()
           .adapter(Types.newParameterizedType(Map.class, String.class, Object.class));
 
-  public MessageCreationUtil(final BigInteger privateKey, Address publisherId) {
+  public MessageCreationUtil(final BigInteger privateKey, final Address publisherId) {
     this.privateKey = privateKey;
     this.publisherId = publisherId;
     this.msgChainId = RandomStringUtils.randomAlphanumeric(20);
-  }
-
-  public StreamMessage createStreamMessage(
-      Stream stream, Map<String, Object> payload, Date timestamp) {
-    return createStreamMessage(stream, payload, timestamp, null, null, null);
-  }
-
-  public StreamMessage createStreamMessage(
-      Stream stream, Map<String, Object> payload, Date timestamp, String partitionKey) {
-    return createStreamMessage(stream, payload, timestamp, partitionKey, null, null);
   }
 
   public StreamMessage createStreamMessage(

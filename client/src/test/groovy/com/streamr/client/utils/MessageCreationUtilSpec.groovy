@@ -34,7 +34,7 @@ class MessageCreationUtilSpec extends Specification {
         Date timestamp = new Date()
 
         when:
-        StreamMessage msg = msgCreationUtil.createStreamMessage(stream, message, timestamp)
+        StreamMessage msg = msgCreationUtil.createStreamMessage(stream, message, timestamp, null, null, null)
 
         then:
         msg.getStreamId() == stream.getId()
@@ -56,7 +56,7 @@ class MessageCreationUtilSpec extends Specification {
         MessageCreationUtil msgCreationUtil2 = new MessageCreationUtil(null, TestingAddresses.PUBLISHER_ID)
 
         when:
-        StreamMessage msg = msgCreationUtil2.createStreamMessage(stream, message, new Date())
+        StreamMessage msg = msgCreationUtil2.createStreamMessage(stream, message, new Date(), null, null, null)
 
         then:
         msg.getSignatureType() == StreamMessage.SignatureType.NONE
@@ -86,9 +86,9 @@ class MessageCreationUtilSpec extends Specification {
     void "createStreamMessage() with different timestamps chains messages with sequenceNumber always zero"() {
         long timestamp = (new Date()).getTime()
         when:
-        StreamMessage msg1 = msgCreationUtil.createStreamMessage(stream, message, new Date(timestamp))
-        StreamMessage msg2 = msgCreationUtil.createStreamMessage(stream, message, new Date(timestamp + 100))
-        StreamMessage msg3 = msgCreationUtil.createStreamMessage(stream, message, new Date(timestamp + 200))
+        StreamMessage msg1 = msgCreationUtil.createStreamMessage(stream, message, new Date(timestamp), null, null, null)
+        StreamMessage msg2 = msgCreationUtil.createStreamMessage(stream, message, new Date(timestamp + 100), null, null, null)
+        StreamMessage msg3 = msgCreationUtil.createStreamMessage(stream, message, new Date(timestamp + 200), null, null, null)
         then:
         msg1.getTimestamp() == timestamp
         msg1.getSequenceNumber() == 0L
@@ -108,9 +108,9 @@ class MessageCreationUtilSpec extends Specification {
     void "createStreamMessage() with the same timestamp chains messages with increasing sequenceNumbers"() {
         Date timestamp = new Date()
         when:
-        StreamMessage msg1 = msgCreationUtil.createStreamMessage(stream, message, timestamp)
-        StreamMessage msg2 = msgCreationUtil.createStreamMessage(stream, message, timestamp)
-        StreamMessage msg3 = msgCreationUtil.createStreamMessage(stream, message, timestamp)
+        StreamMessage msg1 = msgCreationUtil.createStreamMessage(stream, message, timestamp, null, null, null)
+        StreamMessage msg2 = msgCreationUtil.createStreamMessage(stream, message, timestamp, null, null, null)
+        StreamMessage msg3 = msgCreationUtil.createStreamMessage(stream, message, timestamp, null, null, null)
         then:
         assert msg1.getTimestamp() == timestamp.getTime()
         assert msg1.getSequenceNumber() == 0L
@@ -135,8 +135,8 @@ class MessageCreationUtilSpec extends Specification {
 
         when:
         // Messages should go to different partitions
-        StreamMessage msg1 = msgCreationUtil.createStreamMessage(stream, message, timestamp, "partition-key-1")
-        StreamMessage msg2 = msgCreationUtil.createStreamMessage(stream, message, timestamp, "partition-key-2")
+        StreamMessage msg1 = msgCreationUtil.createStreamMessage(stream, message, timestamp, "partition-key-1", null, null)
+        StreamMessage msg2 = msgCreationUtil.createStreamMessage(stream, message, timestamp, "partition-key-2", null, null)
 
         then:
         assert msg1.getStreamPartition() != msg2.getStreamPartition()
@@ -161,7 +161,7 @@ class MessageCreationUtilSpec extends Specification {
                             5, 3, 5, 0, 9, 4, 3, 9, 6, 7, 8, 6, 4, 6, 0, 1, 1, 5, 8, 3, 9, 7]
         then:
         for (int i = 0; i < 100; i++) {
-            StreamMessage msg = msgCreationUtil.createStreamMessage(stream, message, new Date(), "key-"+i)
+            StreamMessage msg = msgCreationUtil.createStreamMessage(stream, message, new Date(), "key-"+i, null, null)
             assert msg.streamPartition == partitions[i]
         }
     }

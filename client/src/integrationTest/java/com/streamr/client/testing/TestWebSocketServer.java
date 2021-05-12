@@ -50,7 +50,7 @@ public class TestWebSocketServer extends WebSocketServer {
           "Tried to broadcast a message, but there are no connected clients! Something's wrong!");
     }
     log.info("sendToAll: connections list size is " + getConnections().size());
-    StreamMessage streamMessage = msgCreationUtil.createStreamMessage(stream, payload, new Date());
+    StreamMessage streamMessage = msgCreationUtil.createStreamMessage(stream, payload, new Date(), null, null, null);
     BroadcastMessage req = new BroadcastMessage("", streamMessage);
     getConnections()
         .forEach(
