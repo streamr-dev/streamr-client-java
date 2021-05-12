@@ -3,7 +3,7 @@ package com.streamr.client.protocol.message_layer
 import com.streamr.client.protocol.common.MessageRef
 import com.streamr.client.testing.TestingAddresses
 import com.streamr.client.testing.TestingContent
-import com.streamr.client.utils.EncryptedGroupKey
+import com.streamr.client.stream.EncryptedGroupKey
 import spock.lang.Specification
 
 class StreamMessageV32AdapterSpec extends Specification {

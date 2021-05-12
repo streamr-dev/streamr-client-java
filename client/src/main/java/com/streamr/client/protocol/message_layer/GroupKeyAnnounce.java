@@ -1,7 +1,7 @@
 package com.streamr.client.protocol.message_layer;
 
 import com.streamr.client.java.util.Objects;
-import com.streamr.client.utils.EncryptedGroupKey;
+import com.streamr.client.stream.EncryptedGroupKey;
 import java.util.List;
 
 public final class GroupKeyAnnounce extends AbstractGroupKeyMessage {

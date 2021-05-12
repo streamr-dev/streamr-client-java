@@ -5,13 +5,13 @@ import com.streamr.client.options.ResendLastOption
 import com.streamr.client.options.ResendOption
 import com.streamr.client.protocol.message_layer.MessageId
 import com.streamr.client.protocol.message_layer.StreamMessage
+import com.streamr.client.stream.EncryptionUtil
+import com.streamr.client.stream.GroupKey
+import com.streamr.client.stream.GroupKeyStore
+import com.streamr.client.stream.KeyExchangeUtil
 import com.streamr.client.testing.TestingAddresses
 import com.streamr.client.testing.TestingContent
 import com.streamr.client.utils.Address
-import com.streamr.client.utils.EncryptionUtil
-import com.streamr.client.utils.GroupKey
-import com.streamr.client.utils.GroupKeyStore
-import com.streamr.client.utils.KeyExchangeUtil
 import spock.lang.Specification
 import spock.util.concurrent.PollingConditions
 

@@ -1,6 +1,7 @@
-package com.streamr.client.utils;
+package com.streamr.client.stream;
 
 import com.streamr.client.java.util.Objects;
+import com.streamr.client.utils.IdGenerator;
 import java.security.SecureRandom;
 import javax.crypto.SecretKey;
 import org.web3j.utils.Numeric;

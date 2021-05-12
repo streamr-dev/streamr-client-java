@@ -1,4 +1,4 @@
-package com.streamr.client.utils;
+package com.streamr.client.stream;
 
 public class InvalidGroupKeyRequestException extends Exception {
     public InvalidGroupKeyRequestException(String msg) {

@@ -1,10 +1,13 @@
-package com.streamr.client.protocol.message_layer;
+package com.streamr.client;
 
 import com.streamr.client.options.SigningOptions.SignatureVerificationPolicy;
+import com.streamr.client.protocol.message_layer.AbstractGroupKeyMessage;
+import com.streamr.client.protocol.message_layer.StreamMessage;
+import com.streamr.client.protocol.message_layer.ValidationException;
 import com.streamr.client.rest.Stream;
 import com.streamr.client.utils.Address;
 import com.streamr.client.utils.AddressValidityUtil;
-import com.streamr.client.utils.KeyExchangeUtil;
+import com.streamr.client.stream.KeyExchangeUtil;
 import com.streamr.client.utils.SigningUtil;
 import java.util.concurrent.TimeUnit;
 import java.util.function.Function;

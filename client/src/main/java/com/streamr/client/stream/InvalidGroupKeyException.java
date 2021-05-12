@@ -1,4 +1,4 @@
-package com.streamr.client.utils;
+package com.streamr.client.stream;
 
 public class InvalidGroupKeyException extends Exception {
   public InvalidGroupKeyException(int keyLength) {

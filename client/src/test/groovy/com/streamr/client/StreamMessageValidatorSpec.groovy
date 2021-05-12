@@ -1,16 +1,21 @@
-package com.streamr.client.protocol.message_layer
+package com.streamr.client
 
 import com.streamr.client.crypto.KeysRsa
 import com.streamr.client.crypto.RsaKeyPair
 import com.streamr.client.options.SigningOptions.SignatureVerificationPolicy
+import com.streamr.client.protocol.message_layer.AbstractGroupKeyMessage
+import com.streamr.client.protocol.message_layer.GroupKeyRequest
+import com.streamr.client.protocol.message_layer.MessageId
+import com.streamr.client.protocol.message_layer.StreamMessage
+import com.streamr.client.protocol.message_layer.ValidationException
 import com.streamr.client.rest.FieldConfig
 import com.streamr.client.rest.Stream
 import com.streamr.client.rest.StreamConfig
+import com.streamr.client.stream.GroupKey
 import com.streamr.client.testing.TestingAddresses
 import com.streamr.client.testing.TestingContent
 import com.streamr.client.utils.Address
 import com.streamr.client.utils.AddressValidityUtil
-import com.streamr.client.utils.GroupKey
 import com.streamr.client.utils.MessageCreationUtil
 import spock.lang.Specification
 
@@ -19,7 +24,7 @@ class StreamMessageValidatorSpec extends Specification {
     private final Address publisher = new Address("0x6807295093ac5da6fb2a10f7dedc5edd620804fb")
     private final String subscriberPrivateKey = "81fe39ed83c4ab997f64564d0c5a630e34c621ad9bbe51ad2754fac575fc0c46"
     private final Address subscriber = new Address("0xbe0ab87a1f5b09afe9101b09e3c86fd8f4162527")
-	StreamMessageValidator validator
+    private StreamMessageValidator validator
 
     final GroupKey groupKey = GroupKey.generate()
     final RsaKeyPair rsaKeyPair = RsaKeyPair.generateKeyPair()

@@ -1,4 +1,4 @@
-package com.streamr.client.utils;
+package com.streamr.client.stream;
 
 import com.streamr.client.java.util.Objects;
 import com.streamr.client.protocol.message_layer.EncryptedGroupKeyAdapter;

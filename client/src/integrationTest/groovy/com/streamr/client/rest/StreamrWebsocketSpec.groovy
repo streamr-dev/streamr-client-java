@@ -10,7 +10,7 @@ import com.streamr.client.subs.Subscription
 import com.streamr.client.testing.TestingKeys
 import com.streamr.client.testing.TestingStreamrClient
 import com.streamr.client.testing.TestingStreams
-import com.streamr.client.utils.GroupKey
+import com.streamr.client.stream.GroupKey
 import com.streamr.client.utils.UnableToDecryptException
 import org.java_websocket.enums.ReadyState
 import spock.lang.Specification

@@ -19,6 +19,9 @@ import com.streamr.client.protocol.message_layer.StreamMessage
 import com.streamr.client.rest.ResourceNotFoundException
 import com.streamr.client.rest.Stream
 import com.streamr.client.rest.StreamrRestClient
+import com.streamr.client.stream.EncryptionUtil
+import com.streamr.client.stream.GroupKey
+import com.streamr.client.stream.KeyExchangeUtil
 import com.streamr.client.subs.Subscription
 import com.streamr.client.testing.TestWebSocketServer
 import com.streamr.client.testing.TestingAddresses
@@ -26,9 +29,6 @@ import com.streamr.client.testing.TestingContent
 import com.streamr.client.testing.TestingMeta
 import com.streamr.client.testing.TestingStreamrClient
 import com.streamr.client.utils.Address
-import com.streamr.client.utils.EncryptionUtil
-import com.streamr.client.utils.GroupKey
-import com.streamr.client.utils.KeyExchangeUtil
 import spock.lang.Shared
 import spock.lang.Specification
 import spock.util.concurrent.PollingConditions

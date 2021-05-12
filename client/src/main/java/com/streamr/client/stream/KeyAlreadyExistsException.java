@@ -1,6 +1,4 @@
-package com.streamr.client.utils;
-
-import com.streamr.client.utils.GroupKey;
+package com.streamr.client.stream;
 
 public class KeyAlreadyExistsException extends RuntimeException {
     public KeyAlreadyExistsException(GroupKey key) {

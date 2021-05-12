@@ -3,7 +3,7 @@ package com.streamr.client.protocol.message_layer;
 import com.squareup.moshi.JsonAdapter;
 import com.squareup.moshi.Moshi;
 import com.squareup.moshi.Types;
-import com.streamr.client.utils.EncryptedGroupKey;
+import com.streamr.client.stream.EncryptedGroupKey;
 import java.lang.reflect.ParameterizedType;
 import java.util.Date;
 import java.util.List;

@@ -1,4 +1,4 @@
-package com.streamr.client.utils;
+package com.streamr.client.stream;
 
 import nl.jqno.equalsverifier.EqualsVerifier;
 import org.junit.jupiter.api.Test;

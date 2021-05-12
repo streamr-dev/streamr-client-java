@@ -1,4 +1,4 @@
-package com.streamr.client.utils
+package com.streamr.client.stream
 
 import com.streamr.client.crypto.KeysRsa
 import com.streamr.client.crypto.RsaKeyPair
@@ -8,6 +8,9 @@ import com.streamr.client.protocol.message_layer.GroupKeyResponse
 import com.streamr.client.protocol.message_layer.MessageId
 import com.streamr.client.protocol.message_layer.StreamMessage
 import com.streamr.client.testing.TestingAddresses
+import com.streamr.client.utils.Address
+import com.streamr.client.utils.AddressValidityUtil
+import com.streamr.client.utils.MessageCreationUtil
 import java.nio.charset.StandardCharsets
 import java.time.Clock
 import java.time.Duration
@@ -18,7 +21,7 @@ import spock.lang.Specification
 
 class KeyExchangeUtilSpec extends Specification {
     KeyExchangeUtil util
-    GroupKeyStore keyStore
+	GroupKeyStore keyStore
     MessageCreationUtil messageCreationUtil
     Consumer<StreamMessage> publish
     KeyExchangeUtil.OnNewKeysFunction onNewKeysFunction

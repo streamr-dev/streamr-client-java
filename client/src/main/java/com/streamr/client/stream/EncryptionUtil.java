@@ -1,15 +1,17 @@
-package com.streamr.client.utils;
+package com.streamr.client.stream;
 
 import com.streamr.client.crypto.KeysRsa;
 import com.streamr.client.protocol.message_layer.StreamMessage;
+import com.streamr.client.utils.UnableToDecryptException;
 import java.lang.reflect.Field;
 import java.lang.reflect.Modifier;
-import java.nio.charset.StandardCharsets;
+import java.security.NoSuchAlgorithmException;
 import java.security.SecureRandom;
 import java.security.interfaces.RSAPrivateKey;
 import java.security.interfaces.RSAPublicKey;
 import java.util.Arrays;
 import javax.crypto.Cipher;
+import javax.crypto.NoSuchPaddingException;
 import javax.crypto.SecretKey;
 import javax.crypto.spec.IvParameterSpec;
 import javax.crypto.spec.SecretKeySpec;
@@ -28,6 +30,26 @@ public final class EncryptionUtil {
 
   private EncryptionUtil() {}
 
+  private static Cipher getAESCipher() {
+    final String transformation = "AES/CTR/NoPadding";
+    try {
+      return Cipher.getInstance(transformation);
+    } catch (NoSuchAlgorithmException | NoSuchPaddingException e) {
+      String format = String.format("%s is not avaible.", transformation);
+      throw new IllegalArgumentException(format, e);
+    }
+  }
+
+  private static Cipher getRSACipher() {
+    final String transformation = "RSA/ECB/OAEPWithSHA1AndMGF1Padding";
+    try {
+      return Cipher.getInstance(transformation);
+    } catch (NoSuchAlgorithmException | NoSuchPaddingException e) {
+      String format = String.format("%s is not avaible.", transformation);
+      throw new IllegalArgumentException(format, e);
+    }
+  }
+
   public static byte[] decryptWithPrivateKey(final RSAPrivateKey privateKey, String ciphertextHex)
       throws UnableToDecryptException {
     byte[] encryptedBytes = DatatypeConverter.parseHexBinary(ciphertextHex);
@@ -39,28 +61,58 @@ public final class EncryptionUtil {
     }
   }
 
-  static StreamMessage decryptWithPrivateKey(final RSAPrivateKey rsaPrivateKey, final StreamMessage msg) throws UnableToDecryptException {
-    if (msg.getEncryptionType() != StreamMessage.EncryptionType.RSA) {
-      throw new IllegalArgumentException("Given StreamMessage is not encrypted with RSA!");
+  public static String encrypt(byte[] plaintext, GroupKey groupKey) {
+    try {
+      byte[] iv = new byte[16];
+      SRAND.nextBytes(iv);
+      IvParameterSpec ivspec = new IvParameterSpec(iv);
+      aesCipher.get().init(Cipher.ENCRYPT_MODE, groupKey.toSecretKey(), ivspec);
+      byte[] ciphertext = aesCipher.get().doFinal(plaintext);
+      return Numeric.toHexStringNoPrefix(iv) + Numeric.toHexStringNoPrefix(ciphertext);
+    } catch (Exception e) {
+      log.error("Failed to encrypt with groupKey", e);
     }
-    final byte[] payload = decryptWithPrivateKey(rsaPrivateKey, msg.getSerializedContent());
-    final StreamMessage.Content content = StreamMessage.Content.Factory.withJsonAsPayload(payload);
-    return new StreamMessage.Builder(msg)
-        .withEncryptionType(StreamMessage.EncryptionType.NONE)
-        .withContent(content)
-        .createStreamMessage();
+    return null;
   }
 
-  private static StreamMessage encryptWithPublicKey(
-      final StreamMessage msg, final String publicKey) {
-    final String message = encryptWithPublicKey(msg.getSerializedContentAsBytes(), publicKey);
-    final byte[] payload = message.getBytes(StandardCharsets.UTF_8);
-    final StreamMessage.Content content = StreamMessage.Content.Factory.withJsonAsPayload(payload);
-    return new StreamMessage.Builder(msg)
-        .withEncryptionType(StreamMessage.EncryptionType.RSA)
-        .withGroupKeyId(publicKey)
-        .withContent(content)
-        .createStreamMessage();
+  public static byte[] decrypt(String ciphertext, GroupKey groupKey) throws Exception {
+    if (groupKey == null) throw new InvalidGroupKeyException(0);
+    byte[] iv = DatatypeConverter.parseHexBinary(ciphertext.substring(0, 32));
+    IvParameterSpec ivParameterSpec = new IvParameterSpec(iv);
+    aesCipher.get().init(Cipher.DECRYPT_MODE, groupKey.toSecretKey(), ivParameterSpec);
+    return aesCipher.get().doFinal(DatatypeConverter.parseHexBinary(ciphertext.substring(32)));
+  }
+
+  public static EncryptedGroupKey encryptGroupKey(
+      GroupKey keyToEncrypt, GroupKey keyToEncryptWith) {
+    return new EncryptedGroupKey(
+        keyToEncrypt.getGroupKeyId(),
+        encrypt(DatatypeConverter.parseHexBinary(keyToEncrypt.getGroupKeyHex()), keyToEncryptWith));
+  }
+
+  public static GroupKey decryptGroupKey(EncryptedGroupKey keyToDecrypt, GroupKey keyToDecryptWith)
+      throws Exception {
+    return new GroupKey(
+        keyToDecrypt.getGroupKeyId(),
+        Numeric.toHexStringNoPrefix(
+            decrypt(keyToDecrypt.getEncryptedGroupKeyHex(), keyToDecryptWith)));
+  }
+
+  public static EncryptedGroupKey encryptWithPublicKey(
+      GroupKey keyToEncrypt, RSAPublicKey keyToEncryptWith) {
+    return new EncryptedGroupKey(
+        keyToEncrypt.getGroupKeyId(),
+        encryptWithPublicKey(keyToEncrypt.getGroupKeyHex(), keyToEncryptWith));
+  }
+
+  static String encryptWithPublicKey(String plaintextHex, String publicKey) {
+    byte[] plaintext = DatatypeConverter.parseHexBinary(plaintextHex);
+    return encryptWithPublicKey(plaintext, publicKey);
+  }
+
+  static String encryptWithPublicKey(String plaintextHex, RSAPublicKey publicKey) {
+    byte[] plaintext = DatatypeConverter.parseHexBinary(plaintextHex);
+    return encryptWithPublicKey(plaintext, publicKey);
   }
 
   static String encryptWithPublicKey(byte[] plaintext, String publicKey) {
@@ -78,72 +130,11 @@ public final class EncryptionUtil {
     }
   }
 
-  static String encryptWithPublicKey(String plaintextHex, String publicKey) {
-    byte[] plaintext = DatatypeConverter.parseHexBinary(plaintextHex);
-    return encryptWithPublicKey(plaintext, publicKey);
-  }
-
-  static String encryptWithPublicKey(String plaintextHex, RSAPublicKey publicKey) {
-    byte[] plaintext = DatatypeConverter.parseHexBinary(plaintextHex);
-    return encryptWithPublicKey(plaintext, publicKey);
-  }
-
-  static String encrypt(byte[] plaintext, GroupKey groupKey) {
-    try {
-      byte[] iv = new byte[16];
-      SRAND.nextBytes(iv);
-      IvParameterSpec ivspec = new IvParameterSpec(iv);
-      aesCipher.get().init(Cipher.ENCRYPT_MODE, groupKey.toSecretKey(), ivspec);
-      byte[] ciphertext = aesCipher.get().doFinal(plaintext);
-      return Numeric.toHexStringNoPrefix(iv) + Numeric.toHexStringNoPrefix(ciphertext);
-    } catch (Exception e) {
-      log.error("Failed to encrypt with groupKey", e);
-    }
-    return null;
-  }
-
-  static byte[] decrypt(String ciphertext, GroupKey groupKey) throws Exception {
-    if (groupKey == null) throw new InvalidGroupKeyException(0);
-    byte[] iv = DatatypeConverter.parseHexBinary(ciphertext.substring(0, 32));
-    IvParameterSpec ivParameterSpec = new IvParameterSpec(iv);
-    aesCipher.get().init(Cipher.DECRYPT_MODE, groupKey.toSecretKey(), ivParameterSpec);
-    return aesCipher.get().doFinal(DatatypeConverter.parseHexBinary(ciphertext.substring(32)));
-  }
-
-  static EncryptedGroupKey encryptGroupKey(GroupKey keyToEncrypt, GroupKey keyToEncryptWith) {
-    return new EncryptedGroupKey(
-        keyToEncrypt.getGroupKeyId(),
-        encrypt(DatatypeConverter.parseHexBinary(keyToEncrypt.getGroupKeyHex()), keyToEncryptWith));
-  }
-
-  static GroupKey decryptGroupKey(EncryptedGroupKey keyToDecrypt, GroupKey keyToDecryptWith)
-      throws Exception {
-    return new GroupKey(
-        keyToDecrypt.getGroupKeyId(),
-        Numeric.toHexStringNoPrefix(
-            decrypt(keyToDecrypt.getEncryptedGroupKeyHex(), keyToDecryptWith)));
-  }
-
-  static EncryptedGroupKey encryptWithPublicKey(
-      GroupKey keyToEncrypt, RSAPublicKey keyToEncryptWith) {
-    return new EncryptedGroupKey(
-        keyToEncrypt.getGroupKeyId(),
-        encryptWithPublicKey(keyToEncrypt.getGroupKeyHex(), keyToEncryptWith));
-  }
-
-  static GroupKey decryptWithPrivateKey(final RSAPrivateKey rsaPrivateKey, EncryptedGroupKey keyToDecrypt)
-      throws UnableToDecryptException, InvalidGroupKeyException {
-    return new GroupKey(
-        keyToDecrypt.getGroupKeyId(),
-        Numeric.toHexStringNoPrefix(
-            decryptWithPrivateKey(rsaPrivateKey, keyToDecrypt.getEncryptedGroupKeyHex())));
-  }
-
   /**
    * Sets the content of 'streamMessage' with the encryption result of the old content with
    * 'groupKey'.
    */
-  static StreamMessage encryptStreamMessage(
+  public static StreamMessage encryptStreamMessage(
       final StreamMessage streamMessage, final GroupKey groupKey) throws InvalidGroupKeyException {
     final String message = encrypt(streamMessage.getSerializedContentAsBytes(), groupKey);
     final StreamMessage.Content content = StreamMessage.Content.Factory.withJsonAsPayload(message);
@@ -186,24 +177,6 @@ public final class EncryptionUtil {
     }
   }
 
-  private static Cipher getAESCipher() {
-    try {
-      return Cipher.getInstance("AES/CTR/NoPadding");
-    } catch (Exception e) {
-      log.error("Failed to get AES cipher", e);
-      throw new RuntimeException(e);
-    }
-  }
-
-  private static Cipher getRSACipher() {
-    try {
-      return Cipher.getInstance("RSA/ECB/OAEPWithSHA1AndMGF1Padding");
-    } catch (Exception e) {
-      log.error("Failed to get RSA cipher", e);
-      throw new RuntimeException(e);
-    }
-  }
-
   public static SecretKey getSecretKeyFromHexString(String groupKeyHex)
       throws InvalidGroupKeyException {
     GroupKey.validate(groupKeyHex);
@@ -228,5 +201,14 @@ public final class EncryptionUtil {
       throw new RuntimeException(ex);
     }
     return new SecretKeySpec(DatatypeConverter.parseHexBinary(groupKeyHex), "AES");
+  }
+
+  public static GroupKey decryptWithPrivateKey(
+      final RSAPrivateKey rsaPrivateKey, EncryptedGroupKey keyToDecrypt)
+      throws UnableToDecryptException, InvalidGroupKeyException {
+    return new GroupKey(
+        keyToDecrypt.getGroupKeyId(),
+        Numeric.toHexStringNoPrefix(
+            decryptWithPrivateKey(rsaPrivateKey, keyToDecrypt.getEncryptedGroupKeyHex())));
   }
 }

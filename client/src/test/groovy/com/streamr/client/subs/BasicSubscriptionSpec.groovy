@@ -1,20 +1,20 @@
 package com.streamr.client.subs
 
 import com.streamr.client.MessageHandler
-import com.streamr.client.utils.UnableToDecryptException
 import com.streamr.client.protocol.common.MessageRef
 import com.streamr.client.protocol.message_layer.MessageId
 import com.streamr.client.protocol.message_layer.StreamMessage
+import com.streamr.client.stream.EncryptionUtil
+import com.streamr.client.stream.GroupKey
+import com.streamr.client.stream.GroupKeyStore
+import com.streamr.client.stream.KeyExchangeUtil
 import com.streamr.client.subs.BasicSubscription.GroupKeyRequestFunction
 import com.streamr.client.testing.TestingAddresses
 import com.streamr.client.testing.TestingContent
 import com.streamr.client.testing.TestingMessageRef
 import com.streamr.client.utils.Address
-import com.streamr.client.utils.EncryptionUtil
-import com.streamr.client.utils.GroupKey
-import com.streamr.client.utils.GroupKeyStore
-import com.streamr.client.utils.KeyExchangeUtil
 import com.streamr.client.utils.OrderedMsgChain
+import com.streamr.client.utils.UnableToDecryptException
 import spock.lang.Specification
 
 /**

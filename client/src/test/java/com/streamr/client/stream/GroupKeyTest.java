@@ -1,4 +1,4 @@
-package com.streamr.client.utils;
+package com.streamr.client.stream;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 

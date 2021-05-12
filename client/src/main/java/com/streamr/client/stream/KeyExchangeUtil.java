@@ -1,4 +1,4 @@
-package com.streamr.client.utils;
+package com.streamr.client.stream;
 
 import com.streamr.client.crypto.RsaKeyPair;
 import com.streamr.client.java.util.Objects;
@@ -7,6 +7,9 @@ import com.streamr.client.protocol.message_layer.GroupKeyAnnounce;
 import com.streamr.client.protocol.message_layer.GroupKeyRequest;
 import com.streamr.client.protocol.message_layer.GroupKeyResponse;
 import com.streamr.client.protocol.message_layer.StreamMessage;
+import com.streamr.client.utils.Address;
+import com.streamr.client.utils.AddressValidityUtil;
+import com.streamr.client.utils.MessageCreationUtil;
 import java.time.Clock;
 import java.time.Duration;
 import java.time.Instant;

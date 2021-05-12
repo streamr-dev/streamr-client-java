@@ -1,4 +1,4 @@
-package com.streamr.client.utils
+package com.streamr.client.stream
 
 import com.streamr.client.crypto.KeysRsa
 import com.streamr.client.crypto.RsaKeyPair
@@ -18,7 +18,7 @@ class EncryptionUtilSpec extends Specification {
     final byte[] plaintextBytes = "some random text".getBytes(StandardCharsets.UTF_8)
 
     StreamMessage streamMessage
-    GroupKey key
+	GroupKey key
     RsaKeyPair rsaKeyPair
     def setup() {
         def messageId = new MessageId.Builder()
@@ -50,21 +50,6 @@ class EncryptionUtilSpec extends Specification {
         String ciphertext = EncryptionUtil.encryptWithPublicKey(Numeric.toHexStringNoPrefix(plaintextBytes), KeysRsa.exportPublicKeyAsPemString(rsaKeyPair.getRsaPublicKey()))
         then:
         EncryptionUtil.decryptWithPrivateKey(rsaKeyPair.getRsaPrivateKey(), ciphertext) == plaintextBytes
-    }
-
-    void "rsa decryption after encryption equals the initial plaintext (StreamMessage)"() {
-        when:
-        streamMessage = EncryptionUtil.encryptWithPublicKey(streamMessage, KeysRsa.exportPublicKeyAsPemString(rsaKeyPair.getRsaPublicKey()))
-        then:
-        streamMessage.getSerializedContent() != serializedPlaintextContent
-        streamMessage.getEncryptionType() == StreamMessage.EncryptionType.RSA
-
-        when:
-        streamMessage = EncryptionUtil.decryptWithPrivateKey(rsaKeyPair.getRsaPrivateKey(), streamMessage)
-        then:
-        streamMessage.getSerializedContent() == serializedPlaintextContent
-        streamMessage.getParsedContent() == plaintextContent
-        streamMessage.getEncryptionType() == StreamMessage.EncryptionType.NONE
     }
 
     void "rsa decryption after encryption equals the initial plaintext (GroupKey)"() {

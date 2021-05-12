@@ -1,4 +1,4 @@
-package com.streamr.client.utils;
+package com.streamr.client.stream;
 
 import java.util.HashMap;
 import java.util.HashSet;
