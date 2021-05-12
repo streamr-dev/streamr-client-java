@@ -10,7 +10,6 @@ import com.streamr.client.protocol.message_layer.StreamMessage
 import com.streamr.client.testing.TestingAddresses
 import com.streamr.ethereum.common.Address
 import com.streamr.client.utils.AddressValidityUtil
-import com.streamr.client.utils.MessageCreationUtil
 import java.nio.charset.StandardCharsets
 import java.time.Clock
 import java.time.Duration

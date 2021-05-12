@@ -1,7 +1,6 @@
-package com.streamr.client.utils;
+package com.streamr.client.subs;
 
 import com.streamr.client.protocol.control_layer.ControlMessage;
-import com.streamr.client.subs.Subscription;
 import org.java_websocket.client.WebSocketClient;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;

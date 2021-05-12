@@ -47,7 +47,7 @@ class EncryptionUtilSpec extends Specification {
 
     void "rsa decryption after encryption equals the initial plaintext (hex string)"() {
         when:
-        String ciphertext = EncryptionUtil.encryptWithPublicKey(Numeric.toHexStringNoPrefix(plaintextBytes), KeysRsa.exportPublicKeyAsPemString(rsaKeyPair.getRsaPublicKey()))
+        String ciphertext = EncryptionUtil.encryptWithPublicKey(plaintextBytes, KeysRsa.exportPublicKeyAsPemString(rsaKeyPair.getRsaPublicKey()))
         then:
         EncryptionUtil.decryptWithPrivateKey(rsaKeyPair.getRsaPrivateKey(), ciphertext) == plaintextBytes
     }

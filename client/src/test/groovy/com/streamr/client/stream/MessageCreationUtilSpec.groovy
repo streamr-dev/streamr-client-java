@@ -1,4 +1,4 @@
-package com.streamr.client.utils
+package com.streamr.client.stream
 
 import com.streamr.client.crypto.KeysRsa
 import com.streamr.client.crypto.RsaKeyPair
@@ -9,11 +9,8 @@ import com.streamr.client.protocol.message_layer.GroupKeyRequest
 import com.streamr.client.protocol.message_layer.GroupKeyResponse
 import com.streamr.client.protocol.message_layer.StreamMessage
 import com.streamr.client.rest.Stream
-import com.streamr.client.stream.EncryptionUtil
-import com.streamr.client.stream.GroupKey
-import com.streamr.client.stream.InvalidGroupKeyRequestException
-import com.streamr.client.stream.KeyExchangeUtil
 import com.streamr.client.testing.TestingAddresses
+import com.streamr.client.utils.SigningRequiredException
 import spock.lang.Specification
 
 class MessageCreationUtilSpec extends Specification {

@@ -6,7 +6,7 @@ import com.streamr.client.protocol.control_layer.SubscribeRequest;
 import com.streamr.client.protocol.control_layer.SubscribeResponse;
 import com.streamr.client.protocol.message_layer.StreamMessage;
 import com.streamr.client.rest.Stream;
-import com.streamr.client.utils.MessageCreationUtil;
+import com.streamr.client.stream.MessageCreationUtil;
 import java.io.IOException;
 import java.net.InetSocketAddress;
 import java.net.ServerSocket;

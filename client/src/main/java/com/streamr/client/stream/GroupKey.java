@@ -2,8 +2,12 @@ package com.streamr.client.stream;
 
 import com.streamr.client.java.util.Objects;
 import com.streamr.client.utils.IdGenerator;
+import java.lang.reflect.Field;
+import java.lang.reflect.Modifier;
 import java.security.SecureRandom;
 import javax.crypto.SecretKey;
+import javax.crypto.spec.SecretKeySpec;
+import javax.xml.bind.DatatypeConverter;
 import org.web3j.utils.Numeric;
 
 public final class GroupKey {
@@ -15,7 +19,7 @@ public final class GroupKey {
   public GroupKey(String groupKeyId, String groupKeyHex) throws InvalidGroupKeyException {
     this.groupKeyId = groupKeyId;
     this.groupKeyHex = groupKeyHex;
-    this.cachedSecretKey = EncryptionUtil.getSecretKeyFromHexString(groupKeyHex);
+    this.cachedSecretKey = getSecretKeyFromHexString(groupKeyHex);
   }
 
   static void validate(final String groupKeyHex) throws InvalidGroupKeyException {
@@ -23,6 +27,32 @@ public final class GroupKey {
     if (withoutPrefix.length() != 64) { // the key must be 256 bits long
       throw new InvalidGroupKeyException(withoutPrefix.length() * 4);
     }
+  }
+
+  private static SecretKey getSecretKeyFromHexString(String groupKeyHex)
+      throws InvalidGroupKeyException {
+    GroupKey.validate(groupKeyHex);
+    try {
+      // need to modify "isRestricted" field to be able to use keys longer than 128 bits.
+      Field field = Class.forName("javax.crypto.JceSecurity").getDeclaredField("isRestricted");
+      field.setAccessible(true);
+
+      // "isRestricted" is final so we must remove the 'final' modifier in order to change the field
+      // value
+      Field modifiersField = Field.class.getDeclaredField("modifiers");
+      modifiersField.setAccessible(true);
+      modifiersField.setInt(field, field.getModifiers() & ~Modifier.FINAL);
+
+      // removes the restriction for key size by setting "isRestricted" to false
+      field.set(null, false);
+    } catch (ClassNotFoundException
+        | NoSuchFieldException
+        | SecurityException
+        | IllegalArgumentException
+        | IllegalAccessException ex) {
+      throw new RuntimeException(ex);
+    }
+    return new SecretKeySpec(DatatypeConverter.parseHexBinary(groupKeyHex), "AES");
   }
 
   public String getGroupKeyId() {

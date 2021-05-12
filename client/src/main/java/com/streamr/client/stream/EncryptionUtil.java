@@ -3,8 +3,6 @@ package com.streamr.client.stream;
 import com.streamr.client.crypto.KeysRsa;
 import com.streamr.client.protocol.message_layer.StreamMessage;
 import com.streamr.client.utils.UnableToDecryptException;
-import java.lang.reflect.Field;
-import java.lang.reflect.Modifier;
 import java.security.NoSuchAlgorithmException;
 import java.security.SecureRandom;
 import java.security.interfaces.RSAPrivateKey;
@@ -12,9 +10,7 @@ import java.security.interfaces.RSAPublicKey;
 import java.util.Arrays;
 import javax.crypto.Cipher;
 import javax.crypto.NoSuchPaddingException;
-import javax.crypto.SecretKey;
 import javax.crypto.spec.IvParameterSpec;
-import javax.crypto.spec.SecretKeySpec;
 import javax.xml.bind.DatatypeConverter;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -50,7 +46,7 @@ public final class EncryptionUtil {
     }
   }
 
-  public static byte[] decryptWithPrivateKey(final RSAPrivateKey privateKey, String ciphertextHex)
+  static byte[] decryptWithPrivateKey(final RSAPrivateKey privateKey, String ciphertextHex)
       throws UnableToDecryptException {
     byte[] encryptedBytes = DatatypeConverter.parseHexBinary(ciphertextHex);
     try {
@@ -61,7 +57,7 @@ public final class EncryptionUtil {
     }
   }
 
-  public static String encrypt(byte[] plaintext, GroupKey groupKey) {
+  static String encrypt(byte[] plaintext, GroupKey groupKey) {
     try {
       byte[] iv = new byte[16];
       SRAND.nextBytes(iv);
@@ -75,7 +71,7 @@ public final class EncryptionUtil {
     return null;
   }
 
-  public static byte[] decrypt(String ciphertext, GroupKey groupKey) throws Exception {
+  static byte[] decrypt(String ciphertext, GroupKey groupKey) throws Exception {
     if (groupKey == null) throw new InvalidGroupKeyException(0);
     byte[] iv = DatatypeConverter.parseHexBinary(ciphertext.substring(0, 32));
     IvParameterSpec ivParameterSpec = new IvParameterSpec(iv);
@@ -98,16 +94,11 @@ public final class EncryptionUtil {
             decrypt(keyToDecrypt.getEncryptedGroupKeyHex(), keyToDecryptWith)));
   }
 
-  public static EncryptedGroupKey encryptWithPublicKey(
+  static EncryptedGroupKey encryptWithPublicKey(
       GroupKey keyToEncrypt, RSAPublicKey keyToEncryptWith) {
-    return new EncryptedGroupKey(
-        keyToEncrypt.getGroupKeyId(),
-        encryptWithPublicKey(keyToEncrypt.getGroupKeyHex(), keyToEncryptWith));
-  }
-
-  static String encryptWithPublicKey(String plaintextHex, String publicKey) {
-    byte[] plaintext = DatatypeConverter.parseHexBinary(plaintextHex);
-    return encryptWithPublicKey(plaintext, publicKey);
+    String encryptedGroupKeyHex =
+        encryptWithPublicKey(keyToEncrypt.getGroupKeyHex(), keyToEncryptWith);
+    return new EncryptedGroupKey(keyToEncrypt.getGroupKeyId(), encryptedGroupKeyHex);
   }
 
   static String encryptWithPublicKey(String plaintextHex, RSAPublicKey publicKey) {
@@ -120,7 +111,7 @@ public final class EncryptionUtil {
     return encryptWithPublicKey(plaintext, KeysRsa.getPublicKeyFromString(publicKey));
   }
 
-  static String encryptWithPublicKey(byte[] plaintext, RSAPublicKey rsaPublicKey) {
+  private static String encryptWithPublicKey(byte[] plaintext, RSAPublicKey rsaPublicKey) {
     try {
       rsaCipher.get().init(Cipher.ENCRYPT_MODE, rsaPublicKey);
       return Numeric.toHexStringNoPrefix(rsaCipher.get().doFinal(plaintext));
@@ -177,33 +168,7 @@ public final class EncryptionUtil {
     }
   }
 
-  public static SecretKey getSecretKeyFromHexString(String groupKeyHex)
-      throws InvalidGroupKeyException {
-    GroupKey.validate(groupKeyHex);
-    try {
-      // need to modify "isRestricted" field to be able to use keys longer than 128 bits.
-      Field field = Class.forName("javax.crypto.JceSecurity").getDeclaredField("isRestricted");
-      field.setAccessible(true);
-
-      // "isRestricted" is final so we must remove the 'final' modifier in order to change the field
-      // value
-      Field modifiersField = Field.class.getDeclaredField("modifiers");
-      modifiersField.setAccessible(true);
-      modifiersField.setInt(field, field.getModifiers() & ~Modifier.FINAL);
-
-      // removes the restriction for key size by setting "isRestricted" to false
-      field.set(null, false);
-    } catch (ClassNotFoundException
-        | NoSuchFieldException
-        | SecurityException
-        | IllegalArgumentException
-        | IllegalAccessException ex) {
-      throw new RuntimeException(ex);
-    }
-    return new SecretKeySpec(DatatypeConverter.parseHexBinary(groupKeyHex), "AES");
-  }
-
-  public static GroupKey decryptWithPrivateKey(
+  static GroupKey decryptWithPrivateKey(
       final RSAPrivateKey rsaPrivateKey, EncryptedGroupKey keyToDecrypt)
       throws UnableToDecryptException, InvalidGroupKeyException {
     return new GroupKey(

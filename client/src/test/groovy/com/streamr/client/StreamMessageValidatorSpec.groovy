@@ -16,7 +16,7 @@ import com.streamr.client.testing.TestingAddresses
 import com.streamr.client.testing.TestingContent
 import com.streamr.ethereum.common.Address
 import com.streamr.client.utils.AddressValidityUtil
-import com.streamr.client.utils.MessageCreationUtil
+import com.streamr.client.stream.MessageCreationUtil
 import spock.lang.Specification
 
 class StreamMessageValidatorSpec extends Specification {
