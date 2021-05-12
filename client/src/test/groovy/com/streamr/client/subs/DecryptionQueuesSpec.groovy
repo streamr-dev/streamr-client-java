@@ -1,4 +1,4 @@
-package com.streamr.client.utils
+package com.streamr.client.subs
 
 import com.streamr.client.protocol.message_layer.MessageId
 import com.streamr.client.protocol.message_layer.StreamMessage

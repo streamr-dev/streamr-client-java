@@ -1,16 +1,25 @@
-package com.streamr.client.utils;
+package com.streamr.client.subs;
 
 import com.streamr.client.protocol.message_layer.StreamMessage;
+import com.streamr.client.utils.Address;
+import java.util.ArrayDeque;
+import java.util.ArrayList;
+import java.util.Collection;
+import java.util.Deque;
+import java.util.HashMap;
+import java.util.HashSet;
+import java.util.LinkedHashMap;
+import java.util.List;
+import java.util.Map;
+import java.util.Set;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-
-import java.util.*;
 
 /**
  * Utility class for queuing encrypted messages while waiting for their
  * decryption keys to be received. The messages are queued by [publisherId, msgChainId] tuples.
  */
-public class DecryptionQueues {
+final class DecryptionQueues {
     private static final Logger log = LoggerFactory.getLogger(DecryptionQueues.class);
 
     private final Map<Address, Map<String, ArrayDeque<StreamMessage>>> msgChainsByPublisher = new HashMap<>();
@@ -23,17 +32,13 @@ public class DecryptionQueues {
     }
 
     private Map<String, ArrayDeque<StreamMessage>> getQueuesByMsgChain(Address publisherId) {
-        if (!msgChainsByPublisher.containsKey(publisherId)) {
-            msgChainsByPublisher.put(publisherId, new LinkedHashMap<>());
-        }
+        msgChainsByPublisher.computeIfAbsent(publisherId, v -> new LinkedHashMap<>());
         return msgChainsByPublisher.get(publisherId);
     }
 
-    public ArrayDeque<StreamMessage> getQueue(Address publisherId, String msgChainId) {
+    private Deque<StreamMessage> getQueue(Address publisherId, String msgChainId) {
         Map<String, ArrayDeque<StreamMessage>> queuesByMsgChain = getQueuesByMsgChain(publisherId);
-        if (!queuesByMsgChain.containsKey(msgChainId)) {
-            queuesByMsgChain.put(msgChainId, new ArrayDeque<>());
-        }
+        queuesByMsgChain.computeIfAbsent(msgChainId, v -> new ArrayDeque<>());
         return queuesByMsgChain.get(msgChainId);
     }
 
