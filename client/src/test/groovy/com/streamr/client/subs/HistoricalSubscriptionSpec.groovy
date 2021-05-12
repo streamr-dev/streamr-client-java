@@ -11,7 +11,7 @@ import com.streamr.client.stream.GroupKeyStore
 import com.streamr.client.stream.KeyExchangeUtil
 import com.streamr.client.testing.TestingAddresses
 import com.streamr.client.testing.TestingContent
-import com.streamr.client.utils.Address
+import com.streamr.ethereum.common.Address
 import spock.lang.Specification
 import spock.util.concurrent.PollingConditions
 

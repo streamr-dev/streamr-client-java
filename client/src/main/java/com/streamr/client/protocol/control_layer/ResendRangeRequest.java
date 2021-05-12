@@ -1,7 +1,7 @@
 package com.streamr.client.protocol.control_layer;
 
 import com.streamr.client.protocol.common.MessageRef;
-import com.streamr.client.utils.Address;
+import com.streamr.ethereum.common.Address;
 
 public class ResendRangeRequest extends ControlMessage {
   public static final int TYPE = 13;

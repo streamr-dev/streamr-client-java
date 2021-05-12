@@ -6,6 +6,7 @@ import com.streamr.client.protocol.message_layer.StreamMessage
 import com.streamr.client.stream.EncryptedGroupKey
 import com.streamr.client.testing.TestingAddresses
 import com.streamr.client.testing.TestingContent
+import com.streamr.ethereum.common.Address
 import org.web3j.crypto.ECKeyPair
 import org.web3j.crypto.Keys
 import org.web3j.utils.Numeric

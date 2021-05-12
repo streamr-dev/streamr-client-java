@@ -1,6 +1,6 @@
 package com.streamr.client.rest;
 
-import com.streamr.client.utils.Address;
+import com.streamr.ethereum.common.Address;
 
 public final class StorageNode {
   private final Address address;

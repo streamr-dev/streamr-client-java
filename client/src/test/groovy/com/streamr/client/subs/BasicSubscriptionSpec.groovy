@@ -12,7 +12,7 @@ import com.streamr.client.subs.BasicSubscription.GroupKeyRequestFunction
 import com.streamr.client.testing.TestingAddresses
 import com.streamr.client.testing.TestingContent
 import com.streamr.client.testing.TestingMessageRef
-import com.streamr.client.utils.Address
+import com.streamr.ethereum.common.Address
 import com.streamr.client.utils.OrderedMsgChain
 import com.streamr.client.utils.UnableToDecryptException
 import spock.lang.Specification

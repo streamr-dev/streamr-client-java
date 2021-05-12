@@ -4,7 +4,7 @@ import com.squareup.moshi.JsonReader;
 import com.squareup.moshi.JsonWriter;
 import com.streamr.client.protocol.common.MessageRef;
 import com.streamr.client.protocol.common.MessageRefAdapter;
-import com.streamr.client.utils.Address;
+import com.streamr.ethereum.common.Address;
 import java.io.IOException;
 
 final class ResendRangeRequestAdapter extends ControlLayerAdapter<ResendRangeRequest> {

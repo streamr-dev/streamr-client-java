@@ -2,7 +2,7 @@ package com.streamr.client.protocol.message_layer;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 
-import com.streamr.client.utils.Address;
+import com.streamr.ethereum.common.Address;
 import java.io.IOException;
 import okio.Buffer;
 import org.apache.commons.lang3.RandomStringUtils;

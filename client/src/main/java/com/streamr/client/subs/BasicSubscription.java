@@ -6,7 +6,7 @@ import com.streamr.client.utils.UnableToDecryptException;
 import com.streamr.client.protocol.common.MessageRef;
 import com.streamr.client.protocol.common.UnsupportedMessageException;
 import com.streamr.client.protocol.message_layer.StreamMessage;
-import com.streamr.client.utils.Address;
+import com.streamr.ethereum.common.Address;
 import com.streamr.client.stream.GroupKey;
 import com.streamr.client.stream.GroupKeyStore;
 import com.streamr.client.stream.KeyExchangeUtil;

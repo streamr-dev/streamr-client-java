@@ -3,7 +3,7 @@ package com.streamr.client.protocol.message_layer;
 import com.streamr.client.java.util.Objects;
 import com.streamr.client.protocol.common.MessageRef;
 import com.streamr.client.protocol.common.UnsupportedMessageException;
-import com.streamr.client.utils.Address;
+import com.streamr.ethereum.common.Address;
 import com.streamr.client.stream.EncryptedGroupKey;
 import java.io.IOException;
 import java.io.Serializable;

@@ -6,6 +6,7 @@ import com.streamr.client.protocol.message_layer.StreamMessage
 import com.streamr.client.testing.TestingAddresses
 import com.streamr.client.testing.TestingContent
 import com.streamr.client.testing.TestingMessageRef
+import com.streamr.ethereum.common.Address
 import java.util.function.Consumer
 import spock.lang.Specification
 
@@ -47,7 +48,7 @@ class OrderingUtilSpec extends Specification {
     void "calls the gap handler when a gap is detected"() {
         MessageRef fromReceived
         MessageRef toReceived
-        Address publisherIdReceived
+		Address publisherIdReceived
         String msgChainIdReceived
 
         OrderingUtil util = new OrderingUtil(new Consumer<StreamMessage>() {

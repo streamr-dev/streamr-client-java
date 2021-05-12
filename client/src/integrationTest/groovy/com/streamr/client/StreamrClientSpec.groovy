@@ -28,7 +28,7 @@ import com.streamr.client.testing.TestingAddresses
 import com.streamr.client.testing.TestingContent
 import com.streamr.client.testing.TestingMeta
 import com.streamr.client.testing.TestingStreamrClient
-import com.streamr.client.utils.Address
+import com.streamr.ethereum.common.Address
 import spock.lang.Shared
 import spock.lang.Specification
 import spock.util.concurrent.PollingConditions

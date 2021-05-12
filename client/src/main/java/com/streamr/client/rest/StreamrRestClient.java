@@ -4,7 +4,7 @@ import com.squareup.moshi.JsonAdapter;
 import com.squareup.moshi.Types;
 import com.streamr.client.crypto.Keys;
 import com.streamr.client.java.util.Objects;
-import com.streamr.client.utils.Address;
+import com.streamr.ethereum.common.Address;
 import com.streamr.client.utils.SigningUtil;
 import java.io.IOException;
 import java.lang.reflect.ParameterizedType;

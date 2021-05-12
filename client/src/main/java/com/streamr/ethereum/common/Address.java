@@ -1,4 +1,4 @@
-package com.streamr.client.utils;
+package com.streamr.ethereum.common;
 
 import com.streamr.client.java.util.Objects;
 import org.web3j.crypto.Keys;

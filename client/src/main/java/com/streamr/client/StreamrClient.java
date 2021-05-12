@@ -38,7 +38,7 @@ import com.streamr.client.subs.CombinedSubscription;
 import com.streamr.client.subs.HistoricalSubscription;
 import com.streamr.client.subs.RealTimeSubscription;
 import com.streamr.client.subs.Subscription;
-import com.streamr.client.utils.Address;
+import com.streamr.ethereum.common.Address;
 import com.streamr.client.utils.AddressValidityUtil;
 import com.streamr.client.stream.GroupKey;
 import com.streamr.client.stream.GroupKeyStore;

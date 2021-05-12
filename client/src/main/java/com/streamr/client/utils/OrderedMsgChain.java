@@ -2,6 +2,7 @@ package com.streamr.client.utils;
 
 import com.streamr.client.protocol.common.MessageRef;
 import com.streamr.client.protocol.message_layer.StreamMessage;
+import com.streamr.ethereum.common.Address;
 import java.util.ArrayList;
 import java.util.Comparator;
 import java.util.List;

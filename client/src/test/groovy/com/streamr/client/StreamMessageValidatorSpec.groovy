@@ -14,7 +14,7 @@ import com.streamr.client.rest.StreamConfig
 import com.streamr.client.stream.GroupKey
 import com.streamr.client.testing.TestingAddresses
 import com.streamr.client.testing.TestingContent
-import com.streamr.client.utils.Address
+import com.streamr.ethereum.common.Address
 import com.streamr.client.utils.AddressValidityUtil
 import com.streamr.client.utils.MessageCreationUtil
 import spock.lang.Specification

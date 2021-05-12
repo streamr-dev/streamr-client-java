@@ -1,6 +1,7 @@
 package com.streamr.client.utils
 
 import com.streamr.client.testing.TestingAddresses
+import com.streamr.ethereum.common.Address
 import java.util.function.BiFunction
 import java.util.function.Function
 import spock.lang.Specification

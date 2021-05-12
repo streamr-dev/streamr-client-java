@@ -8,6 +8,7 @@ import com.streamr.client.stream.GroupKey;
 import com.streamr.client.stream.GroupKeyStore;
 import com.streamr.client.stream.KeyExchangeUtil;
 import com.streamr.client.utils.*;
+import com.streamr.ethereum.common.Address;
 import java.util.Collection;
 import java.util.UUID;
 

@@ -3,7 +3,7 @@ package com.streamr.client.rest;
 import com.squareup.moshi.JsonAdapter;
 import com.squareup.moshi.JsonReader;
 import com.squareup.moshi.JsonWriter;
-import com.streamr.client.utils.Address;
+import com.streamr.ethereum.common.Address;
 import java.io.IOException;
 
 public class AddressJsonAdapter extends JsonAdapter<Address> {

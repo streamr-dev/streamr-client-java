@@ -1,5 +1,6 @@
 package com.streamr.client.utils;
 
+import com.streamr.ethereum.common.Address;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;

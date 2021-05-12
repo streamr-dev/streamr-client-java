@@ -1,6 +1,7 @@
 package com.streamr.client.utils;
 
 import com.streamr.client.protocol.common.MessageRef;
+import com.streamr.ethereum.common.Address;
 
 public class GapFillFailedException extends RuntimeException {
   public GapFillFailedException(

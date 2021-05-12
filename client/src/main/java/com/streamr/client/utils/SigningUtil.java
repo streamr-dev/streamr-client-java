@@ -1,6 +1,7 @@
 package com.streamr.client.utils;
 
 import com.streamr.client.protocol.message_layer.StreamMessage;
+import com.streamr.ethereum.common.Address;
 import java.math.BigInteger;
 import java.nio.charset.StandardCharsets;
 import java.security.SignatureException;

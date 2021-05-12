@@ -7,7 +7,7 @@ import com.streamr.client.protocol.message_layer.GroupKeyAnnounce;
 import com.streamr.client.protocol.message_layer.GroupKeyRequest;
 import com.streamr.client.protocol.message_layer.GroupKeyResponse;
 import com.streamr.client.protocol.message_layer.StreamMessage;
-import com.streamr.client.utils.Address;
+import com.streamr.ethereum.common.Address;
 import com.streamr.client.utils.AddressValidityUtil;
 import com.streamr.client.utils.MessageCreationUtil;
 import java.time.Clock;

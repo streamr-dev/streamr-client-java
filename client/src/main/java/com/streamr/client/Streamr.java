@@ -11,7 +11,7 @@ import com.streamr.client.rest.StreamPart;
 import com.streamr.client.rest.StreamrRestClient;
 import com.streamr.client.rest.UserInfo;
 import com.streamr.client.subs.Subscription;
-import com.streamr.client.utils.Address;
+import com.streamr.ethereum.common.Address;
 import com.streamr.client.stream.GroupKey;
 import java.io.IOException;
 import java.math.BigInteger;

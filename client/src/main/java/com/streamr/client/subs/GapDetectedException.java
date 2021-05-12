@@ -1,7 +1,7 @@
 package com.streamr.client.subs;
 
 import com.streamr.client.protocol.common.MessageRef;
-import com.streamr.client.utils.Address;
+import com.streamr.ethereum.common.Address;
 
 public class GapDetectedException extends RuntimeException {
   private final String streamId;

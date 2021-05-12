@@ -1,7 +1,7 @@
 package com.streamr.client.subs;
 
 import com.streamr.client.protocol.message_layer.StreamMessage;
-import com.streamr.client.utils.Address;
+import com.streamr.ethereum.common.Address;
 import java.util.ArrayDeque;
 import java.util.ArrayList;
 import java.util.Collection;

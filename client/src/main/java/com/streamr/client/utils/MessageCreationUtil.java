@@ -1,6 +1,5 @@
 package com.streamr.client.utils;
 
-import com.squareup.moshi.JsonAdapter;
 import com.squareup.moshi.Moshi;
 import com.squareup.moshi.Types;
 import com.streamr.client.crypto.KeysRsa;
@@ -22,6 +21,7 @@ import com.streamr.client.stream.InvalidGroupKeyException;
 import com.streamr.client.stream.InvalidGroupKeyRequestException;
 import com.streamr.client.stream.InvalidGroupKeyResponseException;
 import com.streamr.client.stream.KeyExchangeUtil;
+import com.streamr.ethereum.common.Address;
 import java.math.BigInteger;
 import java.nio.ByteBuffer;
 import java.nio.ByteOrder;

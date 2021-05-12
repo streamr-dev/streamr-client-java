@@ -1,7 +1,7 @@
 package com.streamr.client.protocol.message_layer;
 
 import com.streamr.client.java.util.Objects;
-import com.streamr.client.utils.Address;
+import com.streamr.ethereum.common.Address;
 import java.util.Date;
 
 public final class MessageId {
