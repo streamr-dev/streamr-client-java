@@ -1,10 +1,11 @@
-package com.streamr.client.utils
+package com.streamr.client
 
 import com.streamr.client.subs.RealTimeSubscription
 import com.streamr.client.subs.Subscription
-import spock.lang.Specification
-
+import com.streamr.client.utils.GroupKeyStore
+import com.streamr.client.utils.KeyExchangeUtil
 import java.util.function.Consumer
+import spock.lang.Specification
 
 class SubscriptionsSpec extends Specification {
 

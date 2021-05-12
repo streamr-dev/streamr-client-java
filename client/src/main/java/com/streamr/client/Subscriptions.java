@@ -1,7 +1,6 @@
-package com.streamr.client.utils;
+package com.streamr.client;
 
 import com.streamr.client.subs.Subscription;
-
 import java.util.Collection;
 import java.util.HashMap;
 import java.util.HashSet;
