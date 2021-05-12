@@ -51,11 +51,6 @@ public class MessageCreationUtil {
   private final Address publisherId;
   private final String msgChainId;
   private final Map<String, MessageRef> refsPerStreamAndPartition = new HashMap<>();
-  private final JsonAdapter<Map<String, Object>> mapOfStringAndObjectAdapter =
-      new Moshi.Builder()
-          .add(Date.class, new StringOrMillisDateJsonAdapter().nullSafe())
-          .build()
-          .adapter(Types.newParameterizedType(Map.class, String.class, Object.class));
 
   public MessageCreationUtil(final BigInteger privateKey, final Address publisherId) {
     this.privateKey = privateKey;
@@ -74,7 +69,12 @@ public class MessageCreationUtil {
 
     Pair<MessageId, MessageRef> pair =
         createMsgIdAndRef(stream.getId(), streamPartition, timestamp.getTime());
-    final String jsonMessage = mapOfStringAndObjectAdapter.toJson(payload);
+    final String jsonMessage =
+        new Moshi.Builder()
+            .add(Date.class, new StringOrMillisDateJsonAdapter().nullSafe())
+            .build()
+            .adapter(Types.newParameterizedType(Map.class, String.class, Object.class))
+            .toJson(payload);
     StreamMessage streamMessage =
         new StreamMessage.Builder()
             .withMessageId(pair.getLeft())
