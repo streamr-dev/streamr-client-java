@@ -98,7 +98,7 @@ class StreamMessageV32AdapterSpec extends Specification {
 		msg.getContentType() == StreamMessage.Content.Type.JSON
 		msg.getEncryptionType() == StreamMessage.EncryptionType.AES
 		msg.getSerializedContent() == "encrypted-content"
-		msg.getNewGroupKey() == new EncryptedGroupKey("newGroupKeyId", "encryptedGroupKeyHex")
+		msg.getNewGroupKey() == new EncryptedGroupKey("newGroupKeyId", "encryptedGroupKeyHex", null)
 		msg.getSignatureType() == StreamMessage.SignatureType.ETH
 		msg.getSignature() == "signature"
 

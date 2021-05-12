@@ -4,8 +4,8 @@ import com.streamr.client.stream.EncryptedGroupKey
 import spock.lang.Specification
 
 class GroupKeyAnnounceAdapterSpec extends Specification {
-	static final EncryptedGroupKey key1 = new EncryptedGroupKey("groupKeyId1", "encrypted1")
-	static final EncryptedGroupKey key2 = new EncryptedGroupKey("groupKeyId2", "encrypted2")
+	static final EncryptedGroupKey key1 = new EncryptedGroupKey("groupKeyId1", "encrypted1", null)
+	static final EncryptedGroupKey key2 = new EncryptedGroupKey("groupKeyId2", "encrypted2", null)
 
 
 	def "serialization and deserialization"(String serializedMessage, GroupKeyAnnounce message) {

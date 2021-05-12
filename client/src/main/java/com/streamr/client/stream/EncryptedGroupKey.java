@@ -13,10 +13,6 @@ public final class EncryptedGroupKey {
   private final String encryptedGroupKeyHex;
   private String serialized;
 
-  public EncryptedGroupKey(String groupKeyId, String encryptedGroupKeyHex) {
-    this(groupKeyId, encryptedGroupKeyHex, null);
-  }
-
   /**
    * @param serialized used to cache the exact serialized form of the EncryptedGroupKey, useful for
    *     validation

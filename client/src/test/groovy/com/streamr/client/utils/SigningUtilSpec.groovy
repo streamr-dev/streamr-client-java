@@ -75,7 +75,7 @@ class SigningUtilSpec extends Specification {
                 .withMessageId(msgId)
                 .withPreviousMessageRef(new MessageRef(100, 1))
                 .withContent(TestingContent.fromJsonMap([foo: 'bar']))
-                .withNewGroupKey(new EncryptedGroupKey("groupKeyId", "keyHex"))
+                .withNewGroupKey(new EncryptedGroupKey("groupKeyId", "keyHex", null))
                 .createStreamMessage()
         String expectedPayload = "streamId04252353150" + TestingAddresses.PUBLISHER_ID + "msgChainId1001"+'{"foo":"bar"}'+'["groupKeyId","keyHex"]'
         when:

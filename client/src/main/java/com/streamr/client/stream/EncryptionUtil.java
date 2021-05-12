@@ -80,9 +80,9 @@ public final class EncryptionUtil {
 
   public static EncryptedGroupKey encryptGroupKey(
       GroupKey keyToEncrypt, GroupKey keyToEncryptWith) {
-    return new EncryptedGroupKey(
-        keyToEncrypt.getGroupKeyId(),
-        encrypt(Numeric.hexStringToByteArray(keyToEncrypt.getGroupKeyHex()), keyToEncryptWith));
+    byte[] plaintext = Numeric.hexStringToByteArray(keyToEncrypt.getGroupKeyHex());
+    String encrypted = encrypt(plaintext, keyToEncryptWith);
+    return new EncryptedGroupKey(keyToEncrypt.getGroupKeyId(), encrypted, null);
   }
 
   public static GroupKey decryptGroupKey(EncryptedGroupKey keyToDecrypt, GroupKey keyToDecryptWith)
@@ -97,7 +97,7 @@ public final class EncryptionUtil {
       GroupKey keyToEncrypt, RSAPublicKey keyToEncryptWith) {
     String encryptedGroupKeyHex =
         encryptWithPublicKey(keyToEncrypt.getGroupKeyHex(), keyToEncryptWith);
-    return new EncryptedGroupKey(keyToEncrypt.getGroupKeyId(), encryptedGroupKeyHex);
+    return new EncryptedGroupKey(keyToEncrypt.getGroupKeyId(), encryptedGroupKeyHex, null);
   }
 
   static String encryptWithPublicKey(String plaintextHex, RSAPublicKey publicKey) {

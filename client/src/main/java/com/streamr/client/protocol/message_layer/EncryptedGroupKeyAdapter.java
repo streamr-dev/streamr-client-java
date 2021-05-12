@@ -17,7 +17,7 @@ public class EncryptedGroupKeyAdapter extends JsonAdapter<EncryptedGroupKey> {
         String groupKeyId = reader.nextString();
         String encryptedGroupKey = reader.nextString();
         reader.endArray();
-        return new EncryptedGroupKey(groupKeyId, encryptedGroupKey);
+        return new EncryptedGroupKey(groupKeyId, encryptedGroupKey, null);
     }
 
     @Override
