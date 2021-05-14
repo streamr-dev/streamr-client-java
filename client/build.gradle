@@ -1,25 +1,11 @@
-import org.gradle.api.tasks.testing.logging.TestLogEvent
-import org.gradle.api.tasks.testing.logging.TestExceptionFormat
-
 plugins {
-	id 'java-library'
 	id 'groovy-gradle-plugin'
 	id 'groovy'
-	id 'idea'
-	id 'eclipse'
 	id 'maven-publish'
-	id 'jacoco'
-	id 'codenarc'
-	id 'pmd'
-	id 'com.github.ben-manes.versions' version '0.36.0'
 	id 'org.unbroken-dome.test-sets' version '3.0.1'
 }
 
-group = 'com.streamr'
-version = '3.0.0-alpha.1'
 description = 'A Java library to interact with Streamr Network'
-
-final boolean isLocalDevEnv = (System.getenv("CI") == null)
 
 sourceSets {
 	main {
@@ -41,118 +27,6 @@ testSets {
 	integrationTest { extendsFrom unitTest }
 }
 check.dependsOn integrationTest
-// https://docs.gradle.org/current/userguide/jacoco_plugin.html
-test {
-	finalizedBy jacocoTestReport // report is always generated after tests run
-}
-jacocoTestReport {
-	dependsOn test // tests are required to run before generating the report
-}
-jacoco {
-	toolVersion = '0.8.6'
-}
-jacocoTestReport {
-	reports {
-		xml.enabled false
-		csv.enabled false
-		html.destination file("${buildDir}/reports/coverage")
-	}
-}
-// https://docs.gradle.org/current/userguide/codenarc_plugin.html
-codenarc {
-	configFile = file("${project.projectDir}/gradle/config/codenarc/codenarc.xml")
-	ignoreFailures = false
-	reportFormat = 'html'
-	reportsDir = file("${project.projectDir}/build/reports/codenarc")
-	maxPriority1Violations = 1
-	maxPriority2Violations = 2
-	maxPriority3Violations = 4
-}
-// https://docs.gradle.org/current/userguide/pmd_plugin.html
-pmd {
-	toolVersion = '6.30.0'
-	consoleOutput = isLocalDevEnv
-	ignoreFailures = false
-	rulesMinimumPriority = 5
-	ruleSets = ["${project.projectDir}/gradle/config/pmd/ruleset.xml"]
-}
-tasks.withType(Test) {
-	useJUnitPlatform {
-		systemProperties = [
-				'junit.jupiter.extensions.autodetection.enabled': 'true',
-				'junit.jupiter.testinstance.lifecycle.default': 'per_class',
-				'junit.jupiter.execution.timeout.default': '3 m',
-		]
-	}
-	testLogging {
-		events = [
-				TestLogEvent.SKIPPED,
-				TestLogEvent.FAILED,
-		]
-		exceptionFormat TestExceptionFormat.SHORT
-		if (isLocalDevEnv) {
-			exceptionFormat TestExceptionFormat.FULL
-			events += TestLogEvent.PASSED
-		}
-		info {
-			events = [
-					TestLogEvent.PASSED,
-					TestLogEvent.SKIPPED,
-					TestLogEvent.FAILED,
-			]
-			exceptionFormat TestExceptionFormat.FULL
-		}
-		debug {
-			events = [
-					TestLogEvent.STANDARD_OUT,
-					TestLogEvent.STANDARD_ERROR,
-					TestLogEvent.STARTED,
-					TestLogEvent.SKIPPED,
-					TestLogEvent.FAILED,
-					TestLogEvent.PASSED,
-			]
-			exceptionFormat TestExceptionFormat.FULL
-		}
-	}
-}
-java {
-	sourceCompatibility(JavaVersion.VERSION_1_8)
-	targetCompatibility(JavaVersion.VERSION_1_8)
-	withJavadocJar()
-	withSourcesJar()
-}
-tasks.withType(JavaCompile) {
-	options.encoding = 'UTF-8'
-	options.compilerArgs += [
-			'-Werror',
-			'-Xlint:auxiliaryclass',
-			'-Xlint:cast',
-			'-Xlint:classfile',
-			'-Xlint:deprecation',
-			'-Xlint:dep-ann',
-			'-Xlint:divzero',
-			'-Xlint:empty',
-			'-Xlint:fallthrough',
-			'-Xlint:finally',
-			'-Xlint:options',
-			'-Xlint:overloads',
-			'-Xlint:overrides',
-			'-Xlint:path',
-			'-Xlint:processing',
-			'-Xlint:rawtypes',
-			'-Xlint:-serial',
-			'-Xlint:static',
-			'-Xlint:try',
-			'-Xlint:unchecked',
-			'-Xlint:varargs',
-	]
-}
-javadoc {
-	options.encoding = 'UTF-8'
-	if (JavaVersion.current().isJava9Compatible()) {
-		options.addBooleanOption('html5', true)
-	}
-}
 
 def jarManifest = [
 		'Implementation-Title': "Streamr Java Client v${version}",
@@ -243,12 +117,6 @@ dependencies {
 	testRuntimeOnly("org.junit.jupiter:junit-jupiter-engine:${junitJupiterVersion}")
 	testRuntimeOnly("org.junit.vintage:junit-vintage-engine:${junitJupiterVersion}")
 }
-// https://docs.gradle.org/current/userguide/resolution_strategy_tuning.html
-//configurations.all {
-//	resolutionStrategy {
-//		failOnVersionConflict()
-//	}
-//}
 // https://docs.gradle.org/current/userguide/publishing_setup.html
 publishing {
 	publications {
