@@ -1,9 +1,11 @@
 package com.streamr.client.dataunion;
 
 import com.streamr.client.dataunion.contracts.*;
+import com.streamr.client.options.DataUnionClientOptions;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.web3j.abi.EventValues;
+import org.web3j.abi.TypeEncoder;
 import org.web3j.abi.datatypes.Address;
 import org.web3j.abi.datatypes.DynamicArray;
 import org.web3j.abi.datatypes.DynamicBytes;
@@ -48,29 +50,22 @@ public class DataUnionClient {
     private final Web3j sidechain;
     private final Credentials mainnetCred;
     private final Credentials sidechainCred;
-    private final String sidechainFactory;
-    private final String mainnetFactory;
     private long bridgePollInterval = 10000;
     private long bridgePollTimeout = 600000;
     private EstimatedGasProvider mainnetGasProvider;
     private EstimatedGasProvider sidechainGasProvider;
+    private final DataUnionClientOptions opts;
 
-    public DataUnionClient(String mainnetUrl,
-                           String mainnetFactory,
-                           String mainnetAdminPrvKey,
-                           String sidechainUrl,
-                           String sidechainFactory,
-                           String sidechainAdminPrvKey
-                           ) {
+    public DataUnionClient(String mainnetUrl, String sidechainUrl, DataUnionClientOptions opts) {
+        this.opts = opts;
         this.mainnet = Web3j.build(new HttpService(mainnetUrl));
-        this.mainnetFactory = mainnetFactory;
-        this.mainnetCred = Credentials.create(mainnetAdminPrvKey);
+        this.mainnetCred = Credentials.create(opts.getMainnetAdminPrvKey());
         this.sidechain = Web3j.build(new HttpService(sidechainUrl));
-        this.sidechainFactory = sidechainFactory;
-        this.sidechainCred = Credentials.create(sidechainAdminPrvKey);
+        this.sidechainCred = Credentials.create(opts.getSidechainAdminPrvKey());
         mainnetGasProvider = new EstimatedGasProvider(mainnet, 730000);
         sidechainGasProvider = new EstimatedGasProvider(sidechain, 3000000);
     }
+
 
     public void setMainnetMaxGasPrice(long maxPrice){
         mainnetGasProvider.setMaxGasPrice(maxPrice);
@@ -126,7 +121,7 @@ public class DataUnionClient {
         ).send();
         Address mainnetAddress = factoryMainnet().mainnetAddress(new Address(mainnetCred.getAddress()), duname).send();
         String sidechainAddress = factoryMainnet().sidechainAddress(mainnetAddress).send().getValue();
-        return new DataUnion(mainnetDataUnion(mainnetAddress.getValue()), mainnet, mainnetCred, sidechainDataUnion(sidechainAddress), sidechain, sidechainCred);
+        return new DataUnion(mainnetDataUnion(mainnetAddress.getValue()), mainnet, sidechainDataUnion(sidechainAddress), sidechain, opts);
     }
 
     public DataUnion dataUnionFromName(String name) throws Exception {
@@ -138,11 +133,15 @@ public class DataUnionClient {
     public DataUnion dataUnionFromMainnetAddress(String mainnetAddress) throws Exception {
         DataUnionMainnet main =  mainnetDataUnion(mainnetAddress);
         DataUnionSidechain side = sidechainDataUnion(factoryMainnet().sidechainAddress(new Address(main.getContractAddress())).send().getValue());
-        return new DataUnion(main, mainnet, mainnetCred, side, sidechain, sidechainCred);
+        return new DataUnion(main, mainnet, side, sidechain, opts);
+    }
+
+    protected BinanceAdapter binanceAdapterSidechain() {
+        return BinanceAdapter.load(opts.getBinanceAdapterAddress(), mainnet, mainnetCred, mainnetGasProvider);
     }
 
     protected DataUnionFactoryMainnet factoryMainnet() {
-        return DataUnionFactoryMainnet.load(mainnetFactory, mainnet, mainnetCred, mainnetGasProvider);
+        return DataUnionFactoryMainnet.load(opts.getDataUnionMainnetFactoryAddress(), mainnet, mainnetCred, mainnetGasProvider);
     }
 
     protected DataUnionMainnet mainnetDataUnion(String address) {
@@ -150,7 +149,7 @@ public class DataUnionClient {
     }
 
     protected DataUnionFactorySidechain factorySidechain() {
-        return DataUnionFactorySidechain.load(sidechainFactory, sidechain, sidechainCred, sidechainGasProvider);
+        return DataUnionFactorySidechain.load(opts.getDataUnionSidechainFactoryAddress(), sidechain, sidechainCred, sidechainGasProvider);
     }
 
     protected DataUnionSidechain sidechainDataUnion(String address) {
@@ -163,6 +162,40 @@ public class DataUnionClient {
 
     public String sidechainTokenAddress() throws Exception {
         return  factorySidechain().token().send().getValue();
+    }
+
+    public String getBinanceDepositAddress(String user) throws Exception {
+        return binanceAdapterSidechain().binanceRecipient(new Address(user)).send().component1().getValue();
+    }
+
+    public EthereumTransactionReceipt setBinanceDepositAddress(String depositAddress) throws Exception {
+        return new EthereumTransactionReceipt(binanceAdapterSidechain().setBinanceRecipient(new Address(depositAddress)).send());
+    }
+
+    //setBinanceDepositAddress
+
+    /*
+    bytes32 messageHash = keccak256(abi.encodePacked(
+            "\x19Ethereum Signed Message:\n72", recipient, nonce, address(this)));
+*/
+    public byte[] createSetBinanceRecipientRequest(String recipient) throws Exception {
+        BigInteger nonce = getBinanceSetRecipientNonce(sidechainCred.getAddress()).add(BigInteger.ONE);
+        //TypeEncode doesnt expose a non-padding encode() :(
+        String messageHex = TypeEncoder.encode(new Address(recipient)).substring(24) +
+                TypeEncoder.encode(new Uint256(nonce)) +
+                TypeEncoder.encode(new Address(opts.getBinanceAdapterAddress())).substring(24);
+        return Numeric.hexStringToByteArray(messageHex);
+    }
+
+
+    public BigInteger getBinanceSetRecipientNonce(String address) throws Exception {
+        return binanceAdapterSidechain().binanceRecipient(new Address(address)).send().component2().getValue();
+    }
+
+    public void signSetBinanceDepositAddress(String recipient) throws Exception {
+        byte[] req = createSetBinanceRecipientRequest(recipient);
+        byte[] sig = toBytes65(Sign.signPrefixedMessage(req, sidechainCred.getEcKeyPair()));
+        //TODO send to withdraw server
     }
 
     protected IERC20 mainnetToken() throws Exception {

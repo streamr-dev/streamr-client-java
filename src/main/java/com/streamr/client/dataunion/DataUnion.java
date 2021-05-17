@@ -2,6 +2,7 @@ package com.streamr.client.dataunion;
 
 import com.streamr.client.dataunion.contracts.DataUnionMainnet;
 import com.streamr.client.dataunion.contracts.DataUnionSidechain;
+import com.streamr.client.options.DataUnionClientOptions;
 import com.streamr.client.utils.Web3jUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -12,6 +13,7 @@ import org.web3j.crypto.Credentials;
 import org.web3j.crypto.ECKeyPair;
 import org.web3j.crypto.Sign;
 import org.web3j.protocol.Web3j;
+import org.web3j.protocol.http.HttpService;
 import org.web3j.utils.Numeric;
 import java.math.BigInteger;
 import static com.streamr.client.utils.Web3jUtils.*;
@@ -28,6 +30,7 @@ public class DataUnion {
     private final Web3j sidechainConnector;
     private final Credentials mainnetCred;
     private final Credentials sidechainCred;
+    private final DataUnionClientOptions opts;
 
     protected static class RangeException extends Exception{
         public RangeException(String msg){
@@ -36,13 +39,14 @@ public class DataUnion {
     }
 
     //use DataUnionClient to instantiate
-    protected DataUnion(DataUnionMainnet mainnet, Web3j mainnetConnector, Credentials mainnetCred, DataUnionSidechain sidechain, Web3j sidechainConnector, Credentials sidechainCred) {
+    protected DataUnion(DataUnionMainnet mainnet, Web3j mainnetConnector, DataUnionSidechain sidechain, Web3j sidechainConnector, DataUnionClientOptions opts) {
+        this.opts = opts;
         this.mainnet = mainnet;
         this.mainnetConnector = mainnetConnector;
-        this.mainnetCred = mainnetCred;
+        this.mainnetCred = Credentials.create(opts.getMainnetAdminPrvKey());
+        this.sidechainCred = Credentials.create(opts.getSidechainAdminPrvKey());
         this.sidechain = sidechain;
         this.sidechainConnector = sidechainConnector;
-        this.sidechainCred = sidechainCred;
     }
 
     public boolean waitForDeployment(long pollInterval, long timeout) throws Exception {
@@ -284,4 +288,14 @@ public class DataUnion {
     public boolean isMemberInactive(String member) throws Exception {
         return ActiveStatus.INACTIVE.ordinal() == sidechain.memberData(new Address(member)).send().component1().getValue().longValue();
     }
+
+
+    public EthereumTransactionReceipt withdrawAllToBinance() throws Exception {
+        return withdrawAllTokensForSelfOrAsAdmin(opts.getBinanceAdapterAddress(), false);
+    }
+
+    public EthereumTransactionReceipt signWithdrawAllToBinance(String member, byte[] signedWithdrawalRequest) throws Exception {
+        return withdrawAllTokensForMember(member, opts.getBinanceAdapterAddress(), signedWithdrawalRequest, false);
+    }
+
 }

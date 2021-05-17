@@ -79,7 +79,10 @@ class JavaWrapperUtil {
                         public boolean accept(File file) {
                             String fname = file.getName();
                             return fname.endsWith(".json")  &&
-                                    (fname.startsWith("DataUnion") || fname.contains("IERC20") || fname.contains("AMB")) ;
+                                    (fname.startsWith("DataUnion") ||
+                                            fname.contains("IERC20") ||
+                                            fname.startsWith("Binance") ||
+                                        fname.contains("AMB")) ;
                         }
                     }
             );
