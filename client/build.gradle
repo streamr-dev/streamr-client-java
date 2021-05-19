@@ -193,9 +193,9 @@ ext {
 	bouncyCastleVersion = '1.67'
 	equalsVerifierVersion = '3.5.2'
 	groovyVersion = '2.5.14'
-	spockVersion = '1.3-groovy-2.5'
-	byteBuddyVersion = '1.9.16'
-	objenesisVersion = '3.1'
+	spockVersion = '2.0-groovy-2.5'
+	byteBuddyVersion = '1.11.0'
+	objenesisVersion = '3.2'
 	junitJupiterVersion = '5.7.0'
 	junitPlatformVersion = '1.7.0'
 }
@@ -232,10 +232,15 @@ dependencies {
 	integrationTestImplementation sourceSets.test.output
 	testImplementation("nl.jqno.equalsverifier:equalsverifier:${equalsVerifierVersion}")
 	// Spock
-	testImplementation("org.codehaus.groovy:groovy-all:${groovyVersion}")
-	testImplementation("org.spockframework:spock-core:${spockVersion}")
-	testImplementation("net.bytebuddy:byte-buddy:${byteBuddyVersion}")
-	testImplementation("org.objenesis:objenesis:${objenesisVersion}")
+	implementation("org.codehaus.groovy:groovy:${groovyVersion}")
+	testImplementation platform("org.spockframework:spock-bom:${spockVersion}")
+	testImplementation("org.spockframework:spock-core")
+	testRuntimeOnly("net.bytebuddy:byte-buddy:${byteBuddyVersion}") {
+		because("allows mocking of classes (in addition to interfaces)")
+	}
+	testRuntimeOnly("org.objenesis:objenesis:${objenesisVersion}") {
+		because("allows mocking of classes without default constructor (together with ByteBuddy or CGLIB)")
+	}
 	// End Spock
 	testImplementation("nl.jqno.equalsverifier:equalsverifier:${equalsVerifierVersion}")
 	testImplementation("org.junit.jupiter:junit-jupiter-api:${junitJupiterVersion}")
