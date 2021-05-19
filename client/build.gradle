@@ -13,7 +13,7 @@ plugins {
 	id 'pmd'
 	id 'com.github.ben-manes.versions' version '0.36.0'
 	id 'com.diffplug.spotless' version '5.9.0'
-	id 'org.unbroken-dome.test-sets' version '3.0.1'
+	id 'org.unbroken-dome.test-sets' version '4.0.0'
 }
 
 group = 'com.streamr'
