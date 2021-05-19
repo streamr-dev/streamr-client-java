@@ -48,6 +48,7 @@ public class DataUnionClient {
 
     private final Web3j mainnet;
     private final Web3j sidechain;
+    private Web3j binance;
     private final Credentials mainnetCred;
     private final Credentials sidechainCred;
     private long bridgePollInterval = 10000;
@@ -172,6 +173,15 @@ public class DataUnionClient {
         return new EthereumTransactionReceipt(binanceAdapterSidechain().setBinanceRecipient(new Address(depositAddress)).send());
     }
 
+    /*
+    lazy-instantiate binance Web3j connector
+     */
+    protected Web3j getBinanceWeb3j() {
+        if(binance == null)
+            binance = Web3j.build(new HttpService(opts.getBinanceRPC()));
+        return binance;
+    }
+
     //setBinanceDepositAddress
 
     /*
@@ -206,6 +216,10 @@ public class DataUnionClient {
     protected IERC20 sidechainToken() throws Exception {
         String tokenAddress = factorySidechain().token().send().getValue();
         return IERC20.load(tokenAddress, sidechain, sidechainCred, sidechainGasProvider);
+    }
+
+    protected ForeignAMB binanceAMB(Credentials cred) throws Exception {
+        return ForeignAMB.load(opts.getBinanceSmartChainAMBAddress(), getBinanceWeb3j(), cred, mainnetGasProvider);
     }
 
     protected ForeignAMB mainnetAMB(Credentials cred) throws Exception {
@@ -278,24 +292,25 @@ public class DataUnionClient {
         return new EthereumTransactionReceipt(factorySidechain().setNewMemberInitialEth(new Uint256(amountWei)).send());
     }
 
+
     /**
      * port an AMB message that has required # signatures.
      *
      *
      * @param msgHash AMB message hash
      * @param collectedSignatures
-     * @param cred
      * @throws Exception
      *
      * from foreign AMB hasEnoughValidSignatures(): Need to construct this binary blob:
-    * First byte X is a number of signatures in a blob,
-    * next X bytes are v components of signatures,
-    * next 32 * X bytes are r components of signatures,
-    * next 32 * X bytes are s components of signatures.
+     * First byte X is a number of signatures in a blob,
+     * next X bytes are v components of signatures,
+     * next 32 * X bytes are r components of signatures,
+     * next 32 * X bytes are s components of signatures.
     java byte is signed, so we use short to support 0-255
 
      */
-    protected EthereumTransactionReceipt portTxToMainnet(Bytes32 msgHash, short collectedSignatures, Credentials cred) throws Exception {
+
+    protected EthereumTransactionReceipt portTx(ForeignAMB toAMB, Bytes32 msgHash, short collectedSignatures) throws Exception {
         if(collectedSignatures > 255) {
             throw new UnsupportedOperationException("collectedSignatures cannot be greater than 255");
         }
@@ -309,44 +324,48 @@ public class DataUnionClient {
             System.arraycopy(sig.getR(), 0, signatures, 1+collectedSignatures+(i*32), 32);
             System.arraycopy(sig.getS(), 0, signatures, 1+(collectedSignatures*33)+(i*32), 32);
         }
-        return new EthereumTransactionReceipt(mainnetAMB(cred).executeSignatures(message, new DynamicBytes(signatures)).send());
+        return new EthereumTransactionReceipt(toAMB.executeSignatures(message, new DynamicBytes(signatures)).send());
+    }
+
+    public List<EthereumTransactionReceipt> portTxsToBinance(EthereumTransactionReceipt withdrawalTransaction, String binanceSenderPrivateKey) throws Exception {
+        return portTxs(binanceAMB(Credentials.create(binanceSenderPrivateKey)), withdrawalTransaction.tr);
     }
 
     public List<EthereumTransactionReceipt> portTxsToMainnet(EthereumTransactionReceipt withdrawalTransaction, String mainnetSenderPrivateKey) throws Exception {
-        return portTxsToMainnet(withdrawalTransaction.tr, Credentials.create(mainnetSenderPrivateKey));
+        return portTxs(mainnetAMB(Credentials.create(mainnetSenderPrivateKey)), withdrawalTransaction.tr);
     }
 
     public List<EthereumTransactionReceipt> portTxsToMainnet(EthereumTransactionReceipt withdrawalTransaction, BigInteger mainnetSenderPrivateKey) throws Exception {
-        return portTxsToMainnet(withdrawalTransaction.tr, Credentials.create(ECKeyPair.create(mainnetSenderPrivateKey)));
+        return portTxs(mainnetAMB(Credentials.create(ECKeyPair.create(mainnetSenderPrivateKey))), withdrawalTransaction.tr);
     }
 
-
+    /**
+     * port all bridge requests triggered by sidechain withdraw transaction
+     * @param withdrawTxHash
+     * @param mainnetSenderPrivateKey
+     * @return
+     * @throws Exception
+     */
     public List<EthereumTransactionReceipt> portTxsToMainnet(String withdrawTxHash, String mainnetSenderPrivateKey) throws Exception {
         Optional<TransactionReceipt> optional = sidechain.ethGetTransactionReceipt(withdrawTxHash).send().getTransactionReceipt();
         if(!optional.isPresent()) {
             throw new NoSuchElementException("No sidechain transaction found for txhash " + withdrawTxHash);
         }
         TransactionReceipt withdraw = optional.get();
-        return portTxsToMainnet(withdraw, Credentials.create(mainnetSenderPrivateKey));
+        return portTxs(mainnetAMB(Credentials.create(mainnetSenderPrivateKey)), withdraw);
     }
 
-    /**
-     * port all bridge requests triggered by sidechain withdraw transaction
-     * @param withdraw
-     * @param mainnetSenderCredentials
-     * @return list of mainnet bridge port TXs executed
-     * @throws Exception
-     */
 
-    protected List<EthereumTransactionReceipt> portTxsToMainnet(TransactionReceipt withdraw, Credentials mainnetSenderCredentials) throws Exception {
+
+    protected List<EthereumTransactionReceipt> portTxs(ForeignAMB toAMB, TransactionReceipt withdraw) throws Exception {
         List<Bytes32[]> msgs = extractAmbMessagesIdAndHash(withdraw);
         List<EthereumTransactionReceipt> txs = new ArrayList<EthereumTransactionReceipt>(msgs.size());
         for(Bytes32[] msg : msgs){
             Bytes32 id = msg[0];
             Bytes32 hash = msg[1];
             //check if message has already been sent
-            if(mainnetAMB().messageCallStatus(id).send().getValue() ||
-                    !mainnetAMB().failedMessageSender(id).send().toUint().getValue().equals(BigInteger.ZERO)){
+            if(toAMB.messageCallStatus(id).send().getValue() ||
+                    !toAMB.failedMessageSender(id).send().toUint().getValue().equals(BigInteger.ZERO)){
                 log.warn("ForeignAMB has already seen msgId " + Numeric.toHexString(id.getValue()) + ". skipping");
                 continue;
             }
@@ -357,7 +376,7 @@ public class DataUnionClient {
                 continue;
             }
             log.info("Porting msgId " + id);
-            txs.add(portTxToMainnet(hash, signatures.shortValueExact(), mainnetSenderCredentials));
+            txs.add(portTx(toAMB, hash, signatures.shortValueExact()));
         }
         return txs;
     }
