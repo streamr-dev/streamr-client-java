@@ -22,11 +22,11 @@ jobs:
       - uses: actions/checkout@v2.3.4
         with:
           fetch-depth: 0
-      - uses: actions/setup-java@v2.0.0
+      - uses: actions/setup-java@v2.1.0
         with:
           java-version: ${{ env.JAVA_VERSION }}
           distribution: 'zulu'
-      - uses: actions/cache@v2.1.4
+      - uses: actions/cache@v2.1.5
         with:
           path: ~/.gradle/caches
           key: ${{ runner.os }}-gradle-${{ hashFiles('build.gradle') }}
@@ -52,11 +52,11 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v2.3.4
-      - uses: actions/setup-java@v2.0.0
+      - uses: actions/setup-java@v2.1.0
         with:
           java-version: ${{ env.JAVA_VERSION }}
           distribution: 'zulu'
-      - uses: actions/cache@v2.1.4
+      - uses: actions/cache@v2.1.5
         with:
           path: ~/.gradle/caches
           key: ${{ runner.os }}-gradle-${{ hashFiles('build.gradle') }}
@@ -107,7 +107,7 @@ jobs:
         with:
           repository: streamr-dev/streamr-client-testing
           path: streamr-client-testing
-      - uses: actions/setup-java@v2.0.0
+      - uses: actions/setup-java@v2.1.0
         with:
           java-version: '8'
           distribution: 'zulu'

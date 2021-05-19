@@ -2,7 +2,7 @@ plugins {
 	id 'groovy-gradle-plugin'
 	id 'groovy'
 	id 'maven-publish'
-	id 'org.unbroken-dome.test-sets' version '3.0.1'
+	id 'org.unbroken-dome.test-sets' version '4.0.0'
 }
 
 description = 'A Java library to interact with Streamr Network'
