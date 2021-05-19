@@ -11,7 +11,7 @@ updates:
       time: "08:00"
       timezone: "Europe/Helsinki"
     commit-message:
-      prefix: "chore(ga)"
+      prefix: "build"
       include: "scope"
     reviewers:
       - "kare"
@@ -26,7 +26,7 @@ updates:
       time: "08:00"
       timezone: "Europe/Helsinki"
     commit-message:
-      prefix: "chore(gradle)"
+      prefix: "build"
       include: "scope"
     reviewers:
       - "kare"
