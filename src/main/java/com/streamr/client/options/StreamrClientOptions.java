@@ -22,6 +22,7 @@ public class StreamrClientOptions {
     private String sidechainRpcUrl = "https://rpc.xdaichain.com/";
     private Address storageNodeAddress = new Address("0x31546eEA76F2B2b3C5cC06B1c93601dc35c9D916");
     private String storageNodeUrl = "https://corea1.streamr.network:8001";
+
     private long connectionTimeoutMillis = 60 * 1000;
     private long reconnectRetryInterval = 10 * 1000;
     private int propagationTimeout = 5000;
