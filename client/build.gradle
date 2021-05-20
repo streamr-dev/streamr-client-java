@@ -165,10 +165,11 @@ jar {
 	}
 }
 // https://docs.gradle.org/current/userguide/working_with_files.html#sec:creating_uber_jar_example
-task fatJar(type: Jar) {
+tasks.register('fatJar', Jar) {
 	description = 'Creates a Jar file with all dependencies included.'
 	group = JavaBasePlugin.BUILD_TASK_NAME
 	archiveClassifier = 'fat'
+	duplicatesStrategy = 'exclude'
 
 	manifest {
 		attributes(jarManifest)
@@ -192,8 +193,8 @@ ext {
 	jetbrainsVersion = '17.0.0'
 	bouncyCastleVersion = '1.67'
 	equalsVerifierVersion = '3.5.2'
-	groovyVersion = '2.5.14'
-	spockVersion = '2.0-groovy-2.5'
+	groovyVersion = '3.0.8'
+	spockVersion = '2.0-groovy-3.0'
 	byteBuddyVersion = '1.11.0'
 	objenesisVersion = '3.2'
 	junitJupiterVersion = '5.7.0'
