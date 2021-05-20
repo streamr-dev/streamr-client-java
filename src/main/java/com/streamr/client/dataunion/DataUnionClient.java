@@ -2,6 +2,7 @@ package com.streamr.client.dataunion;
 
 import com.streamr.client.dataunion.contracts.*;
 import com.streamr.client.options.DataUnionClientOptions;
+import com.streamr.client.utils.Web3jUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.web3j.abi.EventValues;
@@ -55,6 +56,8 @@ public class DataUnionClient {
     private long bridgePollTimeout = 600000;
     private EstimatedGasProvider mainnetGasProvider;
     private EstimatedGasProvider sidechainGasProvider;
+    private EstimatedGasProvider binanceGasProvider;
+
     private final DataUnionClientOptions opts;
 
     public DataUnionClient(String mainnetUrl, String sidechainUrl, DataUnionClientOptions opts) {
@@ -138,7 +141,7 @@ public class DataUnionClient {
     }
 
     protected BinanceAdapter binanceAdapterSidechain() {
-        return BinanceAdapter.load(opts.getBinanceAdapterAddress(), mainnet, mainnetCred, mainnetGasProvider);
+        return BinanceAdapter.load(opts.getBinanceAdapterAddress(), sidechain, sidechainCred, sidechainGasProvider);
     }
 
     protected DataUnionFactoryMainnet factoryMainnet() {
@@ -201,12 +204,23 @@ public class DataUnionClient {
     public BigInteger getBinanceSetRecipientNonce(String address) throws Exception {
         return binanceAdapterSidechain().binanceRecipient(new Address(address)).send().component2().getValue();
     }
+/*
+    public EthereumTransactionReceipt setBinanceRecipientFromSig() {
+        return binanceAdapterSidechain().setBinanceRecipientFromSig(new Address(sidechainCred.getAddress(),
+                ))
+    }
+    */
 
     public void signSetBinanceDepositAddress(String recipient) throws Exception {
         byte[] req = createSetBinanceRecipientRequest(recipient);
         byte[] sig = toBytes65(Sign.signPrefixedMessage(req, sidechainCred.getEcKeyPair()));
         //TODO send to withdraw server
     }
+
+    public byte[] sign(byte[] request) {
+        return toBytes65(Sign.signPrefixedMessage(request, sidechainCred.getEcKeyPair() ));
+    }
+
 
     protected IERC20 mainnetToken() throws Exception {
         String tokenAddress = factoryMainnet().token().send().getValue();
@@ -219,7 +233,8 @@ public class DataUnionClient {
     }
 
     protected ForeignAMB binanceAMB(Credentials cred) throws Exception {
-        return ForeignAMB.load(opts.getBinanceSmartChainAMBAddress(), getBinanceWeb3j(), cred, mainnetGasProvider);
+        Web3j binance = getBinanceWeb3j();
+        return ForeignAMB.load(opts.getBinanceSmartChainAMBAddress(), binance, cred, new EstimatedGasProvider(binance, 3000000));
     }
 
     protected ForeignAMB mainnetAMB(Credentials cred) throws Exception {
@@ -231,11 +246,17 @@ public class DataUnionClient {
         return mainnetAMB(mainnetCred);
     }
 
-    protected HomeAMB sidechainAMB() throws Exception {
+    protected HomeAMB sidechainAMBToMainnet() throws Exception {
         String amb = factorySidechain().amb().send().getValue();
         return HomeAMB.load(amb, sidechain, sidechainCred, sidechainGasProvider);
     }
 
+    protected HomeAMB sidechainAMBToBinance() throws Exception {
+        //pull the AMB address from the tokenMediator pointed to by Binance Adapter
+        String tokenMediator = binanceAdapterSidechain().bscBridge().send().getValue();
+        String amb = Web3jUtils.callAddressGetterFunction(tokenMediator, "bridgeContract", sidechain);
+        return HomeAMB.load(amb, sidechain, sidechainCred, sidechainGasProvider);
+    }
 
     /**
      *
@@ -247,12 +268,12 @@ public class DataUnionClient {
      * @return number of signatures if complete or null if incomplete
      * @throws Exception
      */
-    protected BigInteger waitForSidechainAMBAffirmations(final Bytes32 msgHash, long sleeptime, long timeout) throws Exception {
+    protected static BigInteger waitForAMBAffirmations(HomeAMB fromAMB, final Bytes32 msgHash, long sleeptime, long timeout) throws Exception {
         Condition affirmationsChange = new Condition(){
             @Override
             public Object check() throws Exception {
-                BigInteger requiredSignatures = sidechainAMB().requiredSignatures().send().getValue();
-                BigInteger signatures = sidechainAMB().numMessagesSigned(msgHash).send().getValue();
+                BigInteger requiredSignatures = fromAMB.requiredSignatures().send().getValue();
+                BigInteger signatures = fromAMB.numMessagesSigned(msgHash).send().getValue();
                 //bit 255 is set in AMB to indicate completion. should the same as signatures >= reqd
                 boolean complete = signatures.testBit(255);
                 signatures = signatures.clearBit(255);
@@ -310,16 +331,16 @@ public class DataUnionClient {
 
      */
 
-    protected EthereumTransactionReceipt portTx(ForeignAMB toAMB, Bytes32 msgHash, short collectedSignatures) throws Exception {
+    protected EthereumTransactionReceipt portTx(HomeAMB fromAMB, ForeignAMB toAMB, Bytes32 msgHash, short collectedSignatures) throws Exception {
         if(collectedSignatures > 255) {
             throw new UnsupportedOperationException("collectedSignatures cannot be greater than 255");
         }
-        DynamicBytes message = sidechainAMB().message(msgHash).send();
+        DynamicBytes message = fromAMB.message(msgHash).send();
         byte[] signatures = new byte[1 + (65*collectedSignatures)];
         signatures[0] = (byte) collectedSignatures;
         //collect signatures one by one from sidechain, add to blob
         for(short i = 0; i < collectedSignatures; i++){
-            Sign.SignatureData sig = fromBytes65(sidechainAMB().signature(msgHash, new Uint256(i)).send().getValue());
+            Sign.SignatureData sig = fromBytes65(fromAMB.signature(msgHash, new Uint256(i)).send().getValue());
             signatures[i+1] = sig.getV()[0];
             System.arraycopy(sig.getR(), 0, signatures, 1+collectedSignatures+(i*32), 32);
             System.arraycopy(sig.getS(), 0, signatures, 1+(collectedSignatures*33)+(i*32), 32);
@@ -328,15 +349,15 @@ public class DataUnionClient {
     }
 
     public List<EthereumTransactionReceipt> portTxsToBinance(EthereumTransactionReceipt withdrawalTransaction, String binanceSenderPrivateKey) throws Exception {
-        return portTxs(binanceAMB(Credentials.create(binanceSenderPrivateKey)), withdrawalTransaction.tr);
+        return portTxs(sidechainAMBToBinance(), binanceAMB(Credentials.create(binanceSenderPrivateKey)), withdrawalTransaction.tr);
     }
 
     public List<EthereumTransactionReceipt> portTxsToMainnet(EthereumTransactionReceipt withdrawalTransaction, String mainnetSenderPrivateKey) throws Exception {
-        return portTxs(mainnetAMB(Credentials.create(mainnetSenderPrivateKey)), withdrawalTransaction.tr);
+        return portTxs(sidechainAMBToMainnet(), mainnetAMB(Credentials.create(mainnetSenderPrivateKey)), withdrawalTransaction.tr);
     }
 
     public List<EthereumTransactionReceipt> portTxsToMainnet(EthereumTransactionReceipt withdrawalTransaction, BigInteger mainnetSenderPrivateKey) throws Exception {
-        return portTxs(mainnetAMB(Credentials.create(ECKeyPair.create(mainnetSenderPrivateKey))), withdrawalTransaction.tr);
+        return portTxs(sidechainAMBToMainnet(), mainnetAMB(Credentials.create(ECKeyPair.create(mainnetSenderPrivateKey))), withdrawalTransaction.tr);
     }
 
     /**
@@ -352,12 +373,12 @@ public class DataUnionClient {
             throw new NoSuchElementException("No sidechain transaction found for txhash " + withdrawTxHash);
         }
         TransactionReceipt withdraw = optional.get();
-        return portTxs(mainnetAMB(Credentials.create(mainnetSenderPrivateKey)), withdraw);
+        return portTxs(sidechainAMBToMainnet(), mainnetAMB(Credentials.create(mainnetSenderPrivateKey)), withdraw);
     }
 
 
 
-    protected List<EthereumTransactionReceipt> portTxs(ForeignAMB toAMB, TransactionReceipt withdraw) throws Exception {
+    protected List<EthereumTransactionReceipt> portTxs(HomeAMB fromAMB, ForeignAMB toAMB, TransactionReceipt withdraw) throws Exception {
         List<Bytes32[]> msgs = extractAmbMessagesIdAndHash(withdraw);
         List<EthereumTransactionReceipt> txs = new ArrayList<EthereumTransactionReceipt>(msgs.size());
         for(Bytes32[] msg : msgs){
@@ -370,13 +391,13 @@ public class DataUnionClient {
                 continue;
             }
             //wait until required signatures are present
-            BigInteger signatures = waitForSidechainAMBAffirmations(hash, bridgePollInterval, bridgePollTimeout);
+            BigInteger signatures = waitForAMBAffirmations(fromAMB, hash, bridgePollInterval, bridgePollTimeout);
             if(signatures == null){
                 log.warn("Couldnt find affimation for AMB msgId " + id);
                 continue;
             }
             log.info("Porting msgId " + id);
-            txs.add(portTx(toAMB, hash, signatures.shortValueExact()));
+            txs.add(portTx(fromAMB, toAMB, hash, signatures.shortValueExact()));
         }
         return txs;
     }

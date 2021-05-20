@@ -289,9 +289,12 @@ public class DataUnion {
         return ActiveStatus.INACTIVE.ordinal() == sidechain.memberData(new Address(member)).send().component1().getValue().longValue();
     }
 
+    public EthereumTransactionReceipt withdrawToBinance(BigInteger amount) throws Exception {
+        return withdrawTokensForMember(sidechainCred, opts.getBinanceAdapterAddress(), amount, false);
+    }
 
     public EthereumTransactionReceipt withdrawAllToBinance() throws Exception {
-        return withdrawAllTokensForSelfOrAsAdmin(opts.getBinanceAdapterAddress(), false);
+        return withdrawTokensForMember(sidechainCred, opts.getBinanceAdapterAddress(), BigInteger.ZERO,false);
     }
 
     public EthereumTransactionReceipt signWithdrawAllToBinance(String member, byte[] signedWithdrawalRequest) throws Exception {

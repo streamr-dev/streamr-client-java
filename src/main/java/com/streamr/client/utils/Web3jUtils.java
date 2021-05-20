@@ -154,6 +154,17 @@ public class Web3jUtils {
         return (BigInteger) ret.iterator().next().getValue();
     }
 
+    public static String callAddressGetterFunction(String contract, String functionName, Web3j connection) throws ClassNotFoundException, NoSuchMethodException, InvocationTargetException, InstantiationException, IllegalAccessException, IOException {
+        Function fn = FunctionEncoder.makeFunction(functionName,
+                Collections.<String>emptyList(),
+                Collections.emptyList(),
+                Arrays.<String>asList("address")
+        );
+        List<Type> ret = callFunction(contract, fn, connection);
+        return (String) ret.iterator().next().getValue();
+    }
+
+
     public static BigInteger erc20Balance(String contract, String balanceAddress, Web3j connection) throws ClassNotFoundException, NoSuchMethodException, InvocationTargetException, InstantiationException, IllegalAccessException, IOException {
         Function fn = FunctionEncoder.makeFunction("balanceOf",
                 Arrays.<String>asList("address"),
