@@ -302,8 +302,18 @@ public class StreamrRestClient {
   public Stream createStream(final Stream stream) throws IOException {
     final HttpUrl url = getEndpointUrl("streams");
     final JsonAdapter<Stream> streamJsonAdapter =
-        Json.newMoshiBuilder().build().adapter(Stream.class);
-    return postWithRetry(url, streamJsonAdapter.toJson(stream), streamJsonAdapter);
+      Json.newMoshiBuilder().build().adapter(Stream.class);
+    String json = streamJsonAdapter.toJson(stream);
+    if (stream.getId() != null) {
+      if (this.privateKey == null) {
+        throw new AuthenticationException("No private key");
+      }
+      String fullId = Stream.createStreamId(stream.getId(), new Address(Keys.privateKeyToAddressWithPrefix(this.privateKey)));
+      if (fullId != stream.getId()) {
+         json = Json.withValue(json, "id", fullId);
+      }
+    }
+    return postWithRetry(url, json, streamJsonAdapter);
   }
 
   public Permission grant(
