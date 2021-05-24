@@ -134,7 +134,7 @@ class StreamEndpointsSpec extends Specification {
         Stream createResult = client.createStream(proto)
 
         then:
-        createResult.getId() == address + path
+        createResult.getId() == address.toLowerCase() + path
     }
 
 
