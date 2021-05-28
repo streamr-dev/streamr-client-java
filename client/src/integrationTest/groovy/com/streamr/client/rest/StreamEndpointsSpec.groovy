@@ -98,58 +98,6 @@ class StreamEndpointsSpec extends Specification {
         getResult.name == createResult.name
     }
 
-    void "createStream() without streamId"() {
-        Stream proto = new Stream.Builder()
-            .createStream()
-
-        when:
-        Stream createResult = client.createStream(proto)
-
-        then:
-        createResult.getId() != null
-    }
-
-    void "createStream() full streamId"() {
-        String path = "/foobar-" + System.currentTimeMillis()
-        String address = Keys.privateKeyToAddressWithPrefix(privateKey)
-        Stream proto = new Stream.Builder()
-            .withId(address + path)
-            .createStream()
-
-        when:
-        Stream createResult = client.createStream(proto)
-
-        then:
-        createResult.getId() == address + path
-    }
-
-    void "createStream() path streamId"() {
-        String address = Keys.privateKeyToAddressWithPrefix(privateKey)
-        String path = "/foobar-" + System.currentTimeMillis()
-        Stream proto = new Stream.Builder()
-            .withId(path)
-            .createStream()
-
-        when:
-        Stream createResult = client.createStream(proto)
-
-        then:
-        createResult.getId() == address.toLowerCase() + path
-    }
-
-
-    void "getStreamByName() path streamId, no authentication"() {
-        Stream proto = new Stream.Builder()
-            .withId("/foobar-" + System.currentTimeMillis())
-            .createStream()
-
-        when:
-        Stream createResult = TestingStreamrClient.createUnauthenticatedClient().createStream(proto)
-
-        then:
-        thrown(AuthenticationException)
-    }
-
     void "getStreamByName() throws ResourceNotFoundException if no such stream is found"() {
         when:
         client.getStreamByName("non-existent for sure " + System.currentTimeMillis())
