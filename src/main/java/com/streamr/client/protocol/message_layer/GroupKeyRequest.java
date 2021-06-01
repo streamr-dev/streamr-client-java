@@ -10,7 +10,7 @@ import java.io.IOException;
 public class GroupKeyRequest extends AbstractGroupKeyMessage {
     private final String requestId;
     private final String publicKey;
-    private final List<String> groupKeyIds; // = new ArrayList<>();
+    private final List<String> groupKeyIds = new ArrayList<>();
 
     // public GroupKeyRequest(String requestId, String streamId, String rsaPublicKey, List<String> groupKeyIds) throws IOException{
     public GroupKeyRequest(String requestId, String streamId, String rsaPublicKey, List<String> groupKeyIds) {
@@ -22,8 +22,7 @@ public class GroupKeyRequest extends AbstractGroupKeyMessage {
 
         this.requestId = requestId;
         this.publicKey = rsaPublicKey;
-        this.groupKeyIds = groupKeyIds;
-        /*
+        
         // validate that no public keys are send as groupKeyIds
         String newLine = System.getProperty("line.separator");
         for (int i = 0; i < groupKeyIds.size(); i++) {
@@ -33,7 +32,7 @@ public class GroupKeyRequest extends AbstractGroupKeyMessage {
                 // should do something like this, right?
                 // throw new IOException("Invalid string given as groupKeyId:" + groupKeyIds.get(i));
             }
-        }*/
+        }
     }
 
     public String getRequestId() {
