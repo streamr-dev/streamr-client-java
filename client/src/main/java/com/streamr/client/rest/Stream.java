@@ -1,6 +1,7 @@
 package com.streamr.client.rest;
 
 import com.streamr.client.java.util.Objects;
+import com.streamr.client.utils.Address;
 import java.time.Instant;
 import java.util.ArrayList;
 import java.util.Date;
@@ -270,5 +271,18 @@ public final class Stream {
           dateCreated,
           lastUpdated);
     }
+  }
+
+  public static String createStreamId(String streamIdOrPath, Address owner) {
+    if (streamIdOrPath == null) {
+        throw new IllegalArgumentException("Missing stream id");
+    }
+    if (!streamIdOrPath.startsWith("/")) {
+        return streamIdOrPath;
+    }
+    if (owner == null) {
+        throw new Error("Owner missing for stream id: " + streamIdOrPath);
+    }
+    return owner.toString().toLowerCase() + streamIdOrPath;
   }
 }

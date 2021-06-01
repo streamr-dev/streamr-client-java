@@ -98,7 +98,6 @@ class StreamEndpointsSpec extends Specification {
         getResult.name == createResult.name
     }
 
-
     void "getStreamByName() throws ResourceNotFoundException if no such stream is found"() {
         when:
         client.getStreamByName("non-existent for sure " + System.currentTimeMillis())

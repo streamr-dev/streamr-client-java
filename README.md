@@ -234,7 +234,7 @@ If no error message handler is register then the error is logged.
 <a name="creating-streams"></a>
 ## Creating streams
 
-You create streams via the `create(Stream)` method, passing in a prototype `Stream` object with fields set as you wish. The method returns the `Stream` object that was actually created.
+You create streams via the `create(Stream)` method, passing in a prototype `Stream` object with fields set as you wish. The method returns the `Stream` object that was actually created. If you specify `id`, it can be a full streamId or a path (e.g. `/foo/bar` will create a stream with id `<your-ethereum-address>/foo/bar` if you have authenticated with a private key)
 
 ```java
 Stream created = client.createStream(new Stream("Stream name", "Stream description"));
