@@ -5,6 +5,8 @@ import com.streamr.client.utils.ValidationUtil;
 import java.util.ArrayList;
 import java.util.List;
 
+import java.io.IOException;
+
 public class GroupKeyRequest extends AbstractGroupKeyMessage {
     private final String requestId;
     private final String publicKey;
@@ -26,6 +28,8 @@ public class GroupKeyRequest extends AbstractGroupKeyMessage {
         for (int i = 0; i < groupKeyIds.size(); i++) {
             if (!groupKeyIds.get(i).contains(newLine)){
                 this.groupKeyIds.add(groupKeyIds.get(i));
+            } else {
+                throw new IOException("Invalid string given as groupKeyId:" + groupKeyIds.get(i));
             }
         }
     }
