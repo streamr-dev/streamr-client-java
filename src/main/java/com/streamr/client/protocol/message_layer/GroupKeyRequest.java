@@ -12,7 +12,7 @@ public class GroupKeyRequest extends AbstractGroupKeyMessage {
     private final String publicKey;
     private final List<String> groupKeyIds = new ArrayList<>();
 
-    public GroupKeyRequest(String requestId, String streamId, String rsaPublicKey, List<String> groupKeyIds) {
+    public GroupKeyRequest(String requestId, String streamId, String rsaPublicKey, List<String> groupKeyIds) throws IOException{
         super(streamId);
         ValidationUtil.checkNotNull(requestId, "requestId");
         ValidationUtil.checkNotNull(rsaPublicKey, "rsaPublicKey");
