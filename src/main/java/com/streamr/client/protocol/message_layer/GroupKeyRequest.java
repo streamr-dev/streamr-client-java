@@ -12,7 +12,8 @@ public class GroupKeyRequest extends AbstractGroupKeyMessage {
     private final String publicKey;
     private final List<String> groupKeyIds = new ArrayList<>();
 
-    public GroupKeyRequest(String requestId, String streamId, String rsaPublicKey, List<String> groupKeyIds) throws IOException{
+    // public GroupKeyRequest(String requestId, String streamId, String rsaPublicKey, List<String> groupKeyIds) throws IOException{
+    public GroupKeyRequest(String requestId, String streamId, String rsaPublicKey, List<String> groupKeyIds) {
         super(streamId);
         ValidationUtil.checkNotNull(requestId, "requestId");
         ValidationUtil.checkNotNull(rsaPublicKey, "rsaPublicKey");
@@ -28,7 +29,8 @@ public class GroupKeyRequest extends AbstractGroupKeyMessage {
             if (!groupKeyIds.get(i).contains(newLine)){
                 this.groupKeyIds.add(groupKeyIds.get(i));
             } else {
-                throw new IOException("Invalid string given as groupKeyId:" + groupKeyIds.get(i));
+                // should do something like this, right?
+                // throw new IOException("Invalid string given as groupKeyId:" + groupKeyIds.get(i));
             }
         }
     }
