@@ -18,7 +18,15 @@ public class GroupKeyRequest extends AbstractGroupKeyMessage {
 
         this.requestId = requestId;
         this.publicKey = rsaPublicKey;
-        this.groupKeyIds = groupKeyIds;
+
+        this.groupKeyIds = new ArrayList<>();
+        // validate that no public keys are send as groupKeyIds
+        String newLine = System.getProperty("line.separator");
+        for (int i = 0; i < groupKeyIds.size(); i++) {
+            if (!groupKeyIds.get(i).contains(newLine)){
+                this.groupKeyIds.add(groupKeyIds.get(i));
+            }
+        }
     }
 
     public String getRequestId() {
