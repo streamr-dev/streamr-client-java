@@ -257,7 +257,7 @@ class StreamEndpointsSpec extends Specification {
         StorageNode storageNode = new StorageNode(TestingAddresses.createRandom())
         client.addStreamToStorageNode(streamId, storageNode)
         when:
-        client.removeStreamToStorageNode(streamId, storageNode)
+        client.removeStreamFromStorageNode(streamId, storageNode)
         List<StorageNode> storageNodes = client.getStorageNodes(streamId)
         then:
         storageNodes.size() == 0

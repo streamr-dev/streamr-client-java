@@ -121,7 +121,7 @@ interface Streamr {
   void addStreamToStorageNode(final String streamId, final StorageNode storageNode)
       throws IOException;
 
-  void removeStreamToStorageNode(final String streamId, final StorageNode storageNode)
+  void removeStreamFromStorageNode(final String streamId, final StorageNode storageNode)
       throws IOException;
 
   List<StorageNode> getStorageNodes(final String streamId) throws IOException;

@@ -228,7 +228,7 @@ public class StreamrRestClient {
     postWithRetry(url, storageNodeJsonAdapter.toJson(storageNode), streamJsonAdapter);
   }
 
-  public void removeStreamToStorageNode(final String streamId, final StorageNode storageNode)
+  public void removeStreamFromStorageNode(final String streamId, final StorageNode storageNode)
       throws IOException {
     final HttpUrl url =
         getEndpointUrl("streams", streamId, "storageNodes", storageNode.getAddress().toString());

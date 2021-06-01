@@ -776,9 +776,9 @@ public class StreamrClient implements Streamr {
   }
 
   @Override
-  public void removeStreamToStorageNode(final String streamId, final StorageNode storageNode)
+  public void removeStreamFromStorageNode(final String streamId, final StorageNode storageNode)
       throws IOException {
-    restClient.removeStreamToStorageNode(streamId, storageNode);
+    restClient.removeStreamFromStorageNode(streamId, storageNode);
   }
 
   @Override

@@ -238,6 +238,8 @@ You create streams via the `create(Stream)` method, passing in a prototype `Stre
 
 ```java
 Stream created = client.createStream(new Stream("Stream name", "Stream description"));
+// Optional: to enable historical data resends, add the stream to a storage node
+client.addStreamToStorageNode(created.getId(), StorageNode.STREAMR_GERMANY);
 ```
 
 <a name="looking-up-streams"></a>
