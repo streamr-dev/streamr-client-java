@@ -5,8 +5,6 @@ import com.streamr.client.utils.ValidationUtil;
 import java.util.ArrayList;
 import java.util.List;
 
-import java.io.IOException;
-
 public class GroupKeyRequest extends AbstractGroupKeyMessage {
     private final String requestId;
     private final String publicKey;
