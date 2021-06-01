@@ -2,6 +2,7 @@ package com.streamr.client.protocol.message_layer;
 
 import com.streamr.client.utils.ValidationUtil;
 
+import java.util.ArrayList;
 import java.util.List;
 
 public class GroupKeyRequest extends AbstractGroupKeyMessage {
@@ -19,7 +20,7 @@ public class GroupKeyRequest extends AbstractGroupKeyMessage {
         this.requestId = requestId;
         this.publicKey = rsaPublicKey;
 
-        this.groupKeyIds = new List<>();
+        this.groupKeyIds = new ArrayList<String>();
         // validate that no public keys are send as groupKeyIds
         String newLine = System.getProperty("line.separator");
         for (int i = 0; i < groupKeyIds.size(); i++) {
