@@ -60,11 +60,11 @@ public class DataUnionClient {
 
     private final DataUnionClientOptions opts;
 
-    public DataUnionClient(String mainnetUrl, String sidechainUrl, DataUnionClientOptions opts) {
+    public DataUnionClient(DataUnionClientOptions opts) {
         this.opts = opts;
-        this.mainnet = Web3j.build(new HttpService(mainnetUrl));
+        this.mainnet = Web3j.build(new HttpService(opts.getMainnetRPC()));
         this.mainnetCred = Credentials.create(opts.getMainnetAdminPrvKey());
-        this.sidechain = Web3j.build(new HttpService(sidechainUrl));
+        this.sidechain = Web3j.build(new HttpService(opts.getSidechainRPC()));
         this.sidechainCred = Credentials.create(opts.getSidechainAdminPrvKey());
         mainnetGasProvider = new EstimatedGasProvider(mainnet, 730000);
         sidechainGasProvider = new EstimatedGasProvider(sidechain, 3000000);
@@ -169,7 +169,11 @@ public class DataUnionClient {
     }
 
     public String getBinanceDepositAddress(String user) throws Exception {
-        return binanceAdapterSidechain().binanceRecipient(new Address(user)).send().component1().getValue();
+        BinanceAdapter ba = binanceAdapterSidechain();
+        Address a = ba.binanceRecipient(new Address(user)).send().component1();
+        if(a.toUint().getValue().equals(BigInteger.ZERO))
+            return null;
+        return a.getValue();
     }
 
     public EthereumTransactionReceipt setBinanceDepositAddress(String depositAddress) throws Exception {
@@ -191,7 +195,7 @@ public class DataUnionClient {
     bytes32 messageHash = keccak256(abi.encodePacked(
             "\x19Ethereum Signed Message:\n72", recipient, nonce, address(this)));
 */
-    public byte[] createSetBinanceRecipientRequest(String recipient) throws Exception {
+    protected byte[] createSetBinanceRecipientRequest(String recipient) throws Exception {
         BigInteger nonce = getBinanceSetRecipientNonce(sidechainCred.getAddress()).add(BigInteger.ONE);
         //TypeEncode doesnt expose a non-padding encode() :(
         String messageHex = TypeEncoder.encode(new Address(recipient)).substring(24) +
@@ -200,16 +204,25 @@ public class DataUnionClient {
         return Numeric.hexStringToByteArray(messageHex);
     }
 
+    public String createSignedSetBinanceRecipientRequest(String recipient) throws Exception {
+        return createSignedSetBinanceRecipientRequest(sidechainCred, recipient);
+    }
 
-    public BigInteger getBinanceSetRecipientNonce(String address) throws Exception {
+    public String createSignedSetBinanceRecipientRequest(Credentials cred, String recipient) throws Exception {
+        byte[] req = createSetBinanceRecipientRequest(recipient);
+        byte[] sig = toBytes65(Sign.signPrefixedMessage(req, cred.getEcKeyPair()));
+        return Numeric.toHexString(sig);
+    }
+
+    protected BigInteger getBinanceSetRecipientNonce(String address) throws Exception {
         return binanceAdapterSidechain().binanceRecipient(new Address(address)).send().component2().getValue();
     }
-/*
-    public EthereumTransactionReceipt setBinanceRecipientFromSig() {
-        return binanceAdapterSidechain().setBinanceRecipientFromSig(new Address(sidechainCred.getAddress(),
-                ))
+
+    public EthereumTransactionReceipt setBinanceRecipientFromSig(String from, String recip, String signedSetBinanceRecipientRequest) throws Exception {
+        byte[] sig = Numeric.hexStringToByteArray(signedSetBinanceRecipientRequest);
+        return new EthereumTransactionReceipt(binanceAdapterSidechain().setBinanceRecipientFromSig(new Address(from), new Address(recip), new DynamicBytes(sig)).send());
     }
-    */
+
 
     public void signSetBinanceDepositAddress(String recipient) throws Exception {
         byte[] req = createSetBinanceRecipientRequest(recipient);

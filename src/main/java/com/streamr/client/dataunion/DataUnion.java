@@ -263,7 +263,7 @@ public class DataUnion {
     }
 
     /**
-     * creates the blob that must be signed in order to withdraw for another
+     * creates the unsigned blob that must be signed to withdraw for another
      *
      * @param from
      * @param to
@@ -271,7 +271,7 @@ public class DataUnion {
      * @return
      * @throws Exception
      */
-    public byte[] createWithdrawRequest(String from, String to, BigInteger amount) throws Exception {
+    protected byte[] createWithdrawRequest(String from, String to, BigInteger amount) throws Exception {
         Uint256 withdrawn = sidechain.getWithdrawn(new Address(from)).send();
         //TypeEncode doesnt expose a non-padding encode() :(
         String messageHex = TypeEncoder.encode(new Address(to)).substring(24) +
@@ -294,11 +294,27 @@ public class DataUnion {
     }
 
     public EthereumTransactionReceipt withdrawAllToBinance() throws Exception {
-        return withdrawTokensForMember(sidechainCred, opts.getBinanceAdapterAddress(), BigInteger.ZERO,false);
+        return withdrawToBinance(BigInteger.ZERO);
     }
 
-    public EthereumTransactionReceipt signWithdrawAllToBinance(String member, byte[] signedWithdrawalRequest) throws Exception {
-        return withdrawAllTokensForMember(member, opts.getBinanceAdapterAddress(), signedWithdrawalRequest, false);
+    /**
+     * creates a signed withdrawal request to recipient using the sidechain private key
+     * @param recipient
+     * @return
+     * @throws Exception
+     */
+    public String signWithdraw(String recipient, BigInteger amount) throws Exception {
+        byte[] req = createWithdrawRequest(sidechainCred.getAddress(), recipient, amount);
+        byte[] sig = toBytes65(Sign.signPrefixedMessage(req, sidechainCred.getEcKeyPair()));
+        return Numeric.toHexString(sig);
+    }
+
+    public String signWithdrawAll(String recipient) throws Exception {
+        return signWithdraw(recipient, BigInteger.ZERO);
+    }
+
+    public String signWithdrawAllToBinance() throws Exception {
+        return signWithdrawAll(opts.getBinanceAdapterAddress());
     }
 
 }

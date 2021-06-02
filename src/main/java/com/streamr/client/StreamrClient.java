@@ -337,9 +337,7 @@ public class StreamrClient extends StreamrRESTClient {
     }
 
     public DataUnionClient dataUnionClient(String mainnetAdminPrvKey, String sidechainAdminPrvKey) {
-        return new DataUnionClient(options.getMainnetRpcUrl(),
-                options.getSidechainRpcUrl(),
-                new DataUnionClientOptions(mainnetAdminPrvKey, sidechainAdminPrvKey));
+        return new DataUnionClient(new DataUnionClientOptions(options.getMainnetRpcUrl(), mainnetAdminPrvKey, options.getSidechainRpcUrl(), sidechainAdminPrvKey));
     }
 
     /*

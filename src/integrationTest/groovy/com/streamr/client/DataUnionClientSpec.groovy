@@ -51,6 +51,24 @@ class DataUnionClientSpec extends StreamrIntegrationSpecification{
         mainnetToken = IERC20.load(client.mainnetTokenAddress(), mainnet, wallets[0], new EstimatedGasProvider(mainnet, 730000))
     }
 
+    void "set/get Binance recipient for self"() {
+        when:
+        client.setBinanceDepositAddress(wallets[1].getAddress())
+
+        then:
+        client.getBinanceDepositAddress(wallets[0].getAddress()).equals(wallets[1].getAddress())
+        client.getBinanceDepositAddress(wallets[1].getAddress()) == null
+    }
+
+    void "set/get Binance recipient for other with signature"() {
+        when:
+        String sig = client.createSignedSetBinanceRecipientRequest(wallets[1], wallets[2].getAddress())
+        client.setBinanceRecipientFromSig(wallets[1].getAddress(), wallets[2].getAddress(), sig)
+
+        then:
+        client.getBinanceDepositAddress(wallets[1].getAddress()).equals(wallets[2].getAddress())
+    }
+
     void "create DU"() {
         //Address deployer = new Address(wallets[0].getAddress())
         when:
@@ -131,5 +149,4 @@ class DataUnionClientSpec extends StreamrIntegrationSpecification{
         then:
         du.isMemberActive(member)
     }
-
 }

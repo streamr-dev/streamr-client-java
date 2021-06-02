@@ -2,6 +2,7 @@ package com.streamr.client
 
 import com.streamr.client.authentication.EthereumAuthenticationMethod
 import com.streamr.client.dataunion.DataUnionClient
+import com.streamr.client.options.DataUnionClientOptions
 import com.streamr.client.options.EncryptionOptions
 import com.streamr.client.options.SigningOptions
 import com.streamr.client.options.StreamrClientOptions
@@ -20,6 +21,7 @@ class StreamrIntegrationSpecification extends Specification {
     protected final static DEV_SIDECHAIN_RPC = "http://localhost:8546"
     protected final static DEV_SIDECHAIN_FACTORY = "0x4A4c4759eb3b7ABee079f832850cD3D0dC48D927"
     protected final static DEV_MAINCHAIN_FACTORY = "0x4bbcBeFBEC587f6C4AF9AF9B48847caEa1Fe81dA"
+    protected final static DEV_BINANCE_ADAPTER = "0xdc5F6368cd31330adC259386e78604a5E29E9415"
 
     // "broker-node-storage-1" om Docker environment
     protected final static DEV_STORAGE_NODE_ADDRESS = new Address("0xde1112f631486CfC759A50196853011528bC5FA0")
@@ -32,13 +34,11 @@ class StreamrIntegrationSpecification extends Specification {
     }
 
     protected static DataUnionClient devChainDataUnionClient(String mainnetAdminPrvKey, String sidechainAdminPrvKey) {
-        StreamrClientOptions opts = new StreamrClientOptions(null, SigningOptions.getDefault(), EncryptionOptions.getDefault(), DEFAULT_WEBSOCKET_URL, DEFAULT_REST_URL)
-        opts.setSidechainRpcUrl(DEV_SIDECHAIN_RPC)
-        opts.setMainnetRpcUrl(DEV_MAINCHAIN_RPC)
+        DataUnionClientOptions opts = new DataUnionClientOptions(DEV_MAINCHAIN_RPC, mainnetAdminPrvKey, DEV_SIDECHAIN_RPC, sidechainAdminPrvKey);
         opts.setDataUnionMainnetFactoryAddress(DEV_MAINCHAIN_FACTORY)
         opts.setDataUnionSidechainFactoryAddress(DEV_SIDECHAIN_FACTORY)
-        opts.setConnectionTimeoutMillis(60000)
-        return new StreamrClient(opts).dataUnionClient(mainnetAdminPrvKey, sidechainAdminPrvKey)
+        opts.setBinanceAdapterAddress(DEV_BINANCE_ADAPTER)
+        return new DataUnionClient(opts)
     }
 
     protected static StreamrClient createUnauthenticatedClient() {

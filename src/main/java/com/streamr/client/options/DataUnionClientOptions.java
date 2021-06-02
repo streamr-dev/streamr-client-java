@@ -10,9 +10,13 @@ public class DataUnionClientOptions {
     private String mainnetAdminPrvKey;
     private String sidechainAdminPrvKey;
     private String binanceRPC = "https://bsc-dataseed.binance.org/";
+    private String mainnetRPC;
+    private String sidechainRPC;
 
-    public DataUnionClientOptions(String mainnetAdminPrvKey, String sidechainAdminPrvKey){
+    public DataUnionClientOptions(String mainnetRPC, String mainnetAdminPrvKey, String sidechainRPC, String sidechainAdminPrvKey){
+        this.mainnetRPC = mainnetRPC;
         this.mainnetAdminPrvKey = mainnetAdminPrvKey;
+        this.sidechainRPC = sidechainRPC;
         this.sidechainAdminPrvKey = sidechainAdminPrvKey;
     }
 
@@ -69,5 +73,21 @@ public class DataUnionClientOptions {
 
     public void setBinanceRPC(String binanceRPC) {
         this.binanceRPC = binanceRPC;
+    }
+
+    public String getMainnetRPC() {
+        return mainnetRPC;
+    }
+
+    public void setMainnetRPC(String mainnetRPC) {
+        this.mainnetRPC = mainnetRPC;
+    }
+
+    public String getSidechainRPC() {
+        return sidechainRPC;
+    }
+
+    public void setSidechainRPC(String sidechainRPC) {
+        this.sidechainRPC = sidechainRPC;
     }
 }
