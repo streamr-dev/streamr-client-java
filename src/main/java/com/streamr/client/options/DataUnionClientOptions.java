@@ -12,7 +12,8 @@ public class DataUnionClientOptions {
     private String binanceRPC = "https://bsc-dataseed.binance.org/";
     private String mainnetRPC;
     private String sidechainRPC;
-
+    private String withdrawServerBaseUrl = "http://localhost:3000";
+    private long connectionTimeoutMillis = 60000;
     public DataUnionClientOptions(String mainnetRPC, String mainnetAdminPrvKey, String sidechainRPC, String sidechainAdminPrvKey){
         this.mainnetRPC = mainnetRPC;
         this.mainnetAdminPrvKey = mainnetAdminPrvKey;
@@ -89,5 +90,21 @@ public class DataUnionClientOptions {
 
     public void setSidechainRPC(String sidechainRPC) {
         this.sidechainRPC = sidechainRPC;
+    }
+
+    public String getWithdrawServerBaseUrl() {
+        return withdrawServerBaseUrl;
+    }
+
+    public void setWithdrawServerBaseUrl(String withdrawServerBaseUrl) {
+        this.withdrawServerBaseUrl = withdrawServerBaseUrl;
+    }
+
+    public long getConnectionTimeoutMillis() {
+        return connectionTimeoutMillis;
+    }
+
+    public void setConnectionTimeoutMillis(long connectionTimeoutMillis) {
+        this.connectionTimeoutMillis = connectionTimeoutMillis;
     }
 }

@@ -68,7 +68,18 @@ class DataUnionClientSpec extends StreamrIntegrationSpecification{
         then:
         client.getBinanceDepositAddress(wallets[1].getAddress()).equals(wallets[2].getAddress())
     }
+/*
+    /withdraw server isn't part of Streamr docker stack atm. Must be started manually
 
+    void "set/get Binance recipient for other with signature using withdraw server"() {
+        when:
+        String sig = client.createSignedSetBinanceRecipientRequest(wallets[2], wallets[3].getAddress())
+        client.setBinanceRecipientViaWithdrawServer(wallets[2].getAddress(), wallets[3].getAddress(), sig)
+
+        then:
+        client.getBinanceDepositAddress(wallets[2].getAddress()).equals(wallets[3].getAddress())
+    }
+*/
     void "create DU"() {
         //Address deployer = new Address(wallets[0].getAddress())
         when:

@@ -1,8 +1,13 @@
 package com.streamr.client.dataunion;
 
+import com.squareup.moshi.JsonAdapter;
+import com.streamr.client.StreamrClient;
 import com.streamr.client.dataunion.contracts.*;
 import com.streamr.client.options.DataUnionClientOptions;
+import com.streamr.client.rest.SetBinanceRecipientFromSignature;
+import com.streamr.client.utils.HttpUtils;
 import com.streamr.client.utils.Web3jUtils;
+import okhttp3.*;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.web3j.abi.EventValues;
@@ -22,12 +27,15 @@ import org.web3j.protocol.core.methods.response.Log;
 import org.web3j.protocol.core.methods.response.TransactionReceipt;
 import org.web3j.protocol.http.HttpService;
 
+import java.io.IOException;
 import java.math.BigInteger;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.NoSuchElementException;
 import java.util.Optional;
+import java.util.concurrent.TimeUnit;
 
+import static com.streamr.client.utils.HttpUtils.MOSHI;
 import static com.streamr.client.utils.Web3jUtils.*;
 import static org.web3j.tx.Contract.staticExtractEventParameters;
 
@@ -46,6 +54,7 @@ import org.web3j.utils.Numeric;
  */
 public class DataUnionClient {
     private static final Logger log = LoggerFactory.getLogger(DataUnionClient.class);
+    public static final JsonAdapter<SetBinanceRecipientFromSignature> setBinanceRecipientAdapter = MOSHI.adapter(SetBinanceRecipientFromSignature.class);
 
     private final Web3j mainnet;
     private final Web3j sidechain;
@@ -140,6 +149,43 @@ public class DataUnionClient {
         return new DataUnion(main, mainnet, side, sidechain, opts);
     }
 
+    protected OkHttpClient.Builder httpClientBuilder(){
+        OkHttpClient.Builder builder = new OkHttpClient.Builder();
+        if(opts != null) {
+            builder.connectTimeout(opts.getConnectionTimeoutMillis(), TimeUnit.MILLISECONDS);
+            builder.readTimeout(opts.getConnectionTimeoutMillis(), TimeUnit.MILLISECONDS);
+            builder.writeTimeout(opts.getConnectionTimeoutMillis(), TimeUnit.MILLISECONDS);
+        }
+        return builder;
+    }
+
+    public void setBinanceRecipientViaWithdrawServer(String member, String binanceRecipient, String signature) throws IOException {
+        HttpUrl.Builder builder = HttpUrl.parse(opts.getWithdrawServerBaseUrl()).newBuilder();
+        builder.addPathSegment("binanceAdapterSetRecipient");
+        HttpUrl url = builder.build();
+        SetBinanceRecipientFromSignature set = new SetBinanceRecipientFromSignature(member, binanceRecipient, signature);
+        Request.Builder reqBuilder = new Request.Builder()
+                .url(url)
+                .post(RequestBody.create(HttpUtils.jsonType, setBinanceRecipientAdapter.toJson(set)));
+        execute(reqBuilder.build(),null);
+    }
+
+    private <T> T execute(Request request, JsonAdapter<T> adapter) throws IOException {
+        OkHttpClient client = new OkHttpClient(httpClientBuilder());
+        // Execute the request and retrieve the response.
+        Response response = client.newCall(request).execute();
+        try {
+            HttpUtils.assertSuccessful(response);
+
+            // Deserialize HTTP response to concrete type.
+            return adapter == null ? null : adapter.fromJson(response.body().source());
+        } finally {
+            response.close();
+        }
+    }
+            /*
+*/
+
     protected BinanceAdapter binanceAdapterSidechain() {
         return BinanceAdapter.load(opts.getBinanceAdapterAddress(), sidechain, sidechainCred, sidechainGasProvider);
     }
@@ -222,7 +268,6 @@ public class DataUnionClient {
         byte[] sig = Numeric.hexStringToByteArray(signedSetBinanceRecipientRequest);
         return new EthereumTransactionReceipt(binanceAdapterSidechain().setBinanceRecipientFromSig(new Address(from), new Address(recip), new DynamicBytes(sig)).send());
     }
-
 
     public void signSetBinanceDepositAddress(String recipient) throws Exception {
         byte[] req = createSetBinanceRecipientRequest(recipient);
