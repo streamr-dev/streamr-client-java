@@ -241,8 +241,8 @@ public class DataUnionClient {
     bytes32 messageHash = keccak256(abi.encodePacked(
             "\x19Ethereum Signed Message:\n72", recipient, nonce, address(this)));
 */
-    protected byte[] createSetBinanceRecipientRequest(String recipient) throws Exception {
-        BigInteger nonce = getBinanceSetRecipientNonce(sidechainCred.getAddress()).add(BigInteger.ONE);
+    protected byte[] createSetBinanceRecipientRequest(String from, String recipient) throws Exception {
+        BigInteger nonce = getBinanceSetRecipientNonce(from).add(BigInteger.ONE);
         //TypeEncode doesnt expose a non-padding encode() :(
         String messageHex = TypeEncoder.encode(new Address(recipient)).substring(24) +
                 TypeEncoder.encode(new Uint256(nonce)) +
@@ -255,7 +255,7 @@ public class DataUnionClient {
     }
 
     public String createSignedSetBinanceRecipientRequest(Credentials cred, String recipient) throws Exception {
-        byte[] req = createSetBinanceRecipientRequest(recipient);
+        byte[] req = createSetBinanceRecipientRequest(cred.getAddress(), recipient);
         byte[] sig = toBytes65(Sign.signPrefixedMessage(req, cred.getEcKeyPair()));
         return Numeric.toHexString(sig);
     }
@@ -267,12 +267,6 @@ public class DataUnionClient {
     public EthereumTransactionReceipt setBinanceRecipientFromSig(String from, String recip, String signedSetBinanceRecipientRequest) throws Exception {
         byte[] sig = Numeric.hexStringToByteArray(signedSetBinanceRecipientRequest);
         return new EthereumTransactionReceipt(binanceAdapterSidechain().setBinanceRecipientFromSig(new Address(from), new Address(recip), new DynamicBytes(sig)).send());
-    }
-
-    public void signSetBinanceDepositAddress(String recipient) throws Exception {
-        byte[] req = createSetBinanceRecipientRequest(recipient);
-        byte[] sig = toBytes65(Sign.signPrefixedMessage(req, sidechainCred.getEcKeyPair()));
-        //TODO send to withdraw server
     }
 
     public byte[] sign(byte[] request) {

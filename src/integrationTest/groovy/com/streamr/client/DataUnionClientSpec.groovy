@@ -29,6 +29,7 @@ class DataUnionClientSpec extends StreamrIntegrationSpecification{
         "0x2cd9855d17e01ce041953829398af7e48b24ece04ff9d0e183414de54dc52285",
         "0x2c326a4c139eced39709b235fffa1fde7c252f3f7b505103f7b251586c35d543"
     ]
+    private String oneAddress = "0x0000000000000000000000000000000000000001"
 
     // the default key used by Engine & Editor
     private String eePrivateKey = "0x0123456789ABCDEF0123456789ABCDEF0123456789ABCDEF0123456789ABCDEF"
@@ -57,7 +58,11 @@ class DataUnionClientSpec extends StreamrIntegrationSpecification{
 
         then:
         client.getBinanceDepositAddress(wallets[0].getAddress()).equals(wallets[1].getAddress())
-        client.getBinanceDepositAddress(wallets[1].getAddress()) == null
+    }
+
+    void "0x address recipient returns null"() {
+        expect:
+        client.getBinanceDepositAddress(oneAddress) == null
     }
 
     void "set/get Binance recipient for other with signature"() {
@@ -69,8 +74,8 @@ class DataUnionClientSpec extends StreamrIntegrationSpecification{
         client.getBinanceDepositAddress(wallets[1].getAddress()).equals(wallets[2].getAddress())
     }
 /*
-    /withdraw server isn't part of Streamr docker stack atm. Must be started manually
-
+    // withdraw server isn't part of Streamr docker stack atm. Must be started manually
+    // uncomment this test when withdraw server is added to CI
     void "set/get Binance recipient for other with signature using withdraw server"() {
         when:
         String sig = client.createSignedSetBinanceRecipientRequest(wallets[2], wallets[3].getAddress())
