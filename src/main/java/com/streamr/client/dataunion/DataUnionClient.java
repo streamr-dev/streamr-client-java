@@ -1,7 +1,6 @@
 package com.streamr.client.dataunion;
 
 import com.squareup.moshi.JsonAdapter;
-import com.streamr.client.StreamrClient;
 import com.streamr.client.dataunion.contracts.*;
 import com.streamr.client.options.DataUnionClientOptions;
 import com.streamr.client.rest.SetBinanceRecipientFromSignature;
@@ -72,9 +71,9 @@ public class DataUnionClient {
     public DataUnionClient(DataUnionClientOptions opts) {
         this.opts = opts;
         this.mainnet = Web3j.build(new HttpService(opts.getMainnetRPC()));
-        this.mainnetCred = Credentials.create(opts.getMainnetAdminPrvKey());
+        this.mainnetCred = Credentials.create(opts.getMainnetAdminPrivateKey());
         this.sidechain = Web3j.build(new HttpService(opts.getSidechainRPC()));
-        this.sidechainCred = Credentials.create(opts.getSidechainAdminPrvKey());
+        this.sidechainCred = Credentials.create(opts.getSidechainAdminPrivateKey());
         mainnetGasProvider = new EstimatedGasProvider(mainnet, 730000);
         sidechainGasProvider = new EstimatedGasProvider(sidechain, 3000000);
     }

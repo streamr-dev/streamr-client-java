@@ -13,7 +13,6 @@ import org.web3j.crypto.Credentials;
 import org.web3j.crypto.ECKeyPair;
 import org.web3j.crypto.Sign;
 import org.web3j.protocol.Web3j;
-import org.web3j.protocol.http.HttpService;
 import org.web3j.utils.Numeric;
 import java.math.BigInteger;
 import static com.streamr.client.utils.Web3jUtils.*;
@@ -43,8 +42,8 @@ public class DataUnion {
         this.opts = opts;
         this.mainnet = mainnet;
         this.mainnetConnector = mainnetConnector;
-        this.mainnetCred = Credentials.create(opts.getMainnetAdminPrvKey());
-        this.sidechainCred = Credentials.create(opts.getSidechainAdminPrvKey());
+        this.mainnetCred = Credentials.create(opts.getMainnetAdminPrivateKey());
+        this.sidechainCred = Credentials.create(opts.getSidechainAdminPrivateKey());
         this.sidechain = sidechain;
         this.sidechainConnector = sidechainConnector;
     }

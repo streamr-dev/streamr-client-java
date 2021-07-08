@@ -7,18 +7,19 @@ public class DataUnionClientOptions {
     private String dataUnionMainnetFactoryAddress = "0x7d55f9981d4E10A193314E001b96f72FCc901e40";
     private String binanceAdapterAddress = "0x0c1aF6edA561fbDA48E9A7B1Dd46D216F31A97cC";
     private String binanceSmartChainAMBAddress = "0x05185872898b6f94aa600177ef41b9334b1fa48b";
-    private String mainnetAdminPrvKey;
-    private String sidechainAdminPrvKey;
+    private String mainnetAdminPrivateKey;
+    private String sidechainAdminPrivateKey;
     private String binanceRPC = "https://bsc-dataseed.binance.org/";
     private String mainnetRPC;
     private String sidechainRPC;
     private String withdrawServerBaseUrl = "http://localhost:3000";
     private long connectionTimeoutMillis = 60000;
-    public DataUnionClientOptions(String mainnetRPC, String mainnetAdminPrvKey, String sidechainRPC, String sidechainAdminPrvKey){
+
+    public DataUnionClientOptions(String mainnetRPC, String mainnetAdminPrivateKey, String sidechainRPC, String sidechainAdminPrivateKey){
         this.mainnetRPC = mainnetRPC;
-        this.mainnetAdminPrvKey = mainnetAdminPrvKey;
+        this.mainnetAdminPrivateKey = mainnetAdminPrivateKey;
         this.sidechainRPC = sidechainRPC;
-        this.sidechainAdminPrvKey = sidechainAdminPrvKey;
+        this.sidechainAdminPrivateKey = sidechainAdminPrivateKey;
     }
 
     public String getDataUnionSidechainFactoryAddress() {
@@ -44,20 +45,20 @@ public class DataUnionClientOptions {
         this.binanceAdapterAddress = binanceAdapaterAddress;
     }
 
-    public String getSidechainAdminPrvKey() {
-        return sidechainAdminPrvKey;
+    public String getSidechainAdminPrivateKey() {
+        return sidechainAdminPrivateKey;
     }
 
-    public void setSidechainAdminPrvKey(String sidechainAdminPrvKey) {
-        this.sidechainAdminPrvKey = sidechainAdminPrvKey;
+    public void setSidechainAdminPrivateKey(String sidechainAdminPrivateKey) {
+        this.sidechainAdminPrivateKey = sidechainAdminPrivateKey;
     }
 
-    public String getMainnetAdminPrvKey() {
-        return mainnetAdminPrvKey;
+    public String getMainnetAdminPrivateKey() {
+        return mainnetAdminPrivateKey;
     }
 
-    public void setMainnetAdminPrvKey(String mainnetAdminPrvKey) {
-        this.mainnetAdminPrvKey = mainnetAdminPrvKey;
+    public void setMainnetAdminPrivateKey(String mainnetAdminPrivateKey) {
+        this.mainnetAdminPrivateKey = mainnetAdminPrivateKey;
     }
 
     public String getBinanceSmartChainAMBAddress() {
