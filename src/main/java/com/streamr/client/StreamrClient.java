@@ -7,6 +7,7 @@ import com.streamr.client.exceptions.ConnectionTimeoutException;
 import com.streamr.client.exceptions.MalformedMessageException;
 import com.streamr.client.exceptions.PartitionNotSpecifiedException;
 import com.streamr.client.exceptions.SubscriptionNotFoundException;
+import com.streamr.client.options.DataUnionClientOptions;
 import com.streamr.client.options.ResendOption;
 import com.streamr.client.options.StreamrClientOptions;
 import com.streamr.client.protocol.control_layer.*;
@@ -336,12 +337,7 @@ public class StreamrClient extends StreamrRESTClient {
     }
 
     public DataUnionClient dataUnionClient(String mainnetAdminPrvKey, String sidechainAdminPrvKey) {
-        return new DataUnionClient(options.getMainnetRpcUrl(),
-                options.getDataUnionMainnetFactoryAddress(),
-                mainnetAdminPrvKey,
-                options.getSidechainRpcUrl(),
-                options.getDataUnionSidechainFactoryAddress(),
-                sidechainAdminPrvKey);
+        return new DataUnionClient(new DataUnionClientOptions(options.getMainnetRpcUrl(), mainnetAdminPrvKey, options.getSidechainRpcUrl(), sidechainAdminPrvKey));
     }
 
     /*
