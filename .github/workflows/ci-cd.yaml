@@ -41,7 +41,7 @@ jobs:
 #        run: $make pmd
       - name: Codenarc for Groovy tests
         run: $make codenarc
-      - uses: actions/upload-artifact@v2.2.3
+      - uses: actions/upload-artifact@v2.2.4
         with:
           name: streamr-client-java-report-${{ env.datetime }}-${{ github.job }}
           if: failure()
