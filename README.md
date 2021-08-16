@@ -399,6 +399,8 @@ To get an existing instance of Data Union, call:
 | withdrawTokensForSelfOrAsAdmin(String memberAddress, BigInteger amount, boolean sendWithdrawToMainnet) | TransactionReceipt | Withdraw members tokens to given address |
 | withdrawTokensForMember(BigInteger privateKey, String to, BigInteger amount, boolean sendWithdrawToMainnet) | TransactionReceipt | Withdraw members tokens |
 
+Adding members using admin functions is not at feature parity with the member function `join`. The newly added member will not be granted publish permissions to the streams inside the Data Union. This will need to be done manually using, `streamr.grantPermission(stream_publish, user)`. Similarly, after removing a member using the admin function `removeMembers`, the publish permissions will need to be removed in a secondary step using `revokePermission(permissionId)`.
+
 When withdrawing, you can choose to send tokens to sidechain or mainnet with the `sendWithdrawToMainnet` boolean. If you withdraw to mainnet, you must **port** the resulting TransactionReceipt across the bridge with `DataUnionClient.portTxsToMainnet(sidechainTxReceipt, prvKey)`, which costs ETH. If you keep tokens on sidechain, you can use the [xDai bridge](https://omni.xdaichain.com/) to transfer them to mainnet at a later time.
 
 
