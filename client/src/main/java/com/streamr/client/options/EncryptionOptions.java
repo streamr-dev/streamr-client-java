@@ -1,7 +1,7 @@
 package com.streamr.client.options;
 
-import com.streamr.client.utils.EncryptionUtil;
-import com.streamr.client.utils.GroupKeyStore;
+import com.streamr.client.protocol.utils.EncryptionUtil;
+import com.streamr.client.protocol.utils.GroupKeyStore;
 import com.streamr.client.utils.InMemoryGroupKeyStore;
 import java.security.interfaces.RSAPrivateKey;
 import java.security.interfaces.RSAPublicKey;
@@ -20,7 +20,7 @@ public class EncryptionOptions {
       this.rsaPublicKey = EncryptionUtil.getPublicKeyFromString(rsaPublicKey);
     }
     if (rsaPrivateKey != null) {
-      EncryptionUtil.validatePrivateKey(rsaPrivateKey);
+      validatePrivateKey(rsaPrivateKey);
       this.rsaPrivateKey = EncryptionUtil.getPrivateKeyFromString(rsaPrivateKey);
     }
     this.autoRevoke = autoRevoke;
@@ -41,6 +41,14 @@ public class EncryptionOptions {
 
   private EncryptionOptions(boolean autoRevoke) {
     this(new InMemoryGroupKeyStore(), null, null, autoRevoke);
+  }
+
+  static void validatePrivateKey(String privateKey) {
+    if (privateKey == null
+        || !privateKey.startsWith("-----BEGIN PRIVATE KEY-----")
+        || !privateKey.endsWith("-----END PRIVATE KEY-----\n")) {
+      throw new RuntimeException("Must be a valid RSA private key in the PEM format.");
+    }
   }
 
   public GroupKeyStore getKeyStore() {

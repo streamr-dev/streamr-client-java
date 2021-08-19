@@ -1,6 +1,6 @@
 package com.streamr.client.testing;
 
-import com.streamr.client.utils.Address;
+import com.streamr.client.protocol.utils.Address;
 import java.util.Random;
 
 public final class TestingAddresses {

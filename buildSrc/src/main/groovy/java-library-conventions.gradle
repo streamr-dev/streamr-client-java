@@ -1,0 +1,131 @@
+import org.gradle.api.tasks.testing.logging.TestExceptionFormat
+import org.gradle.api.tasks.testing.logging.TestLogEvent
+
+plugins {
+	id 'java-library'
+	id 'idea'
+	id 'eclipse'
+}
+
+final boolean isLocalDevEnv = (System.getenv("CI") == null)
+
+ext {
+	slf4jApiVersion = '1.7.30'
+	moshiVersion = '1.11.0'
+	moshiAdaptersVersion = '1.11.0'
+	findbugsVersion = '3.0.2'
+	jetbrainsVersion = '17.0.0'
+	equalsVerifierVersion = '3.5.2'
+	junitJupiterVersion = '5.7.2'
+}
+// https://docs.gradle.org/current/userguide/java_library_plugin.html
+dependencies {
+	implementation("org.slf4j:slf4j-api:${slf4jApiVersion}")
+	implementation("org.web3j:core:${web3jVersion}") {
+		exclude group: 'com.squareup.okhttp3', module: 'okhttp'
+		exclude group: 'org.java-websocket', module: 'Java-WebSocket'
+		exclude group: 'org.slf4j', module: 'slf4j-api'
+	}
+	implementation("com.squareup.moshi:moshi:${moshiVersion}")
+	implementation("com.squareup.moshi:moshi-adapters:${moshiAdaptersVersion}")
+	implementation("com.google.code.findbugs:jsr305:${findbugsVersion}") // This project is dead?
+	implementation("org.jetbrains:annotations:${jetbrainsVersion}") // This does nothing?
+	// Test dependencies below
+	testImplementation("nl.jqno.equalsverifier:equalsverifier:${equalsVerifierVersion}")
+	testImplementation(platform("org.junit:junit-bom:${junitJupiterVersion}"))
+	testImplementation("org.junit.jupiter:junit-jupiter")
+}
+java {
+	withJavadocJar()
+	withSourcesJar()
+	toolchain {
+		languageVersion = JavaLanguageVersion.of(8)
+	}
+}
+tasks.compileJava {
+	javaCompiler.set(javaToolchains.compilerFor {
+		languageVersion.set(JavaLanguageVersion.of(8))
+	})
+}
+tasks.withType(JavaCompile).configureEach {
+	options.incremental = true
+	options.fork = true
+	options.failOnError = false
+	options.encoding = 'UTF-8'
+	options.compilerArgs += [
+			'-Werror',
+			'-Xlint:auxiliaryclass',
+			'-Xlint:cast',
+			'-Xlint:classfile',
+			'-Xlint:deprecation',
+			'-Xlint:dep-ann',
+			'-Xlint:divzero',
+			'-Xlint:empty',
+			'-Xlint:fallthrough',
+			'-Xlint:finally',
+			'-Xlint:options',
+			'-Xlint:overloads',
+			'-Xlint:overrides',
+			'-Xlint:path',
+			'-Xlint:processing',
+			'-Xlint:rawtypes',
+			'-Xlint:-serial',
+			'-Xlint:static',
+			'-Xlint:try',
+			'-Xlint:unchecked',
+			'-Xlint:varargs',
+	]
+}
+javadoc {
+	options.encoding = 'UTF-8'
+	options.addStringOption("Xdoclint:none", "-quiet")
+	options.links += [
+			"https://docs.oracle.com/javase/8/docs/api/",
+	]
+	options.source = "8"
+}
+tasks.withType(Test) {
+	useJUnitPlatform {
+		excludeTags "integration"
+		systemProperties = [
+				'junit.jupiter.extensions.autodetection.enabled': 'true',
+				'junit.jupiter.testinstance.lifecycle.default': 'per_method',
+				'junit.jupiter.execution.timeout.default': '3 m',
+		]
+	}
+	testLogging {
+		events = [
+				TestLogEvent.SKIPPED,
+				TestLogEvent.FAILED,
+		]
+		exceptionFormat TestExceptionFormat.SHORT
+		if (isLocalDevEnv) {
+			exceptionFormat TestExceptionFormat.FULL
+			events += TestLogEvent.PASSED
+		}
+		info {
+			events = [
+					TestLogEvent.PASSED,
+					TestLogEvent.SKIPPED,
+					TestLogEvent.FAILED,
+			]
+			exceptionFormat TestExceptionFormat.FULL
+		}
+		debug {
+			events = [
+					TestLogEvent.STANDARD_OUT,
+					TestLogEvent.STANDARD_ERROR,
+					TestLogEvent.STARTED,
+					TestLogEvent.SKIPPED,
+					TestLogEvent.FAILED,
+					TestLogEvent.PASSED,
+			]
+			exceptionFormat TestExceptionFormat.FULL
+		}
+	}
+}
+task integrationTest(type: Test) {
+	useJUnitPlatform {
+		includeTags "integration"
+	}
+}

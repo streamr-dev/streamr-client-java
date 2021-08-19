@@ -1,5 +1,6 @@
 package com.streamr.client.options;
 
+import com.streamr.client.protocol.options.SigningOptions;
 import com.streamr.client.ws.WebsocketUrl;
 
 public class StreamrClientOptions {

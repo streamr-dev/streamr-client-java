@@ -1,10 +1,13 @@
 package com.streamr.client.subs;
 
 import com.streamr.client.MessageHandler;
-import com.streamr.client.exceptions.GapDetectedException;
 import com.streamr.client.options.ResendOption;
 import com.streamr.client.protocol.common.UnsupportedMessageException;
 import com.streamr.client.protocol.message_layer.StreamMessage;
+import com.streamr.client.protocol.utils.Address;
+import com.streamr.client.protocol.utils.GroupKey;
+import com.streamr.client.protocol.utils.GroupKeyStore;
+import com.streamr.client.protocol.utils.KeyExchangeUtil;
 import com.streamr.client.utils.*;
 import java.util.Collection;
 import java.util.UUID;

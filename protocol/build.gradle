@@ -1,0 +1,28 @@
+plugins {
+	id 'java-library-conventions'
+}
+
+description = 'Streamr Protocol implementation in Java'
+
+sourceSets {
+	main {
+		java {
+			srcDirs = ['src/main/java']
+		}
+	}
+	test {
+		java {
+			srcDirs = ['src/test/java']
+		}
+	}
+}
+
+ext {
+	cache2kVersion = '1.6.0.Final'
+	commonsLangVersion = '3.11'
+}
+dependencies {
+	implementation("org.cache2k:cache2k-api:${cache2kVersion}")
+	implementation("org.cache2k:cache2k-core:${cache2kVersion}")
+	implementation("org.apache.commons:commons-lang3:${commonsLangVersion}")
+}

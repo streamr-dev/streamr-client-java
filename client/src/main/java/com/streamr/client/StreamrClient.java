@@ -2,9 +2,6 @@ package com.streamr.client;
 
 import com.streamr.client.crypto.Keys;
 import com.streamr.client.dataunion.DataUnionClient;
-import com.streamr.client.exceptions.ConnectionTimeoutException;
-import com.streamr.client.exceptions.PartitionNotSpecifiedException;
-import com.streamr.client.exceptions.SubscriptionNotFoundException;
 import com.streamr.client.java.util.Objects;
 import com.streamr.client.options.ResendOption;
 import com.streamr.client.options.StreamrClientOptions;
@@ -27,12 +24,20 @@ import com.streamr.client.protocol.message_layer.GroupKeyRequest;
 import com.streamr.client.protocol.message_layer.MalformedMessageException;
 import com.streamr.client.protocol.message_layer.StreamMessage;
 import com.streamr.client.protocol.message_layer.StreamMessageValidator;
+import com.streamr.client.protocol.rest.Stream;
+import com.streamr.client.protocol.rest.StreamPart;
+import com.streamr.client.protocol.utils.Address;
+import com.streamr.client.protocol.utils.AddressValidityUtil;
+import com.streamr.client.protocol.utils.EncryptionUtil;
+import com.streamr.client.protocol.utils.GroupKey;
+import com.streamr.client.protocol.utils.GroupKeyStore;
+import com.streamr.client.protocol.utils.IdGenerator;
+import com.streamr.client.protocol.utils.KeyExchangeUtil;
+import com.streamr.client.protocol.utils.MessageCreationUtil;
 import com.streamr.client.rest.AmbiguousResultsException;
 import com.streamr.client.rest.DataUnionSecretResponse;
 import com.streamr.client.rest.Permission;
 import com.streamr.client.rest.StorageNode;
-import com.streamr.client.rest.Stream;
-import com.streamr.client.rest.StreamPart;
 import com.streamr.client.rest.StreamrRestClient;
 import com.streamr.client.rest.UserInfo;
 import com.streamr.client.subs.BasicSubscription;
@@ -40,16 +45,9 @@ import com.streamr.client.subs.CombinedSubscription;
 import com.streamr.client.subs.HistoricalSubscription;
 import com.streamr.client.subs.RealTimeSubscription;
 import com.streamr.client.subs.Subscription;
-import com.streamr.client.utils.Address;
-import com.streamr.client.utils.AddressValidityUtil;
-import com.streamr.client.utils.EncryptionUtil;
-import com.streamr.client.utils.GroupKey;
-import com.streamr.client.utils.GroupKeyStore;
-import com.streamr.client.utils.IdGenerator;
-import com.streamr.client.utils.KeyExchangeUtil;
-import com.streamr.client.utils.MessageCreationUtil;
+import com.streamr.client.subs.SubscriptionNotFoundException;
+import com.streamr.client.subs.Subscriptions;
 import com.streamr.client.utils.OneTimeResend;
-import com.streamr.client.utils.Subscriptions;
 import java.io.IOException;
 import java.math.BigInteger;
 import java.net.URI;
@@ -793,17 +791,21 @@ public class StreamrClient implements Streamr {
   }
 
   @Override
-  public DataUnionSecretResponse setDataUnionSecret(final String dataUnionAddress, final String dataUnionSecretName) throws IOException {
+  public DataUnionSecretResponse setDataUnionSecret(
+      final String dataUnionAddress, final String dataUnionSecretName) throws IOException {
     return restClient.setDataUnionSecret(dataUnionAddress, dataUnionSecretName);
   }
 
   @Override
-  public void requestDataUnionJoin(final String dataUnionAddress, final String memberAddress, final String dataUnionSecret) throws IOException {
+  public void requestDataUnionJoin(
+      final String dataUnionAddress, final String memberAddress, final String dataUnionSecret)
+      throws IOException {
     restClient.requestDataUnionJoin(dataUnionAddress, memberAddress, dataUnionSecret);
   }
 
   @Override
-  public void createDataUnionProduct(final String name, final String beneficiaryAddress) throws IOException {
+  public void createDataUnionProduct(final String name, final String beneficiaryAddress)
+      throws IOException {
     restClient.createDataUnionProduct(name, beneficiaryAddress);
   }
 

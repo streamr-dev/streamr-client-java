@@ -111,11 +111,7 @@ public final class DataUnion {
     return mainnet.adminFeeFraction().send().getValue();
   }
 
-  /**
-   * @param fractionInWei a fraction expressed in wei (ie 10^18 means 1)
-   * @return
-   * @throws Exception
-   */
+  /** @param fractionInWei a fraction expressed in wei (ie 10^18 means 1) */
   public EthereumTransactionReceipt setAdminFeeFraction(final BigInteger fractionInWei)
       throws Exception {
     checkRange(fractionInWei, BigInteger.ZERO, BigInteger.TEN.pow(18));

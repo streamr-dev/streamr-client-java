@@ -1,7 +1,7 @@
 package com.streamr.client.utils;
 
-import com.streamr.client.exceptions.GapFillFailedException;
 import com.streamr.client.protocol.message_layer.StreamMessage;
+import com.streamr.client.protocol.utils.Address;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.Map;

@@ -1,17 +1,15 @@
 package com.streamr.client.subs;
 
 import com.streamr.client.MessageHandler;
-import com.streamr.client.exceptions.GapDetectedException;
-import com.streamr.client.exceptions.UnableToDecryptException;
 import com.streamr.client.protocol.common.MessageRef;
 import com.streamr.client.protocol.common.UnsupportedMessageException;
+import com.streamr.client.protocol.exceptions.UnableToDecryptException;
 import com.streamr.client.protocol.message_layer.StreamMessage;
-import com.streamr.client.utils.Address;
-import com.streamr.client.utils.DecryptionQueues;
-import com.streamr.client.utils.EncryptionUtil;
-import com.streamr.client.utils.GroupKey;
-import com.streamr.client.utils.GroupKeyStore;
-import com.streamr.client.utils.KeyExchangeUtil;
+import com.streamr.client.protocol.utils.Address;
+import com.streamr.client.protocol.utils.EncryptionUtil;
+import com.streamr.client.protocol.utils.GroupKey;
+import com.streamr.client.protocol.utils.GroupKeyStore;
+import com.streamr.client.protocol.utils.KeyExchangeUtil;
 import com.streamr.client.utils.OrderedMsgChain;
 import com.streamr.client.utils.OrderingUtil;
 import java.util.ArrayList;
@@ -270,8 +268,7 @@ public abstract class BasicSubscription extends Subscription {
 
     Set<String> groupKeyIds =
         groupKeys.stream().map(GroupKey::getGroupKeyId).collect(Collectors.toSet());
-    Collection<StreamMessage> unlocked =
-        decryptionQueues.drainUnlockedMessages(publisherId, groupKeyIds);
+    List<StreamMessage> unlocked = decryptionQueues.drainUnlockedMessages(publisherId, groupKeyIds);
 
     getLogger()
         .trace(

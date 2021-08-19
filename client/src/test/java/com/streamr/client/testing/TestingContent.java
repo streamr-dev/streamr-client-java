@@ -37,4 +37,10 @@ public final class TestingContent {
     final Map<String, Object> content = Collections.unmodifiableMap(new HashMap<String, Object>());
     return fromJsonMap(content);
   }
+
+  public static Map<String, Object> mapWithValue(final String key, final Object value) {
+    HashMap<String, Object> map = new HashMap<>();
+    map.put(key, value);
+    return map;
+  }
 }

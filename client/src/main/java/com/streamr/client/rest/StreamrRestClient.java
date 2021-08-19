@@ -4,8 +4,10 @@ import com.squareup.moshi.JsonAdapter;
 import com.squareup.moshi.Types;
 import com.streamr.client.crypto.Keys;
 import com.streamr.client.java.util.Objects;
-import com.streamr.client.utils.Address;
-import com.streamr.client.utils.SigningUtil;
+import com.streamr.client.protocol.rest.Stream;
+import com.streamr.client.protocol.rest.StreamPart;
+import com.streamr.client.protocol.utils.Address;
+import com.streamr.client.protocol.utils.SigningUtil;
 import java.io.IOException;
 import java.lang.reflect.ParameterizedType;
 import java.math.BigInteger;
@@ -57,9 +59,9 @@ public class StreamrRestClient {
 
   public static class Builder {
     private String restApiUrl = REST_API_URL;
-    private long writeTimeout = 5000l;
-    private long readTimeout = 5000l;
-    private long connectTimeout = 5000l;
+    private long writeTimeout = 30000l;
+    private long readTimeout = 30000l;
+    private long connectTimeout = 60000l;
     private BigInteger privateKey;
 
     public Builder() {}
@@ -302,15 +304,17 @@ public class StreamrRestClient {
   public Stream createStream(final Stream stream) throws IOException {
     final HttpUrl url = getEndpointUrl("streams");
     final JsonAdapter<Stream> streamJsonAdapter =
-      Json.newMoshiBuilder().build().adapter(Stream.class);
+        Json.newMoshiBuilder().build().adapter(Stream.class);
     String json = streamJsonAdapter.toJson(stream);
     if (stream.getId() != null) {
       if (this.privateKey == null) {
         throw new AuthenticationException("No private key");
       }
-      String fullId = Stream.createStreamId(stream.getId(), new Address(Keys.privateKeyToAddressWithPrefix(this.privateKey)));
+      String fullId =
+          Stream.createStreamId(
+              stream.getId(), new Address(Keys.privateKeyToAddressWithPrefix(this.privateKey)));
       if (fullId != stream.getId()) {
-         json = Json.withValue(json, "id", fullId);
+        json = Json.withValue(json, "id", fullId);
       }
     }
     return postWithRetry(url, json, streamJsonAdapter);

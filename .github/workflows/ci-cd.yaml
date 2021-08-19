@@ -9,7 +9,7 @@ on:
       - 'release/v3.0.0'
 
 env:
-  JAVA_VERSION: '8.0.282+8'
+  JAVA_VERSION: '11.0.12-zulu'
   make: make -f Makefile.ci
 
 jobs:
@@ -39,8 +39,6 @@ jobs:
         run: $make test-unit
 #      - name: PMD static analysis
 #        run: $make pmd
-      - name: Codenarc for Groovy tests
-        run: $make codenarc
       - uses: actions/upload-artifact@v2.2.4
         with:
           name: streamr-client-java-report-${{ env.datetime }}-${{ github.job }}

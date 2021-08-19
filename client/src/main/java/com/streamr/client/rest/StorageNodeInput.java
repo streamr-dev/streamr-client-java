@@ -1,6 +1,6 @@
 package com.streamr.client.rest;
 
-import com.streamr.client.utils.Address;
+import com.streamr.client.protocol.utils.Address;
 
 public final class StorageNodeInput {
   private final Address storageNodeAddress;

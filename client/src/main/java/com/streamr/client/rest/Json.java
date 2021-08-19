@@ -1,12 +1,12 @@
 package com.streamr.client.rest;
 
+import com.squareup.moshi.JsonAdapter;
 import com.squareup.moshi.JsonDataException;
 import com.squareup.moshi.Moshi;
-import com.squareup.moshi.JsonAdapter;
 import com.squareup.moshi.Types;
 import com.streamr.client.protocol.message_layer.StringOrMillisDateJsonAdapter;
-import com.streamr.client.utils.Address;
-
+import com.streamr.client.protocol.rest.BigDecimalAdapter;
+import com.streamr.client.protocol.utils.Address;
 import java.io.IOException;
 import java.lang.reflect.Type;
 import java.math.BigDecimal;
@@ -26,8 +26,8 @@ final class Json {
 
   public static String withValue(String json, String key, Object value) throws IOException {
     Type type = Types.newParameterizedType(Map.class, String.class, Object.class);
-    JsonAdapter<Map<String,Object>> adapter = Json.newMoshiBuilder().build().adapter(type);
-    Map<String,Object> jsonMap;
+    JsonAdapter<Map<String, Object>> adapter = Json.newMoshiBuilder().build().adapter(type);
+    Map<String, Object> jsonMap;
     try {
       jsonMap = adapter.fromJson(json);
     } catch (JsonDataException e) {

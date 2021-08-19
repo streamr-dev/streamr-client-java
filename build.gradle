@@ -1,5 +1,70 @@
+import java.time.Duration
+
 buildscript {
 	repositories {
 		mavenCentral()
 	}
+}
+plugins {
+	id "pmd"
+	id "com.diffplug.spotless" version "5.14.2"
+	id "io.github.gradle-nexus.publish-plugin" version "1.1.0"
+	id "com.github.ben-manes.versions" version "0.39.0"
+}
+
+group = 'com.streamr'
+version = '3.0.0-alpha.1'
+
+nexusPublishing {
+	repositories {
+		sonatype {
+			nexusUrl.set(uri("https://oss.sonatype.org/service/local/"))
+			snapshotRepositoryUrl.set(uri("https://oss.sonatype.org/content/repositories/snapshots/"))
+			username = project.findProperty("sonatypeUsername")
+			password = project.findProperty("sonatypePassword")
+		}
+	}
+
+	// 5 min is default
+	connectTimeout.set(Duration.ofMinutes(5))
+	clientTimeout.set(Duration.ofMinutes(5))
+}
+
+final boolean isLocalDevEnv = (System.getenv("CI") == null)
+
+allprojects {
+	apply plugin: "java-library"
+	classes.dependsOn spotlessApply
+}
+
+subprojects {
+}
+
+// https://github.com/diffplug/spotless/tree/main/plugin-gradle
+// https://github.com/google/google-java-format
+// https://google.github.io/styleguide/javaguide.html
+spotless {
+	format 'misc', {
+		target '**/*.gradle', '.gitignore'
+
+		indentWithTabs()
+		trimTrailingWhitespace()
+		endWithNewline()
+	}
+	java {
+		target fileTree('.') {
+			include '*/src/*/java/**/*.java'
+			include '*/src/*/groovy/**/*.java'
+			exclude 'client/src/main/java/com/streamr/client/dataunion/contracts/**'
+		}
+		googleJavaFormat('1.11.0')
+	}
+}
+// https://docs.gradle.org/current/userguide/pmd_plugin.html
+pmd {
+	toolVersion = '6.30.0'
+	consoleOutput = isLocalDevEnv
+	ignoreFailures = false
+	rulesMinimumPriority = 5
+	ruleSets = ["${project.projectDir}/gradle/config/pmd/ruleset.xml"]
 }

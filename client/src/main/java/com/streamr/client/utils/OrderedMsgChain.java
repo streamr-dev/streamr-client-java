@@ -1,9 +1,14 @@
 package com.streamr.client.utils;
 
-import com.streamr.client.exceptions.GapFillFailedException;
 import com.streamr.client.protocol.common.MessageRef;
 import com.streamr.client.protocol.message_layer.StreamMessage;
-import java.util.*;
+import com.streamr.client.protocol.utils.Address;
+import java.util.ArrayList;
+import java.util.Comparator;
+import java.util.List;
+import java.util.PriorityQueue;
+import java.util.Timer;
+import java.util.TimerTask;
 import java.util.function.Consumer;
 import java.util.function.Function;
 import org.slf4j.Logger;
@@ -111,6 +116,7 @@ public class OrderedMsgChain {
                 queueAsArrayList.get(queueAsArrayList.size() - 1).getMessageRef(),
                 unorderedMsg.getMessageRef());
 
+        System.out.println(skipGapsOnFullQueue);
         if (skipGapsOnFullQueue) {
           log.warn("Queue is full. Emptying and processing new message. " + diagnosisString);
           clearGap();

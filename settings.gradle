@@ -1,5 +1,6 @@
 rootProject.name = 'streamr-client-java'
 include('client')
+include('protocol')
 dependencyResolutionManagement {
 	repositories {
 		mavenCentral()

@@ -2,18 +2,17 @@ package com.streamr.client;
 
 import com.streamr.client.dataunion.DataUnionClient;
 import com.streamr.client.options.ResendOption;
+import com.streamr.client.protocol.rest.Stream;
+import com.streamr.client.protocol.rest.StreamPart;
+import com.streamr.client.protocol.utils.Address;
+import com.streamr.client.protocol.utils.GroupKey;
 import com.streamr.client.rest.AmbiguousResultsException;
-import com.streamr.client.rest.DataUnionSecretRequest;
 import com.streamr.client.rest.DataUnionSecretResponse;
 import com.streamr.client.rest.Permission;
 import com.streamr.client.rest.StorageNode;
-import com.streamr.client.rest.Stream;
-import com.streamr.client.rest.StreamPart;
 import com.streamr.client.rest.StreamrRestClient;
 import com.streamr.client.rest.UserInfo;
 import com.streamr.client.subs.Subscription;
-import com.streamr.client.utils.Address;
-import com.streamr.client.utils.GroupKey;
 import java.io.IOException;
 import java.math.BigInteger;
 import java.util.Date;
@@ -135,5 +134,6 @@ interface Streamr {
       final String dataUnionAddress, final String memberAddress, final String dataUnionSecret)
       throws IOException;
 
-  void createDataUnionProduct(final String name, final String beneficiaryAddress) throws IOException;
+  void createDataUnionProduct(final String name, final String beneficiaryAddress)
+      throws IOException;
 }
