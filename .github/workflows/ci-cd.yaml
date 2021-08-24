@@ -9,7 +9,7 @@ on:
       - 'release/v3.0.0'
 
 env:
-  JAVA_VERSION: '11.0.12-zulu'
+  JAVA_VERSION: '11.0.12+7'
   make: make -f Makefile.ci
 
 jobs:
