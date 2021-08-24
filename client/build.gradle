@@ -48,7 +48,7 @@ tasks.register('fatJar', Jar) {
 ext {
 	okHttpVersion = '4.9.1'
 	javaWebSocketVersion = '1.5.1'
-	bouncyCastleVersion = '1.67'
+	bouncyCastleVersion = '1.69'
 }
 // https://docs.gradle.org/current/userguide/java_library_plugin.html
 dependencies {
