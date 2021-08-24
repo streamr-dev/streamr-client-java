@@ -18,7 +18,7 @@ sourceSets {
 }
 
 ext {
-	cache2kVersion = '1.6.0.Final'
+	cache2kVersion = '2.2.1.Final'
 	commonsLangVersion = '3.12.0'
 }
 dependencies {
