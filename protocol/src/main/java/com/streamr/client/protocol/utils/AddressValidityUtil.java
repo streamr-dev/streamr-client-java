@@ -10,6 +10,7 @@ import java.util.function.BiFunction;
 import java.util.function.Function;
 import org.cache2k.Cache;
 import org.cache2k.Cache2kBuilder;
+import org.cache2k.CacheManager;
 
 /**
  * This util contains methods to check if an Ethereum address is a valid publisher/subscriber (using
@@ -69,8 +70,12 @@ public class AddressValidityUtil {
   }
 
   public void clearAndClose() {
-    subscribersPerStreamId.clearAndClose();
-    publishersPerStreamId.clearAndClose();
+    CacheManager subscribersPerStreamIdCacheManager = subscribersPerStreamId.getCacheManager();
+    subscribersPerStreamIdCacheManager.clear();
+    subscribersPerStreamIdCacheManager.close();
+    CacheManager publishersPerStreamIdCacheManager = publishersPerStreamId.getCacheManager();
+    publishersPerStreamIdCacheManager.clear();
+    publishersPerStreamIdCacheManager.close();
   }
 
   private static boolean isValid(
