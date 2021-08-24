@@ -2,8 +2,6 @@ plugins {
 	id 'java-library-conventions'
 	id 'maven-publish'
 }
-apply from: '../gradle/loadProps.gradle'
-
 description = 'A Java library to interact with Streamr Network'
 
 sourceSets {
@@ -52,7 +50,8 @@ ext {
 }
 // https://docs.gradle.org/current/userguide/java_library_plugin.html
 dependencies {
-	implementation project(":protocol")
+	implementation(project(":protocol"))
+	implementation(project(":contracts"))
 	api("com.squareup.okhttp3:okhttp:${okHttpVersion}")
 	implementation("com.squareup.okio:okio") {
 		because "OkHttpClient requires okio"
@@ -63,16 +62,6 @@ dependencies {
 	implementation("org.bouncycastle:bcprov-jdk15on:${bouncyCastleVersion}") {
 		because 'Web3j has same dependency and EncryptionUtil requires PEM'
 	}
-	// Transitive dependencies leaked from other dependencies
-	implementation("org.web3j:codegen:${web3jVersion}") { // DO NOT USE! This should be a build time dep
-		exclude group: 'org.junit.platform'
-		exclude group: 'org.junit.jupiter'
-		exclude group: 'org.junit.vintage'
-	}
-	implementation("com.googlecode.json-simple:json-simple:1.1.1") { // DO NOT USE! This should be a build time dep
-		exclude group: 'junit', module: 'junit'
-	}
-	// End transitive dependencies
 }
 // https://docs.gradle.org/current/userguide/resolution_strategy_tuning.html
 //configurations.all {

@@ -10,6 +10,7 @@ plugins {
 final boolean isLocalDevEnv = (System.getenv("CI") == null)
 
 ext {
+	web3jVersion = '4.8.7'
 	slf4jApiVersion = '1.7.30'
 	moshiVersion = '1.11.0'
 	moshiAdaptersVersion = '1.11.0'

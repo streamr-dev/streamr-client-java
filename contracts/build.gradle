@@ -1,7 +1,6 @@
 import org.web3j.solidity.gradle.plugin.EVMVersion
 import org.web3j.solidity.gradle.plugin.OutputComponent
 import org.web3j.solidity.gradle.plugin.CombinedOutputComponent
-import org.web3j.solidity.gradle.plugin.SolidityResolve
 
 plugins {
 	id "org.web3j.solidity" version "0.3.3-beta.1"
@@ -12,17 +11,22 @@ sourceSets {
 	main {
 		solidity {
 			srcDirs = [
-				"../data-union-solidity/packages/data-union-solidity/contracts",
+				"./data-union-solidity/packages/data-union-solidity/contracts",
 			]
 		}
 	}
 }
+java {
+	toolchain {
+		languageVersion = JavaLanguageVersion.of(8)
+	}
+}
 node {
-	nodeProjectDir = file("../data-union-solidity/packages/data-union-solidity")
+	nodeProjectDir = file("./data-union-solidity/packages/data-union-solidity")
 }
 solidity {
-	executable = null //"/usr/local/Cellar/solidity/0.8.7/bin/solc" // (bundled with the plugin) Solidity compiler path
-	version = "0.8.4" // (defined by contract's pragma) Solidity compiler version
+	executable = null // (bundled with the plugin) Solidity compiler path
+	version = null // (defined by contract's pragma) Solidity compiler version
 	overwrite = true // Overwrite existing files
 	resolvePackages = true // Resolve third-party contract packages
 	optimize = true // Enable byte code optimizer
@@ -30,13 +34,12 @@ solidity {
 	prettyJson = false // Output JSON in pretty format. Enables the combined JSON output
 	ignoreMissing = false // Ignore missing files
 	allowPaths = [ // Allow a given path for imports
-		'src/main/solidity',
-		'src/test/solidity',
+		".",
 	]
 	pathRemappings = [ // Remaps contract imports to target path
-		:
+		"openzeppelin-solidity" : "./data-union-solidity/packages/data-union-solidity/node_modules/openzeppelin-solidity",
 	]
-	evmVersion = EVMVersion.BYZANTIUM // Select desired EVM version
+	evmVersion = EVMVersion.CONSTANTINOPLE // Select desired EVM version
 	outputComponents = [ // List of output components to produce
 		OutputComponent.ABI,
 		OutputComponent.ASM_JSON,
@@ -50,7 +53,7 @@ solidity {
 	]
 }
 web3j {
-	generatedPackageName = "${group}.contracts.{0}" // Generated contract wrappers package
+	generatedPackageName = "com.streamr.client.contracts.{0}" // Generated contract wrappers package
 	generatedFilesBaseDir = "${buildDir}/generated/sources/web3j" // Generated Java code output directory
 	includedContracts = [ // Included contract names from wrapper generation. Has preference over excludedContracts
 		"DataUnionFactoryMainnet",
