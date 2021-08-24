@@ -1,0 +1,70 @@
+import org.web3j.solidity.gradle.plugin.EVMVersion
+import org.web3j.solidity.gradle.plugin.OutputComponent
+import org.web3j.solidity.gradle.plugin.CombinedOutputComponent
+import org.web3j.solidity.gradle.plugin.SolidityResolve
+
+plugins {
+	id "org.web3j.solidity" version "0.3.3-beta.1"
+	id "org.web3j" version "4.8.4"
+}
+
+sourceSets {
+	main {
+		solidity {
+			srcDirs = [
+				"../data-union-solidity/packages/data-union-solidity/contracts",
+			]
+		}
+	}
+}
+node {
+	nodeProjectDir = file("../data-union-solidity/packages/data-union-solidity")
+}
+solidity {
+	executable = null //"/usr/local/Cellar/solidity/0.8.7/bin/solc" // (bundled with the plugin) Solidity compiler path
+	version = "0.8.4" // (defined by contract's pragma) Solidity compiler version
+	overwrite = true // Overwrite existing files
+	resolvePackages = true // Resolve third-party contract packages
+	optimize = true // Enable byte code optimizer
+	optimizeRuns = 200 // Set for how many contract runs to optimize
+	prettyJson = false // Output JSON in pretty format. Enables the combined JSON output
+	ignoreMissing = false // Ignore missing files
+	allowPaths = [ // Allow a given path for imports
+		'src/main/solidity',
+		'src/test/solidity',
+	]
+	pathRemappings = [ // Remaps contract imports to target path
+		:
+	]
+	evmVersion = EVMVersion.BYZANTIUM // Select desired EVM version
+	outputComponents = [ // List of output components to produce
+		OutputComponent.ABI,
+		OutputComponent.ASM_JSON,
+		OutputComponent.BIN,
+	]
+	combinedOutputComponents = [ // List of output components in combined JSON output
+		CombinedOutputComponent.BIN,
+		CombinedOutputComponent.BIN_RUNTIME,
+		CombinedOutputComponent.SRCMAP,
+		CombinedOutputComponent.SRCMAP_RUNTIME,
+	]
+}
+web3j {
+	generatedPackageName = "${group}.contracts.{0}" // Generated contract wrappers package
+	generatedFilesBaseDir = "${buildDir}/generated/sources/web3j" // Generated Java code output directory
+	includedContracts = [ // Included contract names from wrapper generation. Has preference over excludedContracts
+		"DataUnionFactoryMainnet",
+		"DataUnionFactorySidechain",
+		"DataUnionMainnet",
+		"DataUnionSidechain",
+		"IERC20",
+		"IERC20Metadata",
+		"IERC20Receiver",
+		"IAMB",
+		//"MockAMB",
+	]
+	excludedContracts = [ // Excluded contract names from wrapper generation
+	]
+	useNativeJavaTypes = false // Generate smart contract wrappers using native Java types
+	addressBitLength = 160 // Supported address length in bits, by default Ethereum addresses (160)
+}
