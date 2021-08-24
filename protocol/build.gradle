@@ -19,7 +19,7 @@ sourceSets {
 
 ext {
 	cache2kVersion = '1.6.0.Final'
-	commonsLangVersion = '3.11'
+	commonsLangVersion = '3.12.0'
 }
 dependencies {
 	implementation("org.cache2k:cache2k-api:${cache2kVersion}")
