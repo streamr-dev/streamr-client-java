@@ -12,6 +12,7 @@ sourceSets {
 		solidity {
 			srcDirs = [
 				"./data-union-solidity/packages/data-union-solidity/contracts",
+				"./tokenbridge-contracts/contracts/upgradeable_contracts/arbitrary_message"
 			]
 		}
 	}
@@ -64,7 +65,8 @@ web3j {
 		"IERC20Metadata",
 		"IERC20Receiver",
 		"IAMB",
-		//"MockAMB",
+		"ForeignAMB",
+		"HomeAMB",
 	]
 	excludedContracts = [ // Excluded contract names from wrapper generation
 	]

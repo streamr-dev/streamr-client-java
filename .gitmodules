@@ -1,3 +1,6 @@
 [submodule "contracts/data-union-solidity"]
 	path = contracts/data-union-solidity
 	url = git@github.com:streamr-dev/data-union-solidity.git
+[submodule "contracts/tokenbridge-contracts"]
+	path = contracts/tokenbridge-contracts
+	url = git@github.com:streamr-dev/tokenbridge-contracts.git
