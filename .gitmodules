@@ -4,3 +4,6 @@
 [submodule "contracts/tokenbridge-contracts"]
 	path = contracts/tokenbridge-contracts
 	url = git@github.com:streamr-dev/tokenbridge-contracts.git
+[submodule "tokenbridge-contracts-openzeppelin-contracts"]
+	path = contracts/tokenbridge-contracts-openzeppelin-contracts
+	url = git@github.com:OpenZeppelin/openzeppelin-contracts.git
