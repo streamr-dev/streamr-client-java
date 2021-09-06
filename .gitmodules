@@ -1,3 +1,0 @@
-[submodule "contracts/data-union"]
-	path = contracts/data-union
-	url = git@github.com:streamr-dev/data-union.git
