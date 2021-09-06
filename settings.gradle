@@ -11,5 +11,6 @@ include('contracts')
 dependencyResolutionManagement {
 	repositories {
 		mavenCentral()
+		mavenLocal()
 	}
 }
