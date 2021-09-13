@@ -1,80 +1,49 @@
-import org.web3j.solidity.gradle.plugin.EVMVersion
-import org.web3j.solidity.gradle.plugin.OutputComponent
-import org.web3j.solidity.gradle.plugin.CombinedOutputComponent
-
-plugins {
-	id "java"
-	id "org.web3j.solidity" version "0.3.3-beta.1"
-	id "org.web3j" version "4.8.7"
-}
-java {
-	toolchain {
-		languageVersion = JavaLanguageVersion.of(8)
+buildscript {
+	dependencies {
+		classpath("org.web3j:codegen:4.8.7")
+		classpath("org.slf4j:slf4j-api:1.7.32")
+		classpath("org.slf4j:slf4j-log4j12:1.7.32")
 	}
 }
-sourceSets {
-	main {
-		solidity {
-			srcDirs = [
-				"./data-union-solidity/packages/data-union-solidity/contracts",
-			]
+plugins {
+	id "java-library-conventions"
+}
+def contracts = [
+	"DataUnionFactoryMainnet",
+	"DataUnionFactorySidechain",
+	"DataUnionMainnet",
+	"DataUnionSidechain",
+	"IERC20",
+	"IERC20Metadata",
+	"IERC20Receiver",
+	"IAMB",
+	//"ForeignAMB",
+	//"HomeAMB",
+]
+
+task make() {
+	group = "build"
+	doLast {
+		exec {
+			workingDir = "."
+			commandLine = "./make.sh"
+		}
+		for (String contract : contracts) {
+			javaexec {
+				classpath = project.buildscript.configurations.classpath
+				main = "org.web3j.codegen.SolidityFunctionWrapperGenerator"
+				args = [
+						"--abiFile=" + file("./data-union/packages/data-union-solidity/build/resources/main/solidity/${contract}.abi"),
+						"--binFile=" + file("./data-union/packages/data-union-solidity/build/resources/main/solidity/${contract}.bin"),
+						"--contractName=${contract}",
+						"--outputDir=${buildDir}/generated/sources/web3j",
+						"--package=com.streamr.client.contracts",
+						"--addressLength=20",
+						"--javaTypes=false",
+						"--solidityTypes=true",
+						"--primitiveTypes=false",
+				]
+			}
 		}
 	}
-}
-node {
-	download = false
-//	version = "16.6.1"
-//	npmInstallCommand = "ci"
-//	nodeProjectDir = file("./data-union-solidity")
-	//nodeProjectDir = file("./data-union-solidity/packages/data-union-solidity")
-	//nodeProjectDir = file("$buildDir")
-}
-
-solidity {
-	executable = null // (bundled with the plugin) Solidity compiler path
-	version = null // (defined by contract's pragma) Solidity compiler version
-	overwrite = true // Overwrite existing files
-	resolvePackages = true // Resolve third-party contract packages
-	optimize = true // Enable byte code optimizer
-	optimizeRuns = 200 // Set for how many contract runs to optimize
-	prettyJson = false // Output JSON in pretty format. Enables the combined JSON output
-	ignoreMissing = false // Ignore missing files
-	allowPaths = [ // Allow a given path for imports
-		".",
-	]
-	pathRemappings = [ // Remaps contract imports to target path
-		"openzeppelin-solidity" : "./data-union-solidity/packages/data-union-solidity/openzeppelin-solidity",
-	]
-	evmVersion = EVMVersion.CONSTANTINOPLE // Select desired EVM version
-	outputComponents = [ // List of output components to produce
-		OutputComponent.ABI,
-		OutputComponent.ASM_JSON,
-		OutputComponent.BIN,
-	]
-	combinedOutputComponents = [ // List of output components in combined JSON output
-		CombinedOutputComponent.BIN,
-		CombinedOutputComponent.BIN_RUNTIME,
-		CombinedOutputComponent.SRCMAP,
-		CombinedOutputComponent.SRCMAP_RUNTIME,
-	]
-}
-web3j {
-	generatedPackageName = "com.streamr.client.contracts.{0}" // Generated contract wrappers package
-	generatedFilesBaseDir = "${buildDir}/generated/sources/web3j" // Generated Java code output directory
-	includedContracts = [ // Included contract names from wrapper generation. Has preference over excludedContracts
-		"DataUnionFactoryMainnet",
-		"DataUnionFactorySidechain",
-		"DataUnionMainnet",
-		"DataUnionSidechain",
-		"IERC20",
-		"IERC20Metadata",
-		"IERC20Receiver",
-		"IAMB",
-		"ForeignAMB",
-		"HomeAMB",
-	]
-	excludedContracts = [ // Excluded contract names from wrapper generation
-	]
-	useNativeJavaTypes = false // Generate smart contract wrappers using native Java types
-	addressBitLength = 160 // Supported address length in bits, by default Ethereum addresses (160)
 }

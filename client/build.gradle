@@ -7,7 +7,10 @@ description = 'A Java library to interact with Streamr Network'
 sourceSets {
 	main {
 		java {
-			srcDirs = ['src/main/java']
+			srcDirs = [
+				"src/main/java",
+				"../contracts/build/generated/sources/web3j",
+			]
 		}
 	}
 	test {
@@ -51,7 +54,6 @@ ext {
 // https://docs.gradle.org/current/userguide/java_library_plugin.html
 dependencies {
 	implementation(project(":protocol"))
-	implementation(project(":contracts"))
 	api("com.squareup.okhttp3:okhttp:${okHttpVersion}")
 	implementation("com.squareup.okio:okio") {
 		because "OkHttpClient requires okio"
