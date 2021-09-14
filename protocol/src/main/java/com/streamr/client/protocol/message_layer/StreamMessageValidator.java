@@ -10,6 +10,7 @@ import java.util.concurrent.TimeUnit;
 import java.util.function.Function;
 import org.cache2k.Cache;
 import org.cache2k.Cache2kBuilder;
+import org.cache2k.CacheManager;
 
 public class StreamMessageValidator {
   private static final int STREAM_EXPIRATION = 15;
@@ -247,7 +248,9 @@ public class StreamMessageValidator {
   }
 
   public void clearAndClose() {
-    safeGetStreamCache().clearAndClose();
+    CacheManager subscribersPerStreamIdCacheManager = safeGetStreamCache().getCacheManager();
+    subscribersPerStreamIdCacheManager.clear();
+    subscribersPerStreamIdCacheManager.close();
     addressValidityUtil.clearAndClose();
   }
 }
