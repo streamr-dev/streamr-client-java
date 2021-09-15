@@ -7,5 +7,3 @@ plugins {
 repositories {
 	gradlePluginPortal()
 }
-
-apply from: "../gradle/loadProps.gradle"

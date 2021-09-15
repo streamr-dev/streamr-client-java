@@ -1,8 +1,16 @@
+pluginManagement {
+	repositories {
+		gradlePluginPortal()
+		mavenLocal()
+	}
+}
 rootProject.name = 'streamr-client-java'
 include('client')
 include('protocol')
+include('contracts')
 dependencyResolutionManagement {
 	repositories {
 		mavenCentral()
+		mavenLocal()
 	}
 }

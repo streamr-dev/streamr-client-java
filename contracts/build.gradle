@@ -1,0 +1,49 @@
+buildscript {
+	dependencies {
+		classpath("org.web3j:codegen:4.8.7")
+		classpath("org.slf4j:slf4j-api:1.7.32")
+		classpath("org.slf4j:slf4j-log4j12:1.7.32")
+	}
+}
+plugins {
+	id "java-library-conventions"
+}
+def contracts = [
+	"DataUnionFactoryMainnet",
+	"DataUnionFactorySidechain",
+	"DataUnionMainnet",
+	"DataUnionSidechain",
+	"IERC20",
+	"IERC20Metadata",
+	"IERC20Receiver",
+	"IAMB",
+	//"ForeignAMB",
+	//"HomeAMB",
+]
+
+task make() {
+	group = "build"
+	doLast {
+		exec {
+			workingDir = "."
+			commandLine = "./make.sh"
+		}
+		for (String contract : contracts) {
+			javaexec {
+				classpath = project.buildscript.configurations.classpath
+				main = "org.web3j.codegen.SolidityFunctionWrapperGenerator"
+				args = [
+						"--abiFile=" + file("./data-union/packages/data-union-solidity/build/resources/main/solidity/${contract}.abi"),
+						"--binFile=" + file("./data-union/packages/data-union-solidity/build/resources/main/solidity/${contract}.bin"),
+						"--contractName=${contract}",
+						"--outputDir=${buildDir}/generated/sources/web3j",
+						"--package=com.streamr.client.contracts",
+						"--addressLength=20",
+						"--javaTypes=false",
+						"--solidityTypes=true",
+						"--primitiveTypes=false",
+				]
+			}
+		}
+	}
+}
