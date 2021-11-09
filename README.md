@@ -19,7 +19,7 @@ This library covers the following functionality:
 - [Subscribing and unsubscribing to Streams](#subscribing-unsubscribing)
 - [Data Unions](#data-unions)
 
-[![Build Status](https://travis-ci.com/streamr-dev/streamr-client-java.svg?branch=master)](https://travis-ci.com/streamr-dev/streamr-client-java)
+[![CI](https://github.com/streamr-dev/streamr-client-java/actions/workflows/ci-cd.yaml/badge.svg)](https://github.com/streamr-dev/streamr-client-java/actions/workflows/ci-cd.yaml)
 
 ## Installation
 
