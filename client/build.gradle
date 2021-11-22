@@ -47,7 +47,7 @@ tasks.register('fatJar', Jar) {
 }
 // End FAT Jar
 ext {
-	okHttpVersion = '4.9.2'
+	okHttpVersion = '4.9.3'
 	javaWebSocketVersion = '1.5.1'
 	bouncyCastleVersion = '1.69'
 }
