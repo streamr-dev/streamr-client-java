@@ -132,23 +132,23 @@ public class DataUnionClient {
                 duname
         ).send();
         Address mainnetAddress = factoryMainnet().mainnetAddress(new Address(mainnetCred.getAddress()), duname).send();
-        String sidechainAddress = factoryMainnet().sidechainAddress(mainnetAddress).send().getValue();
-        return new DataUnion(mainnetDataUnion(mainnetAddress.getValue()), mainnet, sidechainDataUnion(sidechainAddress), sidechain, opts);
+        Address sidechainAddress = factoryMainnet().sidechainAddress(mainnetAddress).send();
+        return new DataUnion(mainnetDataUnion(mainnetAddress), mainnet, sidechainDataUnion(sidechainAddress), sidechain, opts);
     }
 
     public DataUnion dataUnionFromName(String name) throws Exception {
-        String address = factoryMainnet().mainnetAddress(new Address(mainnetCred.getAddress()), new Utf8String(name)).send().getValue();
-        return dataUnionFromMainnetAddress(address);
+        Address duAddress = factoryMainnet().mainnetAddress(new Address(mainnetCred.getAddress()), new Utf8String(name)).send();
+        return dataUnionFromMainnetAddress(duAddress.getValue());
     }
-
 
     public DataUnion dataUnionFromMainnetAddress(String mainnetAddress) throws Exception {
-        DataUnionMainnet main =  mainnetDataUnion(mainnetAddress);
-        DataUnionSidechain side = sidechainDataUnion(factoryMainnet().sidechainAddress(new Address(main.getContractAddress())).send().getValue());
-        return new DataUnion(main, mainnet, side, sidechain, opts);
+        DataUnionMainnet duMainnet = mainnetDataUnion(new Address(mainnetAddress));
+        Address sidechainAddress = duMainnet.sidechainAddress().send();
+        DataUnionSidechain duSidechain = sidechainDataUnion(sidechainAddress);
+        return new DataUnion(duMainnet, mainnet, duSidechain, sidechain, opts);
     }
 
-    protected OkHttpClient.Builder httpClientBuilder(){
+    protected OkHttpClient.Builder httpClientBuilder() {
         OkHttpClient.Builder builder = new OkHttpClient.Builder();
         if(opts != null) {
             builder.connectTimeout(opts.getConnectionTimeoutMillis(), TimeUnit.MILLISECONDS);
@@ -193,16 +193,16 @@ public class DataUnionClient {
         return DataUnionFactoryMainnet.load(opts.getDataUnionMainnetFactoryAddress(), mainnet, mainnetCred, mainnetGasProvider);
     }
 
-    protected DataUnionMainnet mainnetDataUnion(String address) {
-        return DataUnionMainnet.load(address, mainnet, mainnetCred, mainnetGasProvider);
+    protected DataUnionMainnet mainnetDataUnion(Address contractAddress) {
+        return DataUnionMainnet.load(contractAddress.getValue(), mainnet, mainnetCred, mainnetGasProvider);
     }
 
     protected DataUnionFactorySidechain factorySidechain() {
         return DataUnionFactorySidechain.load(opts.getDataUnionSidechainFactoryAddress(), sidechain, sidechainCred, sidechainGasProvider);
     }
 
-    protected DataUnionSidechain sidechainDataUnion(String address) {
-        return DataUnionSidechain.load(address, sidechain, sidechainCred, sidechainGasProvider);
+    protected DataUnionSidechain sidechainDataUnion(Address contractAddress) {
+        return DataUnionSidechain.load(contractAddress.getValue(), sidechain, sidechainCred, sidechainGasProvider);
     }
 
     public String mainnetTokenAddress() throws Exception {
