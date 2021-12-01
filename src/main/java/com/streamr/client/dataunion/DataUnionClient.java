@@ -136,6 +136,11 @@ public class DataUnionClient {
         return new DataUnion(mainnetDataUnion(mainnetAddress), mainnet, sidechainDataUnion(sidechainAddress), sidechain, opts);
     }
 
+    /**
+     * NOTE: this is VERY unsafe and should be removed! DUs previously deployed using a different factory will return wrong addresses
+     * This should only be used during deployment to predict addresses.
+     * @deprecated
+     */
     public DataUnion dataUnionFromName(String name) throws Exception {
         Address duAddress = factoryMainnet().mainnetAddress(new Address(mainnetCred.getAddress()), new Utf8String(name)).send();
         return dataUnionFromMainnetAddress(duAddress.getValue());

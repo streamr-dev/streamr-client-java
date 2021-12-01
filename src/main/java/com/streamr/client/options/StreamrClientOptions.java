@@ -43,7 +43,8 @@ public class StreamrClientOptions {
             if (authenticationMethod instanceof EthereumAuthenticationMethod) {
                 this.publishSignedMsgs = true;
             } else {
-                throw new InvalidOptionsException("SigningOptions.SignatureComputationPolicy.ALWAYS requires an EthereumAuthenticationMethod as" +
+                throw new InvalidOptionsException("SigningOptions.SignatureComputationPolicy.ALWAYS" +
+                        "requires an EthereumAuthenticationMethod as" +
                         "AuthenticationMethod.(Need a private key to be able to sign).");
             }
         } else if (this.signingOptions.getPublishSigned() == SigningOptions.SignatureComputationPolicy.AUTO) {

@@ -2,6 +2,7 @@ package com.streamr.client.options;
 
 public class DataUnionClientOptions {
 
+    // TODO: read these from configs, see ETH-193
     //mainnet - xDai addresses are default:
     private String dataUnionSidechainFactoryAddress = "0x1b55587Beea0b5Bc96Bb2ADa56bD692870522e9f";
     private String dataUnionMainnetFactoryAddress = "0x7d55f9981d4E10A193314E001b96f72FCc901e40";
