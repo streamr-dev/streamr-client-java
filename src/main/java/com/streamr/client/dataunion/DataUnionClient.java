@@ -143,9 +143,10 @@ public class DataUnionClient {
 
 
     public DataUnion dataUnionFromMainnetAddress(String mainnetAddress) throws Exception {
-        DataUnionMainnet main =  mainnetDataUnion(mainnetAddress);
-        DataUnionSidechain side = sidechainDataUnion(factoryMainnet().sidechainAddress(new Address(main.getContractAddress())).send().getValue());
-        return new DataUnion(main, mainnet, side, sidechain, opts);
+        DataUnionMainnet duMainnet = mainnetDataUnion(mainnetAddress);
+        String sidechainAddress = duMainnet.sidechainAddress().send().getValue();
+        DataUnionSidechain duSidechain = sidechainDataUnion(sidechainAddress);
+        return new DataUnion(duMainnet, mainnet, duSidechain, sidechain, opts);
     }
 
     protected OkHttpClient.Builder httpClientBuilder(){
