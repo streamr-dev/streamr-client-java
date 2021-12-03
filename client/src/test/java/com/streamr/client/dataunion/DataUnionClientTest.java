@@ -89,6 +89,13 @@ class DataUnionClientTest {
             .withRestApiUrl(TestingMeta.REST_URL)
             .createStreamrRestClient();
     streamrClient = new StreamrClient(opts, restClient);
+
+    du =
+            client.deployDataUnion(
+                    DATA_UNION_NAME,
+                    adminWallet.getAddress(),
+                    BigInteger.ZERO,
+                    Arrays.asList(adminWallet.getAddress(), coreApiWallet.getAddress()));
   }
 
   @AfterAll
@@ -103,7 +110,6 @@ class DataUnionClientTest {
   void createDataUnionClient() throws Exception {
     final String adminPk = TEST_RPC_KEYS[0];
     client = streamrClient.dataUnionClient(adminPk, adminPk);
-    du = client.dataUnionFromName(DATA_UNION_NAME);
     Web3j mainnet = Web3j.build(new HttpService(DEV_MAINCHAIN_RPC));
     mainnetToken =
         IERC20.load(
@@ -116,20 +122,6 @@ class DataUnionClientTest {
 
   private final long pollInterval = 10000;
   private final long timeout = 600000;
-
-  @Test
-  @Order(10)
-  void createDataUnion() throws Exception {
-    du =
-        client.deployDataUnion(
-            DATA_UNION_NAME,
-            adminWallet.getAddress(),
-            BigInteger.ZERO,
-            Arrays.asList(adminWallet.getAddress(), coreApiWallet.getAddress()));
-
-    assertTrue(du.waitForDeployment(pollInterval, timeout));
-    assertTrue(du.isDeployed());
-  }
 
   @Test
   @Order(20)
