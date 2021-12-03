@@ -11,6 +11,7 @@ import com.streamr.client.testing.TestingMeta;
 import com.streamr.client.testing.TestingStreamrClient;
 import java.io.IOException;
 import java.math.BigInteger;
+import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.Tag;
 import org.junit.jupiter.api.Test;
 
@@ -25,6 +26,7 @@ class StreamrRestClientTest {
   }
 
   @Test
+  @Disabled
   void createStream_withoutStreamId() throws IOException {
     Stream proto = new Stream.Builder().createStream();
     Stream actual = createClient(TestingKeys.generatePrivateKey()).createStream(proto);
