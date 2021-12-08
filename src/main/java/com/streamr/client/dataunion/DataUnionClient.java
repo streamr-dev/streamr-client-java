@@ -2,6 +2,7 @@ package com.streamr.client.dataunion;
 
 import com.squareup.moshi.JsonAdapter;
 import com.streamr.client.dataunion.contracts.*;
+import com.streamr.client.exceptions.DataUnionNotFoundException;
 import com.streamr.client.options.DataUnionClientOptions;
 import com.streamr.client.rest.SetBinanceRecipientFromSignature;
 import com.streamr.client.utils.HttpUtils;
@@ -136,19 +137,23 @@ public class DataUnionClient {
         return new DataUnion(mainnetDataUnion(mainnetAddress.getValue()), mainnet, sidechainDataUnion(sidechainAddress), sidechain, opts);
     }
 
+    /** @deprecated DU name should only be used to predict address before deployment, never for finding existing Data Union contracts */
     public DataUnion dataUnionFromName(String name) throws Exception {
         String address = factoryMainnet().mainnetAddress(new Address(mainnetCred.getAddress()), new Utf8String(name)).send().getValue();
         return dataUnionFromMainnetAddress(address);
     }
 
-
     public DataUnion dataUnionFromMainnetAddress(String mainnetAddress) throws Exception {
-        DataUnionMainnet main =  mainnetDataUnion(mainnetAddress);
-        DataUnionSidechain side = sidechainDataUnion(factoryMainnet().sidechainAddress(new Address(main.getContractAddress())).send().getValue());
-        return new DataUnion(main, mainnet, side, sidechain, opts);
+        DataUnionMainnet duMainnet = mainnetDataUnion(mainnetAddress);
+        Address sidechainAddress = duMainnet.sidechainAddress().send();
+        if (sidechainAddress == null) {
+            throw new DataUnionNotFoundException(mainnetAddress);
+        }
+        DataUnionSidechain duSidechain = sidechainDataUnion(sidechainAddress.getValue());
+        return new DataUnion(duMainnet, mainnet, duSidechain, sidechain, opts);
     }
 
-    protected OkHttpClient.Builder httpClientBuilder(){
+    protected OkHttpClient.Builder httpClientBuilder() {
         OkHttpClient.Builder builder = new OkHttpClient.Builder();
         if(opts != null) {
             builder.connectTimeout(opts.getConnectionTimeoutMillis(), TimeUnit.MILLISECONDS);

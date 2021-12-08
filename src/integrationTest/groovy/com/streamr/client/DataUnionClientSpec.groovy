@@ -13,8 +13,9 @@ import org.web3j.crypto.Credentials
 import org.web3j.protocol.Web3j
 import org.web3j.protocol.core.methods.response.TransactionReceipt
 import org.web3j.protocol.http.HttpService
+import spock.lang.Shared
 
-class DataUnionClientSpec extends StreamrIntegrationSpecification{
+class DataUnionClientSpec extends StreamrIntegrationSpecification {
     private DataUnionClient client;
     //truffle keys mnemonic "testrpc"
     private String[] testrpc_keys = [
@@ -36,20 +37,35 @@ class DataUnionClientSpec extends StreamrIntegrationSpecification{
     private Credentials eeWallet;
     private BigInteger testSendAmount = BigInteger.valueOf(1000000000000000000l)
     private Credentials[] wallets;
-    private DataUnion du;
     private IERC20 mainnetToken;
-    private static final String duname = "test"+System.currentTimeMillis();
+    @Shared
+    private String duAddress;
     void setup() {
         wallets = new Credentials[testrpc_keys.length];
-        for(int i=0; i < testrpc_keys.length; i++){
+        for (int i = 0; i < testrpc_keys.length; i++) {
             wallets[i] = Credentials.create(testrpc_keys[i]);
         }
         eeWallet = Credentials.create(eePrivateKey)
         client = devChainDataUnionClient(testrpc_keys[0], testrpc_keys[0])
-        du = client.dataUnionFromName(duname);
-        //    public static IERC20 load(String contractAddress, Web3j web3j, Credentials credentials, ContractGasProvider contractGasProvider)
         Web3j mainnet = Web3j.build(new HttpService(DEV_MAINCHAIN_RPC))
         mainnetToken = IERC20.load(client.mainnetTokenAddress(), mainnet, wallets[0], new EstimatedGasProvider(mainnet, 730000))
+    }
+
+    private DataUnion getOrDeployDU() {
+        if (duAddress != null) {
+            return client.dataUnionFromMainnetAddress(duAddress);
+        }
+        String duName = "test" + System.currentTimeMillis();
+        //Address deployer = new Address(wallets[0].getAddress())
+        DataUnion du = client.deployDataUnion(
+            duName,
+            wallets[0].getAddress(),
+            BigInteger.ZERO,
+            Arrays.<String>asList(wallets[0].getAddress(), eeWallet.getAddress()),
+        )
+        du.waitForDeployment(10000, 600000)
+        duAddress = du.getMainnetContractAddress()
+        return du
     }
 
     void "set/get Binance recipient for self"() {
@@ -86,25 +102,17 @@ class DataUnionClientSpec extends StreamrIntegrationSpecification{
     }
 */
     void "create DU"() {
-        //Address deployer = new Address(wallets[0].getAddress())
         when:
-        du = client.deployDataUnion(
-                duname,
-                wallets[0].getAddress(),
-                BigInteger.ZERO,
-                Arrays.<String>asList(wallets[0].getAddress(), eeWallet.getAddress()),
-        )
+        DataUnion du = getOrDeployDU()
 
         then:
-        du.waitForDeployment(10000, 600000)
         du.isDeployed()
     }
 
-
     void "add members"() {
-        EthereumTransactionReceipt tr;
         when:
-        tr = du.addMembers(wallets[1].getAddress(), wallets[2].getAddress())
+        DataUnion du = getOrDeployDU()
+        EthereumTransactionReceipt tr = du.addMembers(wallets[1].getAddress(), wallets[2].getAddress())
 
         then:
         client.waitForSidechainTx(tr.getTransactionHash(), 10000, 600000)
@@ -113,22 +121,24 @@ class DataUnionClientSpec extends StreamrIntegrationSpecification{
     }
 
     void "test transfer and sidechain stats"() {
-        BigInteger sidechainEarnings = du.totalEarnings()
         when:
+        DataUnion du = getOrDeployDU()
+        BigInteger sidechainEarnings = du.totalEarnings()
         TransactionReceipt tr = mainnetToken.transfer(new Address(du.getMainnetContractAddress()), new Uint256(testSendAmount.multiply(BigInteger.valueOf(2)))).send()
         client.waitForMainnetTx(tr.getTransactionHash(), 10000, 600000)
         du.sendTokensToBridge();
+
         then:
         du.waitForEarningsChange(sidechainEarnings, 10000, 600000) != null
         du.getEarnings(wallets[1].getAddress()).equals(testSendAmount)
     }
 
     void "withdraw member as admin"() {
+        when:
         String recipient = wallets[2].getAddress();
         BigInteger recipientBal = mainnetToken.balanceOf(new Address(recipient)).send().getValue();
-        EthereumTransactionReceipt tr;
-        when:
-        tr = du.withdrawAllTokensForSelfOrAsAdmin(recipient, true)
+        DataUnion du = getOrDeployDU()
+        EthereumTransactionReceipt tr = du.withdrawAllTokensForSelfOrAsAdmin(recipient, true)
         client.portTxsToMainnet(tr, wallets[0].getEcKeyPair().getPrivateKey())
 
         then:
@@ -137,11 +147,11 @@ class DataUnionClientSpec extends StreamrIntegrationSpecification{
     }
 
     void "signed withdrawal for another"() {
+        when:
+        DataUnion du = getOrDeployDU()
         String recipient = wallets[2].getAddress();
         BigInteger recipientBal = mainnetToken.balanceOf(new Address(recipient)).send().getValue();
-        EthereumTransactionReceipt tr;
-        when:
-        tr = du.withdrawAllTokensForMember(wallets[1].getEcKeyPair().getPrivateKey(), recipient, true)
+        EthereumTransactionReceipt tr = du.withdrawAllTokensForMember(wallets[1].getEcKeyPair().getPrivateKey(), recipient, true)
         client.portTxsToMainnet(tr, wallets[0].getEcKeyPair().getPrivateKey())
 
         then:
@@ -149,7 +159,10 @@ class DataUnionClientSpec extends StreamrIntegrationSpecification{
         client.waitForMainnetBalanceChange(recipientBal,recipient, 10000, 600000 ) == recipientBal.add(testSendAmount)
     }
 
+    // TODO: there's a bit of a circular dependency here: core-api uses streamr-client-java
     void "join with shared secret"() {
+        when:
+        DataUnion du = getOrDeployDU()
         StreamrClient apiClient0 = createClientWithPrivateKey(testrpc_keys[0]);
         StreamrClient apiClient3 = createClientWithPrivateKey(testrpc_keys[3]);
         String member = wallets[3].getAddress()
@@ -157,7 +170,6 @@ class DataUnionClientSpec extends StreamrIntegrationSpecification{
         p.setBeneficiaryAddress(du.getMainnetContractAddress())
         p.setType("DATAUNION")
         p.setDataUnionVersion(2)
-        when:
         apiClient0.createProduct(p)
         Secret sec = apiClient0.setDataUnionSecret(du.getMainnetContractAddress(), "someName")
         apiClient3.requestDataUnionJoin(du.getMainnetContractAddress(), member, sec.getSecret())
