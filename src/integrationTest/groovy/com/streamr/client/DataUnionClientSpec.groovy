@@ -13,6 +13,7 @@ import org.web3j.crypto.Credentials
 import org.web3j.protocol.Web3j
 import org.web3j.protocol.core.methods.response.TransactionReceipt
 import org.web3j.protocol.http.HttpService
+import spock.lang.Shared
 
 class DataUnionClientSpec extends StreamrIntegrationSpecification {
     private DataUnionClient client;
@@ -37,6 +38,7 @@ class DataUnionClientSpec extends StreamrIntegrationSpecification {
     private BigInteger testSendAmount = BigInteger.valueOf(1000000000000000000l)
     private Credentials[] wallets;
     private IERC20 mainnetToken;
+    @Shared
     private String duAddress;
     void setup() {
         wallets = new Credentials[testrpc_keys.length];
