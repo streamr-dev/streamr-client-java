@@ -15,6 +15,8 @@ updates:
       include: "scope"
     reviewers:
       - "kare"
+    assignees:
+      - DaisyDomergue
     labels:
       - "github-actions"
       - "dependencies"
