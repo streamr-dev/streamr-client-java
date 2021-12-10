@@ -66,12 +66,6 @@ public class EthereumAuthenticationMethod extends AuthenticationMethod {
         return SigningUtil.sign(challengeToSign, account);
     }
 
-    static class Challenge {
-        String id;
-        String challenge;
-        Date expires;
-    }
-
     static class ChallengeResponse {
         Challenge challenge;
         String signature;
