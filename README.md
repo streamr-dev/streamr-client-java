@@ -6,6 +6,8 @@
 
 # Streamr Java Client
 
+**NOTE: This library is deprecated! It works with the Corea milestone network, but won't work with Brubeck which launches in Q1/2022. The [Broker node](https://streamr.network/docs/streamr-network/installing-broker-node) pattern works trivially with any programming language including Java. Or if you happen to run JS, you could check out the [light node](https://streamr.network/docs/streamr-network/using-a-light-node) pattern as well.**
+
 Using this library, you can easily interact with Streamr over HTTP and websocket APIs from Java-based applications.
 
 This library covers the following functionality:
