@@ -1,7 +1,7 @@
 buildscript {
 	dependencies {
 		classpath("org.web3j:codegen:4.8.7")
-		classpath("org.slf4j:slf4j-api:1.7.33")
+		classpath("org.slf4j:slf4j-api:1.7.36")
 		classpath("org.slf4j:slf4j-log4j12:1.7.33")
 	}
 }
