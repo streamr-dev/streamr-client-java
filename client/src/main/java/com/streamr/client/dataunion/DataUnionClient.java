@@ -142,6 +142,7 @@ public final class DataUnionClient {
         sidechainCred);
   }
 
+  /** @deprecated */
   public DataUnion dataUnionFromName(final String name) throws Exception {
     String address =
         factoryMainnet()
@@ -155,8 +156,8 @@ public final class DataUnionClient {
     DataUnionMainnet main = mainnetDataUnion(mainnetAddress);
     DataUnionSidechain side =
         sidechainDataUnion(
-            factoryMainnet()
-                .sidechainAddress(new Address(main.getContractAddress()))
+            main
+                .sidechainAddress()
                 .send()
                 .getValue());
     return new DataUnion(main, mainnet, mainnetCred, side, sidechain, sidechainCred);
