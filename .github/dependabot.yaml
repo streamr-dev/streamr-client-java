@@ -13,10 +13,6 @@ updates:
     commit-message:
       prefix: "build"
       include: "scope"
-    reviewers:
-      - "kare"
-    assignees:
-      - DaisyDomergue
     labels:
       - "github-actions"
       - "dependencies"
@@ -30,8 +26,6 @@ updates:
     commit-message:
       prefix: "build"
       include: "scope"
-    reviewers:
-      - "kare"
     labels:
       - "gradle"
       - "dependencies"
