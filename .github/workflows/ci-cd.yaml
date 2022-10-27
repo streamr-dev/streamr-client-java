@@ -39,7 +39,7 @@ jobs:
         run: $make test-unit
 #      - name: PMD static analysis
 #        run: $make pmd
-      - uses: actions/upload-artifact@v3.1.0
+      - uses: actions/upload-artifact@v3.1.1
         with:
           name: streamr-client-java-report-${{ env.datetime }}-${{ github.job }}
           if: failure()
